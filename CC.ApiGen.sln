@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCApi.SourceGenerator", "CCApi.SourceGenerator\CCApi.SourceGenerator.csproj", "{4DEE0921-8078-40ED-A7E2-075760876D66}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCApi.WebApiExample", "CCApi.WebApiExample\CCApi.WebApiExample.csproj", "{7AF8A7DD-E8C6-4A56-ADEA-753A6C1CCC7A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostgresFunction", "PostgresFunction\PostgresFunction.csproj", "{11EF88F6-29CF-460F-B607-2D622733F487}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4DEE0921-8078-40ED-A7E2-075760876D66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DEE0921-8078-40ED-A7E2-075760876D66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DEE0921-8078-40ED-A7E2-075760876D66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DEE0921-8078-40ED-A7E2-075760876D66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7AF8A7DD-E8C6-4A56-ADEA-753A6C1CCC7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7AF8A7DD-E8C6-4A56-ADEA-753A6C1CCC7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7AF8A7DD-E8C6-4A56-ADEA-753A6C1CCC7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7AF8A7DD-E8C6-4A56-ADEA-753A6C1CCC7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11EF88F6-29CF-460F-B607-2D622733F487}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11EF88F6-29CF-460F-B607-2D622733F487}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11EF88F6-29CF-460F-B607-2D622733F487}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11EF88F6-29CF-460F-B607-2D622733F487}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
