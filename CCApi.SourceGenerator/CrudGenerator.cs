@@ -46,6 +46,9 @@ using CCApi.WebApiExample.Data; //TODO: AppDbContext here
 using Microsoft.EntityFrameworkCore;
 using {item.ModelNamespace};
 
+using CC.ApiGen.Filtering;
+using CC.ApiGen.HelperDtos;
+
 /*
 ==== area for testing ====
 {PrintPropertyInfos(item.PropertiesInfos)}
@@ -59,12 +62,34 @@ namespace {item.RootNamespace}.Controllers;
 public partial class {item.ClassName}Controller(AppDbContext dbContext) : ControllerBase
 {{
      [HttpGet]
-     public async Task<IActionResult> Get{item.ClassName}s()
+     public async Task<IActionResult> Get{item.ClassName}s([FromQuery] PagingFilter? filter)
      {{
          var result = await dbContext.{item.ClassName}s
                         {GetIncludesIfAny(item.PropertiesInfos)}
                         .ToListAsync();
-         return Ok(result);
+
+         IEnumerable<{item.ClassName}> sortedResult = result;
+         if(!string.IsNullOrEmpty(filter.SortBy))
+         {{
+            var propertyInfo = typeof({item.ClassName}).GetProperty(filter.SortBy);
+
+            if(propertyInfo != null)
+            {{
+                sortedResult = filter.SortDirection == SortDirection.Ascending
+                    ? sortedResult.OrderBy({item.ClassName.ToLower()} => propertyInfo.GetValue({item.ClassName.ToLower()}, null))
+                    : sortedResult.OrderByDescending({item.ClassName.ToLower()} => propertyInfo.GetValue({item.ClassName.ToLower()}, null));
+            }}
+         }}
+
+         var listDto = new ListResponseDTO<{item.ClassName}>
+         {{
+            Data = sortedResult.Skip(filter.Offset).Take(filter.Limit).ToList(),
+            Limit = filter.Limit,
+            Offset = filter.Offset,
+            Total = sortedResult.Count()
+         }};
+        
+         return Ok(listDto);
      }}
 
      [HttpGet(""{{id}}"")]
