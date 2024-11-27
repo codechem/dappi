@@ -1,0 +1,65 @@
+# Ignore build outputs
+bin/
+obj/
+out/
+
+# Rider and JetBrains IDE files
+.idea/
+*.sln.DotSettings
+*.sln.DotSettings.user
+
+# Visual Studio files
+.vscode/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs and temporary files
+*.log
+*.tlog
+*.loghost
+
+# Dependency directories
+node_modules/
+packages/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+
+# Git-specific files
+*.orig
+*.rej
+
+# Generated files by source generator
+*.Generated.cs
+
+# Settings and environment files (do not include sensitive info)
+appsettings.Development.json
+appsettings.*.json
+.env
+
+# Postgres-related files
+*.sql-journal
+*.bak
+*.pgsql
+
+# Test results
+TestResults/
+coverage/
+.coverage
+
+# Entity Framework migration files
+Migrations/
+
+# Ignore IDE-specific files
+*.idea/
+*.vs/
+
+# Ignore temporary files
+*.tmp
+*.temp
+
