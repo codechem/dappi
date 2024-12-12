@@ -62,7 +62,7 @@ namespace {item.RootNamespace}.Controllers;
 public partial class {item.ClassName}Controller(AppDbContext dbContext) : ControllerBase
 {{
      [HttpGet]
-     public async Task<IActionResult> Get{item.ClassName}s([FromQuery] PagingFilter? filter)
+     public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
      {{
          var result = await dbContext.{item.ClassName}s
                         {GetIncludesIfAny(item.PropertiesInfos)}
