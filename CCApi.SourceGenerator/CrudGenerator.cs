@@ -64,32 +64,33 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
      [HttpGet]
      public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
      {{
-         var result = await dbContext.{item.ClassName}s
-                        {GetIncludesIfAny(item.PropertiesInfos)}
-                        .ToListAsync();
+         var query = dbContext.{item.ClassName}s{GetIncludesIfAny(item.PropertiesInfos)}.AsQueryable();
 
-         IEnumerable<{item.ClassName}> sortedResult = result;
-         if(!string.IsNullOrEmpty(filter.SortBy))
+         if (filter != null)
          {{
-            var propertyInfo = typeof({item.ClassName}).GetProperty(filter.SortBy);
-
-            if(propertyInfo != null)
-            {{
-                sortedResult = filter.SortDirection == SortDirection.Ascending
-                    ? sortedResult.OrderBy({item.ClassName.ToLower()} => propertyInfo.GetValue({item.ClassName.ToLower()}, null))
-                    : sortedResult.OrderByDescending({item.ClassName.ToLower()} => propertyInfo.GetValue({item.ClassName.ToLower()}, null));
-            }}
+            query = LinqExtensions.ApplyFiltering(query, filter);
          }}
+
+         if (!string.IsNullOrEmpty(filter.SortBy))
+         {{
+            query = LinqExtensions.ApplySorting(query, filter.SortBy, filter.SortDirection);
+         }}
+
+         var total = await query.CountAsync();
+         var data = await query
+             .Skip(filter.Offset)
+             .Take(filter.Limit)
+             .ToListAsync();
 
          var listDto = new ListResponseDTO<{item.ClassName}>
          {{
-            Data = sortedResult.Skip(filter.Offset).Take(filter.Limit).ToList(),
-            Limit = filter.Limit,
-            Offset = filter.Offset,
-            Total = sortedResult.Count()
+             Data = data,
+             Limit = filter.Limit,
+             Offset = filter.Offset,
+             Total = total
          }};
-        
-         return Ok(listDto);
+
+        return Ok(listDto);
      }}
 
      [HttpGet(""{{id}}"")]

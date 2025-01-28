@@ -5,7 +5,7 @@ using CCApi.SourceGenerator.Attributes;
 
 namespace CCApi.WebApiExample.Entities;
 
-[CCController(CreateDto = true)]
+[CCController]
 public class Book
 {
     [Key]
