@@ -13,8 +13,8 @@ public class CrudGenerator : IIncrementalGenerator
     {
         var syntaxProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
             "CCApi.SourceGenerator.Attributes.CCControllerAttribute",
-            (node, _) => node is ClassDeclarationSyntax,
-            (ctx, _) => 
+            predicate: (node, _) => node is ClassDeclarationSyntax,
+            transform: (ctx, _) => 
             {
                 var classDeclaration = (ClassDeclarationSyntax)ctx.TargetNode;
                 var classSymbol = (ISymbol)ctx.TargetSymbol;
