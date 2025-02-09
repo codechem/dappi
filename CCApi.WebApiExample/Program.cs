@@ -1,24 +1,31 @@
 using CCApi.WebApiExample.Data;
+using CCApi.WebApiExample.Interfaces;
+using CCApi.WebApiExample.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services to the container
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnection")));
 
 builder.Services.AddTransient<IWeatherService, WeatherService>();
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Add controllers and other services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-// worth mentioning in blogpost
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Apply migrations at startup
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.Migrate();  // Apply migrations automatically
+}
+
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -26,14 +33,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-// app.AddMinimalApiControllers();
-// app.MapPost("/items", async (Item item, AppDbContext dbContext) =>
-// {
-//     dbContext.Items.Add(item);
-//     await dbContext.SaveChangesAsync();
-//     return TypedResults.Created($"/items/{item.Id}", item);
-// });
-
 app.MapControllers();
+
 app.Run();
