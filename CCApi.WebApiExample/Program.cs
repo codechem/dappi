@@ -18,12 +18,6 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Apply migrations at startup
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.Migrate();  // Apply migrations automatically
-}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

@@ -125,6 +125,7 @@ namespace CCApi.WebApiExample.Controllers
             sb.AppendLine("using System;");
             sb.AppendLine("using CCApi.SourceGenerator.Attributes;");
             sb.AppendLine($"namespace CCApi.WebApiExample.Entities;");
+            sb.AppendLine($"[CCController]");
             sb.AppendLine($"    public class {modelType.Name}");
             sb.AppendLine("    {");
             sb.AppendLine("    [Key]");

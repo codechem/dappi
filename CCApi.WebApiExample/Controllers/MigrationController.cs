@@ -25,13 +25,13 @@ public class MigrationController : ControllerBase
         try
         {
             GenerateMigrationsIfNeeded();
-            
+
             var directory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly()?.Location);
-         
+
             ApplyMigrationsAfterRestart(directory);
 
             RestartApplication();
-            
+
             _appLifetime.StopApplication();
 
             return Ok("Migrations applied. Application restarting...");
@@ -48,7 +48,7 @@ public class MigrationController : ControllerBase
         {
             var migrationDirectory = Path.Combine(_projectDirectory, "Migrations");
 
-            
+
             if (!Directory.Exists(migrationDirectory))
             {
                 Directory.CreateDirectory(migrationDirectory);
@@ -77,25 +77,68 @@ public class MigrationController : ControllerBase
         try
         {
             var exePath = System.Reflection.Assembly.GetEntryAssembly()?.Location;
-
             if (exePath != null)
             {
                 var directory = Path.GetDirectoryName(exePath);
+                var processId = Process.GetCurrentProcess().Id;  // Get current process ID
 
-                if (directory != null)
+                string scriptPath;
+                string scriptContent;
+
+                if (OperatingSystem.IsWindows())
                 {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = "dotnet",
-                        Arguments = Path.Combine(directory, "CCApi.WebApiExample.dll"),  
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    });
+                    scriptPath = Path.Combine(directory, "restart.bat");
+                    scriptContent = $@"
+@echo off
+set pid={processId}
+set app_path=""{exePath}""
 
-                    ApplyMigrationsAfterRestart(directory);
+:waitloop
+tasklist /FI ""PID eq %pid%"" | find /I ""%pid%"" >nul
+if not errorlevel 1 (
+    timeout /t 1 >nul
+    goto waitloop
+)
 
-                    _appLifetime.StopApplication();
+start """" dotnet ""%app_path%""
+exit
+";
                 }
+                else
+                {
+                    scriptPath = Path.Combine(directory, "restart.sh");
+                    scriptContent = $@"
+#!/bin/bash
+pid={processId}
+app_path=""{exePath}""
+
+# Wait until the old process exits
+while kill -0 ""$pid"" 2>/dev/null; do sleep 1; done
+
+# Start the new instance
+dotnet ""$app_path"" &
+";
+
+                    // Ensure the script file has execute permissions
+                    System.IO.File.WriteAllText(scriptPath, scriptContent);
+                    Process.Start("chmod", new[] { "+x", scriptPath })?.WaitForExit();
+                }
+
+                // Write the script file
+                System.IO.File.WriteAllText(scriptPath, scriptContent);
+
+                // Use bash or cmd to execute the script properly
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = OperatingSystem.IsWindows() ? "cmd.exe" : "/bin/bash",
+                    Arguments = OperatingSystem.IsWindows() ? $"/c \"{scriptPath}\"" : $"-c \"{scriptPath}\"",
+                    UseShellExecute = false, // Prevent opening in Xcode
+                    CreateNoWindow = true
+                };
+                Process.Start(startInfo);
+
+                // Stop the current application
+                _appLifetime.StopApplication();
             }
         }
         catch (Exception ex)
