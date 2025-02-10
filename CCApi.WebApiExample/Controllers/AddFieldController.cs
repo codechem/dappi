@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace YourNamespace.Controllers
+namespace CCApi.WebApiExample.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
