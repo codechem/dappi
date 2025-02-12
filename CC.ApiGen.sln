@@ -4,8 +4,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCApi.SourceGenerator", "CC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCApi.WebApiExample", "CCApi.WebApiExample\CCApi.WebApiExample.csproj", "{7AF8A7DD-E8C6-4A56-ADEA-753A6C1CCC7A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostgresFunction", "PostgresFunction\PostgresFunction.csproj", "{11EF88F6-29CF-460F-B607-2D622733F487}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
