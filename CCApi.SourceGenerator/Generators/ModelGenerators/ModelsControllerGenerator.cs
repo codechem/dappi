@@ -1,15 +1,11 @@
-using System;
-using System.IO;
-using System.Reflection;
-using System.Reflection.Emit;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
-namespace CCApi.SourceGenerator
+namespace CCApi.SourceGenerator.Generators.ModelGenerators
 {
     [Generator]
-    public class CreateModelGenerator : IIncrementalGenerator
+    public class ModelsControllerGenerator : IIncrementalGenerator
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -33,19 +29,41 @@ using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace CCApi.WebApiExample.Controllers
+namespace {rootNamespace}.Controllers
 {{
     [Route(""api/[controller]"")]
     [ApiController]
-    public partial class CreateModelController : ControllerBase
+    public partial class ModelsController : ControllerBase
     {{
         private readonly string _entitiesFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ""Entities"");
 
-        public CreateModelController()
+        public ModelsController()
         {{
             if (!Directory.Exists(_entitiesFolderPath))
             {{
                 Directory.CreateDirectory(_entitiesFolderPath);
+            }}
+        }}
+
+ [HttpGet]
+        public IActionResult GetAllModels()
+        {{
+            try
+            {{
+                if (!Directory.Exists(_entitiesFolderPath))
+                {{
+                    return NotFound(""Entities directory not found."");
+                }}
+
+                var modelNames = Directory.GetFiles(_entitiesFolderPath, ""*.cs"")
+                                          .Select(Path.GetFileNameWithoutExtension)
+                                          .ToList();
+
+                return Ok(modelNames);
+            }}
+            catch (Exception ex)
+            {{
+                return StatusCode(500, $""Internal server error: {{ex.Message}}"");
             }}
         }}
 
@@ -90,6 +108,37 @@ if (modelNames.Contains(request.ModelName))
                 {{
                     Message = $""Model class '{{modelType.Name}}' created successfully."",
                     FilePath = filePath
+                }});
+            }}
+            catch (Exception ex)
+            {{
+                return StatusCode(500, $""Internal server error: {{ex.Message}}"");
+            }}
+        }}
+
+        [HttpDelete(""{{modelName}}"")]
+        public IActionResult DeleteModel(string modelName)
+        {{
+            if (string.IsNullOrWhiteSpace(modelName))
+            {{
+                return BadRequest(""Model name must be provided."");
+            }}
+
+            var modelFilePath = Path.Combine(_entitiesFolderPath, $""{{modelName}}.cs"");
+
+            try
+            {{
+                if (!System.IO.File.Exists(modelFilePath))
+                {{
+                    return NotFound(""Model file not found."");
+                }}
+
+                System.IO.File.Delete(modelFilePath);
+
+                return Ok(new
+                {{
+                    Message = $""Model '{{modelName}}' deleted successfully."",
+                    FilePath = modelFilePath
                 }});
             }}
             catch (Exception ex)
@@ -195,7 +244,7 @@ if (modelNames.Contains(request.ModelName))
     }}
 }}
 ", Encoding.UTF8);
-            context.AddSource("MigrationControllerGenerator.cs", sourceText);
+            context.AddSource("ModelsController.cs", sourceText);
         }
     }
 }

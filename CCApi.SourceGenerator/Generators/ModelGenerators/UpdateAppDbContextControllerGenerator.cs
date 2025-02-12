@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
 
-namespace CCApi.SourceGenerator
+namespace CCApi.SourceGenerator.Generators.ModelGenerators
 {
     [Generator]
     public class UpdateAppDbContextControllerGenerator : IIncrementalGenerator
