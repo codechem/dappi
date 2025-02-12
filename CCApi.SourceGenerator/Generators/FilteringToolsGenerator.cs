@@ -5,16 +5,22 @@ using Microsoft.CodeAnalysis.Text;
 namespace CCApi.SourceGenerator.Generators;
 
 [Generator]
-public class FilteringToolsGenerator : ISourceGenerator
+public class FilteringToolsGenerator : IIncrementalGenerator
 {
-    public void Initialize(GeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        context.RegisterImplementationSourceOutput(
+            context.CompilationProvider,
+            (context, compilation) => GenerateFiltering(context, compilation)
+        );
     }
 
-    public void Execute(GeneratorExecutionContext context)
+    private void GenerateFiltering(SourceProductionContext context, Compilation compilation)
     {
+        var rootNamespace = compilation.AssemblyName ?? "DefaultNamespace";
+
         var sourceText = SourceText.From($@"
-namespace CC.ApiGen.Filtering;
+namespace {rootNamespace}.Filtering;
 
 public interface IPagingFilter
 {{
