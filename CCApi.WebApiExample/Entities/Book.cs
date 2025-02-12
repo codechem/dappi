@@ -22,24 +22,3 @@ public class Book
     // Navigation property: Each book has one author
     public Author? Author { get; set; }
 }
-
-[CCController]
-public class Author
-{
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public Guid Id { get; set; }
-
-    [Required]
-    [MaxLength(100)]
-    public string Name { get; set; }
-
-    [Required]
-    [Range(0, 120)]
-    public int Age { get; set; }
-    
-    // Navigation property: One author can have many books
-    // Required to have jsonIgnore and be nullable
-    [JsonIgnore]
-    public ICollection<Book>? Books { get; set; }
-}

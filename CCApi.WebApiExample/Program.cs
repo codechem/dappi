@@ -1,4 +1,6 @@
 using CCApi.WebApiExample.Data;
+using CCApi.WebApiExample.Interfaces;
+using CCApi.WebApiExample.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
