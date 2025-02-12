@@ -3,8 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CCApi.WebApiExample.Data;
 
-
-
 public class Item
 {
     public int Id { get; set; }
