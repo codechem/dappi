@@ -41,7 +41,7 @@ public class ClassFilterGenerator : IIncrementalGenerator
         foreach (var item in collectedData)
         {
             context.AddSource($"{item.ClassName}Filter.cs", @$"
-namespace CC.ApiGen.Filtering;
+namespace {item.RootNamespace}.Filtering;
 
 public class {item.ClassName}Filter : PagingFilter
 {{ 

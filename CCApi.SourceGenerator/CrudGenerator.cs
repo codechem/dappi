@@ -46,8 +46,9 @@ using CCApi.WebApiExample.Data; //TODO: AppDbContext here
 using Microsoft.EntityFrameworkCore;
 using {item.ModelNamespace};
 
-using CC.ApiGen.Filtering;
-using CC.ApiGen.HelperDtos;
+using {item.RootNamespace}.Filtering;
+using {item.RootNamespace}.HelperDtos;
+using {item.RootNamespace}.Extensions;
 
 /*
 ==== area for testing ====

@@ -5,18 +5,25 @@ using Microsoft.CodeAnalysis.Text;
 namespace CCApi.SourceGenerator.Generators;
 
 [Generator]
-public class ExtensionsGenerator : ISourceGenerator
+public class ExtensionsGenerator : IIncrementalGenerator
 {
-    public void Initialize(GeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        context.RegisterImplementationSourceOutput(
+            context.CompilationProvider,
+            (context, compilation) => GenerateExtensions(context, compilation)
+        );
     }
 
-    public void Execute(GeneratorExecutionContext context)
+    private void GenerateExtensions(SourceProductionContext context, Compilation compilation)
     {
+        var rootNamespace = compilation.AssemblyName ?? "DefaultNamespace";
         var sourceText = SourceText.From($@"
-
+using System.Text.RegularExpressions;
 using System.Linq.Expressions;
-namespace CC.ApiGen.Filtering;
+using {rootNamespace}.Filtering;
+
+namespace {rootNamespace}.Extensions;
 
 public static class LinqExtensions
 {{
@@ -56,7 +63,17 @@ public static class LinqExtensions
 
         return (IQueryable<T>)method.Invoke(null, new object[] {{ query, lambda }});
     }}
-}}", Encoding.UTF8);
-        context.AddSource("CCFilter.cs", sourceText);
+}}
+
+public static class PropertyCheckExtensions 
+{{
+    public static bool PropertyExists(string classCode, string fieldName, string fieldType)
+    {{
+        var propertyPattern = $@""\bpublic\s+{{Regex.Escape(fieldType)}}\s+{{Regex.Escape(fieldName)}}\s*\{{{{"";
+        return Regex.IsMatch(classCode, propertyPattern, RegexOptions.IgnoreCase);
+    }}
+}}
+", Encoding.UTF8);
+        context.AddSource("DappiExtensions.cs", sourceText);
     }
 }
