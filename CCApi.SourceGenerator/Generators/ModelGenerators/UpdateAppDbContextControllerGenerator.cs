@@ -25,10 +25,13 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using System.IO;
 using System.Linq;
+using Swashbuckle.AspNetCore.Annotations;
+
 
 namespace {rootNamespace}.Controllers
 {{
-    [Route(""api/[controller]"")]
+[ApiExplorerSettings(GroupName = ""Toolkit"")]
+    [Route(""api/update-db-context"")]
     [ApiController]
     public class UpdateAppDbContextController : ControllerBase
     {{

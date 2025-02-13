@@ -22,6 +22,7 @@ namespace CCApi.SourceGenerator.Generators.ModelGenerators
             var sourceText = SourceText.From($@"
 using CCApi.WebApiExample.Data;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Reflection;
@@ -29,9 +30,9 @@ using System.IO;
 
 namespace {rootNamespace}.Controllers;
 
-
+[ApiExplorerSettings(GroupName = ""Toolkit"")]
 [ApiController]
-[Route(""api/Migrate"")]
+[Route(""api/create-migrations-update-db"")]
 public class MigrationController : ControllerBase
 {{
     private readonly IHostApplicationLifetime _appLifetime;

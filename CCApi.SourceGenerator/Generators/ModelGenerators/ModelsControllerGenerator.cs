@@ -26,12 +26,15 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Linq;
 using System.Collections.Generic;
+using {rootNamespace}.Extensions;
 
 namespace {rootNamespace}.Controllers
 {{
-    [Route(""api/[controller]"")]
+[ApiExplorerSettings(GroupName = ""Toolkit"")]
+    [Route(""api/models"")]
     [ApiController]
     public partial class ModelsController : ControllerBase
     {{
@@ -147,6 +150,55 @@ if (modelNames.Contains(request.ModelName))
             }}
         }}
 
+        [HttpPut(""{{modelName}}"")]
+        public IActionResult AddField(string modelName, [FromBody] FieldRequest request)
+        {{
+            if (string.IsNullOrWhiteSpace(modelName) || string.IsNullOrWhiteSpace(request.FieldName) || string.IsNullOrWhiteSpace(request.FieldType))
+            {{
+                return BadRequest(""Model name, field name, and field type must be provided."");
+            }}
+
+            try
+            {{
+                var modelFilePath = Path.Combine(_entitiesFolderPath, $""{{modelName}}.cs"");
+
+                if (!System.IO.File.Exists(modelFilePath))
+                {{
+                    return NotFound(""Model class not found."");
+                }}
+
+                var existingCode = System.IO.File.ReadAllText(modelFilePath);
+
+                var updatedCode = AddFieldToClass(existingCode, request.FieldName, request.FieldType);
+
+                System.IO.File.WriteAllText(modelFilePath, updatedCode);
+
+                return Ok(new
+                {{
+                    Message = $""Field '{{request.FieldName}}' of type '{{request.FieldType}}' added successfully to '{{modelName}}' model."",
+                    FilePath = modelFilePath
+                }});
+            }}
+            catch (Exception ex)
+            {{
+                return StatusCode(500, $""Internal server error: {{ex.Message}}"");
+            }}
+        }}
+
+        private string AddFieldToClass(string classCode, string fieldName, string fieldType)
+        {{
+            if (PropertyCheckExtensions.PropertyExists(classCode, fieldName, fieldType))
+            {{
+                throw new InvalidOperationException($""The property '{{fieldName}}' of type '{{fieldType}}' already exists in the class."");
+            }}
+            var propertyCode = $""    public {{fieldType}} {{fieldName}} {{{{ get; set; }}}}"";
+            var insertPosition = classCode.LastIndexOf(""}}"", StringComparison.Ordinal); 
+            var updatedCode = classCode.Insert(insertPosition, Environment.NewLine + propertyCode + Environment.NewLine);
+
+            return updatedCode;
+        }}
+
+
         private bool IsValidClassName(string name)
         {{
             if (string.IsNullOrEmpty(name))
@@ -236,6 +288,12 @@ if (modelNames.Contains(request.ModelName))
     public class ModelRequest
     {{
         public string ModelName {{ get; set; }}
+    }}
+
+    public class FieldRequest
+    {{
+        public string FieldName {{ get; set; }}
+        public string FieldType {{ get; set; }}
     }}
 
     [AttributeUsage(AttributeTargets.Class)]
