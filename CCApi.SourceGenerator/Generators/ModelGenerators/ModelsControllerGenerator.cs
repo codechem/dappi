@@ -36,6 +36,7 @@ namespace {rootNamespace}.Controllers
     public partial class ModelsController : ControllerBase
     {{
         private readonly string _entitiesFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ""Entities"");
+        private readonly string _controllersFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ""Controllers"");
 
         public ModelsController()
         {{
@@ -142,6 +143,13 @@ namespace {rootNamespace}.Controllers
 
                 System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
 
+                var controllerFilePath = Path.Combine(_controllersFolderPath, $""{{modelName}}Controller.cs"");
+
+                if (System.IO.File.Exists(controllerFilePath))
+                {{
+                    System.IO.File.Delete(controllerFilePath);
+                }}          
+                
                 return Ok(new
                 {{
                     Message = $""Model '{{modelName}}' deleted successfully."",
