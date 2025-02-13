@@ -16,6 +16,7 @@ builder.Services.AddTransient<IWeatherService, WeatherService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+#if DEBUG
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("Toolkit", new OpenApiInfo { Title = "Toolkit API", Version = "v1" });
@@ -29,6 +30,7 @@ builder.Services.AddSwaggerGen(c =>
 
     c.TagActionsBy(api => api.GroupName ?? api.ActionDescriptor.RouteValues["controller"]);
 });
+#endif
 
 var app = builder.Build();
 
