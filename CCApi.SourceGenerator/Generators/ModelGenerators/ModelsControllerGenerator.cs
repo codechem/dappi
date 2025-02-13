@@ -25,6 +25,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using {rootNamespace}.Extensions;
 
 namespace {rootNamespace}.Controllers
@@ -132,6 +133,14 @@ namespace {rootNamespace}.Controllers
                 }}
 
                 System.IO.File.Delete(modelFilePath);
+
+                var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), ""Data"", ""AppDbContext.cs"");
+
+                string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
+                string pattern = $@""\s*public\s+DbSet<{{modelName}}>\s+{{modelName}}s\s+\{{{{\s+get; set;\s+\}}}}"";
+                dbContextContent = Regex.Replace(dbContextContent, pattern, string.Empty, RegexOptions.Multiline);
+
+                System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
 
                 return Ok(new
                 {{
