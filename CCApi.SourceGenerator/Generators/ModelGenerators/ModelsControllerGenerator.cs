@@ -9,31 +9,27 @@ namespace CCApi.SourceGenerator.Generators.ModelGenerators
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            context.RegisterImplementationSourceOutput(
-           context.CompilationProvider,
-           (context, compilation) => GenerateController(context, compilation)
-       );
+            context.RegisterImplementationSourceOutput(context.CompilationProvider, (context, compilation) => GenerateController(context, compilation));
         }
 
         private void GenerateController(SourceProductionContext context, Compilation compilation)
         {
             var rootNamespace = compilation.AssemblyName ?? "DefaultNamespace";
 
-            var sourceText = SourceText.From($@"
-using Microsoft.AspNetCore.Mvc;
+            var sourceText = SourceText.From(
+$@"using Microsoft.AspNetCore.Mvc;
 using System;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
-using Swashbuckle.AspNetCore.Annotations;
 using System.Linq;
 using System.Collections.Generic;
 using {rootNamespace}.Extensions;
 
 namespace {rootNamespace}.Controllers
 {{
-[ApiExplorerSettings(GroupName = ""Toolkit"")]
+    [ApiExplorerSettings(GroupName = ""Toolkit"")]
     [Route(""api/models"")]
     [ApiController]
     public partial class ModelsController : ControllerBase
@@ -48,7 +44,7 @@ namespace {rootNamespace}.Controllers
             }}
         }}
 
- [HttpGet]
+        [HttpGet]
         public IActionResult GetAllModels()
         {{
             try
@@ -83,15 +79,14 @@ namespace {rootNamespace}.Controllers
             {{
                 return BadRequest($""The model name '{{request.ModelName}}' is not a valid C# class name."");
             }}
-var modelNames = Directory.GetFiles(_entitiesFolderPath, ""*.cs"")
-                          .Select(Path.GetFileNameWithoutExtension)
-                          .ToList();
+            var modelNames = Directory.GetFiles(_entitiesFolderPath, ""*.cs"")
+                                      .Select(Path.GetFileNameWithoutExtension)
+                                      .ToList();
 
-if (modelNames.Contains(request.ModelName))
-{{
-    return BadRequest($""A model with the name '{{request.ModelName}}' already exists."");
-}}
-
+            if (modelNames.Contains(request.ModelName))
+            {{
+                return BadRequest($""A model with the name '{{request.ModelName}}' already exists."");
+            }}
 
             try
             {{
@@ -198,7 +193,6 @@ if (modelNames.Contains(request.ModelName))
             return updatedCode;
         }}
 
-
         private bool IsValidClassName(string name)
         {{
             if (string.IsNullOrEmpty(name))
@@ -238,30 +232,30 @@ if (modelNames.Contains(request.ModelName))
             return true;
         }}
 
-         private Type CreateModel(string modelName)
-{{
-    try
-    {{
-        var assemblyName = new AssemblyName(""DynamicAssembly"");
-        var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
-        var moduleBuilder = assemblyBuilder.DefineDynamicModule(""TempModule"");
+        private Type CreateModel(string modelName)
+        {{
+            try
+            {{
+                var assemblyName = new AssemblyName(""DynamicAssembly"");
+                var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+                var moduleBuilder = assemblyBuilder.DefineDynamicModule(""TempModule"");
 
-        var typeBuilder = moduleBuilder.DefineType(
-            modelName, 
-            System.Reflection.TypeAttributes.Public | System.Reflection.TypeAttributes.Class);
+                var typeBuilder = moduleBuilder.DefineType(
+                    modelName, 
+                    System.Reflection.TypeAttributes.Public | System.Reflection.TypeAttributes.Class);
 
-        var ccControllerAttrConstructor = typeof(CCControllerAttribute).GetConstructor(Type.EmptyTypes);
-        var customAttributeBuilder = new CustomAttributeBuilder(ccControllerAttrConstructor, new object[] {{ }});
-        typeBuilder.SetCustomAttribute(customAttributeBuilder);
+                var ccControllerAttrConstructor = typeof(CCControllerAttribute).GetConstructor(Type.EmptyTypes);
+                var customAttributeBuilder = new CustomAttributeBuilder(ccControllerAttrConstructor, new object[] {{ }});
+                typeBuilder.SetCustomAttribute(customAttributeBuilder);
 
-        return typeBuilder.CreateType();
-    }}
-    catch (Exception ex)
-    {{
-        Console.WriteLine($""Error in CreateModel: {{ex.Message}}"");
-        return null;
-    }}
-}}
+                return typeBuilder.CreateType();
+            }}
+            catch (Exception ex)
+            {{
+                Console.WriteLine($""Error in CreateModel: {{ex.Message}}"");
+                return null;
+            }}
+        }}
 
         private string GenerateClassCode(Type modelType)
         {{
@@ -300,8 +294,7 @@ if (modelNames.Contains(request.ModelName))
     public class CCControllerAttribute : Attribute
     {{
     }}
-}}
-", Encoding.UTF8);
+}}", Encoding.UTF8);
             context.AddSource("ModelsController.cs", sourceText);
         }
     }

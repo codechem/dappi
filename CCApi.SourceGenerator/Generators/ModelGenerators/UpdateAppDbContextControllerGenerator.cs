@@ -9,24 +9,18 @@ namespace CCApi.SourceGenerator.Generators.ModelGenerators
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            context.RegisterImplementationSourceOutput(
-           context.CompilationProvider,
-           (context, compilation) => GenerateController(context, compilation)
-       );
+            context.RegisterImplementationSourceOutput(context.CompilationProvider, (context, compilation) => GenerateController(context, compilation));
         }
 
         private void GenerateController(SourceProductionContext context, Compilation compilation)
         {
             var rootNamespace = compilation.AssemblyName ?? "DefaultNamespace";
 
-
-            var sourceText = SourceText.From($@"
-using Microsoft.AspNetCore.Mvc;
+            var sourceText = SourceText.From(
+$@"using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using System.IO;
 using System.Linq;
-using Swashbuckle.AspNetCore.Annotations;
-
 
 namespace {rootNamespace}.Controllers
 {{
