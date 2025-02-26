@@ -1,0 +1,118 @@
+:host {
+  display: flex;
+  flex-grow: 1;
+}
+
+img {
+  margin-bottom: 16px;
+}
+.layout {
+  display: flex;
+  height: 100vh;
+  flex-grow: 1;
+}
+
+app-sidebar {
+  width: 250px;
+  flex-shrink: 0;
+}
+
+hr {
+  width: 100%;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background-color: #141414;
+  color: #ffffff;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.title-block h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.title-block p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: rgba($color: #ffffff, $alpha: 0.7);
+}
+
+.settings-button {
+  color: #ac99ea;
+  border: 1px solid rgba($color: #d5ccf5, $alpha: 0.5);
+  border-radius: 4px;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.placeholder-icon {
+  font-size: 96px;
+  color: #a1a1a1;
+  margin-bottom: 16px;
+}
+
+.content h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.content p {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #a1a1a1;
+}
+
+.add-field-button {
+  align-self: end;
+  margin-bottom: 10px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-direction: column;
+  margin-top: auto;
+
+  button {
+    align-self: flex-end;
+  }
+}
+
+.save-button {
+  border-radius: 4px;
+  background-color: rgba($color: #AC99EA, $alpha: 1);
+  margin-right: 8px;
+  margin-top: 10px;
+  color: #212121 !important;
+}
+
+.save-button :disabled,
+.save-button[disabled] {
+  color: rgba($color: #ffffff, $alpha: 0.38) !important;
+  background-color: rgba($color: #ffffff, $alpha: 0.12);
+}
+
+.fields-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+  margin-bottom: auto;
+}

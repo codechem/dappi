@@ -1,0 +1,90 @@
+<div class="action-buttons">
+  <div style="display: flex; gap: 10px;">
+    <ng-container *ngIf="!isSearching; else searchField">
+  <mat-icon class="header-icon" (click)="toggleSearch()">search</mat-icon></ng-container>
+  <ng-template #searchField>
+    <div class="search-container">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        placeholder="Type..."
+        [(ngModel)]="searchText"
+        (blur)="closeSearch()"
+        (ngModelChange)="onSearchTextChange($event)"
+      />
+      <mat-icon class="close-icon" (click)="clearSearch()">close</mat-icon>
+    </div>
+  </ng-template>
+  <div class="button">
+    <mat-icon>filter_list</mat-icon>
+    <span >Filter</span>
+  </div>
+</div>
+  <span class="create-button">+ Create new {{selectedType}}</span>
+  </div>
+<div class="scrollable-list">
+  <div class="content-table">
+    <div class="header-row">
+      <div class="cell checkbox-cell">
+        <mat-checkbox></mat-checkbox>
+      </div>
+
+      <div class="cell id-cell">ID</div>
+
+      <div class="cell title-cell">Title</div>
+
+      <div class="cell desc-cell">Description</div>
+
+      <div class="cell status-cell">Status</div>
+
+      <div class="cell menu-cell"></div>
+    </div>
+
+    <div class="content-row" *ngFor="let item of items">
+      <div class="cell checkbox-cell">
+        <mat-checkbox></mat-checkbox>
+      </div>
+
+      <div class="cell id-cell">
+        {{ item.id }}
+      </div>
+
+      <div class="cell title-cell">
+        {{ item.title }}
+      </div>
+
+      <div class="cell desc-cell">
+        {{ item.description }}
+      </div>
+
+      <div class="cell status-cell">
+        <span
+          class="status-pill"
+          [ngClass]="{
+            published: item.status === 'Published',
+            draft: item.status === 'Draft'
+          }"
+        >
+          {{ item.status }}
+        </span>
+      </div>
+
+      <div class="cell menu-cell">
+        <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu" panelClass="menu">
+          <button mat-menu-item class="menu-item edit-item">
+            <mat-icon>edit</mat-icon>
+            <span>Edit</span>
+          </button>
+        
+          <button mat-menu-item  class="menu-item delete-item">
+            <mat-icon>delete</mat-icon>
+            <span>Delete</span>
+          </button>
+        </mat-menu>
+      </div>
+    </div>
+  </div>
+</div>

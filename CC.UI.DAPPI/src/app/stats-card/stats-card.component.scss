@@ -1,0 +1,69 @@
+.stats-container {
+  display: flex;
+  flex-grow: 1;
+  gap: 21px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.stats-card {
+  background: #1e1e1e;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  transition: 0.3s ease-in-out;
+  flex-grow: 1;
+  flex-basis: 0;
+
+  &:hover {
+    box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.create-new {
+  background: rgba($color: #d5ccf5, $alpha: 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #a58fff;
+
+  .icon-container {
+    background: rgba($color: #d5ccf5, $alpha: 0.16);
+    color: #a58fff;
+  }
+}
+
+.icon-container {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #a58fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.green {
+  background: rgba($color: #66bb6a, $alpha: 0.16);
+  color: #66bb6a;
+}
+
+.blue {
+  background: rgba($color: #29b6f6, $alpha: 0.16);
+  color: #29b6f6;
+}
+
+.stats-content h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+}
+
+.stats-content span {
+  font-size: 14px;
+  color: #ac99ea;
+}

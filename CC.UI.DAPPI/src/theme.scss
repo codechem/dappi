@@ -1,0 +1,16 @@
+@use '@angular/material' as mat;
+@use '@angular/material/form-field' as matFormField;
+
+@include mat.core();
+
+$custom-primary: mat.define-palette(mat.$indigo-palette);
+$custom-accent: mat.define-palette(mat.$pink-palette);
+
+$custom-theme: mat.define-light-theme((
+  color: (
+    primary: $custom-primary,
+    accent: $custom-accent,
+  ),
+));
+
+@include mat.all-component-themes($custom-theme);

@@ -1,0 +1,56 @@
+@import "../../styles.scss";
+
+:host {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  width: 72px;
+  background-color: $paper-elevation-4;
+  height: 100vh;
+  padding: 32px 16px;
+  box-sizing: border-box;
+}
+
+.logo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 8px 0;
+  color: white;
+}
+
+hr {
+  border-color: rgba(255, 255, 255, 0.12);
+  padding: 0px 16px;
+}
+
+.menu-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  width: 40px;
+  cursor: pointer;
+  color: white;
+  transition: background 0.3s;
+
+  &:hover {
+    background: $background-default;
+  }
+}
+
+.mat-icon {
+  font-size: 24px;
+}
+
+.menu {
+  padding-top: 39px;
+}
+
+.active {
+  color: #ac99ea;
+  background-color: rgba($color: #d5ccf5, $alpha: 0.16);
+  border-radius: 4px;
+}

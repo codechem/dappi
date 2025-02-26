@@ -1,0 +1,35 @@
+<div class="logo">DAPPI</div>
+<hr />
+<nav>
+  <div class="menu">
+    <div>
+      <a mat-menu-item routerLink="/home" (click)="onMenuItemClick('home')">
+        <mat-icon
+          class="menu-item"
+          [ngClass]="{ active: isCurrentIcon('home') }"
+          >home</mat-icon
+        >
+      </a>
+      <a
+        mat-menu-item
+        routerLink="/builder"
+        (click)="onMenuItemClick('builder')"
+        [ngClass]="{ active: isCurrentIcon('builder') }"
+      >
+        <mat-icon
+          class="menu-item"
+          [ngClass]="{ active: isCurrentIcon('builder') }"
+          >web</mat-icon
+        >
+      </a>
+      <a
+        mat-menu-item
+        routerLink="/content-manager"
+        (click)="onMenuItemClick('content-manager')"
+        [ngClass]="{ active: isCurrentIcon('article') }"
+      >
+        <mat-icon class="menu-item" [ngClass]="{ active: isCurrentIcon('content-manager') }">article</mat-icon>
+      </a>
+    </div>
+  </div>
+</nav>

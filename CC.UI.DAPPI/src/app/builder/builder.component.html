@@ -1,0 +1,46 @@
+<div class="layout">
+  <app-sidebar></app-sidebar>
+  <div class="container">
+    <div class="header">
+      <div class="title-block">
+        <h1>Type Name</h1>
+        <p>Build the data architecture of your design</p>
+      </div>
+      <button mat-icon-button class="settings-button">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+    </div>
+
+    <ng-container
+      *ngIf="!fieldsData || fieldsData.length === 0; else fieldsPresent"
+    >
+      <div class="content">
+        <img src="assets/illustration.svg" alt="No content" />
+        <h2>There are no fields created yet</h2>
+        <p>Add your first field to this Collection-Type</p>
+        <app-button
+          text="+ Add field"
+          (click)="openAddFieldDialog()"
+        ></app-button>
+      </div>
+    </ng-container>
+
+    <ng-template #fieldsPresent>
+      <div class="fields-list">
+        <app-button
+          text="+ Add field"
+          (click)="openAddFieldDialog()"
+          class="add-field-button"
+        ></app-button>
+        <app-fields-list [fields]="fieldsData"></app-fields-list>
+      </div>
+    </ng-template>
+
+    <div class="footer">
+      <hr />
+      <button mat-button class="save-button" [disabled]="disabled">
+        Save your content
+      </button>
+    </div>
+  </div>
+</div>
