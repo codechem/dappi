@@ -10,19 +10,18 @@ import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-add-field-dialog',
-  standalone: true,
-  imports: [MatDialogModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatCheckboxModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    FormsModule,
-    CommonModule],
-  templateUrl: './add-field-dialog.component.html',
-  styleUrl: './add-field-dialog.component.scss',
+    selector: 'app-add-field-dialog',
+    imports: [MatDialogModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatCheckboxModule,
+        MatInputModule,
+        MatButtonModule,
+        MatIconModule,
+        FormsModule,
+        CommonModule],
+    templateUrl: './add-field-dialog.component.html',
+    styleUrl: './add-field-dialog.component.scss'
 })
 export class AddFieldDialogComponent {
   fieldTypes = [

@@ -15,11 +15,10 @@ export interface ContentItem {
 }
 
 @Component({
-  selector: 'app-content-table',
-  standalone: true,
-  imports: [MatCheckboxModule, MatIconModule, MatButtonModule, CommonModule, MatIconModule, ButtonComponent, FormsModule, MatMenuModule],
-  templateUrl: './content-table.component.html',
-  styleUrl: './content-table.component.scss'
+    selector: 'app-content-table',
+    imports: [MatCheckboxModule, MatIconModule, MatButtonModule, CommonModule, MatIconModule, ButtonComponent, FormsModule, MatMenuModule],
+    templateUrl: './content-table.component.html',
+    styleUrl: './content-table.component.scss'
 })
 export class ContentTableComponent {
   @Input() selectedType: string = 'Article';

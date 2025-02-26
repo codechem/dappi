@@ -10,18 +10,17 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 
 @Component({
-  selector: 'app-content-manager',
-  standalone: true,
-  imports: [
-    Sidebar,
-    ContentTableComponent,
-    MatIconModule,
-    MatButtonModule,
-    ButtonComponent,
-    CommonModule,
-  ],
-  templateUrl: './content-manager.component.html',
-  styleUrl: './content-manager.component.scss',
+    selector: 'app-content-manager',
+    imports: [
+        Sidebar,
+        ContentTableComponent,
+        MatIconModule,
+        MatButtonModule,
+        ButtonComponent,
+        CommonModule,
+    ],
+    templateUrl: './content-manager.component.html',
+    styleUrl: './content-manager.component.scss'
 })
 export class ContentManagerComponent {
   disabled: boolean = false;

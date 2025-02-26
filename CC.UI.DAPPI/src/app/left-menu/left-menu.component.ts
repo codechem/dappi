@@ -7,18 +7,17 @@ import { Sidebar } from '../sidebar/sidebar.component';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 
 @Component({
-  selector: 'app-left-menu',
-  standalone: true,
-  imports: [
-    MatTooltipModule,
-    MatIconModule,
-    CommonModule,
-    DashboardComponent,
-    Sidebar,
-    RouterOutlet,
-  ],
-  templateUrl: './left-menu.component.html',
-  styleUrl: './left-menu.component.scss',
+    selector: 'app-left-menu',
+    imports: [
+        MatTooltipModule,
+        MatIconModule,
+        CommonModule,
+        DashboardComponent,
+        Sidebar,
+        RouterOutlet,
+    ],
+    templateUrl: './left-menu.component.html',
+    styleUrl: './left-menu.component.scss'
 })
 export class LeftMenu {
   class = '';

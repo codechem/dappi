@@ -11,11 +11,10 @@ export interface FieldItem {
 }
 
 @Component({
-  selector: 'app-fields-list',
-  standalone: true,
-  imports: [MatIconModule, MatButtonModule, CommonModule],
-  templateUrl: './fields-list.component.html',
-  styleUrl: './fields-list.component.scss'
+    selector: 'app-fields-list',
+    imports: [MatIconModule, MatButtonModule, CommonModule],
+    templateUrl: './fields-list.component.html',
+    styleUrl: './fields-list.component.scss'
 })
 export class FieldsListComponent {
   @Input() fields: FieldItem[] = [];

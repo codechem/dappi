@@ -3,11 +3,10 @@ import { MatCard } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-stats-card',
-  standalone: true,
-  imports: [MatIconModule, MatCard],
-  templateUrl: './stats-card.component.html',
-  styleUrl: './stats-card.component.scss',
+    selector: 'app-stats-card',
+    imports: [MatIconModule, MatCard],
+    templateUrl: './stats-card.component.html',
+    styleUrl: './stats-card.component.scss'
 })
 export class StatsCardComponent {
   @Input() icon!: string;

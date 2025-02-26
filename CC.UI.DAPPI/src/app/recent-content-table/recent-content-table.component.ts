@@ -13,18 +13,17 @@ interface ContentType {
 }
 
 @Component({
-  selector: 'app-recent-content-table',
-  standalone: true,
-  imports: [
-    MatIconModule,
-    MatIconModule,
-    MatButtonModule,
-    MatCardModule,
-    MatTableModule,
-    CommonModule,
-  ],
-  templateUrl: './recent-content-table.component.html',
-  styleUrl: './recent-content-table.component.scss',
+    selector: 'app-recent-content-table',
+    imports: [
+        MatIconModule,
+        MatIconModule,
+        MatButtonModule,
+        MatCardModule,
+        MatTableModule,
+        CommonModule,
+    ],
+    templateUrl: './recent-content-table.component.html',
+    styleUrl: './recent-content-table.component.scss'
 })
 export class RecentContentTableComponent {
   displayedColumns: string[] = [

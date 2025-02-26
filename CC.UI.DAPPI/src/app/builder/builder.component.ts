@@ -9,12 +9,11 @@ import { FieldItem, FieldsListComponent } from '../fields-list/fields-list.compo
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-builder',
-  standalone: true,
-  imports: [Sidebar, MatIconModule,
-    MatButtonModule, ButtonComponent, FieldsListComponent, CommonModule],
-  templateUrl: './builder.component.html',
-  styleUrl: './builder.component.scss',
+    selector: 'app-builder',
+    imports: [Sidebar, MatIconModule,
+        MatButtonModule, ButtonComponent, FieldsListComponent, CommonModule],
+    templateUrl: './builder.component.html',
+    styleUrl: './builder.component.scss'
 })
 export class BuilderComponent {
   disabled: boolean = true;

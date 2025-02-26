@@ -7,18 +7,17 @@ import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../button/button.component';
 
 @Component({
-  selector: 'app-sidebar',
-  standalone: true,
-  imports: [
-    MatSidenavModule,
-    MatListModule,
-    CommonModule,
-    MatIconModule,
-    FormsModule,
-    ButtonComponent,
-  ],
-  templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss',
+    selector: 'app-sidebar',
+    imports: [
+        MatSidenavModule,
+        MatListModule,
+        CommonModule,
+        MatIconModule,
+        FormsModule,
+        ButtonComponent,
+    ],
+    templateUrl: './sidebar.component.html',
+    styleUrl: './sidebar.component.scss'
 })
 export class Sidebar {
   @Input() headerText: string = 'Builder';
