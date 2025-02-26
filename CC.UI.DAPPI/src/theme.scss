@@ -3,10 +3,10 @@
 
 @include mat.core();
 
-$custom-primary: mat.define-palette(mat.$indigo-palette);
-$custom-accent: mat.define-palette(mat.$pink-palette);
+$custom-primary: mat.m2-define-palette(mat.$m2-indigo-palette);
+$custom-accent: mat.m2-define-palette(mat.$m2-pink-palette);
 
-$custom-theme: mat.define-light-theme((
+$custom-theme: mat.m2-define-light-theme((
   color: (
     primary: $custom-primary,
     accent: $custom-accent,
