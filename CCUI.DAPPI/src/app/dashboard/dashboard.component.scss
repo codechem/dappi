@@ -1,0 +1,44 @@
+@use "../../variables" as vars;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  background-color: vars.$background-default;
+  color: white;
+  height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &__header {
+    margin-bottom: 1.25rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  &__subtitle {
+    margin: 0.5rem 0 0;
+    color: vars.$text-secondary;
+    font-size: 0.95rem;
+  }
+
+  &__stats {
+    margin-bottom: 1rem;
+  }
+
+  &__recent-content {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+  }
+}

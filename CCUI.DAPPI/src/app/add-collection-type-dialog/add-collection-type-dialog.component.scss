@@ -1,0 +1,99 @@
+@use "../../variables" as vars;
+@use "sass:color";
+
+.add-collection-type-dialog {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border-radius: 4px;
+  min-width: 400px;
+  max-width: 90vw;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 400;
+  }
+
+  button[mat-icon-button] {
+    color: #ffffff;
+  }
+}
+
+.dialog-content {
+  padding: 0 16px 16px;
+
+  .form-field {
+    margin-bottom: 16px;
+    
+    label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+  }
+
+  .input-field {
+    width: 100%;
+    
+    ::ng-deep {
+      .mat-mdc-form-field-flex {
+        background-color: #1e1e1e;
+      }
+      
+      .mat-mdc-text-field-wrapper {
+        background-color: #1e1e1e;
+      }
+      
+      .mat-mdc-form-field-infix {
+        padding: 8px 0;
+      }
+      
+      .mdc-text-field--outlined .mdc-notched-outline__leading,
+      .mdc-text-field--outlined .mdc-notched-outline__notch,
+      .mdc-text-field--outlined .mdc-notched-outline__trailing {
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+      
+      .mat-mdc-input-element {
+        color: #ffffff;
+      }
+      
+      .mat-mdc-form-field-label {
+        color: rgba(255, 255, 255, 0.6);
+      }
+    }
+  }
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+
+  .continue-button {
+    background-color: #8465ec;
+    color: #ffffff;
+    font-weight: 500;
+    text-transform: none;
+    transition: all 0.2s ease;
+    min-width: 100px;
+    border-radius: 4px;
+
+    &:hover {
+      background-color: lighten(#8465ec, 5%);
+    }
+
+    &[disabled] {
+      background-color: rgba(132, 101, 236, 0.5);
+      cursor: not-allowed;
+    }
+  }
+}

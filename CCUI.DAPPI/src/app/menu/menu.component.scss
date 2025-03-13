@@ -1,0 +1,64 @@
+@use "../../variables" as vars;
+
+.context-menu {
+  display: flex;
+  flex-direction: column;
+  background-color: vars.$background-paper-elevation-1;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 0;
+  min-width: 120px;
+  overflow: hidden;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    text-align: left;
+    width: 100%;
+    transition: background-color 0.2s ease;
+
+    &:hover,
+    &:focus {
+      background-color: vars.$background-hover;
+      outline: none;
+    }
+
+    &:active {
+      background-color: vars.$background-hover;
+    }
+
+    mat-icon {
+      margin-right: 0.75rem;
+      font-size: 1.25rem;
+      height: 1.25rem;
+      width: 1.25rem;
+    }
+
+    &--edit {
+      color: vars.$text-primary;
+
+      mat-icon {
+        color: vars.$text-primary;
+      }
+    }
+
+    &--delete {
+      color: vars.$error-light;
+
+      mat-icon {
+        color: vars.$error-light;
+      }
+    }
+  }
+
+  &__text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

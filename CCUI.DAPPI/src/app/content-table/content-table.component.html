@@ -1,0 +1,163 @@
+<div class="action-buttons">
+  <div class="left-controls">
+    <ng-container *ngIf="!isSearching; else searchField">
+      <button class="icon-button" (click)="toggleSearch()" aria-label="Search">
+        <mat-icon>search</mat-icon>
+      </button>
+    </ng-container>
+
+    <ng-template #searchField>
+      <div class="search-container">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          type="text"
+          placeholder="Type to search..."
+          [(ngModel)]="searchText"
+          (blur)="closeSearch()"
+          (ngModelChange)="onSearchTextChange($event)"
+          aria-label="Search content"
+          autofocus
+        />
+        <button
+          class="clear-button"
+          (click)="clearSearch()"
+          aria-label="Clear search"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </ng-template>
+
+    <button class="filter-button" aria-label="Filter content">
+      <mat-icon>filter_list</mat-icon>
+      <span>Filter</span>
+    </button>
+    <button *ngIf="selectedItems.size > 0" class="delete-selected-button" (click)="deleteSelectedItems()"
+      aria-label="Delete selected items">
+      <mat-icon>delete</mat-icon>
+      <span>Delete selected</span>
+    </button>
+  </div>
+
+  <button
+    class="create-button"
+    (click)="navigateToCreate()"
+    aria-label="Create new content"
+  >
+    + Create new {{ selectedType }}
+  </button>
+</div>
+
+<div class="scrollable-list">
+  <table class="content-table" role="table" aria-label="Content items">
+    <thead>
+      <tr class="header-row" role="row">
+        <th class="small-cell" role="columnheader">
+          <mat-checkbox [checked]="selectAll"
+            [indeterminate]="selectedItems.size > 0 && selectedItems.size < filteredItems.length"
+            (change)="toggleSelectAll($event)" aria-label="Select all items">
+          </mat-checkbox>
+        </th>
+        <ng-container *ngFor="let header of headers | slice:1">
+          <th class="cell" [style.max-width.px]="getColumnWidth(header)" role="columnheader">
+            {{ header.label }}
+          </th>
+        </ng-container>
+        <th class="small-cell actions-cell" role="columnheader">
+          <span class="sr-only">Actions</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        class="content-row"
+        *ngFor="let item of filteredItems"
+        role="row"
+        [attr.aria-selected]="activeMenuItemId === item.id || selectedItems.has(item.id)"
+        [class.selected]="selectedItems.has(item.id)"
+      >
+        <td class="small-cell" role="cell">
+          <mat-checkbox [checked]="selectedItems.has(item.id)" (change)="toggleSelectItem($event, item.id)">
+          </mat-checkbox>
+        </td>
+        <ng-container *ngFor="let header of headers | slice:1">
+          <td class="cell" [style.max-width.px]="getColumnWidth(header)" role="cell">
+            <ng-container *ngIf="header.type === 'file'; else textDisplay">
+              <img 
+                *ngIf="getCellDisplay(item, header)"
+                [src]="getCellDisplay(item, header)" 
+                class="file-preview"
+                alt="{{ header.label }}"
+              />
+            </ng-container>
+            <ng-template #textDisplay>
+              {{ getCellDisplay(item, header) }}
+            </ng-template>
+          </td>
+        </ng-container>
+        <td class="small-cell actions-cell" role="cell">
+          <button
+            mat-icon-button
+            (click)="toggleMenu(item, $event)"
+            aria-haspopup="true"
+            [attr.aria-expanded]="activeMenuItemId === item.id"
+          >
+            <mat-icon>more_vert</mat-icon>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="isLoading" class="loading-indicator">
+    <p>Loading data...</p>
+  </div>
+  
+  <div *ngIf="!isLoading && filteredItems.length === 0" class="no-results">
+    <p>No items found. Try adjusting your search criteria.</p>
+  </div>
+  <div *ngIf="totalPages > 1" class="pagination-controls">
+    <button class="pagination-button" [disabled]="currentPage === 1" (click)="previousPage()" aria-label="Previous page">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+  
+    <ng-container *ngFor="let page of paginationArray">
+      <span *ngIf="page === -1" class="pagination-ellipsis">...</span>
+      <button *ngIf="page !== -1" class="pagination-button" [class.active]="currentPage === page"
+        (click)="goToPage(page)">
+        {{ page }}
+      </button>
+    </ng-container>
+  
+    <button class="pagination-button" [disabled]="currentPage === totalPages" (click)="nextPage()" aria-label="Next page">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  
+    <span class="pagination-info">
+      {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, totalItems) }} of {{ totalItems
+      }} items
+    </span>
+  </div>
+</div>
+
+<div
+  class="floating-menu-container"
+  *ngIf="activeMenuItemId !== undefined"
+  (click)="$event.stopPropagation()"
+>
+  <div
+    class="floating-menu"
+    [style.top.px]="menuPosition.top"
+    [style.left.px]="menuPosition.left"
+    role="menu"
+  >
+    <app-menu
+      [item]="getSelectedItem()"
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
+      editText="Edit"
+      deleteText="Delete"
+    >
+    </app-menu>
+  </div>
+</div>

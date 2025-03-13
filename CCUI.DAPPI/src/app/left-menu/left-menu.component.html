@@ -1,0 +1,48 @@
+<aside class="sidenav">
+  <div class="sidenav__logo">DAPPI</div>
+
+  <hr class="sidenav__divider" />
+
+  <nav class="sidenav__nav">
+    <ul class="sidenav__menu">
+      <li class="sidenav__menu-item">
+        <a
+          class="sidenav__link"
+          routerLink="/home"
+          routerLinkActive="sidenav__link--active"
+          (click)="onMenuItemClick('home')"
+          matTooltip="Home"
+          matTooltipPosition="right"
+        >
+          <mat-icon>home</mat-icon>
+        </a>
+      </li>
+
+      <li class="sidenav__menu-item">
+        <a
+          class="sidenav__link"
+          routerLink="/builder"
+          routerLinkActive="sidenav__link--active"
+          (click)="onMenuItemClick('builder')"
+          matTooltip="Builder"
+          matTooltipPosition="right"
+        >
+          <mat-icon>web</mat-icon>
+        </a>
+      </li>
+
+      <li class="sidenav__menu-item">
+        <a
+          class="sidenav__link"
+          routerLink="/content-manager"
+          routerLinkActive="sidenav__link--active"
+          (click)="onMenuItemClick('content-manager')"
+          matTooltip="Content Manager"
+          matTooltipPosition="right"
+        >
+          <mat-icon>article</mat-icon>
+        </a>
+      </li>
+    </ul>
+  </nav>
+</aside>

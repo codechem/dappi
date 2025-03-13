@@ -1,0 +1,23 @@
+@use "../variables" as vars;
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+app-left-menu {
+  flex-shrink: 0;
+}
+
+app-sidebar {
+  flex-shrink: 0;
+  width: 250px;
+}
+
+.main-content {
+  flex-grow: 1;
+  background-color: vars.$background-default;
+  width: 100%;
+  overflow: hidden;
+}

@@ -294,6 +294,39 @@ namespace {rootNamespace}.Controllers
 
             return sb.ToString();
         }}
+
+        [HttpGet(""fields/{{modelName}}"")]
+        public IActionResult GetModelFields(string modelName)
+        {{
+            var modelFilePath = Path.Combine(Path.Combine(Directory.GetCurrentDirectory(), ""Entities""), $""{{modelName}}.cs"");
+            if (!System.IO.File.Exists(modelFilePath))
+            {{
+                return NotFound($""Model '{{{{modelName}}}}' not found."");
+            }}
+
+            var modelCode = System.IO.File.ReadAllText(modelFilePath);
+            var fieldData = ExtractFieldsFromModel(modelCode);
+
+            return Ok(fieldData);
+        }}
+
+        private List<object> ExtractFieldsFromModel(string classCode)
+        {{
+            var fieldList = new List<object>();
+            var propertyPattern = new Regex(@""public\s+([\w<>\[\]]+)\s+(\w+)\s*\{{\s*get;\s*set;\s*}}"", RegexOptions.Multiline);
+
+            var matches = propertyPattern.Matches(classCode);
+            foreach (Match match in matches)
+            {{
+                if (match.Groups.Count == 3)
+                {{
+                    var fieldType = match.Groups[1].Value;
+                    var fieldName = match.Groups[2].Value;
+                    fieldList.Add(new {{ FieldName = fieldName, FieldType = fieldType }});
+                }}
+            }}
+            return fieldList;
+        }}
     }}
 
     public class ModelRequest

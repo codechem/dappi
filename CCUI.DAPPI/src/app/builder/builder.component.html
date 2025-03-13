@@ -1,0 +1,68 @@
+<div class="layout">
+  <app-sidebar     (collectionTypeSelected)="onCollectionTypeSelected($event)">
+    ></app-sidebar>
+  <div class="container">
+    <header class="header">
+      <div class="title-block">
+        <h1>Type Name</h1>
+        <p>Build the data architecture of your design</p>
+      </div>
+      <button mat-icon-button class="settings-button" aria-label="Settings">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+    </header>
+
+    <ng-container *ngIf="!fieldsData?.length; else fieldsPresent">
+      <div class="content">
+        <img src="assets/illustration.svg" alt="No content" />
+        <h2>There are no fields created yet</h2>
+        <p>Add your first field to this Collection-Type</p>
+        <app-button
+          text="+ Add field"
+          (click)="openAddFieldDialog()"
+          aria-label="Add your first field"
+        ></app-button>
+      </div>
+    </ng-container>
+
+    <ng-template #fieldsPresent>
+      <div class="fields-list">
+        <app-button
+          text="+ Add field"
+          (click)="openAddFieldDialog()"
+          class="add-field-button"
+          aria-label="Add another field"
+        ></app-button>
+        <app-fields-list [fields]="fieldsData"></app-fields-list>
+      </div>
+    </ng-template>
+
+    <footer class="footer">
+      <hr />
+      <button
+        mat-button
+        class="save-button"
+        [disabled]="disabled || isSaving"
+        aria-label="Save content"
+        (click)="saveContent()"
+      >
+      <ng-container *ngIf="!isSaving; else savingSpinner">
+      Save your content
+    </ng-container>
+    <ng-template #savingSpinner>
+      <mat-spinner diameter="20"></mat-spinner> Applying migrations...
+    </ng-template>
+      </button>
+    </footer>
+  </div>
+</div>
+
+<div class="saving-modal" *ngIf="isModalOpen">
+  <div class="modal-content">
+    <div class="spinner-container">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+    <h2>Saving your content</h2>
+    <p>The page will automatically restart with the updated content</p>
+  </div>
+</div>

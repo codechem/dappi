@@ -8,4 +8,6 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
     public DbSet<Book> Books { get; set; }
     public DbSet<Movie> Movies { get; set; }
     public DbSet<Author> Authors { get; set; }
+    public DbSet<Motorcycle> Motorcycles { get; set; }
+
 }

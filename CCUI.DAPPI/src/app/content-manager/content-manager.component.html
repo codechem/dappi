@@ -1,0 +1,74 @@
+<div class="layout">
+  <app-sidebar 
+    headerText="Content Manager" 
+    (collectionTypeSelected)="onCollectionTypeSelected($event)">
+  </app-sidebar>
+  
+  <div class="container">
+    <header class="header">
+      <div class="title-block">
+        <h1>{{ selectedType || 'Select a Type' }}</h1>
+        <p>Create the content of your design</p>
+      </div>
+      <button 
+        mat-icon-button 
+        class="settings-button" 
+        aria-label="Settings" 
+        [disabled]="!selectedType">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+    </header>
+    
+    <ng-container *ngIf="isLoading">
+      <div class="content loading-content">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading content for {{ selectedType }}...</p>
+      </div>
+    </ng-container>
+    
+    <ng-container *ngIf="!isLoading && selectedType">
+      <ng-container *ngIf="!itemsData?.length; else contentPresent">
+        <div class="content">
+          <img src="assets/illustration.svg" alt="No content" />
+          <h2>There are no {{ selectedType }} items created yet</h2>
+          <p>Add your first {{ selectedType }} to this Collection-Type</p>
+          <app-button
+            [text]="'+ Add new ' + selectedType"
+            (click)="navigateToCreate()"
+            aria-label="Add new content"
+          ></app-button>
+        </div>
+      </ng-container>
+      
+      <ng-template #contentPresent>
+        <div class="content-list">
+          <app-content-table 
+          [selectedType]="selectedType"
+          [items]="itemsData"
+          [headers]="tableHeaders"
+        ></app-content-table>
+        </div>
+      </ng-template>
+    </ng-container>
+    
+    <ng-container *ngIf="!isLoading && !selectedType">
+      <div class="content">
+        <img src="assets/illustration.svg" alt="No type selected" />
+        <h2>No collection type selected</h2>
+        <p>Please select a collection type from the sidebar</p>
+      </div>
+    </ng-container>
+    
+    <footer class="footer">
+      <hr />
+      <button
+        mat-button
+        class="save-button"
+        [disabled]="disabled || !selectedType"
+        aria-label="Save content"
+      >
+        Save your content
+      </button>
+    </footer>
+  </div>
+</div>

@@ -1,0 +1,42 @@
+<div class="add-collection-type-dialog">
+    <div class="dialog-header">
+      <h2>Add new collection type</h2>
+      <button mat-icon-button (click)="onClose()" aria-label="Close dialog">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  
+    <div class="dialog-content">
+      <form [formGroup]="collectionForm">
+        <div class="form-field">
+          <label for="displayName">Display name</label>
+          <mat-form-field appearance="outline" class="input-field">
+            <input
+              matInput
+              id="displayName"
+              formControlName="displayName"
+              placeholder="Placeholder"
+            />
+            <mat-error *ngIf="collectionForm.get('displayName')?.hasError('required')">
+              Display name is required
+            </mat-error>
+            <mat-error *ngIf="collectionForm.get('displayName')?.hasError('maxlength')">
+              Display name cannot exceed 50 characters
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </form>
+    </div>
+  
+    <div class="dialog-footer">
+      <button
+        mat-flat-button
+        class="continue-button"
+        [disabled]="!canSubmit"
+        (click)="onContinue()"
+      >
+        <span *ngIf="!isSubmitting">Continue</span>
+        <span *ngIf="isSubmitting">Processing...</span>
+      </button>
+    </div>
+  </div>

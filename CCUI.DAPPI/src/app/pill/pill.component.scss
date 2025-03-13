@@ -1,0 +1,19 @@
+@use "../../variables" as vars;
+
+.status-pill {
+  border: 1px solid;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.published {
+  border-color: vars.$success-main;
+  color: vars.$success-main;
+}
+
+.draft {
+  border-color: vars.$default-enabled-border;
+  color: vars.$text-primary;
+}

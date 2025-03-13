@@ -1,0 +1,40 @@
+@use "@angular/material" as mat;
+
+$background-default: #121212;
+$background-paper-elevation-1: #1e1e1e;
+$background-paper-elevation-2: #232323;
+$background-paper-elevation-8: #2e2e2e;
+$background-hover: rgba(255, 255, 255, 0.2);
+
+$primary-main: #ac99ea;
+$info-main: #29b6f6;
+$success-main: #66bb6a;
+$primary-outlined-border: 1px solid
+  rgba(
+    $color: #d5ccf5,
+    $alpha: 0.5,
+  );
+$primary-selected: rgba(#d5ccf5, 0.16);
+$primary-focus: rgba(#d5ccf5, 0.12);
+$primary-contrast-text: #212121;
+$text-primary: #ffffff;
+$text-secondary: rgba(
+  $color: #ffffff,
+  $alpha: 0.7,
+);
+
+$divider: 1px solid rgba(#ffffff, 0.12);
+
+$action-active: rgba(#ffffff, 0.56);
+$action-disabled-background: rgba(
+  $color: #ffffff,
+  $alpha: 0.12,
+);
+$action-disabled: rgba(
+  $color: #ffffff,
+  $alpha: 0.38,
+);
+
+$error-light: #ef5350;
+
+$default-enabled-border: #616161;
