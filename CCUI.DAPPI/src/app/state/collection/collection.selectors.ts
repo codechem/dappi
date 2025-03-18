@@ -23,11 +23,6 @@ export const selectFields = createSelector(
   (state) => state.fields
 );
 
-// export const selectFieldsByModelType = (modelType: string) => createSelector(
-//   selectCollectionState,
-//   (state) => state.fields[modelType] || []
-// );
-
 export const selectIsLoadingFields = createSelector(
   selectCollectionState,
   (state) => state.loadingFields
@@ -41,4 +36,19 @@ export const selectFieldsError = createSelector(
 export const selectSearchText = createSelector(
   selectCollectionState,
   (state) => state.searchText
+);
+
+export const selectIsSaving = createSelector(
+  selectCollectionState,
+  (state) => state.isSaving
+);
+
+export const selectServerRestarting = createSelector(
+  selectCollectionState,
+  (state) => state.serverRestarting
+);
+
+export const selectSaveError = createSelector(
+  selectCollectionState,
+  (state) => state.saveError
 );

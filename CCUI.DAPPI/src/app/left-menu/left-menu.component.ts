@@ -3,7 +3,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
 
 interface MenuItem {
@@ -21,6 +21,8 @@ interface MenuItem {
   styleUrls: ['./left-menu.component.scss'],
 })
 export class LeftMenuComponent implements OnInit, OnDestroy {
+  private subscriptions: Subscription = new Subscription();
+
   activeIcon = 'home';
 
   menuItems: MenuItem[] = [
@@ -39,23 +41,24 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
   constructor(private router: Router) {}
 
   ngOnInit(): void {
-    this.router.events
-      .pipe(
-        filter((event) => event instanceof NavigationEnd),
-        takeUntil(this.destroy$)
-      )
-      .subscribe((event: any) => {
-        const currentPath = event.url.split('/')[1] || 'home';
-        this.updateActiveIcon(currentPath);
-      });
+    this.subscriptions.add(
+      this.router.events
+        .pipe(
+          filter((event) => event instanceof NavigationEnd),
+          takeUntil(this.destroy$)
+        )
+        .subscribe((event: any) => {
+          const currentPath = event.url.split('/')[1] || 'home';
+          this.updateActiveIcon(currentPath);
+        })
+    );
 
     const initialPath = this.router.url.split('/')[1] || 'home';
     this.updateActiveIcon(initialPath);
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this.subscriptions.unsubscribe();
   }
 
   onMenuItemClick(id: string): void {

@@ -6,9 +6,8 @@ import { ButtonComponent } from '../button/button.component';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { SidebarComponent } from '../sidebar/sidebar.component';
-import { Subject, takeUntil, Observable, take } from 'rxjs';
+import { Subject, takeUntil, Observable, take, Subscription } from 'rxjs';
 import { MatSpinner } from '@angular/material/progress-spinner';
-import { ContentStateService } from './content-state.service';
 import { Store } from '@ngrx/store';
 import {
   selectItems,
@@ -17,6 +16,7 @@ import {
   selectSelectedType,
   selectTotalItems,
   selectError,
+  selectSearchText,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
 import {
@@ -24,7 +24,6 @@ import {
   PaginatedResponse,
   TableHeader,
 } from '../models/content.model';
-import { error } from 'console';
 
 @Component({
   selector: 'app-content-manager',
@@ -43,10 +42,14 @@ import { error } from 'console';
 })
 export class ContentManagerComponent implements OnInit, OnDestroy {
   disabled = false;
+  searchText = '';
 
   private destroy$ = new Subject<void>();
+  private subscription: Subscription = new Subscription();
 
   items: ContentItem[] = [];
+
+  searchText$ = this.store.select(selectSearchText);
 
   items$: Observable<PaginatedResponse | undefined> =
     this.store.select(selectItems);
@@ -57,48 +60,43 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
   selectedType$: Observable<string> = this.store.select(selectSelectedType);
   totalItems$: Observable<number> = this.store.select(selectTotalItems);
 
-  constructor(
-    private router: Router,
-    private contentStateService: ContentStateService,
-    private store: Store
-  ) {}
+  constructor(private router: Router, private store: Store) {}
 
   ngOnInit(): void {
-    this.selectedType$.subscribe((selectedType) => {
-      if (selectedType) {
-        this.store.dispatch(
-          ContentActions.loadHeaders({ selectedType: selectedType })
-        );
+    this.subscription.add(
+      this.searchText$.subscribe((text) => (this.searchText = text))
+    );
 
-        this.store.dispatch(
-          ContentActions.loadContent({
-            selectedType,
-            page: 1,
-            limit: 10,
-            searchText: '',
-          })
-        );
-      }
-    });
+    this.subscription.add(
+      this.selectedType$.subscribe((selectedType) => {
+        if (selectedType) {
+          this.store.dispatch(
+            ContentActions.loadHeaders({ selectedType: selectedType })
+          );
 
-    this.items$.subscribe((items) => {
-      this.items = items?.data ?? [];
-    });
+          this.store.dispatch(
+            ContentActions.loadContent({
+              selectedType,
+              page: 1,
+              limit: 10,
+              searchText: '',
+            })
+          );
+        }
+      })
+    );
+    this.subscription.add(
+      this.items$.subscribe((items) => {
+        this.items = items?.data ?? [];
+      })
+    );
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this.subscription.unsubscribe();
   }
 
   navigateToCreate(): void {
-    this.headers$.pipe(takeUntil(this.destroy$)).subscribe((headers) => {
-      this.selectedType$
-        .pipe(takeUntil(this.destroy$))
-        .subscribe((selectedType) => {
-          this.contentStateService.setContentCreateData(headers, selectedType);
-          this.router.navigate(['/content-create']);
-        });
-    });
+    this.router.navigate(['/content-create']);
   }
 }

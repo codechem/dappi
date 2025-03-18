@@ -1,5 +1,5 @@
 import { CommonModule, Location } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -11,9 +11,15 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { HttpClient } from '@angular/common/http';
-import { ContentStateService } from '../content-manager/content-state.service';
-import { TableHeader } from '../models/content.model';
+import { ContentItem, TableHeader } from '../models/content.model';
+import { Store } from '@ngrx/store';
+import {
+  selectCurrentItem,
+  selectHeaders,
+  selectSelectedType,
+} from '../state/content/content.selectors';
+import * as ContentActions from '../state/content/content.actions';
+import { Subscription } from 'rxjs';
 
 interface ContentField {
   key: string;
@@ -41,9 +47,18 @@ interface ContentField {
   templateUrl: './new-record-form.component.html',
   styleUrls: ['./new-record-form.component.scss'],
 })
-export class NewRecordFormComponent implements OnInit {
-  @Input() selectedType = 'Article';
-  @Input() fields: TableHeader[] = [];
+export class NewRecordFormComponent implements OnInit, OnDestroy {
+  private subscriptions: Subscription = new Subscription();
+
+  fields: TableHeader[] = [];
+  selectedType = '';
+
+  headers$ = this.store.select(selectHeaders);
+  selectedType$ = this.store.select(selectSelectedType);
+  currentItem: ContentItem | undefined = undefined;
+
+  private subscription: Subscription = new Subscription();
+  currentItem$ = this.store.select(selectCurrentItem);
 
   contentForm: FormGroup;
   contentFields: ContentField[] = [];
@@ -60,17 +75,20 @@ export class NewRecordFormComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private http: HttpClient,
-    private contentStateService: ContentStateService,
-    private location: Location
+    private location: Location,
+    private store: Store
   ) {
     this.contentForm = this.fb.group({});
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
   populateFormWithData(itemData: any): void {
     Object.keys(this.contentForm.controls).forEach((key) => {
-      if (itemData['_value'][key] !== undefined) {
-        this.contentForm.get(key)?.setValue(itemData['_value'][key]);
+      if (itemData[key] !== undefined) {
+        this.contentForm.get(key)?.setValue(itemData[key]);
       }
     });
 
@@ -86,38 +104,46 @@ export class NewRecordFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.fields = this.contentStateService.getHeaders();
-    this.selectedType = this.contentStateService.getSelectedType();
-    const itemData = this.contentStateService.getItemData();
+    this.subscriptions.add(
+      this.headers$.subscribe((fields) => {
+        this.fields = fields;
+        this.contentFields = this.fields
+          .filter((field) => field.key !== 'id')
+          .map((field) => ({
+            key: field.key,
+            label: field.label,
+            type: field.type,
+            placeholder: `Enter ${field.label}`,
+            required: true,
+            validators: [Validators.required],
+          }));
 
-    this.contentFields = this.fields
-      .filter((field) => field.key !== 'id')
-      .map((field) => ({
-        key: field.key,
-        label: field.label,
-        type: field.type,
-        placeholder: `Enter ${field.label}`,
-        required: true,
-        validators: [Validators.required],
-      }));
+        this.fileFields = this.contentFields.filter(
+          (field) => field.type === 'file'
+        );
 
-    this.fileFields = this.contentFields.filter(
-      (field) => field.type === 'file'
+        const nonFileFields = this.contentFields.filter(
+          (field) => field.type !== 'file'
+        );
+        const halfLength = Math.ceil(nonFileFields.length / 2);
+
+        this.leftColumnFields = nonFileFields.slice(0, halfLength);
+        this.rightColumnFields = nonFileFields.slice(halfLength);
+        this.buildForm();
+      })
+    );
+    this.subscriptions.add(
+      this.selectedType$.subscribe((type) => (this.selectedType = type))
     );
 
-    const nonFileFields = this.contentFields.filter(
-      (field) => field.type !== 'file'
+    this.subscription.add(
+      this.currentItem$.subscribe((item) => {
+        if (item !== undefined) {
+          this.currentItem = item;
+          this.populateFormWithData(item);
+        }
+      })
     );
-    const halfLength = Math.ceil(nonFileFields.length / 2);
-
-    this.leftColumnFields = nonFileFields.slice(0, halfLength);
-    this.rightColumnFields = nonFileFields.slice(halfLength);
-
-    this.buildForm();
-
-    if (itemData) {
-      this.populateFormWithData(itemData);
-    }
   }
 
   buildForm(): void {
@@ -235,38 +261,34 @@ export class NewRecordFormComponent implements OnInit {
   }
 
   private submitToBackend(formData: any): void {
-    const existingItem = this.contentStateService.getItemData();
-
-    const endpoint = `http://localhost:5101/api/${this.selectedType
-      .toLowerCase()
-      .replace(/\s+/g, '-')}`;
-
-    if (existingItem['_value']) {
-      this.http
-        .put(`${endpoint}/${existingItem['_value'].id}`, formData)
-        .subscribe({
-          next: (response) => {
-            console.log('Successfully updated:', response);
-            this.resetForm();
-            this.location.back();
-          },
-          error: (error) => {
-            console.error('Error updating record:', error);
-            this.location.back();
-          },
-        });
+    if (this.currentItem !== undefined) {
+      this.store.dispatch(
+        ContentActions.updateContent({
+          id: this.currentItem.id,
+          formData: formData,
+          contentType: this.selectedType,
+        })
+      );
     } else {
-      this.http.post(endpoint, formData).subscribe({
-        next: (response) => {
-          console.log('Successfully created:', response);
-          this.resetForm();
-          this.location.back();
-        },
-        error: (error) => {
-          console.error('Error creating record:', error);
-          this.location.back();
-        },
-      });
+      this.store.dispatch(
+        ContentActions.createContent({
+          formData: formData,
+          contentType: this.selectedType,
+        })
+      );
     }
+    this.store.dispatch(
+      ContentActions.setCurrentItem({ currentItem: undefined })
+    );
+    this.resetForm();
+    this.location.back();
+    this.store.dispatch(
+      ContentActions.loadContent({
+        selectedType: this.selectedType ?? '',
+        page: 1,
+        limit: 10,
+        searchText: '',
+      })
+    );
   }
 }

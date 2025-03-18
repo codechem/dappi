@@ -133,6 +133,42 @@ export class ContentEffects {
     )
   );
 
+  createContent$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ContentActions.createContent),
+      mergeMap((action) => {
+        const endpoint = `http://localhost:5101/api/${action.contentType
+          .toLowerCase()
+          .replace(/\s+/g, '-')}`;
+
+        return this.http.post(endpoint, action.formData).pipe(
+          map((response) => ContentActions.createContentSuccess()),
+          catchError((error) =>
+            of(ContentActions.createContentFailure({ error: error.message }))
+          )
+        );
+      })
+    )
+  );
+
+  updateContent$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ContentActions.updateContent),
+      mergeMap((action) => {
+        const endpoint = `http://localhost:5101/api/${action.contentType
+          .toLowerCase()
+          .replace(/\s+/g, '-')}/${action.id}`;
+
+        return this.http.put(endpoint, action.formData).pipe(
+          map((response) => ContentActions.updateContentSuccess()),
+          catchError((error) =>
+            of(ContentActions.updateContentFailure({ error: error.message }))
+          )
+        );
+      })
+    )
+  );
+
   private formatHeaderLabel(key: string): string {
     return key
       .replace(/([A-Z])/g, ' $1')

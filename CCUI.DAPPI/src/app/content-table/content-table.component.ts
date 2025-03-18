@@ -3,6 +3,7 @@ import {
   Component,
   HostListener,
   OnChanges,
+  OnDestroy,
   OnInit,
   SimpleChanges,
 } from '@angular/core';
@@ -13,7 +14,6 @@ import { FormsModule } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu';
 import { Router } from '@angular/router';
 import { MenuComponent } from '../menu/menu.component';
-import { ContentStateService } from '../content-manager/content-state.service';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Store } from '@ngrx/store';
 import {
@@ -26,7 +26,7 @@ import {
   selectSelectedType,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
-import { map, Observable, take, takeUntil } from 'rxjs';
+import { map, Observable, Subscription, take, takeUntil } from 'rxjs';
 import { ContentItem, TableHeader } from '../models/content.model';
 
 @Component({
@@ -44,7 +44,9 @@ import { ContentItem, TableHeader } from '../models/content.model';
   templateUrl: './content-table.component.html',
   styleUrl: './content-table.component.scss',
 })
-export class ContentTableComponent implements OnInit, OnChanges {
+export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
+  private subscription: Subscription = new Subscription();
+
   Math = Math;
   selectedType: string | undefined = undefined;
   searchText: string | undefined = undefined;
@@ -75,21 +77,34 @@ export class ContentTableComponent implements OnInit, OnChanges {
 
   constructor(
     private router: Router,
-    private contentStateService: ContentStateService,
     private sanitizer: DomSanitizer,
     private store: Store
   ) {}
 
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
+  }
+
   ngOnInit(): void {
-    this.selectedType$.subscribe((type) => (this.selectedType = type));
-    this.searchText$.subscribe((searchText) => this.searchText = searchText);
-    this.itemsPerPage$.subscribe((limit) => this.limit = limit);
-    this.items$.subscribe((items) => {
-      this.items = items?.data ?? [];
-      this.totalItems = items?.total ?? 0;
-      this.calculatePagination();
-  });
-  this.loading$.subscribe((loading) => this.isLoading = loading)
+    this.subscription.add(
+      this.selectedType$.subscribe((type) => (this.selectedType = type))
+    );
+    this.subscription.add(
+      this.searchText$.subscribe((searchText) => (this.searchText = searchText))
+    );
+    this.subscription.add(
+      this.itemsPerPage$.subscribe((limit) => (this.limit = limit))
+    );
+    this.subscription.add(
+      this.items$.subscribe((items) => {
+        this.items = items?.data ?? [];
+        this.totalItems = items?.total ?? 0;
+        this.calculatePagination();
+      })
+    );
+    this.subscription.add(
+      this.loading$.subscribe((loading) => (this.isLoading = loading))
+    );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -147,7 +162,7 @@ export class ContentTableComponent implements OnInit, OnChanges {
       this.currentPage = page;
       this.store.dispatch(
         ContentActions.loadContent({
-          selectedType: this.selectedType ,
+          selectedType: this.selectedType,
           page,
           limit: this.limit ?? 10,
           searchText: this.searchText ?? '',
@@ -188,8 +203,7 @@ export class ContentTableComponent implements OnInit, OnChanges {
     }
 
     this.selectAll =
-    this.items.length > 0 &&
-    this.selectedItems.size === this.items.length;
+      this.items.length > 0 && this.selectedItems.size === this.items.length;
   }
 
   deleteSelectedItems(): void {
@@ -201,19 +215,23 @@ export class ContentTableComponent implements OnInit, OnChanges {
 
     if (confirmDelete) {
       const ids = Array.from(this.selectedItems);
-      this.store.dispatch(ContentActions.deleteMultipleContent({
+      this.store.dispatch(
+        ContentActions.deleteMultipleContent({
           ids,
-          contentType: this.selectedType ?? ''
-      }))
-  
-          this.store.dispatch(ContentActions.loadContent({
-            selectedType: this.selectedType ?? '',
-            page: this.currentPage,
-            limit: this.limit ?? 10,
-            searchText: this.searchText ?? ''
-          }));
-          this.selectedItems.clear();
-          this.selectAll = false;
+          contentType: this.selectedType ?? '',
+        })
+      );
+
+      this.store.dispatch(
+        ContentActions.loadContent({
+          selectedType: this.selectedType ?? '',
+          page: this.currentPage,
+          limit: this.limit ?? 10,
+          searchText: this.searchText ?? '',
+        })
+      );
+      this.selectedItems.clear();
+      this.selectAll = false;
     }
   }
 
@@ -310,20 +328,19 @@ export class ContentTableComponent implements OnInit, OnChanges {
 
   onEdit(item: ContentItem): void {
     this.router.navigate(['content-create']);
+    this.store.dispatch(ContentActions.setCurrentItem({ currentItem: item }));
     this.closeMenu();
   }
 
   onDelete(item: ContentItem): void {
     const confirmDelete = window.confirm(`Are you sure you want to delete?`);
     if (confirmDelete) {
-      this.selectedType$.pipe(take(1)).subscribe((selectedType) => {
-        this.store.dispatch(
-          ContentActions.deleteContent({
-            id: item.id,
-            contentType: selectedType,
-          })
-        );
-      });
+      this.store.dispatch(
+        ContentActions.deleteContent({
+          id: item.id,
+          contentType: this.selectedType ?? '',
+        })
+      );
     }
     this.closeMenu();
   }
@@ -332,33 +349,30 @@ export class ContentTableComponent implements OnInit, OnChanges {
     this.isSearching = true;
   }
 
-  closeSearch(): void {
-    setTimeout(() => {
-      this.searchText$.pipe(take(1)).subscribe((searchText) => {
-        if (!searchText) {
-          this.isSearching = false;
-        }
-      });
-    }, 100);
-  }
-
   clearSearch(): void {
     this.store.dispatch(ContentActions.setSearchText({ searchText: '' }));
+    this.searchText = '';
     this.currentPage = 1;
     this.isSearching = false;
+    this.store.dispatch(
+      ContentActions.loadContent({
+        selectedType: this.selectedType ?? '',
+        page: 1,
+        limit: this.itemsPerPage,
+        searchText: '',
+      })
+    );
   }
 
   onSearchTextChange(newText: string): void {
     this.store.dispatch(ContentActions.setSearchText({ searchText: newText }));
-    this.selectedType$.pipe(take(1)).subscribe((selectedType) => {
-      this.store.dispatch(
-        ContentActions.loadContent({
-          selectedType: selectedType,
-          page: 1,
-          limit: this.itemsPerPage,
-          searchText: newText,
-        })
-      );
-    });
+    this.store.dispatch(
+      ContentActions.loadContent({
+        selectedType: this.selectedType ?? '',
+        page: 1,
+        limit: this.itemsPerPage,
+        searchText: newText,
+      })
+    );
   }
 }

@@ -64,5 +64,24 @@ export const collectionReducer = createReducer(
       ...state,
       fields: [...state.fields, field],
     };
-  })
+  }),
+  on(CollectionActions.saveContent, (state) => ({
+    ...state,
+    isSaving: true,
+    saveError: null,
+    serverRestarting: false,
+  })),
+
+  on(CollectionActions.saveContentSuccess, (state, { restarting }) => ({
+    ...state,
+    isSaving: !restarting,
+    disabled: !restarting,
+    serverRestarting: !!restarting,
+  })),
+
+  on(CollectionActions.saveContentFailure, (state, { error }) => ({
+    ...state,
+    isSaving: false,
+    saveError: error,
+  }))
 );

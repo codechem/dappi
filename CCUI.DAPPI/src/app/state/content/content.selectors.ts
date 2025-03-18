@@ -47,6 +47,10 @@ export const selectSearchText = createSelector(
   selectContentState,
   (state) => state.searchText
 );
+export const selectCurrentItem = createSelector(
+  selectContentState,
+  (state) => state.currentItem
+);
 
 export const selectTotalPages = createSelector(
   selectTotalItems,

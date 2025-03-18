@@ -9,9 +9,4 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
     public DbSet<Movie> Movies { get; set; }
     public DbSet<Author> Authors { get; set; }
     public DbSet<Motorcycle> Motorcycles { get; set; }
-
-    public DbSet<test> tests { get; set; }
-
-    public DbSet<testt> testts { get; set; }
-
 }

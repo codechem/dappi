@@ -54,7 +54,11 @@ export const setHeaders = createAction(
   props<{ headers: TableHeader[] }>()
 );
 
-// Set search text
+export const setCurrentItem = createAction(
+  '[Content] Set Current Item',
+  props<{ currentItem: ContentItem | undefined }>()
+);
+
 export const setSearchText = createAction(
   '[Content] Set Search Text',
   props<{ searchText: string }>()
@@ -95,5 +99,33 @@ export const deleteMultipleContentSuccess = createAction(
 
 export const deleteMultipleContentFailure = createAction(
   '[Content] Delete Multiple Content Failure',
+  props<{ error: string }>()
+);
+
+export const createContent = createAction(
+  '[Content] Create Content',
+  props<{ formData: any; contentType: string }>()
+);
+
+export const createContentSuccess = createAction(
+  '[Content] Create Content Success'
+);
+
+export const createContentFailure = createAction(
+  '[Content] Create Content Failure',
+  props<{ error: string }>()
+);
+
+export const updateContent = createAction(
+  '[Content] Update Content',
+  props<{ id: string; formData: any; contentType: string }>()
+);
+
+export const updateContentSuccess = createAction(
+  '[Content] Update Content Success'
+);
+
+export const updateContentFailure = createAction(
+  '[Content] Update Content Failure',
   props<{ error: string }>()
 );

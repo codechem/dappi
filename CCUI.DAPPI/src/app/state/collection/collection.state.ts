@@ -9,6 +9,10 @@ export interface CollectionState {
   loadingFields: boolean;
   errorFields: string | null;
   searchText: string;
+  isSaving: boolean;
+  saveError: any;
+  serverRestarting: boolean;
+  disabled: boolean;
 }
 
 export const initialCollectionState: CollectionState = {
@@ -18,5 +22,9 @@ export const initialCollectionState: CollectionState = {
   fields: [],
   loadingFields: false,
   errorFields: null,
-  searchText: ''
+  searchText: '',
+  isSaving: false,
+  saveError: null,
+  serverRestarting: false,
+  disabled: false,
 };

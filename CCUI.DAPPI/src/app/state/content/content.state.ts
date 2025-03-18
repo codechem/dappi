@@ -11,9 +11,11 @@ export interface ContentState {
   itemsPerPage: number;
   searchText: string;
   selectedItems: Set<string>;
+  currentItem: ContentItem | undefined;
 }
 
 export const initialContentState: ContentState = {
+  currentItem: undefined,
   items: undefined,
   headers: [],
   selectedType: '',
@@ -23,5 +25,5 @@ export const initialContentState: ContentState = {
   currentPage: 1,
   itemsPerPage: 10,
   searchText: '',
-  selectedItems: new Set<string>()
+  selectedItems: new Set<string>(),
 };
