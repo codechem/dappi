@@ -34,6 +34,7 @@
     </div>
   </ng-container>
 
+  <ng-container *ngIf="selectedType$ | async as selectedType">
   <ng-container *ngIf="!isLoading">
     <ng-container *ngIf="filteredCollectionTypes.length > 0; else noResults">
       <mat-list>
@@ -51,5 +52,6 @@
         <p *ngIf="searchText" class="search-hint">Try different search terms</p>
       </div>
     </ng-template>
+  </ng-container>
   </ng-container>
 </div>

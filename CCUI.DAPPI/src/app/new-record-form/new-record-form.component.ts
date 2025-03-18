@@ -11,9 +11,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { TableHeader } from '../content-table/content-table.component';
 import { HttpClient } from '@angular/common/http';
 import { ContentStateService } from '../content-manager/content-state.service';
+import { TableHeader } from '../models/content.model';
 
 interface ContentField {
   key: string;

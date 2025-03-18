@@ -1,6 +1,5 @@
 <div class="layout">
-  <app-sidebar     (collectionTypeSelected)="onCollectionTypeSelected($event)">
-    ></app-sidebar>
+  <app-sidebar></app-sidebar>
   <div class="container">
     <header class="header">
       <div class="title-block">
@@ -11,7 +10,6 @@
         <mat-icon>more_vert</mat-icon>
       </button>
     </header>
-
     <ng-container *ngIf="!fieldsData?.length; else fieldsPresent">
       <div class="content">
         <img src="assets/illustration.svg" alt="No content" />

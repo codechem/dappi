@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { TableHeader } from '../content-table/content-table.component';
 import { BehaviorSubject } from 'rxjs';
+import { TableHeader } from '../models/content.model';
 
 @Injectable({
   providedIn: 'root',

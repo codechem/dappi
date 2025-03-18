@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   HostListener,
-  Input,
   OnChanges,
   OnInit,
   SimpleChanges,
@@ -16,25 +15,19 @@ import { Router } from '@angular/router';
 import { MenuComponent } from '../menu/menu.component';
 import { ContentStateService } from '../content-manager/content-state.service';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { HttpClient } from '@angular/common/http';
-
-export interface TableHeader {
-  key: string;
-  label: string;
-  type: 'text' | 'textarea' | 'file';
-}
-
-export interface ContentItem {
-  id: string;
-  [key: string]: any;
-}
-
-export interface PaginatedResponse {
-  total: number;
-  offset: number;
-  limit: number;
-  data: ContentItem[];
-}
+import { Store } from '@ngrx/store';
+import {
+  selectCurrentPage,
+  selectHeaders,
+  selectItems,
+  selectItemsPerPage,
+  selectLoading,
+  selectSearchText,
+  selectSelectedType,
+} from '../state/content/content.selectors';
+import * as ContentActions from '../state/content/content.actions';
+import { map, Observable, take, takeUntil } from 'rxjs';
+import { ContentItem, TableHeader } from '../models/content.model';
 
 @Component({
   selector: 'app-content-table',
@@ -52,14 +45,21 @@ export interface PaginatedResponse {
   styleUrl: './content-table.component.scss',
 })
 export class ContentTableComponent implements OnInit, OnChanges {
-  @Input() selectedType = 'Article';
-  @Input() items: ContentItem[] = [];
-  @Input() headers: TableHeader[] = [];
   Math = Math;
+  selectedType: string | undefined = undefined;
+  searchText: string | undefined = undefined;
+  limit: number | undefined = undefined;
+  items: ContentItem[] = [];
 
-  searchText = '';
+  selectedType$ = this.store.select(selectSelectedType);
+  currentPage$ = this.store.select(selectCurrentPage);
+  itemsPerPage$ = this.store.select(selectItemsPerPage);
+  searchText$ = this.store.select(selectSearchText);
+  items$ = this.store.select(selectItems);
+  headers$ = this.store.select(selectHeaders);
+  loading$ = this.store.select(selectLoading);
+
   isSearching = false;
-  filteredItems: ContentItem[] = [];
   menuPosition = { top: 0, left: 0 };
   activeMenuItemId?: string = undefined;
 
@@ -71,56 +71,32 @@ export class ContentTableComponent implements OnInit, OnChanges {
   totalItems = 0;
   totalPages = 1;
   paginationArray: number[] = [];
-  isLoading = false;
+  isLoading = true;
 
   constructor(
     private router: Router,
     private contentStateService: ContentStateService,
     private sanitizer: DomSanitizer,
-    private http: HttpClient
+    private store: Store
   ) {}
 
   ngOnInit(): void {
-    this.loadData();
+    this.selectedType$.subscribe((type) => (this.selectedType = type));
+    this.searchText$.subscribe((searchText) => this.searchText = searchText);
+    this.itemsPerPage$.subscribe((limit) => this.limit = limit);
+    this.items$.subscribe((items) => {
+      this.items = items?.data ?? [];
+      this.totalItems = items?.total ?? 0;
+      this.calculatePagination();
+  });
+  this.loading$.subscribe((loading) => this.isLoading = loading)
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['items']) {
-      this.updateFilteredItems();
       this.selectedItems.clear();
       this.selectAll = false;
     }
-  }
-
-  loadData(): void {
-    this.isLoading = true;
-    const offset = (this.currentPage - 1) * this.itemsPerPage;
-
-    const endpoint = `http://localhost:5101/api/${this.selectedType
-      .toLowerCase()
-      .replace(/\s+/g, '-')}`;
-
-    this.http
-      .get<PaginatedResponse>(endpoint, {
-        params: {
-          offset: offset.toString(),
-          limit: 5, //this.itemsPerPage.toString(),
-          SearchTerm: this.searchText || '',
-        },
-      })
-      .subscribe({
-        next: (response) => {
-          this.items = response.data;
-          this.totalItems = response.total;
-          this.updateFilteredItems();
-          this.calculatePagination();
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Error fetching data:', error);
-          this.isLoading = false;
-        },
-      });
   }
 
   calculatePagination(): void {
@@ -167,9 +143,17 @@ export class ContentTableComponent implements OnInit, OnChanges {
     if (page < 1 || page > this.totalPages || page === this.currentPage) {
       return;
     }
-
-    this.currentPage = page;
-    this.loadData();
+    if (this.selectedType) {
+      this.currentPage = page;
+      this.store.dispatch(
+        ContentActions.loadContent({
+          selectedType: this.selectedType ,
+          page,
+          limit: this.limit ?? 10,
+          searchText: this.searchText ?? '',
+        })
+      );
+    }
   }
 
   previousPage(): void {
@@ -190,7 +174,7 @@ export class ContentTableComponent implements OnInit, OnChanges {
     this.selectedItems.clear();
 
     if (checked) {
-      this.filteredItems.forEach((item) => this.selectedItems.add(item.id));
+      this.items.forEach((item) => this.selectedItems.add(item.id));
     }
   }
 
@@ -204,8 +188,8 @@ export class ContentTableComponent implements OnInit, OnChanges {
     }
 
     this.selectAll =
-      this.filteredItems.length > 0 &&
-      this.selectedItems.size === this.filteredItems.length;
+    this.items.length > 0 &&
+    this.selectedItems.size === this.items.length;
   }
 
   deleteSelectedItems(): void {
@@ -216,37 +200,20 @@ export class ContentTableComponent implements OnInit, OnChanges {
     );
 
     if (confirmDelete) {
-      const deletePromises: Promise<any>[] = [];
-
-      this.selectedItems.forEach((itemId) => {
-        const endpoint = `http://localhost:5101/api/${this.selectedType
-          .toLowerCase()
-          .replace(/\s+/g, '-')}/${itemId}`;
-
-        const deletePromise = new Promise((resolve, reject) => {
-          this.http.delete(endpoint).subscribe({
-            next: (response) => resolve(response),
-            error: (error) => reject(error),
-          });
-        });
-
-        deletePromises.push(deletePromise);
-      });
-
-      Promise.allSettled(deletePromises).then((results) => {
-        const successfulDeletes = results.filter(
-          (result) => result.status === 'fulfilled'
-        ).length;
-
-        console.log(
-          `Successfully deleted ${successfulDeletes} of ${this.selectedItems.size} items`
-        );
-
-        this.loadData();
-
-        this.selectedItems.clear();
-        this.selectAll = false;
-      });
+      const ids = Array.from(this.selectedItems);
+      this.store.dispatch(ContentActions.deleteMultipleContent({
+          ids,
+          contentType: this.selectedType ?? ''
+      }))
+  
+          this.store.dispatch(ContentActions.loadContent({
+            selectedType: this.selectedType ?? '',
+            page: this.currentPage,
+            limit: this.limit ?? 10,
+            searchText: this.searchText ?? ''
+          }));
+          this.selectedItems.clear();
+          this.selectAll = false;
     }
   }
 
@@ -295,11 +262,6 @@ export class ContentTableComponent implements OnInit, OnChanges {
   }
 
   navigateToCreate(): void {
-    this.contentStateService.setContentCreateData(
-      this.headers,
-      this.selectedType
-    );
-
     this.router.navigate(['/content-create']);
   }
 
@@ -347,34 +309,20 @@ export class ContentTableComponent implements OnInit, OnChanges {
   }
 
   onEdit(item: ContentItem): void {
-    this.contentStateService.setContentCreateData(
-      this.headers,
-      this.selectedType,
-      item
-    );
     this.router.navigate(['content-create']);
     this.closeMenu();
   }
 
   onDelete(item: ContentItem): void {
-    console.log('Delete item:', item);
     const confirmDelete = window.confirm(`Are you sure you want to delete?`);
     if (confirmDelete) {
-      const endpoint = `http://localhost:5101/api/${this.selectedType
-        .toLowerCase()
-        .replace(/\s+/g, '-')}/${item.id}`;
-
-      this.http.delete(endpoint).subscribe({
-        next: (response) => {
-          console.log('Successfully deleted:', response);
-          this.loadData();
-        },
-        error: (error) => {
-          console.error('Error deleting record:', error);
-        },
-        complete: () => {
-          this.closeMenu();
-        },
+      this.selectedType$.pipe(take(1)).subscribe((selectedType) => {
+        this.store.dispatch(
+          ContentActions.deleteContent({
+            id: item.id,
+            contentType: selectedType,
+          })
+        );
       });
     }
     this.closeMenu();
@@ -386,32 +334,31 @@ export class ContentTableComponent implements OnInit, OnChanges {
 
   closeSearch(): void {
     setTimeout(() => {
-      if (!this.searchText) {
-        this.isSearching = false;
-      }
+      this.searchText$.pipe(take(1)).subscribe((searchText) => {
+        if (!searchText) {
+          this.isSearching = false;
+        }
+      });
     }, 100);
   }
 
   clearSearch(): void {
-    this.searchText = '';
+    this.store.dispatch(ContentActions.setSearchText({ searchText: '' }));
     this.currentPage = 1;
-    this.loadData();
     this.isSearching = false;
   }
 
   onSearchTextChange(newText: string): void {
-    this.searchText = newText.trim();
-    clearTimeout(this.searchDebounce);
-
-    this.searchDebounce = setTimeout(() => {
-      this.currentPage = 1;
-      this.loadData();
-    }, 300);
-  }
-
-  private searchDebounce: any;
-
-  private updateFilteredItems(): void {
-    this.filteredItems = [...this.items];
+    this.store.dispatch(ContentActions.setSearchText({ searchText: newText }));
+    this.selectedType$.pipe(take(1)).subscribe((selectedType) => {
+      this.store.dispatch(
+        ContentActions.loadContent({
+          selectedType: selectedType,
+          page: 1,
+          limit: this.itemsPerPage,
+          searchText: newText,
+        })
+      );
+    });
   }
 }

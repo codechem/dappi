@@ -16,6 +16,8 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { catchError } from 'rxjs';
+import * as CollectionActions from '../state/collection/collection.actions';
+import { Store } from '@ngrx/store';
 
 interface FieldType {
   icon: string;
@@ -109,7 +111,8 @@ export class AddFieldDialogComponent {
     private dialogRef: MatDialogRef<AddFieldDialogComponent>,
     private http: HttpClient,
     private fb: FormBuilder,
-    @Inject(MAT_DIALOG_DATA) public data: { selectedType: string }
+    @Inject(MAT_DIALOG_DATA) public data: { selectedType: string },
+    private store: Store
   ) {
     this.fieldForm = this.fb.group({
       fieldName: ['', [Validators.required, Validators.maxLength(50)]],
@@ -133,23 +136,9 @@ export class AddFieldDialogComponent {
       fieldType: selectedFieldType.netType,
     };
 
-    this.http
-      .put(
-        `http://localhost:5101/api/models/${this.data.selectedType}`,
-        payload
-      )
-      .pipe(
-        catchError((error) => {
-          console.error('Error adding field:', error);
-          alert('Failed to add field. Please try again.');
-          return [];
-        })
-      )
-      .subscribe((response) => {
-        this.dialogRef.close({
-          response: response,
-        });
-      });
+    this.store.dispatch(CollectionActions.addField({ field: payload }));
+
+    this.dialogRef.close();
   }
 
   onClose(): void {

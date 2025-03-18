@@ -12,8 +12,16 @@ import { CommonModule } from '@angular/common';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
-import { ModelField } from '../content-manager/content-manager.component';
 import { MatSpinner } from '@angular/material/progress-spinner';
+import { ModelField } from '../models/content.model';
+import { Store } from '@ngrx/store';
+import * as ContentActions from '../state/content/content.actions';
+import * as CollectionActions from '../state/collection/collection.actions';
+import {
+  selectHeaders,
+  selectSelectedType,
+} from '../state/content/content.selectors';
+import { selectFields } from '../state/collection/collection.selectors';
 
 interface SaveResponse {
   success: boolean;
@@ -49,10 +57,26 @@ export class BuilderComponent implements OnInit {
   retryTimeout: any;
   serverRestarting: boolean = false;
 
-  constructor(private dialog: MatDialog, private http: HttpClient) {}
+  selectedType$ = this.store.select(selectSelectedType);
+  fieldsData$ = this.store.select(selectFields);
+
+  constructor(
+    private dialog: MatDialog,
+    private http: HttpClient,
+    private store: Store
+  ) {}
 
   async ngOnInit(): Promise<void> {
     await this.loadFieldsData();
+    this.selectedType$.subscribe((selectedType) => {
+      this.store.dispatch(
+        CollectionActions.loadFields({ modelType: selectedType })
+      );
+    });
+
+    this.fieldsData$.subscribe((fields) => {
+      this.formatFields(fields);
+    });
   }
 
   openAddFieldDialog(): void {
@@ -71,112 +95,119 @@ export class BuilderComponent implements OnInit {
     });
   }
 
+  private formatFields(fields: ModelField[]): void {
+    if (fields && fields.length > 0) {
+      this.fieldsData = fields.map((field) => {
+        let fieldType = field.fieldType;
+        let type: string;
+        let iconText: string | undefined;
+        let iconName: string | undefined;
+
+        switch (fieldType) {
+          case 'string':
+            if (
+              field.fieldName.toLowerCase().includes('url') ||
+              field.fieldName.toLowerCase().includes('link')
+            ) {
+              type = 'Link';
+              iconName = 'link';
+            } else {
+              type = 'Text';
+              iconText = 'Aa';
+            }
+            break;
+          case 'int':
+          case 'double':
+          case 'decimal':
+            type = 'Number';
+            iconText = '123';
+            break;
+          case 'DateTime':
+            type = 'DateTime';
+            iconName = 'event';
+            break;
+          case 'bool':
+            type = 'Checkbox';
+            iconName = 'check_box';
+            break;
+          case 'byte[]':
+            type = 'Media';
+            iconName = 'perm_media';
+            break;
+          default:
+            type = fieldType;
+            iconText = 'Aa';
+        }
+
+        return {
+          name: field.fieldName,
+          type: type,
+          iconText: iconText,
+          iconName: iconName,
+        };
+      });
+    }
+  }
+
   private async loadFieldsData(): Promise<boolean> {
     if (!this.selectedType) return Promise.resolve(false);
+    return Promise.resolve(true);
+    // this.isModalOpen = true;
+    // this.isSaving = true;
 
-    this.isModalOpen = true;
-    this.isSaving = true;
+    // try {
 
-    if (this.retryTimeout) {
-      clearTimeout(this.retryTimeout);
-    }
+    //   if (fields && fields.length > 0) {
+    //     this.fieldsData = fields.map((field) => {
+    //       let fieldType = field.fieldType;
+    //       let type: string;
+    //       let iconText: string | undefined;
+    //       let iconName: string | undefined;
 
-    if (this.currentRetry >= this.maxRetries) {
-      this.closeModal();
-      alert(
-        'Server restart is taking longer than expected. Please refresh the page manually.'
-      );
-      return false;
-    }
+    //       switch (fieldType) {
+    //         case 'string':
+    //           if (
+    //             field.fieldName.toLowerCase().includes('url') ||
+    //             field.fieldName.toLowerCase().includes('link')
+    //           ) {
+    //             type = 'Link';
+    //             iconName = 'link';
+    //           } else {
+    //             type = 'Text';
+    //             iconText = 'Aa';
+    //           }
+    //           break;
+    //         case 'int':
+    //         case 'double':
+    //         case 'decimal':
+    //           type = 'Number';
+    //           iconText = '123';
+    //           break;
+    //         case 'DateTime':
+    //           type = 'DateTime';
+    //           iconName = 'event';
+    //           break;
+    //         case 'bool':
+    //           type = 'Checkbox';
+    //           iconName = 'check_box';
+    //           break;
+    //         case 'byte[]':
+    //           type = 'Media';
+    //           iconName = 'perm_media';
+    //           break;
+    //         default:
+    //           type = fieldType;
+    //           iconText = 'Aa';
+    //       }
 
-    this.currentRetry++;
-    console.log(`Polling attempt ${this.currentRetry} of ${this.maxRetries}`);
-
-    try {
-      const fields = await this.http
-        .get<ModelField[]>(
-          `http://localhost:5101/api/models/fields/${this.selectedType}`
-        )
-        .pipe(
-          catchError((error) => {
-            console.error('Error fetching fields:', error);
-
-            this.retryTimeout = setTimeout(() => {
-              this.loadFieldsData();
-            }, this.retryInterval);
-            return of([]);
-          })
-        )
-        .toPromise();
-
-      if (fields && fields.length > 0) {
-        this.fieldsData = fields.map((field) => {
-          let fieldType = field.fieldType;
-          let type: string;
-          let iconText: string | undefined;
-          let iconName: string | undefined;
-
-          switch (fieldType) {
-            case 'string':
-              if (
-                field.fieldName.toLowerCase().includes('url') ||
-                field.fieldName.toLowerCase().includes('link')
-              ) {
-                type = 'Link';
-                iconName = 'link';
-              } else {
-                type = 'Text';
-                iconText = 'Aa';
-              }
-              break;
-            case 'int':
-            case 'double':
-            case 'decimal':
-              type = 'Number';
-              iconText = '123';
-              break;
-            case 'DateTime':
-              type = 'DateTime';
-              iconName = 'event';
-              break;
-            case 'bool':
-              type = 'Checkbox';
-              iconName = 'check_box';
-              break;
-            case 'byte[]':
-              type = 'Media';
-              iconName = 'perm_media';
-              break;
-            default:
-              type = fieldType;
-              iconText = 'Aa';
-          }
-
-          return {
-            name: field.fieldName,
-            type: type,
-            iconText: iconText,
-            iconName: iconName,
-          };
-        });
-
-        this.closeModal();
-        this.currentRetry = 0;
-        return true;
-      } else {
-        this.retryTimeout = setTimeout(() => {
-          this.loadFieldsData();
-        }, this.retryInterval);
-        return false;
-      }
-    } catch (error) {
-      console.error('Error during HTTP request:', error);
-
-      this.retryTimeout = setTimeout(() => {
-        this.loadFieldsData();
-      }, this.retryInterval);
-      return false;
-    }
+    //       return {
+    //         name: field.fieldName,
+    //         type: type,
+    //         iconText: iconText,
+    //         iconName: iconName,
+    //       };
+    //     });
+    // })
   }
 
   private closeModal(): void {
