@@ -1,0 +1,58 @@
+<div class="layout">
+  <app-sidebar headerText="Content Manager"></app-sidebar>
+  <div class="container">
+    <div class="back-button" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Back</span>
+    </div>
+    <div class="header">
+      <div class="title-block">
+        <h1>{{ typeName }}</h1>
+        <p>
+          created <b>{{ dateCreated }}</b>
+        </p>
+      </div>
+      <button
+        mat-icon-button
+        class="settings-button"
+        aria-label="Settings menu"
+        (click)="toggleMenu($event)"
+      >
+        <mat-icon>more_vert</mat-icon>
+      </button>
+    </div>
+
+    <div class="content">
+      <app-new-record-form #newRecordForm></app-new-record-form>
+    </div>
+
+    <div class="footer">
+      <hr />
+      <button
+        mat-button
+        class="save-button"
+        [disabled]="!newRecordForm.isFormValid()"
+        (click)="newRecordForm.onSubmit()"
+      >
+        Save your content
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="floating-menu-container" *ngIf="showMenu">
+  <div
+    class="floating-menu"
+    [style.top.px]="menuPosition.top"
+    [style.left.px]="menuPosition.left"
+    (click)="$event.stopPropagation()"
+  >
+    <app-menu
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
+      editText="Edit the model"
+      deleteText="Delete entry"
+    >
+    </app-menu>
+  </div>
+</div>

@@ -1,0 +1,83 @@
+@use "../../variables" as vars;
+
+.stats-container {
+  display: flex;
+  flex-grow: 1;
+  gap: 21px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.stats-card {
+  background: vars.$background-paper-elevation-1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  transition: 0.3s ease-in-out;
+  flex-grow: 1;
+  flex-basis: 0;
+
+  &:hover {
+    box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.create-new {
+  background: vars.$primary-selected;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: vars.$primary-main;
+
+  .icon-container {
+    background: vars.$primary-selected;
+    color: vars.$primary-main;
+  }
+}
+
+.create-new :hover {
+  cursor: pointer;
+}
+
+.icon-container {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: vars.$primary-main;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.green {
+  background: rgba($color: vars.$success-main, $alpha: 0.16);
+  color: vars.$success-main;
+}
+
+.blue-icon {
+  background: rgba($color: vars.$info-main, $alpha: 0.16);
+  color: vars.$info-main;
+}
+
+.stats-content h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+}
+
+.stats-content span {
+  font-size: 14px;
+  color: vars.$primary-main;
+}
+
+.blue {
+  color: vars.$info-main !important;
+}
+
+.green-text {
+  color: vars.$success-main !important;
+}

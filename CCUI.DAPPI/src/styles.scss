@@ -1,0 +1,98 @@
+@use '@angular/material' as mat;
+@use './variables' as vars;
+
+html {
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+:root {
+  box-sizing: border-box;
+  width: 100%;
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(vars.$primary-main, 0.3);
+    border-radius: 3px;
+  }
+
+  @include mat.form-field-overrides((
+    filled-caret-color: orange,
+    outlined-label-text-color: rgba(#FFFFFF, 0.7),
+    outlined-hover-label-text-color: rgba(#FFFFFF, 0.7),
+    outlined-input-text-color: rgba(#FFFFFF, 0.7),
+    filled-hover-label-text-color: rgba(#FFFFFF, 0.7),
+    filled-focus-active-indicator-color: rgba(#FFFFFF, 0.7),
+    outlined-hover-outline-color: rgba(vars.$primary-main, 1),
+    filled-active-indicator-color: rgba(vars.$primary-main, 1),
+    outlined-focus-outline-color: rgba(vars.$primary-main, 1),
+    outlined-focus-label-text-color: rgba(vars.$primary-main, 1),
+  ));
+
+  @include mat.checkbox-overrides((
+    unselected-icon-color: rgba(#FFFFFF, 0.56),
+    unselected-focus-icon-color: rgba(#FFFFFF, 0.56),
+    selected-pressed-icon-color: rgba(vars.$primary-main, 1),
+    selected-icon-color: rgba(vars.$primary-main, 1),
+    selected-focus-icon-color: rgba(vars.$primary-main, 1),
+    selected-hover-icon-color: rgba(vars.$primary-main, 1),
+    unselected-hover-icon-color: rgba(#FFFFFF, 0.56),
+    selected-checkmark-color: vars.$background-default,
+    selected-hover-state-layer-color: #2d2c30,
+    unselected-pressed-state-layer-color: #2d2c30,
+    unselected-hover-state-layer-color: #2d2c30,
+    selected-pressed-state-layer-color: #2d2c30,
+    selected-focus-state-layer-color: #2d2c30,
+    unselected-focus-state-layer-color: #2d2c30,
+    selected-hover-state-layer-opacity: 1,
+    unselected-hover-state-layer-opacity: 1,
+    selected-focus-state-layer-opacity: 0,
+    unselected-pressed-state-layer-opacity: 0,
+    selected-pressed-state-layer-opacity: 0,
+    label-text-color: vars.$text-primary,
+    disabled-label-color: vars.$text-primary
+  ));
+
+  @include mat.progress-spinner-overrides((
+    active-indicator-color: vars.$primary-main,
+  ));
+}
+:root {
+  background-color: vars.$background-default;
+}
+
+hr {
+  width: 100%;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.floating-menu-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.floating-menu {
+  position: absolute;
+  z-index: 1001;
+  pointer-events: auto; 
+  background-color: #2e2e2e; 
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}

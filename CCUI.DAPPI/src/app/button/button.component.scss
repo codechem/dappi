@@ -1,0 +1,16 @@
+@use "../../variables" as vars;
+
+.button {
+  display: block;
+  margin: 3px 0px;
+  color: vars.$primary-main;
+  background-color: transparent;
+  padding: 10px 8px !important;
+  border: vars.$primary-outlined-border;
+  border-radius: 4px;
+}
+
+.button:hover {
+  background: vars.$background-hover;
+  cursor: pointer;
+}

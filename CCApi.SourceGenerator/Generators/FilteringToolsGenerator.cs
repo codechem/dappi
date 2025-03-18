@@ -34,7 +34,12 @@ public interface ISortingFilter
     SortDirection SortDirection {{ get; set; }}
 }}
 
-public interface IGenericFilter : ISortingFilter, IPagingFilter
+public interface ISearchFilter
+{{
+    string? SearchTerm {{ get; set; }}
+}}
+
+public interface IGenericFilter : ISortingFilter, IPagingFilter, ISearchFilter
 {{
 }}
 
@@ -51,7 +56,10 @@ public class PagingFilter : IGenericFilter
 
     public string SortBy {{ get; set; }} = ""Id"";
     public SortDirection SortDirection {{ get; set; }} = SortDirection.Ascending;
-}}", Encoding.UTF8);
+
+    public string? SearchTerm {{ get; set; }}
+}}
+", Encoding.UTF8);
         context.AddSource("CCFilter.cs", sourceText);
     }
 }

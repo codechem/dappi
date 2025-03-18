@@ -1,0 +1,21 @@
+<div class="context-menu" role="menu">
+  <button
+    class="context-menu__item context-menu__item--edit"
+    (click)="onEdit()"
+    role="menuitem"
+    [attr.aria-label]="editText"
+  >
+    <mat-icon>edit</mat-icon>
+    <span class="context-menu__text">{{ editText }}</span>
+  </button>
+
+  <button
+    class="context-menu__item context-menu__item--delete"
+    (click)="onDelete()"
+    role="menuitem"
+    [attr.aria-label]="deleteText"
+  >
+    <mat-icon>delete</mat-icon>
+    <span class="context-menu__text">{{ deleteText }}</span>
+  </button>
+</div>

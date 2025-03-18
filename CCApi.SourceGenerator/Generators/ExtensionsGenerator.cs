@@ -32,12 +32,13 @@ public static class LinqExtensions
         var filterProperties = filter.GetType().GetProperties()
             .Where(p => typeof(T).GetProperty(p.Name) != null);
 
+        string? searchTerm = filter.GetType().GetProperty(""SearchTerm"")?.GetValue(filter) as string;
+        
         foreach (var property in filterProperties)
         {{
             var value = property.GetValue(filter);
-            if (value == null) continue; // Skip null values
+            if (value == null || property.Name == ""SearchTerm"") continue;
 
-            // Build a dynamic filter expression
             var parameter = Expression.Parameter(typeof(T), ""x"");
             var propertyExpression = Expression.Property(parameter, property.Name);
             var constant = Expression.Constant(value);
@@ -45,6 +46,37 @@ public static class LinqExtensions
 
             var lambda = Expression.Lambda<Func<T, bool>>(equals, parameter);
             query = query.Where(lambda);
+        }}
+
+        if (!string.IsNullOrEmpty(searchTerm))
+        {{
+            var searchLower = searchTerm.ToLower();
+            var properties = typeof(T).GetProperties()
+                                      .Where(p => p.PropertyType == typeof(string))
+                                      .ToList();
+
+            if (properties.Any())
+            {{
+                Expression? searchExpression = null;
+                var parameter = Expression.Parameter(typeof(T), ""x"");
+
+                foreach (var property in properties)
+                {{
+                    var propertyExpression = Expression.Property(parameter, property);
+                    var toLowerCall = Expression.Call(propertyExpression, typeof(string).GetMethod(""ToLower"", Type.EmptyTypes));
+                    var containsMethod = typeof(string).GetMethod(""Contains"", new[] {{ typeof(string) }});
+                    var searchConstant = Expression.Constant(searchLower);
+                    var containsExpression = Expression.Call(toLowerCall, containsMethod, searchConstant);
+
+                    searchExpression = searchExpression == null ? containsExpression : Expression.OrElse(searchExpression, containsExpression);
+                }}
+
+                if (searchExpression != null)
+                {{
+                    var lambda = Expression.Lambda<Func<T, bool>>(searchExpression, parameter);
+                    query = query.Where(lambda);
+                }}
+            }}
         }}
 
         return query;

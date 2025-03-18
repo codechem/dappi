@@ -1,0 +1,9 @@
+<span
+  class="status-pill"
+  [ngClass]="{
+    published: text === 'Published',
+    draft: text !== 'Published'
+  }"
+>
+  {{ text }}
+</span>

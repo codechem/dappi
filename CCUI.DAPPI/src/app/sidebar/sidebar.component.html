@@ -1,0 +1,57 @@
+<div class="sidebar-header">
+  <ng-container *ngIf="!isSearching; else searchField">
+    <span class="header-text">{{ headerText }}</span>
+    <button class="header-icon" aria-label="Search" (click)="toggleSearch()">
+      <mat-icon>search</mat-icon>
+    </button>
+  </ng-container>
+
+  <ng-template #searchField>
+    <div class="search-container">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input #searchInput type="text" placeholder="Search collection types..." [(ngModel)]="searchText" (blur)="closeSearch()"
+        (input)="onSearchTextChange(searchText)" (keydown)="onKeyDown($event)" autocomplete="off" />
+      <button *ngIf="searchText" class="clear-button" aria-label="Clear search" (click)="clearSearch()">
+        <mat-icon class="close-icon">close</mat-icon>
+      </button>
+    </div>
+  </ng-template>
+</div>
+
+<div class="sidebar-divider"></div>
+
+<div class="section-title">Collection Types</div>
+
+<div class="add-button-container" *ngIf="headerText !== 'Content Manager'">
+  <app-button (click)="openAddCollectionTypeDialog()" text="+ Add new collection type"></app-button>
+</div>
+
+<div class="scrollable-list">
+  <ng-container *ngIf="isLoading">
+    <div class="loading-state">
+      <mat-spinner diameter="32" color="primary"></mat-spinner>
+      <p>Loading collection types...</p>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="selectedType$ | async as selectedType">
+  <ng-container *ngIf="!isLoading">
+    <ng-container *ngIf="filteredCollectionTypes.length > 0; else noResults">
+      <mat-list>
+        <mat-list-item class="custom-list-item" *ngFor="let type of filteredCollectionTypes; trackBy: trackByFn"
+          [attr.aria-label]="type" [ngClass]="{'selected': selectedType === type}" (click)="selectCollectionType(type)">
+          {{ type }}
+        </mat-list-item>
+      </mat-list>
+    </ng-container>
+
+    <ng-template #noResults>
+      <div class="no-results">
+        <mat-icon>search_off</mat-icon>
+        <p>No collection types found</p>
+        <p *ngIf="searchText" class="search-hint">Try different search terms</p>
+      </div>
+    </ng-template>
+  </ng-container>
+  </ng-container>
+</div>

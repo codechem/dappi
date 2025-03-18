@@ -1,0 +1,169 @@
+@use "../../variables" as vars;
+@use "sass:color";
+
+.add-field-dialog-container {
+  background-color: vars.$background-paper-elevation-1;
+  color: vars.$text-primary;
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 500px;
+  max-width: 90vw;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0px 24px;
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  button[mat-icon-button] {
+    color: vars.$text-primary;
+  }
+}
+
+.dialog-content {
+  padding: 16px 24px;
+
+  .section-title {
+    font-size: 14px;
+    color: vars.$text-primary;
+  }
+
+  .input-field {
+    width: 100%;
+  }
+
+  .field-type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+
+    .field-type-box {
+      width: 100%;
+      background-color: vars.$primary-selected;
+      border: vars.$primary-outlined-border;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s;
+      color: vars.$primary-main;
+      font-size: 28px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .field-type-grid-wrapper {
+    max-height: 220px;
+    overflow-y: auto;
+    margin-bottom: 24px;
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: vars.$text-secondary;
+      border-radius: 3px;
+    }
+  }
+
+  .required-field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 24px;
+
+    mat-checkbox {
+      color: vars.$primary-main;
+      margin-bottom: 4px;
+    }
+
+    small {
+      font-size: 12px;
+      color: vars.$text-secondary;
+      margin-left: 24px;
+    }
+  }
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: vars.$divider;
+
+  .add-field-button {
+    background-color: vars.$primary-main;
+    color: vars.$primary-contrast-text;
+    font-weight: 500;
+    text-transform: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: color.adjust(vars.$primary-main, $lightness: 5%);
+    }
+
+    &[disabled] {
+      background-color: rgba(vars.$primary-main, 0.5);
+      cursor: not-allowed;
+    }
+  }
+}
+
+.box {
+  max-width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  align-items: center;
+  border: vars.$divider;
+  background-color: vars.$background-paper-elevation-2;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  border-radius: 6px;
+
+  &:hover {
+    background-color: vars.$background-hover;
+  }
+
+  &.selected {
+    background-color: vars.$primary-selected;
+    border: 1px solid vars.$primary-main;
+    box-shadow: 0 0 0 1px vars.$primary-main;
+  }
+
+  .selected-indicator {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: vars.$primary-main;
+  }
+}
+
+.label {
+  color: vars.$text-primary;
+  margin: 6px 0 4px;
+  font-weight: 500;
+}
+
+.description {
+  font-size: 12px;
+  color: vars.$text-secondary;
+  text-align: center;
+  line-height: 1.4;
+}

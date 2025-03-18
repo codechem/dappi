@@ -1,0 +1,70 @@
+<div class="add-field-dialog-container">
+  <div class="dialog-header">
+    <h2>Add new field</h2>
+    <button mat-icon-button (click)="onClose()" aria-label="Close dialog">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-content">
+    <form [formGroup]="fieldForm">
+      <h3 class="section-title">1. Select field type</h3>
+      <div class="field-type-grid-wrapper">
+        <div class="field-type-grid">
+          <div
+            *ngFor="let ft of fieldTypes; let i = index"
+            class="box"
+            [class.selected]="selectedFieldTypeIndex === i"
+            (click)="selectFieldType(i)"
+            [attr.aria-selected]="selectedFieldTypeIndex === i"
+            role="option"
+            tabindex="0"
+            (keydown.enter)="selectFieldType(i)"
+          >
+            <mat-icon class="field-type-box">
+              {{ ft.icon }}
+            </mat-icon>
+            <div class="label">{{ ft.label }}</div>
+            <div class="description">{{ ft.description }}</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-title">2. Field settings</h3>
+      <mat-form-field appearance="outline" class="input-field">
+        <mat-label>Field name</mat-label>
+        <input
+          matInput
+          formControlName="fieldName"
+          placeholder="Enter field name"
+        />
+        <mat-error *ngIf="fieldForm.get('fieldName')?.hasError('required')">
+          Field name is required
+        </mat-error>
+        <mat-error *ngIf="fieldForm.get('fieldName')?.hasError('maxlength')">
+          Field name cannot exceed 50 characters
+        </mat-error>
+      </mat-form-field>
+
+      <div class="required-field">
+        <mat-checkbox formControlName="requiredField"
+          >Required field</mat-checkbox
+        >
+        <small
+          >You will not be able to create an entry if this field is empty</small
+        >
+      </div>
+    </form>
+  </div>
+
+  <div class="dialog-footer">
+    <button
+      mat-flat-button
+      class="add-field-button"
+      [disabled]="!canSubmit"
+      (click)="onAddField()"
+    >
+      Add new field
+    </button>
+  </div>
+</div>
