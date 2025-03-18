@@ -57,12 +57,33 @@ export class CollectionEffects {
   addCollectionType$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.addCollectionType),
-      switchMap(action => {
-        // Here you would make an API call to add the collection type
-        // For now, we'll just simulate success
-        return of(CollectionActions.addCollectionTypeSuccess({ 
-          collectionType: action.collectionType 
-        }));
+      switchMap((action) => {
+        const payload = { modelName: action.collectionType };
+        return this.http.post('http://localhost:5101/api/models', payload).pipe(
+          switchMap((response) =>
+            this.http.get('http://localhost:5101/api/update-db-context').pipe(
+              map(() =>
+                CollectionActions.addCollectionTypeSuccess({
+                  collectionType: action.collectionType,
+                })
+              ),
+              catchError((error) => {
+                console.error('Error updating DB context:', error);
+                alert(
+                  'Model created but failed to update DB context. Please try again.'
+                );
+                return of(
+                  CollectionActions.addCollectionTypeFailure({ error })
+                );
+              })
+            )
+          ),
+          catchError((error) => {
+            console.error('Error creating model:', error);
+            alert('Failed to create model. Please try again.');
+            return of(CollectionActions.addCollectionTypeFailure({ error }));
+          })
+        );
       })
     )
   );
@@ -77,14 +98,16 @@ export class CollectionEffects {
           fieldName: action.field.fieldName,
           fieldType: action.field.fieldType,
         };
-  
+
         return this.http
           .put(`http://localhost:5101/api/models/${selectedType}`, payload)
           .pipe(
-            map(response => CollectionActions.addFieldSuccess({ 
-              field: action.field 
-            })),
-            catchError(error => 
+            map((response) =>
+              CollectionActions.addFieldSuccess({
+                field: payload,
+              })
+            ),
+            catchError((error) =>
               of(CollectionActions.addFieldFailure({ error: error.message }))
             )
           );

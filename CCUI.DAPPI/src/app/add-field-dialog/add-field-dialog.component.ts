@@ -1,5 +1,4 @@
-import { Component, Inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Component, Inject, OnInit } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,7 +14,6 @@ import {
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
-import { catchError } from 'rxjs';
 import * as CollectionActions from '../state/collection/collection.actions';
 import { Store } from '@ngrx/store';
 
@@ -109,7 +107,6 @@ export class AddFieldDialogComponent {
 
   constructor(
     private dialogRef: MatDialogRef<AddFieldDialogComponent>,
-    private http: HttpClient,
     private fb: FormBuilder,
     @Inject(MAT_DIALOG_DATA) public data: { selectedType: string },
     private store: Store
@@ -137,7 +134,6 @@ export class AddFieldDialogComponent {
     };
 
     this.store.dispatch(CollectionActions.addField({ field: payload }));
-
     this.dialogRef.close();
   }
 
