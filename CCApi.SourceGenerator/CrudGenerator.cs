@@ -111,7 +111,7 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
      }}
 
      [HttpPost]
-     public async Task<IActionResult> Create([FromBody] {item.ClassName} model) // TODO: should be DTO
+     public async Task<IActionResult> Create([FromForm] {item.ClassName} model) // TODO: should be DTO
      {{
          if(model is null) 
             return BadRequest();
@@ -122,7 +122,7 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
      }}
 
      [HttpPut(""{{id}}"")]
-     public async Task<IActionResult> Update(Guid id, {item.ClassName} model)
+     public async Task<IActionResult> Update(Guid id, [FromForm] {item.ClassName} model)
      {{
          if (model == null || id == Guid.Empty)
             return BadRequest(""Invalid data provided."");
