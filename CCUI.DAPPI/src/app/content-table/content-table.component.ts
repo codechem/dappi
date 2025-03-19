@@ -18,6 +18,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Store } from '@ngrx/store';
 import {
   selectHeaders,
+  selectIsSearching,
   selectItems,
   selectItemsPerPage,
   selectLoading,
@@ -52,6 +53,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   items: ContentItem[] = [];
 
   selectedType$ = this.store.select(selectSelectedType);
+  isSearching$ = this.store.select(selectIsSearching);
   itemsPerPage$ = this.store.select(selectItemsPerPage);
   items$ = this.store.select(selectItems);
   headers$ = this.store.select(selectHeaders);
@@ -84,6 +86,10 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   ngOnInit(): void {
     this.subscription.add(
       this.selectedType$.subscribe((type) => (this.selectedType = type))
+    );
+
+    this.subscription.add(
+      this.isSearching$.subscribe((searching) => (this.isSearching = searching))
     );
 
     this.subscription.add(
@@ -340,14 +346,14 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   toggleSearch(): void {
-    this.isSearching = true;
+    this.store.dispatch(ContentActions.setIsSearching({ isSearching: true }));
   }
 
   clearSearch(): void {
     this.store.dispatch(ContentActions.setSearchText({ searchText: '' }));
     this.searchText = '';
     this.currentPage = 1;
-    this.isSearching = false;
+    this.store.dispatch(ContentActions.setIsSearching({ isSearching: false }));
     this.store.dispatch(
       ContentActions.loadContent({
         selectedType: this.selectedType ?? '',
