@@ -16,7 +16,6 @@ import {
   selectSelectedType,
   selectTotalItems,
   selectError,
-  selectSearchText,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
 import {
@@ -49,8 +48,6 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
 
   items: ContentItem[] = [];
 
-  searchText$ = this.store.select(selectSearchText);
-
   items$: Observable<PaginatedResponse | undefined> =
     this.store.select(selectItems);
   headers$: Observable<TableHeader[]> = this.store.select(selectHeaders);
@@ -63,10 +60,6 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
   constructor(private router: Router, private store: Store) {}
 
   ngOnInit(): void {
-    this.subscription.add(
-      this.searchText$.subscribe((text) => (this.searchText = text))
-    );
-
     this.subscription.add(
       this.selectedType$.subscribe((selectedType) => {
         if (selectedType) {

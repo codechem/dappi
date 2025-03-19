@@ -30,10 +30,8 @@ import { selectSelectedType } from '../state/content/content.selectors';
 import {
   selectCollectionTypes,
   selectCollectionTypesError,
-  selectIsLoadingCollectionTypes,
 } from '../state/collection/collection.selectors';
 import { loadCollectionTypes } from '../state/collection/collection.actions';
-import * as CollectionActions from '../state/collection/collection.actions';
 
 @Component({
   selector: 'app-sidebar',

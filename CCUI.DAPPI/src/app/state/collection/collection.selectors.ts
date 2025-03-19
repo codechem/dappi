@@ -28,16 +28,6 @@ export const selectIsLoadingFields = createSelector(
   (state) => state.loadingFields
 );
 
-export const selectFieldsError = createSelector(
-  selectCollectionState,
-  (state) => state.errorFields
-);
-
-export const selectSearchText = createSelector(
-  selectCollectionState,
-  (state) => state.searchText
-);
-
 export const selectIsSaving = createSelector(
   selectCollectionState,
   (state) => state.isSaving

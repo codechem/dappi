@@ -7,10 +7,7 @@ export interface ContentState {
   loading: boolean;
   error: string | null;
   totalItems: number;
-  currentPage: number;
   itemsPerPage: number;
-  searchText: string;
-  selectedItems: Set<string>;
   currentItem: ContentItem | undefined;
 }
 
@@ -22,8 +19,5 @@ export const initialContentState: ContentState = {
   loading: false,
   error: null,
   totalItems: 0,
-  currentPage: 1,
   itemsPerPage: 10,
-  searchText: '',
-  selectedItems: new Set<string>(),
 };

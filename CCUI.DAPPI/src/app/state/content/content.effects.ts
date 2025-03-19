@@ -6,12 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngrx/store';
 import * as ContentActions from './content.actions';
 import { ModelField, PaginatedResponse } from '../../models/content.model';
-import {
-  selectCurrentPage,
-  selectItemsPerPage,
-  selectSearchText,
-  selectSelectedType,
-} from './content.selectors';
+import { selectItemsPerPage, selectSelectedType } from './content.selectors';
 
 @Injectable()
 export class ContentEffects {
@@ -117,17 +112,15 @@ export class ContentEffects {
         ContentActions.deleteMultipleContentSuccess
       ),
       withLatestFrom(
-        this.store.select(selectCurrentPage),
         this.store.select(selectItemsPerPage),
-        this.store.select(selectSearchText),
         this.store.select(selectSelectedType)
       ),
-      map(([_, page, limit, searchText, selectedType]) =>
+      map(([_, limit, selectedType]) =>
         ContentActions.loadContent({
           selectedType,
-          page,
+          page: 1,
           limit,
-          searchText,
+          searchText: '',
         })
       )
     )
@@ -136,13 +129,22 @@ export class ContentEffects {
   createContent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ContentActions.createContent),
-      mergeMap((action) => {
+      withLatestFrom(this.store.select(selectItemsPerPage)),
+      mergeMap(([action, itemsPerPage]) => {
         const endpoint = `http://localhost:5101/api/${action.contentType
           .toLowerCase()
           .replace(/\s+/g, '-')}`;
 
         return this.http.post(endpoint, action.formData).pipe(
-          map((response) => ContentActions.createContentSuccess()),
+          map((response) => {
+            this.store.dispatch(ContentActions.createContentSuccess());
+            return ContentActions.loadContent({
+              selectedType: action.contentType,
+              page: 1,
+              limit: itemsPerPage,
+              searchText: '',
+            });
+          }),
           catchError((error) =>
             of(ContentActions.createContentFailure({ error: error.message }))
           )
@@ -154,13 +156,22 @@ export class ContentEffects {
   updateContent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ContentActions.updateContent),
-      mergeMap((action) => {
+      withLatestFrom(this.store.select(selectItemsPerPage)),
+      mergeMap(([action, itemsPerPage]) => {
         const endpoint = `http://localhost:5101/api/${action.contentType
           .toLowerCase()
           .replace(/\s+/g, '-')}/${action.id}`;
 
         return this.http.put(endpoint, action.formData).pipe(
-          map((response) => ContentActions.updateContentSuccess()),
+          map((response) => {
+            this.store.dispatch(ContentActions.createContentSuccess());
+            return ContentActions.loadContent({
+              selectedType: action.contentType,
+              page: 1,
+              limit: itemsPerPage,
+              searchText: '',
+            });
+          }),
           catchError((error) =>
             of(ContentActions.updateContentFailure({ error: error.message }))
           )

@@ -42,16 +42,9 @@ export const loadHeadersFailure = createAction(
   props<{ error: string }>()
 );
 
-// Set content type
 export const setContentType = createAction(
   '[Content] Set Content Type',
   props<{ selectedType: string }>()
-);
-
-// Set headers
-export const setHeaders = createAction(
-  '[Content] Set Headers',
-  props<{ headers: TableHeader[] }>()
 );
 
 export const setCurrentItem = createAction(
@@ -64,13 +57,6 @@ export const setSearchText = createAction(
   props<{ searchText: string }>()
 );
 
-// Set current page
-export const setCurrentPage = createAction(
-  '[Content] Set Current Page',
-  props<{ page: number }>()
-);
-
-// Delete content
 export const deleteContent = createAction(
   '[Content] Delete Content',
   props<{ id: string; contentType: string }>()
@@ -86,7 +72,6 @@ export const deleteContentFailure = createAction(
   props<{ error: string }>()
 );
 
-// Delete multiple content items
 export const deleteMultipleContent = createAction(
   '[Content] Delete Multiple Content',
   props<{ ids: string[]; contentType: string }>()

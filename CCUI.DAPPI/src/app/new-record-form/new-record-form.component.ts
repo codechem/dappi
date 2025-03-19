@@ -261,22 +261,33 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   }
 
   private submitToBackend(formData: any): void {
+    const formDataToSend = new FormData();
+
+    Object.keys(formData).forEach((key) => {
+      if (formData[key] instanceof File) {
+        formDataToSend.append(key, formData[key], formData[key].name);
+      } else if (formData[key] !== null && formData[key] !== undefined) {
+        formDataToSend.append(key, formData[key]);
+      }
+    });
+
     if (this.currentItem !== undefined) {
       this.store.dispatch(
         ContentActions.updateContent({
           id: this.currentItem.id,
-          formData: formData,
+          formData: formDataToSend,
           contentType: this.selectedType,
         })
       );
     } else {
       this.store.dispatch(
         ContentActions.createContent({
-          formData: formData,
+          formData: formDataToSend,
           contentType: this.selectedType,
         })
       );
     }
+    
     this.store.dispatch(
       ContentActions.setCurrentItem({ currentItem: undefined })
     );

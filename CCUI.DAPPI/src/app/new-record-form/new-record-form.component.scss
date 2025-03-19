@@ -1,4 +1,4 @@
-@use '../../variables' as vars;
+@use "../../variables" as vars;
 
 .form-container {
   margin: 0 auto;
@@ -13,7 +13,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   margin-bottom: 20px;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
@@ -23,11 +23,11 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  
+
   &.left-column {
     grid-column: 1;
   }
-  
+
   &.right-column {
     grid-column: 2;
 
@@ -35,52 +35,25 @@
       grid-column: 1;
     }
   }
-}
-
-:host ::ng-deep {
-  .mat-form-field {
-    width: 100%;
-    
-    .mat-form-field-wrapper {
-      margin-bottom: 0;
-    }
-    
-    .mat-form-field-outline {
-      color: rgba(255, 255, 255, 0.2);
-    }
-    
-    .mat-form-field-label {
-      color: rgba(255, 255, 255, 0.7);
-    }
-    
-    .mat-input-element {
-      color: white;
-    }
-
-    .mat-error {
-      font-size: 12px;
-      margin-top: 4px;
-    }
-  }
-}
+} 
 
 .file-upload-container {
   display: flex;
   flex-direction: column;
   margin-bottom: 16px;
-  
+
   .file-label {
     font-size: 14px;
     font-weight: 500;
     margin-bottom: 8px;
     color: rgba(255, 255, 255, 0.7);
-    
+
     .required-field {
       color: vars.$error-light;
       margin-left: 2px;
     }
   }
-  
+
   .file-upload-area {
     border: 2px dashed rgba(255, 255, 255, 0.23);
     border-radius: 4px;
@@ -89,11 +62,11 @@
     overflow: hidden;
     display: flex;
     transition: all 0.2s ease;
-    
+
     &:hover {
       border-color: rgba(255, 255, 255, 0.4);
     }
-    
+
     &.has-file {
       border: 1px solid rgba(255, 255, 255, 0.2);
       min-height: auto;
@@ -104,7 +77,7 @@
       border-color: vars.$error-light;
     }
   }
-  
+
   .upload-instructions {
     text-align: center;
     color: rgba(255, 255, 255, 0.7);
@@ -115,7 +88,7 @@
     justify-content: center;
     min-height: 150px;
     width: 100%;
-    
+
     mat-icon {
       font-size: 36px;
       height: 36px;
@@ -123,13 +96,13 @@
       margin-bottom: 16px;
       color: vars.$primary-main;
     }
-    
+
     .upload-link {
       color: vars.$primary-main;
       cursor: pointer;
       text-decoration: underline;
     }
-    
+
     .file-types {
       font-size: 12px;
       display: block;
@@ -137,7 +110,7 @@
       opacity: 0.5;
     }
   }
-  
+
   .file-input {
     position: absolute;
     top: 0;
@@ -147,7 +120,7 @@
     opacity: 0;
     cursor: pointer;
   }
-  
+
   .file-preview {
     width: 100%;
     display: flex;
@@ -155,23 +128,23 @@
     align-items: center;
     padding: 8px 12px;
     flex-grow: 1;
-    
+
     .file-preview-content {
       display: flex;
       align-items: center;
       gap: 12px;
-      
+
       .preview-thumbnail {
         width: 40px;
         height: 40px;
         border-radius: 4px;
         object-fit: cover;
       }
-      
+
       .file-info {
         display: flex;
         flex-direction: column;
-        
+
         .file-name {
           font-size: 14px;
           color: rgba(255, 255, 255, 0.87);
@@ -181,18 +154,18 @@
           text-overflow: ellipsis;
           max-width: 200px;
         }
-        
+
         .file-meta {
           font-size: 12px;
           color: rgba(255, 255, 255, 0.6);
         }
       }
     }
-    
+
     .file-actions {
       display: flex;
       align-items: center;
-      
+
       .remove-file {
         color: rgba(255, 255, 255, 0.56);
         height: 24px;
@@ -213,7 +186,7 @@
           width: 20px;
         }
       }
-      
+
       .check-file {
         color: vars.$success-main;
         height: 24px;
@@ -221,7 +194,7 @@
         line-height: 24px;
         background-color: transparent;
         border: none;
-        
+
         .mat-icon {
           font-size: 20px;
           height: 20px;

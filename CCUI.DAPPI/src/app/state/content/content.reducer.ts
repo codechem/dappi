@@ -29,30 +29,14 @@ export const contentReducer = createReducer(
     currentPage: 1,
   })),
 
-  on(ContentActions.setHeaders, (state, { headers }) => ({
-    ...state,
-    headers,
-  })),
-
   on(ContentActions.loadHeadersSuccess, (state, { headers }) => ({
     ...state,
     headers,
   })),
 
-  on(ContentActions.setSearchText, (state, { searchText }) => ({
-    ...state,
-    searchText,
-    currentPage: 1,
-  })),
-
   on(ContentActions.setCurrentItem, (state, { currentItem }) => ({
     ...state,
     currentItem,
-  })),
-
-  on(ContentActions.setCurrentPage, (state, { page }) => ({
-    ...state,
-    currentPage: page,
   })),
 
   on(ContentActions.deleteContent, (state) => ({

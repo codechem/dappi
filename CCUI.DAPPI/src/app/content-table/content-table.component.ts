@@ -17,12 +17,10 @@ import { MenuComponent } from '../menu/menu.component';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Store } from '@ngrx/store';
 import {
-  selectCurrentPage,
   selectHeaders,
   selectItems,
   selectItemsPerPage,
   selectLoading,
-  selectSearchText,
   selectSelectedType,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
@@ -54,9 +52,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   items: ContentItem[] = [];
 
   selectedType$ = this.store.select(selectSelectedType);
-  currentPage$ = this.store.select(selectCurrentPage);
   itemsPerPage$ = this.store.select(selectItemsPerPage);
-  searchText$ = this.store.select(selectSearchText);
   items$ = this.store.select(selectItems);
   headers$ = this.store.select(selectHeaders);
   loading$ = this.store.select(selectLoading);
@@ -89,9 +85,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     this.subscription.add(
       this.selectedType$.subscribe((type) => (this.selectedType = type))
     );
-    this.subscription.add(
-      this.searchText$.subscribe((searchText) => (this.searchText = searchText))
-    );
+
     this.subscription.add(
       this.itemsPerPage$.subscribe((limit) => (this.limit = limit))
     );

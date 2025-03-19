@@ -15,7 +15,6 @@ export const loadCollectionTypesFailure = createAction(
   props<{ error: string }>()
 );
 
-// Fields Actions
 export const loadFields = createAction(
   '[Collection] Load Fields',
   props<{ modelType: string }>()
@@ -31,7 +30,6 @@ export const loadFieldsFailure = createAction(
   props<{ error: string }>()
 );
 
-// Add Collection Type Actions
 export const addCollectionType = createAction(
   '[Collection] Add Collection Type',
   props<{ collectionType: string }>()
