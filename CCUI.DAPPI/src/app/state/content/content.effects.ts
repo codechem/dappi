@@ -135,20 +135,27 @@ export class ContentEffects {
           .toLowerCase()
           .replace(/\s+/g, '-')}`;
 
-        return this.http.post(endpoint, action.formData).pipe(
-          map((response) => {
-            this.store.dispatch(ContentActions.createContentSuccess());
-            return ContentActions.loadContent({
-              selectedType: action.contentType,
-              page: 1,
-              limit: itemsPerPage,
-              searchText: '',
-            });
-          }),
-          catchError((error) =>
-            of(ContentActions.createContentFailure({ error: error.message }))
-          )
-        );
+        return this.http
+          .post(endpoint, action.formData, {
+            headers: {
+              // Don't set Content-Type here - Angular will set it automatically
+              // with the correct boundary for multipart/form-data
+            },
+          })
+          .pipe(
+            map((response) => {
+              this.store.dispatch(ContentActions.createContentSuccess());
+              return ContentActions.loadContent({
+                selectedType: action.contentType,
+                page: 1,
+                limit: itemsPerPage,
+                searchText: '',
+              });
+            }),
+            catchError((error) =>
+              of(ContentActions.createContentFailure({ error: error.message }))
+            )
+          );
       })
     )
   );
@@ -162,20 +169,26 @@ export class ContentEffects {
           .toLowerCase()
           .replace(/\s+/g, '-')}/${action.id}`;
 
-        return this.http.put(endpoint, action.formData).pipe(
-          map((response) => {
-            this.store.dispatch(ContentActions.createContentSuccess());
-            return ContentActions.loadContent({
-              selectedType: action.contentType,
-              page: 1,
-              limit: itemsPerPage,
-              searchText: '',
-            });
-          }),
-          catchError((error) =>
-            of(ContentActions.updateContentFailure({ error: error.message }))
-          )
-        );
+        return this.http
+          .put(endpoint, action.formData, {
+            headers: {
+              // Don't set Content-Type here - Angular will set it automatically
+            },
+          })
+          .pipe(
+            map((response) => {
+              this.store.dispatch(ContentActions.createContentSuccess());
+              return ContentActions.loadContent({
+                selectedType: action.contentType,
+                page: 1,
+                limit: itemsPerPage,
+                searchText: '',
+              });
+            }),
+            catchError((error) =>
+              of(ContentActions.updateContentFailure({ error: error.message }))
+            )
+          );
       })
     )
   );
