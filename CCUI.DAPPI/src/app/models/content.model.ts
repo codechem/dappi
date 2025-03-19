@@ -34,13 +34,13 @@ export interface TableHeader {
   type: 'text' | 'textarea' | 'file';
 }
 
-
 export interface PaginatedResponse {
   total: number;
   offset: number;
   limit: number;
   data: ContentItem[];
-}export interface ModelField {
+}
+export interface ModelField {
   fieldName: string;
   fieldType: string;
 }

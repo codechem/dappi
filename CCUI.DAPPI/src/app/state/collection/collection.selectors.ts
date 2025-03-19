@@ -23,22 +23,22 @@ export const selectFields = createSelector(
   (state) => state.fields
 );
 
-// export const selectFieldsByModelType = (modelType: string) => createSelector(
-//   selectCollectionState,
-//   (state) => state.fields[modelType] || []
-// );
-
 export const selectIsLoadingFields = createSelector(
   selectCollectionState,
   (state) => state.loadingFields
 );
 
-export const selectFieldsError = createSelector(
+export const selectIsSaving = createSelector(
   selectCollectionState,
-  (state) => state.errorFields
+  (state) => state.isSaving
 );
 
-export const selectSearchText = createSelector(
+export const selectServerRestarting = createSelector(
   selectCollectionState,
-  (state) => state.searchText
+  (state) => state.serverRestarting
+);
+
+export const selectSaveError = createSelector(
+  selectCollectionState,
+  (state) => state.saveError
 );

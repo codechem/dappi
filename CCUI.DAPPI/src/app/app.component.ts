@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { LeftMenuComponent } from './left-menu/left-menu.component';
+import { CommonModule } from '@angular/common';
+
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, LeftMenuComponent],
+  imports: [RouterOutlet, LeftMenuComponent, CommonModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })

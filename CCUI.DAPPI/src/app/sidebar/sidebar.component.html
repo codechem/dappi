@@ -27,15 +27,7 @@
 </div>
 
 <div class="scrollable-list">
-  <ng-container *ngIf="isLoading">
-    <div class="loading-state">
-      <mat-spinner diameter="32" color="primary"></mat-spinner>
-      <p>Loading collection types...</p>
-    </div>
-  </ng-container>
-
   <ng-container *ngIf="selectedType$ | async as selectedType">
-  <ng-container *ngIf="!isLoading">
     <ng-container *ngIf="filteredCollectionTypes.length > 0; else noResults">
       <mat-list>
         <mat-list-item class="custom-list-item" *ngFor="let type of filteredCollectionTypes; trackBy: trackByFn"
@@ -49,9 +41,8 @@
       <div class="no-results">
         <mat-icon>search_off</mat-icon>
         <p>No collection types found</p>
-        <p *ngIf="searchText" class="search-hint">Try different search terms</p>
+        <p class="search-hint">Try different search terms</p>
       </div>
     </ng-template>
-  </ng-container>
   </ng-container>
 </div>

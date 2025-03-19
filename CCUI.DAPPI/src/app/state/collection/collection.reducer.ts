@@ -5,7 +5,6 @@ import { initialCollectionState } from './collection.state';
 export const collectionReducer = createReducer(
   initialCollectionState,
 
-  // Collection Types
   on(CollectionActions.loadCollectionTypes, (state) => ({
     ...state,
     loadingCollectionTypes: true,
@@ -28,7 +27,6 @@ export const collectionReducer = createReducer(
     errorCollectionTypes: error,
   })),
 
-  // Fields
   on(CollectionActions.loadFields, (state) => ({
     ...state,
     loadingFields: true,
@@ -47,7 +45,6 @@ export const collectionReducer = createReducer(
     errorFields: error,
   })),
 
-  // Add Collection Type
   on(
     CollectionActions.addCollectionTypeSuccess,
     (state, { collectionType }) => {
@@ -64,5 +61,24 @@ export const collectionReducer = createReducer(
       ...state,
       fields: [...state.fields, field],
     };
-  })
+  }),
+  on(CollectionActions.saveContent, (state) => ({
+    ...state,
+    isSaving: true,
+    saveError: null,
+    serverRestarting: false,
+  })),
+
+  on(CollectionActions.saveContentSuccess, (state, { restarting }) => ({
+    ...state,
+    isSaving: !restarting,
+    disabled: !restarting,
+    serverRestarting: !!restarting,
+  })),
+
+  on(CollectionActions.saveContentFailure, (state, { error }) => ({
+    ...state,
+    isSaving: false,
+    saveError: error,
+  }))
 );

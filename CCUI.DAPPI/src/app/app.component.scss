@@ -21,3 +21,19 @@ app-sidebar {
   width: 100%;
   overflow: hidden;
 }
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  margin-left: auto;
+  margin-right: auto;
+  p {
+    margin: 16px 0 0;
+    font-size: 14px;
+  }
+}

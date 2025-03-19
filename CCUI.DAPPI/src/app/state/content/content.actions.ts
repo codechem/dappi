@@ -42,31 +42,21 @@ export const loadHeadersFailure = createAction(
   props<{ error: string }>()
 );
 
-// Set content type
 export const setContentType = createAction(
   '[Content] Set Content Type',
   props<{ selectedType: string }>()
 );
 
-// Set headers
-export const setHeaders = createAction(
-  '[Content] Set Headers',
-  props<{ headers: TableHeader[] }>()
+export const setCurrentItem = createAction(
+  '[Content] Set Current Item',
+  props<{ currentItem: ContentItem | undefined }>()
 );
 
-// Set search text
 export const setSearchText = createAction(
   '[Content] Set Search Text',
   props<{ searchText: string }>()
 );
 
-// Set current page
-export const setCurrentPage = createAction(
-  '[Content] Set Current Page',
-  props<{ page: number }>()
-);
-
-// Delete content
 export const deleteContent = createAction(
   '[Content] Delete Content',
   props<{ id: string; contentType: string }>()
@@ -82,7 +72,6 @@ export const deleteContentFailure = createAction(
   props<{ error: string }>()
 );
 
-// Delete multiple content items
 export const deleteMultipleContent = createAction(
   '[Content] Delete Multiple Content',
   props<{ ids: string[]; contentType: string }>()
@@ -95,5 +84,33 @@ export const deleteMultipleContentSuccess = createAction(
 
 export const deleteMultipleContentFailure = createAction(
   '[Content] Delete Multiple Content Failure',
+  props<{ error: string }>()
+);
+
+export const createContent = createAction(
+  '[Content] Create Content',
+  props<{ formData: any; contentType: string }>()
+);
+
+export const createContentSuccess = createAction(
+  '[Content] Create Content Success'
+);
+
+export const createContentFailure = createAction(
+  '[Content] Create Content Failure',
+  props<{ error: string }>()
+);
+
+export const updateContent = createAction(
+  '[Content] Update Content',
+  props<{ id: string; formData: any; contentType: string }>()
+);
+
+export const updateContentSuccess = createAction(
+  '[Content] Update Content Success'
+);
+
+export const updateContentFailure = createAction(
+  '[Content] Update Content Failure',
   props<{ error: string }>()
 );

@@ -68,6 +68,10 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   @include mat.progress-spinner-overrides((
     active-indicator-color: vars.$primary-main,
   ));
+
+  @include mat.dialog-overrides((
+    container-color: vars.$background-paper-elevation-1,
+  ));
 }
 :root {
   background-color: vars.$background-default;

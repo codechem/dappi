@@ -1,4 +1,10 @@
-import { Component, HostListener, Input } from '@angular/core';
+import {
+  Component,
+  HostListener,
+  Input,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
@@ -6,6 +12,13 @@ import { NewRecordFormComponent } from '../new-record-form/new-record-form.compo
 import { Location } from '@angular/common';
 import { MenuComponent } from '../menu/menu.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
+import { Store } from '@ngrx/store';
+import {
+  selectCurrentItem,
+  selectSelectedType,
+} from '../state/content/content.selectors';
+import { Subscription } from 'rxjs';
+import { ContentItem } from '../models/content.model';
 
 @Component({
   selector: 'app-new-entry',
@@ -21,14 +34,27 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
   templateUrl: './new-entry.component.html',
   styleUrl: './new-entry.component.scss',
 })
-export class NewEntryComponent {
+export class NewEntryComponent implements OnInit, OnDestroy {
   disabled: boolean = true;
   dateCreated: string = 'yesterday';
   typeName: string = 'Type Name';
   showMenu: boolean = false;
   menuPosition = { top: 0, left: 0 };
+  private subscription: Subscription = new Subscription();
 
-  constructor(private location: Location) {}
+  selectedType$ = this.store.select(selectSelectedType);
+
+  constructor(private location: Location, private store: Store) {}
+
+  ngOnInit(): void {
+    this.subscription.add(
+      this.selectedType$.subscribe((type) => (this.typeName = type))
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
+  }
 
   goBack() {
     this.location.back();

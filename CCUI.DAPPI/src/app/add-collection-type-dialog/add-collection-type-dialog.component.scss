@@ -2,8 +2,8 @@
 @use "sass:color";
 
 .add-collection-type-dialog {
-  background-color: #1e1e1e;
-  color: #ffffff;
+  background-color: vars.$background-paper-elevation-1;
+  color: vars.$text-primary;
   border-radius: 4px;
   min-width: 400px;
   max-width: 90vw;
@@ -22,7 +22,7 @@
   }
 
   button[mat-icon-button] {
-    color: #ffffff;
+    color: vars.$text-primary;
   }
 }
 
@@ -42,34 +42,6 @@
 
   .input-field {
     width: 100%;
-    
-    ::ng-deep {
-      .mat-mdc-form-field-flex {
-        background-color: #1e1e1e;
-      }
-      
-      .mat-mdc-text-field-wrapper {
-        background-color: #1e1e1e;
-      }
-      
-      .mat-mdc-form-field-infix {
-        padding: 8px 0;
-      }
-      
-      .mdc-text-field--outlined .mdc-notched-outline__leading,
-      .mdc-text-field--outlined .mdc-notched-outline__notch,
-      .mdc-text-field--outlined .mdc-notched-outline__trailing {
-        border-color: rgba(255, 255, 255, 0.3);
-      }
-      
-      .mat-mdc-input-element {
-        color: #ffffff;
-      }
-      
-      .mat-mdc-form-field-label {
-        color: rgba(255, 255, 255, 0.6);
-      }
-    }
   }
 }
 
@@ -79,7 +51,7 @@
   padding: 16px;
 
   .continue-button {
-    background-color: #8465ec;
+    background-color: vars.$primary-main;
     color: #ffffff;
     font-weight: 500;
     text-transform: none;
@@ -88,7 +60,7 @@
     border-radius: 4px;
 
     &:hover {
-      background-color: lighten(#8465ec, 5%);
+      background-color: color.adjust(vars.$primary-main, $lightness: 5%);
     }
 
     &[disabled] {
@@ -96,4 +68,7 @@
       cursor: not-allowed;
     }
   }
+}
+form {
+  margin-top: 20px
 }

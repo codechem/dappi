@@ -15,7 +15,6 @@ export const loadCollectionTypesFailure = createAction(
   props<{ error: string }>()
 );
 
-// Fields Actions
 export const loadFields = createAction(
   '[Collection] Load Fields',
   props<{ modelType: string }>()
@@ -31,7 +30,6 @@ export const loadFieldsFailure = createAction(
   props<{ error: string }>()
 );
 
-// Add Collection Type Actions
 export const addCollectionType = createAction(
   '[Collection] Add Collection Type',
   props<{ collectionType: string }>()
@@ -47,7 +45,6 @@ export const addCollectionTypeFailure = createAction(
   props<{ error: string }>()
 );
 
-// Add Field Actions
 export const addField = createAction(
   '[Collection] Add Field',
   props<{ field: ModelField }>()
@@ -61,4 +58,16 @@ export const addFieldSuccess = createAction(
 export const addFieldFailure = createAction(
   '[Collection] Add Field Failure',
   props<{ error: string }>()
+);
+
+export const saveContent = createAction('[Collection] Save Content');
+
+export const saveContentSuccess = createAction(
+  '[Collection] Save Content Success',
+  props<{ restarting?: boolean }>()
+);
+
+export const saveContentFailure = createAction(
+  '[Collection] Save Content Failure',
+  props<{ error: any }>()
 );

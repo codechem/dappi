@@ -22,7 +22,7 @@
       </ng-container>
     </ng-container>
 
-      <ng-container *ngIf="!items?.length; else contentPresent">
+      <ng-container *ngIf="!items?.length && !searchText; else contentPresent">
         <div class="content">
           <img src="assets/illustration.svg" alt="No content" />
           <h2>There are no {{ selectedType }} items created yet</h2>

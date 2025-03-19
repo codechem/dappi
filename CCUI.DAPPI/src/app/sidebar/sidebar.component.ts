@@ -12,9 +12,14 @@ import { MatListModule } from '@angular/material/list';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { ButtonComponent } from '../button/button.component';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import {
+  Subject,
+  takeUntil,
+  debounceTime,
+  distinctUntilChanged,
+  Subscription,
+} from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { AddCollectionTypeDialogComponent } from '../add-collection-type-dialog/add-collection-type-dialog.component';
@@ -25,10 +30,8 @@ import { selectSelectedType } from '../state/content/content.selectors';
 import {
   selectCollectionTypes,
   selectCollectionTypesError,
-  selectIsLoadingCollectionTypes,
 } from '../state/collection/collection.selectors';
 import { loadCollectionTypes } from '../state/collection/collection.actions';
-import * as CollectionActions from '../state/collection/collection.actions';
 
 @Component({
   selector: 'app-sidebar',
@@ -48,40 +51,48 @@ import * as CollectionActions from '../state/collection/collection.actions';
 export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() headerText: string = 'Builder';
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+  private subscriptions: Subscription = new Subscription();
 
   isSearching = false;
-  searchText = '';
-  isLoading = false;
+
   selectedType$ = this.store.select(selectSelectedType);
   collectionTypes$ = this.store.select(selectCollectionTypes);
-  isLoadingCollectionTypes$ = this.store.select(selectIsLoadingCollectionTypes);
   collectionTypesError$ = this.store.select(selectCollectionTypesError);
   filteredCollectionTypes: string[] = [];
+  collectionTypes: string[] = [];
+  searchText = '';
 
   private destroy$ = new Subject<void>();
   private searchTextChanged = new Subject<string>();
 
   constructor(
-    private http: HttpClient,
     private dialog: MatDialog,
     private router: Router,
     private store: Store
   ) {}
 
   ngOnInit(): void {
-    this.collectionTypes$.subscribe((types) => {
-      if (types.length === 0) {
-        this.store.dispatch(loadCollectionTypes());
-      } else {
-        this.filteredCollectionTypes = types;
-      }
-    });
-
-    this.searchTextChanged
-      .pipe(takeUntil(this.destroy$), debounceTime(300), distinctUntilChanged())
-      .subscribe((text) => {
-        this.filterCollectionTypes(text);
-      });
+    this.subscriptions.add(
+      this.collectionTypes$.subscribe((types) => {
+        if (types.length === 0) {
+          this.store.dispatch(loadCollectionTypes());
+        } else {
+          this.filteredCollectionTypes = types;
+          this.collectionTypes = types;
+        }
+      })
+    );
+    this.subscriptions.add(
+      this.searchTextChanged
+        .pipe(
+          takeUntil(this.destroy$),
+          debounceTime(300),
+          distinctUntilChanged()
+        )
+        .subscribe((text) => {
+          this.filterCollectionTypes(text);
+        })
+    );
   }
 
   ngAfterViewInit(): void {
@@ -91,8 +102,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this.subscriptions.unsubscribe();
   }
 
   selectCollectionType(type: string): void {
@@ -116,17 +126,15 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   closeSearch(): void {
-    if (!this.searchText) {
-      this.isSearching = false;
-    }
+    this.isSearching = false;
+    this.searchTextChanged.next('');
+    this.searchText = '';
   }
 
   clearSearch(): void {
+    this.searchTextChanged.next('');
     this.searchText = '';
     this.isSearching = false;
-    this.collectionTypes$.subscribe((types) => {
-      this.filteredCollectionTypes = [...types];
-    });
   }
 
   onSearchTextChange(newText: string): void {
@@ -149,25 +157,20 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
       panelClass: 'dark-theme-dialog',
       disableClose: true,
     });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result && result.success) {
+    this.subscriptions.add(
+      dialogRef.afterClosed().subscribe(() => {
         this.store.dispatch(loadCollectionTypes());
-      }
-    });
+      })
+    );
   }
 
   private filterCollectionTypes(text: string): void {
     if (!text) {
-      this.collectionTypes$.subscribe((types) => {
-        this.filteredCollectionTypes = [...types];
-      });
+      this.filteredCollectionTypes = [...this.collectionTypes];
       return;
     }
-    this.collectionTypes$.subscribe((types) => {
-      this.filteredCollectionTypes = types.filter((type) =>
-        type.toLowerCase().includes(text.toLowerCase())
-      );
-    });
+    this.filteredCollectionTypes = this.collectionTypes.filter((type) =>
+      type.toLowerCase().includes(text.toLowerCase())
+    );
   }
 }

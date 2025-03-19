@@ -1,7 +1,14 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { map, mergeMap, catchError, withLatestFrom, switchMap, filter } from 'rxjs/operators';
+import {
+  map,
+  mergeMap,
+  catchError,
+  withLatestFrom,
+  switchMap,
+  filter,
+} from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { select, Store } from '@ngrx/store';
 import * as CollectionActions from './collection.actions';
@@ -15,26 +22,37 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.loadCollectionTypes),
       mergeMap(() => {
-        return this.http
-          .get<string[]>('http://localhost:5101/api/models')
-          .pipe(
-            map((collectionTypes) => {
-                return CollectionActions.loadCollectionTypesSuccess({ collectionTypes })
-            }),
-            catchError((error) => 
-              of(CollectionActions.loadCollectionTypesFailure({ error: error.message }))
+        return this.http.get<string[]>('http://localhost:5101/api/models').pipe(
+          map((collectionTypes) => {
+            return CollectionActions.loadCollectionTypesSuccess({
+              collectionTypes,
+            });
+          }),
+          catchError((error) =>
+            of(
+              CollectionActions.loadCollectionTypesFailure({
+                error: error.message,
+              })
             )
-          );
+          )
+        );
       })
     )
   );
 
   setDefaultSelectedType$ = createEffect(() =>
     this.actions$.pipe(
-    ofType(CollectionActions.loadCollectionTypesSuccess),
+      ofType(CollectionActions.loadCollectionTypesSuccess),
       withLatestFrom(this.store.pipe(select(selectSelectedType))),
-      filter(([action, selectedType]) => !selectedType && action.collectionTypes.length > 0),
-      map(([action]) => ContentActions.setContentType({ selectedType: action.collectionTypes[0] }))
+      filter(
+        ([action, selectedType]) =>
+          !selectedType && action.collectionTypes.length > 0
+      ),
+      map(([action]) =>
+        ContentActions.setContentType({
+          selectedType: action.collectionTypes[0],
+        })
+      )
     )
   );
 
@@ -44,15 +62,61 @@ export class CollectionEffects {
       mergeMap((action) => {
         const endpoint = `http://localhost:5101/api/models/fields/${action.modelType}`;
         return this.http.get<ModelField[]>(endpoint).pipe(
-          map(fields => CollectionActions.loadFieldsSuccess({
-           fields: [ ...fields ]}
-          )),
-          catchError(error => of(CollectionActions.loadFieldsFailure({ error: error.message })))
+          map((fields) =>
+            CollectionActions.loadFieldsSuccess({
+              fields: [...fields],
+            })
+          ),
+          catchError((error) =>
+            of(CollectionActions.loadFieldsFailure({ error: error.message }))
+          )
         );
       })
     )
   );
 
+  saveContent$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.saveContent),
+      switchMap(() => {
+        interface SaveResponse {
+          success: boolean;
+          restarting?: boolean;
+          error?: any;
+        }
+
+        return this.http
+          .post<SaveResponse>(
+            'http://localhost:5101/api/create-migrations-update-db',
+            {}
+          )
+          .pipe(
+            map((response: any) => {
+              const typedResponse: SaveResponse =
+                response && response.success !== undefined
+                  ? (response as SaveResponse)
+                  : { success: true };
+
+              return CollectionActions.saveContentSuccess({
+                restarting: !!typedResponse.restarting,
+              });
+            }),
+            catchError((error) => {
+              if (error.status === 200) {
+                console.log(
+                  'Backend is restarting. This is expected behavior.'
+                );
+                return of(
+                  CollectionActions.saveContentSuccess({ restarting: true })
+                );
+              }
+              console.error('Error saving content:', error);
+              return of(CollectionActions.saveContentFailure({ error }));
+            })
+          );
+      })
+    )
+  );
 
   addCollectionType$ = createEffect(() =>
     this.actions$.pipe(
