@@ -52,6 +52,11 @@ export const setCurrentItem = createAction(
   props<{ currentItem: ContentItem | undefined }>()
 );
 
+export const setIsSearching = createAction(
+  '[Content] Set Is Searching',
+  props<{ isSearching: boolean }>()
+);
+
 export const setSearchText = createAction(
   '[Content] Set Search Text',
   props<{ searchText: string }>()
