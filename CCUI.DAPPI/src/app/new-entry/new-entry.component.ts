@@ -1,10 +1,4 @@
-import {
-  Component,
-  HostListener,
-  Input,
-  OnDestroy,
-  OnInit,
-} from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
@@ -13,12 +7,8 @@ import { Location } from '@angular/common';
 import { MenuComponent } from '../menu/menu.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { Store } from '@ngrx/store';
-import {
-  selectCurrentItem,
-  selectSelectedType,
-} from '../state/content/content.selectors';
+import { selectSelectedType } from '../state/content/content.selectors';
 import { Subscription } from 'rxjs';
-import { ContentItem } from '../models/content.model';
 
 @Component({
   selector: 'app-new-entry',

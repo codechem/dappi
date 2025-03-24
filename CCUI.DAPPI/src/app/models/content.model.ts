@@ -43,4 +43,6 @@ export interface PaginatedResponse {
 export interface ModelField {
   fieldName: string;
   fieldType: string;
+  relatedTo?: string;
+  isRequired?: string;
 }

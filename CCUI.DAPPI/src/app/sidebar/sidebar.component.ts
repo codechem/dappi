@@ -19,6 +19,7 @@ import {
   debounceTime,
   distinctUntilChanged,
   Subscription,
+  filter,
 } from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
@@ -64,6 +65,13 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private destroy$ = new Subject<void>();
   private searchTextChanged = new Subject<string>();
+
+  filteredTypes$ = this.collectionTypes$.pipe(
+    takeUntil(this.destroy$),
+    debounceTime(300),
+    distinctUntilChanged(),
+    filter((type) => !!type)
+  );
 
   constructor(
     private dialog: MatDialog,

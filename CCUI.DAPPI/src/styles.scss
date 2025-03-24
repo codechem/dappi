@@ -19,20 +19,29 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 :root {
   box-sizing: border-box;
   width: 100%;
+
+ mat-dialog-container {
+    max-height: 80vh;
+  }
   ::-webkit-scrollbar {
     width: 6px;
   }
-
+  
   ::-webkit-scrollbar-thumb {
-    background-color: rgba(vars.$primary-main, 0.3);
+    background-color: rgba(vars.$primary-main, 0.3) !important;
     border-radius: 3px;
   }
-
+  ::-webkit-scrollbar-track {
+    background: green;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(vars.$primary-main, 0.3) transparent;
+  }
   @include mat.form-field-overrides((
-    filled-caret-color: orange,
     outlined-label-text-color: rgba(#FFFFFF, 0.7),
     outlined-hover-label-text-color: rgba(#FFFFFF, 0.7),
-    outlined-input-text-color: rgba(#FFFFFF, 0.7),
+    outlined-input-text-color: vars.$text-primary,
     filled-hover-label-text-color: rgba(#FFFFFF, 0.7),
     filled-focus-active-indicator-color: rgba(#FFFFFF, 0.7),
     outlined-hover-outline-color: rgba(vars.$primary-main, 1),
@@ -57,6 +66,14 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
     error-focus-trailing-icon-color: vars.$error-light,
     error-hover-trailing-icon-color: vars.$error-light,
     error-trailing-icon-color: vars.$error-light,
+    filled-input-text-color: vars.$text-primary,
+    filled-input-text-placeholder-color: vars.$text-primary,
+    filled-focus-label-text-color: vars.$text-primary,
+    filled-label-text-color: vars.$text-primary,
+    filled-disabled-label-text-color: vars.$text-primary,
+    outlined-disabled-label-text-color: vars.$text-primary,
+    outlined-input-text-placeholder-color: vars.$text-primary,
+    select-option-text-color: vars.$text-primary,
   ));
 
   @include mat.checkbox-overrides((
@@ -80,7 +97,6 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
     unselected-pressed-state-layer-opacity: 0,
     selected-pressed-state-layer-opacity: 0,
     label-text-color: vars.$text-primary,
-    disabled-label-color: vars.$text-primary
   ));
 
   @include mat.progress-spinner-overrides((

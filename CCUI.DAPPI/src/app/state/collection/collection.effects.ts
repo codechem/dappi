@@ -158,17 +158,12 @@ export class CollectionEffects {
       withLatestFrom(this.store.pipe(select(selectSelectedType))),
       filter(([action, selectedType]) => !!selectedType),
       switchMap(([action, selectedType]) => {
-        const payload = {
-          fieldName: action.field.fieldName,
-          fieldType: action.field.fieldType,
-        };
-
         return this.http
-          .put(`http://localhost:5101/api/models/${selectedType}`, payload)
+          .put(`http://localhost:5101/api/models/${selectedType}`, action.field)
           .pipe(
             map((response) =>
               CollectionActions.addFieldSuccess({
-                field: payload,
+                field: action.field,
               })
             ),
             catchError((error) =>
