@@ -22,6 +22,23 @@ export const contentReducer = createReducer(
     loading: false,
     error,
   })),
+  on(ContentActions.loadRelatedItems, (state) => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+
+  on(ContentActions.loadRelatedItemsSuccess, (state, { relatedItems }) => ({
+    ...state,
+    relatedItems,
+    loading: false,
+  })),
+
+  on(ContentActions.loadRelatedItemsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+  })),
 
   on(ContentActions.setContentType, (state, { selectedType }) => ({
     ...state,

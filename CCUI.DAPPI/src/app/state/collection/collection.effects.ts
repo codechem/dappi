@@ -12,7 +12,7 @@ import {
 import { HttpClient } from '@angular/common/http';
 import { select, Store } from '@ngrx/store';
 import * as CollectionActions from './collection.actions';
-import { ModelField } from '../../models/content.model';
+import { DataResponse } from '../../models/content.model';
 import { selectSelectedType } from '../content/content.selectors';
 import * as ContentActions from '../content/content.actions';
 
@@ -22,20 +22,22 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.loadCollectionTypes),
       mergeMap(() => {
-        return this.http.get<string[]>('http://localhost:5101/api/models').pipe(
-          map((collectionTypes) => {
-            return CollectionActions.loadCollectionTypesSuccess({
-              collectionTypes,
-            });
-          }),
-          catchError((error) =>
-            of(
-              CollectionActions.loadCollectionTypesFailure({
-                error: error.message,
-              })
+        return this.http
+          .get<DataResponse>('http://localhost:5101/api/models')
+          .pipe(
+            map((collectionTypes) => {
+              return CollectionActions.loadCollectionTypesSuccess({
+                collectionTypes: collectionTypes.$values,
+              });
+            }),
+            catchError((error) =>
+              of(
+                CollectionActions.loadCollectionTypesFailure({
+                  error: error.message,
+                })
+              )
             )
-          )
-        );
+          );
       })
     )
   );
@@ -61,10 +63,10 @@ export class CollectionEffects {
       ofType(CollectionActions.loadFields),
       mergeMap((action) => {
         const endpoint = `http://localhost:5101/api/models/fields/${action.modelType}`;
-        return this.http.get<ModelField[]>(endpoint).pipe(
+        return this.http.get<DataResponse>(endpoint).pipe(
           map((fields) =>
             CollectionActions.loadFieldsSuccess({
-              fields: [...fields],
+              fields: [...fields.$values],
             })
           ),
           catchError((error) =>

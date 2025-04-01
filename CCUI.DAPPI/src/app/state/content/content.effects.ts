@@ -5,8 +5,8 @@ import { map, mergeMap, catchError, withLatestFrom } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngrx/store';
 import * as ContentActions from './content.actions';
-import { ModelField, PaginatedResponse } from '../../models/content.model';
 import { selectItemsPerPage, selectSelectedType } from './content.selectors';
+import { DataResponse } from '../../models/content.model';
 
 @Injectable()
 export class ContentEffects {
@@ -20,7 +20,7 @@ export class ContentEffects {
           .replace(/\s+/g, '-')}`;
 
         return this.http
-          .get<PaginatedResponse>(endpoint, {
+          .get<any>(endpoint, {
             params: {
               offset: ((action.page - 1) * action.limit).toString(),
               limit: action.limit.toString(),
@@ -29,11 +29,43 @@ export class ContentEffects {
           })
 
           .pipe(
-            map((items) => ContentActions.loadContentSuccess({ items })),
+            map((response) =>
+              ContentActions.loadContentSuccess({
+                items: {
+                  ...response,
+                  data: response.data.$values,
+                },
+              })
+            ),
             catchError((error) =>
               of(ContentActions.loadContentFailure({ error: error.message }))
             )
           );
+      })
+    )
+  );
+
+  loadRelatedItems$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ContentActions.loadRelatedItems),
+      mergeMap((action) => {
+        const endpoint = `http://localhost:5101/api/${action.selectedType
+          .toLowerCase()
+          .replace(/\s+/g, '-')}`;
+
+        return this.http.get<any>(endpoint).pipe(
+          map((response) =>
+            ContentActions.loadRelatedItemsSuccess({
+              relatedItems: {
+                ...response,
+                data: response.data.$values,
+              },
+            })
+          ),
+          catchError((error) =>
+            of(ContentActions.loadRelatedItemsFailure({ error: error.message }))
+          )
+        );
       })
     )
   );
@@ -43,14 +75,17 @@ export class ContentEffects {
       ofType(ContentActions.loadHeaders),
       mergeMap((action) => {
         const endpoint = `http://localhost:5101/api/models/fields/${action.selectedType}`;
-        return this.http.get<ModelField[]>(endpoint).pipe(
-          map((fields) => {
-            const headers = fields.map((field) => ({
+        return this.http.get<DataResponse>(endpoint).pipe(
+          map((response) => {
+            const headers = response.$values.map((field) => ({
               key:
                 field.fieldName.charAt(0).toLowerCase() +
                 field.fieldName.slice(1),
               label: this.formatHeaderLabel(field.fieldName),
               type: this.mapFieldTypeToInputType(field.fieldType),
+              relatedTo: field.fieldType.includes('ICollection')
+                ? field?.fieldType?.match(/<([^>]+)>/)?.[1]
+                : undefined,
             }));
             return ContentActions.loadHeadersSuccess({ headers });
           }),
@@ -203,7 +238,7 @@ export class ContentEffects {
 
   private mapFieldTypeToInputType(
     fieldType: string
-  ): 'text' | 'textarea' | 'file' {
+  ): 'text' | 'textarea' | 'file' | 'collection' | 'id' {
     const lowerFieldType = fieldType.toLowerCase();
 
     if (lowerFieldType.includes('byte[]') || lowerFieldType.includes('blob')) {
@@ -218,6 +253,11 @@ export class ContentEffects {
     ) {
       return 'textarea';
     }
+
+    if (lowerFieldType.includes('icollection')) {
+      return 'collection';
+    }
+    if (lowerFieldType.includes('Guid')) return 'id';
 
     return 'text';
   }

@@ -98,6 +98,17 @@
                 rows="5" 
                 [required]="field.required"
               ></textarea>
+              <ng-container *ngSwitchCase="'collection'" appearance="outline">
+                <mat-label>{{ field.label }}</mat-label>
+                <mat-select [formControlName]="field.key" [attr.multiple]="field.multiple ? '' : null">
+                  <mat-option *ngFor="let item of field.relatedItems" [value]="item">
+                    {{ getRelationDisplayValue(item, field) }}
+                  </mat-option>
+                </mat-select>
+                <mat-error *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched">
+                  {{ getErrorMessage(field.key) }}
+                </mat-error>
+              </ng-container>
             </ng-container>
             <mat-error *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched">
               {{ getErrorMessage(field.key) }}

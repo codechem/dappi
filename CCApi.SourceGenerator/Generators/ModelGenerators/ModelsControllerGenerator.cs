@@ -212,7 +212,7 @@ namespace {rootNamespace}.Controllers
                     updatedCode = AddFieldToClass(existingCode, request.FieldName, request.RelatedTo);
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
-                    var relatedToCode = AddFieldToClass(existingRelatedToCode, request.FieldName, $""ICollection<{{modelName}}>"");
+                    var relatedToCode = AddFieldToClass(existingRelatedToCode, request.FieldName, $""ICollection<{{modelName}}>"", $""{{modelName}}"");
 
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
                     UpdateDbContextOneToMany(modelName, request.FieldName, request.RelatedTo);
@@ -224,10 +224,10 @@ namespace {rootNamespace}.Controllers
                     var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    var updatedCode = AddFieldToClass(existingCode, $""{{request.RelatedTo}}s"", $""ICollection<{{request.RelatedTo}}>"");
+                    var updatedCode = AddFieldToClass(existingCode, $""{{request.RelatedTo}}s"", $""ICollection<{{request.RelatedTo}}>"", $""{{request.RelatedTo}}"");
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
-                    var relatedToCode = AddFieldToClass(existingRelatedToCode, $""{{modelName}}s"", $""ICollection<{{modelName}}>"");
+                    var relatedToCode = AddFieldToClass(existingRelatedToCode, $""{{modelName}}s"", $""ICollection<{{modelName}}>"", $""{{modelName}}"");
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
 
                     UpdateDbContextManyToMany(modelName, request.RelatedTo);
@@ -434,13 +434,17 @@ namespace {rootNamespace}.Controllers
             System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
         }}
 
-        private string AddFieldToClass(string classCode, string fieldName, string fieldType)
+        private string AddFieldToClass(string classCode, string fieldName, string fieldType, string collectionType = """")
         {{
             if (PropertyCheckExtensions.PropertyExists(classCode, fieldName, fieldType))
             {{
                 throw new InvalidOperationException($""The property '{{fieldName}}' of type '{{fieldType}}' already exists in the class."");
             }}
             var propertyCode = $""    public {{fieldType}} {{fieldName}} {{{{ get; set; }}}}"";
+
+            if(fieldType.Contains(""ICollection"")) {{
+            propertyCode = $""    public {{fieldType}} {{fieldName}} {{{{ get; set; }}}} = new List<{{collectionType}}>();"";
+            }}
             var insertPosition = classCode.LastIndexOf(""}}"", StringComparison.Ordinal); 
             var updatedCode = classCode.Insert(insertPosition, Environment.NewLine + propertyCode + Environment.NewLine);
 

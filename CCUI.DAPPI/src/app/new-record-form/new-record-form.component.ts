@@ -16,20 +16,26 @@ import { Store } from '@ngrx/store';
 import {
   selectCurrentItem,
   selectHeaders,
+  selectItems,
+  selectRelatedItems,
   selectSelectedType,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
 import { Subscription } from 'rxjs';
+import { MatOption } from '@angular/material/core';
+import { MatSelectModule } from '@angular/material/select';
 
 interface ContentField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'file';
+  type: 'text' | 'textarea' | 'file' | 'collection' | 'id';
   placeholder?: string;
   required: boolean;
   validators?: any[];
   maxFileSize?: number;
   acceptedFileTypes?: string[];
+  relatedItems?: any[];
+  multiple?: boolean;
 }
 
 @Component({
@@ -43,6 +49,8 @@ interface ContentField {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
+    MatOption,
+    MatSelectModule,
   ],
   templateUrl: './new-record-form.component.html',
   styleUrls: ['./new-record-form.component.scss'],
@@ -56,6 +64,9 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   headers$ = this.store.select(selectHeaders);
   selectedType$ = this.store.select(selectSelectedType);
   currentItem: ContentItem | undefined = undefined;
+  relationFields: ContentField[] = [];
+  contentTypes$ = this.store.select(selectItems);
+  relatedItems$ = this.store.select(selectRelatedItems);
 
   private subscription: Subscription = new Subscription();
   currentItem$ = this.store.select(selectCurrentItem);
@@ -85,6 +96,22 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
+  getRelationDisplayValue(item: any, field: ContentField): string {
+    if (!item) return '';
+
+    const displayKeys = ['name', 'title', 'label', 'displayName', 'value'];
+
+    for (const key of displayKeys) {
+      if (item[key] !== undefined && item[key] !== null) {
+        return String(item[key]);
+      }
+    }
+
+    if (item.id) return item.id;
+
+    return JSON.stringify(item);
+  }
+
   populateFormWithData(itemData: any): void {
     Object.keys(this.contentForm.controls).forEach((key) => {
       if (itemData[key] !== undefined) {
@@ -109,14 +136,61 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
         this.fields = fields;
         this.contentFields = this.fields
           .filter((field) => field.key !== 'id')
-          .map((field) => ({
-            key: field.key,
-            label: field.label,
-            type: field.type,
-            placeholder: `Enter ${field.label}`,
-            required: true,
-            validators: [Validators.required],
-          }));
+          .map((field) => {
+            const contentField: ContentField = {
+              key: field.key,
+              label: field.label,
+              type: field.type,
+              placeholder: `Enter ${field.label}`,
+              required: true,
+              validators: [Validators.required],
+            };
+
+            if (field.type === 'collection') {
+              contentField.multiple = true;
+              this.store.dispatch(
+                ContentActions.loadRelatedItems({
+                  selectedType: field.relatedTo ?? '',
+                })
+              );
+            }
+
+            return contentField;
+          });
+
+        this.relationFields = this.contentFields.filter(
+          (field) => field.type === 'collection'
+        );
+
+        this.fileFields = this.contentFields.filter(
+          (field) => field.type === 'file'
+        );
+
+        const nonFileFields = this.contentFields.filter(
+          (field) => field.type !== 'file'
+        );
+        const halfLength = Math.ceil(nonFileFields.length / 2);
+
+        this.leftColumnFields = nonFileFields.slice(0, halfLength);
+        this.rightColumnFields = nonFileFields.slice(halfLength);
+        this.buildForm();
+      })
+    );
+
+    this.subscription.add(
+      this.relatedItems$.subscribe((items) => {
+        this.contentFields = this.contentFields.map((item) => {
+          if (item.type === 'collection') {
+            return {
+              ...item,
+              relatedItems: items?.data,
+            };
+          } else return item;
+        });
+
+        this.relationFields = this.contentFields.filter(
+          (field) => field.type === 'collection'
+        );
 
         this.fileFields = this.contentFields.filter(
           (field) => field.type === 'file'
@@ -153,7 +227,12 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
       const validators = field.required
         ? [Validators.required, ...(field.validators || [])]
         : field.validators || [];
-      group[field.key] = ['', validators];
+
+      if (field.type === 'collection') {
+        group[field.key] = [field.multiple ? [] : null, validators];
+      } else {
+        group[field.key] = ['', validators];
+      }
     });
 
     this.contentForm = this.fb.group(group);
@@ -251,43 +330,64 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.fileFieldTouched = true;
 
     if (this.isFormValid()) {
-      const formData = {
-        id: crypto.randomUUID(),
-        ...this.contentForm.value,
-      };
+      const formData = Object.keys(this.contentForm.value).reduce(
+        (acc: any, key) => {
+          const value = this.contentForm.value[key];
+
+          if (
+            typeof value === 'object' &&
+            value !== null &&
+            !Array.isArray(value)
+          ) {
+            acc[key] = [{ ...value }];
+          } else {
+            acc[key] = value;
+          }
+
+          return acc;
+        },
+        {}
+      );
 
       this.submitToBackend(formData);
     }
   }
 
   private submitToBackend(formData: any): void {
-    const formDataToSend = new FormData();
+    // maybe later we'll have to switch again to FromForm because of the image upload
+    // const formDataToSend = new FormData();
 
-    Object.keys(formData).forEach((key) => {
-      if (formData[key] instanceof File) {
-        formDataToSend.append(key, formData[key], formData[key].name);
-      } else if (formData[key] !== null && formData[key] !== undefined) {
-        formDataToSend.append(key, formData[key]);
-      }
-    });
+    // Object.keys(formData).forEach((key) => {
+    //   const value = formData[key];
+
+    //   if (value instanceof File) {
+    //     formDataToSend.append(key, value, value.name);
+    //   } else if (typeof value === 'object' && value !== null) {
+    //     formDataToSend.append(key, JSON.stringify(value));
+    //   } else if (value !== null && value !== undefined) {
+    //     formDataToSend.append(key, value.toString());
+    //   }
+    // });
+
+    const body = { ...formData };
 
     if (this.currentItem !== undefined) {
       this.store.dispatch(
         ContentActions.updateContent({
           id: this.currentItem.id,
-          formData: formDataToSend,
+          formData: body,
           contentType: this.selectedType,
         })
       );
     } else {
       this.store.dispatch(
         ContentActions.createContent({
-          formData: formDataToSend,
+          formData: body,
           contentType: this.selectedType,
         })
       );
     }
-    
+
     this.store.dispatch(
       ContentActions.setCurrentItem({ currentItem: undefined })
     );

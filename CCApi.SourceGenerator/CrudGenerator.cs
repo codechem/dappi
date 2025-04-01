@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text;
 using CCApi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -20,7 +21,7 @@ public class CrudGenerator : IIncrementalGenerator
                 var classSymbol = (ISymbol)ctx.TargetSymbol;
                 var namedClassTypeSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
                 var attributeData = ctx.Attributes.FirstOrDefault();
-                
+
                 return new SourceModel
                 {
                     ClassName = classDeclaration.Identifier.Text,
@@ -40,10 +41,13 @@ public class CrudGenerator : IIncrementalGenerator
 
         foreach (var item in collectedData)
         {
+            var collectionAddCode = GenerateCollectionAddCode(item);
             var generatedCode = $@"
 using Microsoft.AspNetCore.Mvc;
 using CCApi.WebApiExample.Data; //TODO: AppDbContext here
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using {item.ModelNamespace};
 
 using {item.RootNamespace}.Filtering;
@@ -110,16 +114,23 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
          return Ok(result);
      }}
 
-     [HttpPost]
-     public async Task<IActionResult> Create([FromForm] {item.ClassName} model) // TODO: should be DTO
-     {{
-         if(model is null) 
-            return BadRequest();
-         await dbContext.{item.ClassName}s.AddAsync(model);
-         await dbContext.SaveChangesAsync();
 
-         return Created();
-     }}
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] {item.ClassName} model)
+    {{
+        if(model is null) 
+            return BadRequest();
+        
+        var modelToSave = new {item.ClassName}();
+        modelToSave = model;
+
+        {collectionAddCode}
+
+        await dbContext.{item.ClassName}s.AddAsync(modelToSave);
+        await dbContext.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(Create), new {{ id = modelToSave.Id }}, modelToSave);
+    }}
 
      [HttpPut(""{{id}}"")]
      public async Task<IActionResult> Update(Guid id, [FromForm] {item.ClassName} model)
@@ -151,10 +162,56 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
 
          return Ok();
      }}
+
+     private dynamic GetDbSetForType(string typeName)
+     {{
+        var dbSetProperty = dbContext.GetType()
+            .GetProperties()
+            .FirstOrDefault(p => 
+                p.PropertyType.IsGenericType && 
+                p.PropertyType.GetGenericArguments()[0].Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
+
+        return dbSetProperty?.GetValue(dbContext);
+    }}
 }}
 ";
             context.AddSource($"{item.ClassName}Controller.cs", generatedCode);
         }
+    }
+
+    private static string GenerateCollectionAddCode(SourceModel model)
+    {
+        var collectionProperties = model.PropertiesInfos
+            .Where(x => x.PropertyType.Name.Contains("ICollection") || x.PropertyType.Name.Contains("List"))
+            .ToList();
+
+        if (!collectionProperties.Any())
+            return string.Empty;
+
+        var sb = new StringBuilder();
+
+        foreach (var prop in collectionProperties)
+        {
+            // Extract the entity type from ICollection<T> or List<T>
+            string entityType = prop.PropertyName.Substring(0, prop.PropertyName.Length - 1); ;
+
+            sb.AppendLine($@"        var {prop.PropertyName.ToLower()}Ids = model.{prop.PropertyName}?.Select(m => m.Id).ToList();
+        modelToSave.{prop.PropertyName} = new List<{entityType}>();
+
+        if ({prop.PropertyName.ToLower()}Ids != null && {prop.PropertyName.ToLower()}Ids.Count > 0)
+        {{
+            foreach (var {entityType.ToLower()}Id in {prop.PropertyName.ToLower()}Ids)
+            {{
+                var {entityType.ToLower()} = new {entityType} {{ Id = {entityType.ToLower()}Id }};
+                
+                dbContext.Attach({entityType.ToLower()});
+                
+                modelToSave.{prop.PropertyName}.Add({entityType.ToLower()});
+            }}
+        }}");
+        }
+
+        return sb.ToString();
     }
 
     private static string GetRootNamespace(INamespaceSymbol namespaceSymbol)
