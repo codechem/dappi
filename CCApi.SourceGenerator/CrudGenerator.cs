@@ -133,7 +133,7 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
     }}
 
      [HttpPut(""{{id}}"")]
-     public async Task<IActionResult> Update(Guid id, [FromForm] {item.ClassName} model)
+    public async Task<IActionResult> Update(Guid id, [FromBody] {item.ClassName} model)
      {{
          if (model == null || id == Guid.Empty)
             return BadRequest(""Invalid data provided."");
@@ -142,8 +142,7 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
          if (existingModel == null)
             return NotFound($""{item.ClassName}s with ID {{id}} not found."");
 
-         // Map incoming model to the existing entity
-         model.Id = id; // Ensure the ID remains consistent
+         model.Id = id;
          dbContext.Entry(existingModel).CurrentValues.SetValues(model);
 
          await dbContext.SaveChangesAsync();
@@ -192,15 +191,22 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
 
         foreach (var prop in collectionProperties)
         {
-            // Extract the entity type from ICollection<T> or List<T>
-            string entityType = prop.PropertyName.Substring(0, prop.PropertyName.Length - 1); ;
+            string entityType = prop.GenericTypeName;
 
-            sb.AppendLine($@"        var {prop.PropertyName.ToLower()}Ids = model.{prop.PropertyName}?.Select(m => m.Id).ToList();
+            if (entityType.EndsWith("?"))
+                entityType = entityType.Substring(0, entityType.Length - 1);
+
+            if (entityType.Contains('.'))
+                entityType = entityType.Substring(entityType.LastIndexOf('.') + 1);
+
+            string propNameLower = prop.PropertyName.ToLower();
+
+            sb.AppendLine($@"        var {propNameLower}Ids = model.{prop.PropertyName}?.Select(m => m.Id).ToList();
         modelToSave.{prop.PropertyName} = new List<{entityType}>();
 
-        if ({prop.PropertyName.ToLower()}Ids != null && {prop.PropertyName.ToLower()}Ids.Count > 0)
+        if ({propNameLower}Ids != null && {propNameLower}Ids.Count > 0)
         {{
-            foreach (var {entityType.ToLower()}Id in {prop.PropertyName.ToLower()}Ids)
+            foreach (var {entityType.ToLower()}Id in {propNameLower}Ids)
             {{
                 var {entityType.ToLower()} = new {entityType} {{ Id = {entityType.ToLower()}Id }};
                 

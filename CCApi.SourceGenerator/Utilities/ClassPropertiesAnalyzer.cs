@@ -40,6 +40,36 @@ public static class ClassPropertiesAnalyzer
         return builder.ToString();
     }
 
+    private static string GetSimpleTypeName(ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+        {
+            return namedTypeSymbol.Name;
+        }
+
+        return typeSymbol.ToDisplayString();
+    }
+
+    private static string GetFormattedTypeName(ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+        {
+            string baseName = namedTypeSymbol.Name;
+
+            if (namedTypeSymbol.IsGenericType && namedTypeSymbol.TypeArguments.Length > 0)
+            {
+                string genericArguments = string.Join(", ", namedTypeSymbol.TypeArguments
+                    .Select(t => GetSimpleTypeName(t)));
+                return $"{genericArguments}";
+            }
+
+            return baseName;
+        }
+
+        return typeSymbol.ToDisplayString();
+    }
+
+
     public static List<PropertyInfo> GoThroughPropertiesAndGatherInfo(INamedTypeSymbol classSymbol)
     {
         var propertiesInfo = classSymbol.GetMembers()
@@ -48,6 +78,7 @@ public static class ClassPropertiesAnalyzer
             {
                 var propertyName = property.Name;
                 var propertyType = property.Type;
+                var genericTypeName = GetFormattedTypeName(propertyType);
                 var propertyForeignKey = string.Empty;
                 var propertyAttributes = property.GetAttributes()
                     // .Select(attr => attr.AttributeClass?.ToDisplayString())
@@ -72,11 +103,10 @@ public static class ClassPropertiesAnalyzer
                     PropertyName = propertyName,
                     PropertyType = propertyType,
                     PropertyAttributes = propertyAttributes,
-                    PropertyForeignKey = propertyForeignKey
+                    PropertyForeignKey = propertyForeignKey,
+                    GenericTypeName = genericTypeName
                 };
             }).ToList();
-        
-        Debugger.Launch();
         return propertiesInfo;
     }
 }

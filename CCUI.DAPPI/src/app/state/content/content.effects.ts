@@ -86,6 +86,7 @@ export class ContentEffects {
               relatedTo: field.fieldType.includes('ICollection')
                 ? field?.fieldType?.match(/<([^>]+)>/)?.[1]
                 : undefined,
+              isRequired: field.isRequired ?? false,
             }));
             return ContentActions.loadHeadersSuccess({ headers });
           }),

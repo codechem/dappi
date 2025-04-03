@@ -16,4 +16,5 @@ public class PropertyInfo
     public ITypeSymbol PropertyType { get; set; }
     public string PropertyForeignKey { get; set; }
     public List<string> PropertyAttributes { get; set; }
+    public string GenericTypeName { get; set; }
 }

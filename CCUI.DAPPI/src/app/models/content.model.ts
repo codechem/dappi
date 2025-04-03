@@ -14,6 +14,7 @@ export interface TableHeader {
   key: string;
   label: string;
   type: 'text' | 'textarea' | 'file' | 'collection' | 'id';
+  isRequired: boolean;
   relatedTo?: string;
 }
 
@@ -44,5 +45,5 @@ export interface ModelField {
   fieldName: string;
   fieldType: string;
   relatedTo?: string;
-  isRequired?: string;
+  isRequired?: boolean;
 }

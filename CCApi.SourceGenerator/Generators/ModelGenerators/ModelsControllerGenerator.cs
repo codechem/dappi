@@ -185,15 +185,15 @@ namespace {rootNamespace}.Controllers
                     var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
                     
-                    var updatedCode = AddFieldToClass(existingCode, $""{{request.FieldName}}Id"", ""Guid"");
+                    var updatedCode = AddFieldToClass(existingCode, $""{{request.FieldName}}Id"", $""Guid{{(!request.IsRequired ? ""?"" : """")}}"", """", request.IsRequired);
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
                     
                     existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    updatedCode = AddFieldToClass(existingCode, request.FieldName, request.RelatedTo);
+                    updatedCode = AddFieldToClass(existingCode, request.FieldName, $""{{request.RelatedTo}}{{(!request.IsRequired ? ""?"" : """")}}"","""", request.IsRequired);
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
-                    var relatedToCode = AddFieldToClass(existingRelatedToCode, request.FieldName, modelName);
+                    var relatedToCode = AddFieldToClass(existingRelatedToCode, request.FieldName, $""{{modelName}}{{(!request.IsRequired ? ""?"" : """")}}"","""", request.IsRequired);
 
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
                     UpdateDbContextOneToOne(modelName, request.FieldName, request.RelatedTo);
@@ -204,15 +204,15 @@ namespace {rootNamespace}.Controllers
                     var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    var updatedCode = AddFieldToClass(existingCode, $""{{request.FieldName}}Id"", ""Guid"");
+                    var updatedCode = AddFieldToClass(existingCode, $""{{request.FieldName}}Id"", $""Guid{{(!request.IsRequired ? ""?"" : """")}}"", """", request.IsRequired);
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
                     existingCode = System.IO.File.ReadAllText(modelFilePath);
                     
-                    updatedCode = AddFieldToClass(existingCode, request.FieldName, request.RelatedTo);
+                    updatedCode = AddFieldToClass(existingCode, request.FieldName, $""{{request.RelatedTo}}{{(!request.IsRequired ? ""?"" : """")}}"", """", request.IsRequired);
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
-                    var relatedToCode = AddFieldToClass(existingRelatedToCode, request.FieldName, $""ICollection<{{modelName}}>"", $""{{modelName}}"");
+                    var relatedToCode = AddFieldToClass(existingRelatedToCode, request.FieldName, $""ICollection<{{modelName}}{{(!request.IsRequired ? ""?"" : """")}}>"", $""{{modelName}}{{(!request.IsRequired ? ""?"" : """")}}"", request.IsRequired);
 
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
                     UpdateDbContextOneToMany(modelName, request.FieldName, request.RelatedTo);
@@ -224,10 +224,10 @@ namespace {rootNamespace}.Controllers
                     var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    var updatedCode = AddFieldToClass(existingCode, $""{{request.RelatedTo}}s"", $""ICollection<{{request.RelatedTo}}>"", $""{{request.RelatedTo}}"");
+                    var updatedCode = AddFieldToClass(existingCode, $""{{request.RelatedTo}}s"", $""ICollection<{{request.RelatedTo}}{{(!request.IsRequired ? ""?"" : """")}}>"", $""{{request.RelatedTo}}{{(!request.IsRequired ? ""?"" : """")}}"", request.IsRequired);
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
-                    var relatedToCode = AddFieldToClass(existingRelatedToCode, $""{{modelName}}s"", $""ICollection<{{modelName}}>"", $""{{modelName}}"");
+                    var relatedToCode = AddFieldToClass(existingRelatedToCode, $""{{modelName}}s"", $""ICollection<{{modelName}}{{(!request.IsRequired ? ""?"" : """")}}>"", $""{{modelName}}{{(!request.IsRequired ? ""?"" : """")}}"", request.IsRequired);
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
 
                     UpdateDbContextManyToMany(modelName, request.RelatedTo);
@@ -236,7 +236,7 @@ namespace {rootNamespace}.Controllers
                 {{
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    var updatedCode = AddFieldToClass(existingCode, request.FieldName, request.FieldType);
+                    var updatedCode = AddFieldToClass(existingCode, request.FieldName, $""{{request.FieldType}}{{(!request.IsRequired ? ""?"" : """")}}"", """", request.IsRequired);
 
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
                 }}
@@ -434,16 +434,18 @@ namespace {rootNamespace}.Controllers
             System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
         }}
 
-        private string AddFieldToClass(string classCode, string fieldName, string fieldType, string collectionType = """")
+        private string AddFieldToClass(string classCode, string fieldName, string fieldType, string collectionType = """", bool isRequired = false)
         {{
             if (PropertyCheckExtensions.PropertyExists(classCode, fieldName, fieldType))
             {{
                 throw new InvalidOperationException($""The property '{{fieldName}}' of type '{{fieldType}}' already exists in the class."");
             }}
-            var propertyCode = $""    public {{fieldType}} {{fieldName}} {{{{ get; set; }}}}"";
+            // var iR = isRequired ? ""required"" : """";
+            var iR = """";
+            var propertyCode = $""    public {{iR}} {{fieldType}} {{fieldName}} {{{{ get; set; }}}}"";
 
             if(fieldType.Contains(""ICollection"")) {{
-            propertyCode = $""    public {{fieldType}} {{fieldName}} {{{{ get; set; }}}} = new List<{{collectionType}}>();"";
+            propertyCode = $""    public {{iR}} {{fieldType}} {{fieldName}} {{{{ get; set; }}}} = new List<{{collectionType}}>();"";
             }}
             var insertPosition = classCode.LastIndexOf(""}}"", StringComparison.Ordinal); 
             var updatedCode = classCode.Insert(insertPosition, Environment.NewLine + propertyCode + Environment.NewLine);
@@ -554,20 +556,29 @@ namespace {rootNamespace}.Controllers
         private List<object> ExtractFieldsFromModel(string classCode)
         {{
             var fieldList = new List<object>();
-            var propertyPattern = new Regex(@""public\s+([\w<>\[\]]+)\s+(\w+)\s*\{{\s*get;\s*set;\s*}}"", RegexOptions.Multiline);
+            var propertyPattern = new Regex(@""public\s+(required\s+)?([\w<>\[\]?]+)\s+(\w+)\s*\{{\s*get;\s*set;\s*\}}"", RegexOptions.Multiline);
 
             var matches = propertyPattern.Matches(classCode);
             foreach (Match match in matches)
             {{
-                if (match.Groups.Count == 3)
+                if (match.Groups.Count >= 4)
                 {{
-                    var fieldType = match.Groups[1].Value;
-                    var fieldName = match.Groups[2].Value;
-                    fieldList.Add(new {{ FieldName = fieldName, FieldType = fieldType }});
-                }}
+                    var hasRequiredKeyword = !string.IsNullOrEmpty(match.Groups[1].Value);
+            var fieldType = match.Groups[2].Value;
+            var fieldName = match.Groups[3].Value;
+
+            bool isRequired = hasRequiredKeyword || !fieldType.EndsWith(""?"");
+
+            if (!isRequired && fieldType.EndsWith(""?""))
+            {{
+                fieldType = fieldType.TrimEnd('?');
             }}
-            return fieldList;
+
+            fieldList.Add(new {{ FieldName = fieldName, FieldType = fieldType, IsRequired = isRequired }});
         }}
+    }}
+    return fieldList;
+}}
     }}
 
     public class ModelRequest

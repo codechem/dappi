@@ -324,6 +324,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       fieldName: this.fieldForm.value.fieldName,
       fieldType: selectedFieldType.netType,
       relatedTo: this.relatedTo,
+      isRequired: this.fieldForm.value.requiredField,
     };
 
     this.store.dispatch(CollectionActions.addField({ field: payload }));

@@ -142,8 +142,8 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
               label: field.label,
               type: field.type,
               placeholder: `Enter ${field.label}`,
-              required: true,
-              validators: [Validators.required],
+              required: field.isRequired,
+              validators: field.isRequired ? [Validators.required] : undefined,
             };
 
             if (field.type === 'collection') {
