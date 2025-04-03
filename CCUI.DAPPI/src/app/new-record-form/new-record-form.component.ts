@@ -11,7 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { ContentItem, TableHeader } from '../models/content.model';
+import { ContentItem, FieldType, TableHeader } from '../models/content.model';
 import { Store } from '@ngrx/store';
 import {
   selectCurrentItem,
@@ -28,7 +28,7 @@ import { MatSelectModule } from '@angular/material/select';
 interface ContentField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'file' | 'collection' | 'id';
+  type: FieldType;
   placeholder?: string;
   required: boolean;
   validators?: any[];
@@ -36,6 +36,7 @@ interface ContentField {
   acceptedFileTypes?: string[];
   relatedItems?: any[];
   multiple?: boolean;
+  relatedTo?: string;
 }
 
 @Component({
@@ -60,7 +61,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
   fields: TableHeader[] = [];
   selectedType = '';
-
+  fieldType = FieldType;
   headers$ = this.store.select(selectHeaders);
   selectedType$ = this.store.select(selectSelectedType);
   currentItem: ContentItem | undefined = undefined;
@@ -135,7 +136,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
       this.headers$.subscribe((fields) => {
         this.fields = fields;
         this.contentFields = this.fields
-          .filter((field) => field.key !== 'id')
+          .filter((field) => field.type !== FieldType.id)
           .map((field) => {
             const contentField: ContentField = {
               key: field.key,
@@ -144,30 +145,38 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
               placeholder: `Enter ${field.label}`,
               required: field.isRequired,
               validators: field.isRequired ? [Validators.required] : undefined,
+              relatedTo: field.relatedTo,
             };
 
-            if (field.type === 'collection') {
-              contentField.multiple = true;
-              this.store.dispatch(
-                ContentActions.loadRelatedItems({
-                  selectedType: field.relatedTo ?? '',
-                })
-              );
+            if (
+              field.type === FieldType.collection ||
+              field.type === FieldType.relation
+            ) {
+              contentField.multiple = field.type === FieldType.collection;
+              if (field.relatedTo) {
+                this.store.dispatch(
+                  ContentActions.loadRelatedItems({
+                    selectedType: field.relatedTo,
+                  })
+                );
+              }
             }
 
             return contentField;
           });
 
         this.relationFields = this.contentFields.filter(
-          (field) => field.type === 'collection'
+          (field) =>
+            field.type === FieldType.collection ||
+            field.type === FieldType.relation
         );
 
         this.fileFields = this.contentFields.filter(
-          (field) => field.type === 'file'
+          (field) => field.type === FieldType.file
         );
 
         const nonFileFields = this.contentFields.filter(
-          (field) => field.type !== 'file'
+          (field) => field.type !== FieldType.file
         );
         const halfLength = Math.ceil(nonFileFields.length / 2);
 
@@ -180,7 +189,10 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.relatedItems$.subscribe((items) => {
         this.contentFields = this.contentFields.map((item) => {
-          if (item.type === 'collection') {
+          if (
+            item.type === FieldType.collection ||
+            item.type === FieldType.relation
+          ) {
             return {
               ...item,
               relatedItems: items?.data,
@@ -189,15 +201,17 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
         });
 
         this.relationFields = this.contentFields.filter(
-          (field) => field.type === 'collection'
+          (field) =>
+            field.type === FieldType.collection ||
+            field.type === FieldType.relation
         );
 
         this.fileFields = this.contentFields.filter(
-          (field) => field.type === 'file'
+          (field) => field.type === FieldType.file
         );
 
         const nonFileFields = this.contentFields.filter(
-          (field) => field.type !== 'file'
+          (field) => field.type !== FieldType.file
         );
         const halfLength = Math.ceil(nonFileFields.length / 2);
 
@@ -228,7 +242,10 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
         ? [Validators.required, ...(field.validators || [])]
         : field.validators || [];
 
-      if (field.type === 'collection') {
+      if (
+        field.type === FieldType.collection ||
+        field.type === FieldType.relation
+      ) {
         group[field.key] = [field.multiple ? [] : null, validators];
       } else {
         group[field.key] = ['', validators];
@@ -333,8 +350,14 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
       const formData = Object.keys(this.contentForm.value).reduce(
         (acc: any, key) => {
           const value = this.contentForm.value[key];
+          const field = this.contentFields.find((f) => f.key === key);
 
-          if (
+          if (field?.type === FieldType.relation && value && value.id) {
+            const relationKey = this.fields.find(
+              (f) => f.key.includes(field.key) && f.type === FieldType.id
+            )?.key;
+            if (relationKey) acc[relationKey] = value.id;
+          } else if (
             typeof value === 'object' &&
             value !== null &&
             !Array.isArray(value)
@@ -354,21 +377,6 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   }
 
   private submitToBackend(formData: any): void {
-    // maybe later we'll have to switch again to FromForm because of the image upload
-    // const formDataToSend = new FormData();
-
-    // Object.keys(formData).forEach((key) => {
-    //   const value = formData[key];
-
-    //   if (value instanceof File) {
-    //     formDataToSend.append(key, value, value.name);
-    //   } else if (typeof value === 'object' && value !== null) {
-    //     formDataToSend.append(key, JSON.stringify(value));
-    //   } else if (value !== null && value !== undefined) {
-    //     formDataToSend.append(key, value.toString());
-    //   }
-    // });
-
     const body = { ...formData };
 
     if (this.currentItem !== undefined) {

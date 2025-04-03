@@ -6,7 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngrx/store';
 import * as ContentActions from './content.actions';
 import { selectItemsPerPage, selectSelectedType } from './content.selectors';
-import { DataResponse } from '../../models/content.model';
+import { DataResponse, FieldType } from '../../models/content.model';
 
 @Injectable()
 export class ContentEffects {
@@ -77,17 +77,20 @@ export class ContentEffects {
         const endpoint = `http://localhost:5101/api/models/fields/${action.selectedType}`;
         return this.http.get<DataResponse>(endpoint).pipe(
           map((response) => {
-            const headers = response.$values.map((field) => ({
-              key:
-                field.fieldName.charAt(0).toLowerCase() +
-                field.fieldName.slice(1),
-              label: this.formatHeaderLabel(field.fieldName),
-              type: this.mapFieldTypeToInputType(field.fieldType),
-              relatedTo: field.fieldType.includes('ICollection')
-                ? field?.fieldType?.match(/<([^>]+)>/)?.[1]
-                : undefined,
-              isRequired: field.isRequired ?? false,
-            }));
+            const headers = response.$values.map((field) => {
+              const fieldType = this.mapFieldTypeToInputType(field.fieldType);
+              const isRelation = fieldType === FieldType.relation;
+
+              return {
+                key: this.toCamelCase(field.fieldName),
+                label: this.formatHeaderLabel(field.fieldName),
+                type: fieldType,
+                relatedTo: isRelation
+                  ? field.fieldType
+                  : this.getRelatedType(field.fieldType),
+                isRequired: field.isRequired ?? false,
+              };
+            });
             return ContentActions.loadHeadersSuccess({ headers });
           }),
           catchError((error) =>
@@ -229,6 +232,16 @@ export class ContentEffects {
     )
   );
 
+  private getRelatedType(fieldType: string): string | undefined {
+    return fieldType.includes('ICollection')
+      ? fieldType.match(/<([^>]+)>/)?.[1]
+      : undefined;
+  }
+
+  private toCamelCase(name: string): string {
+    return name.charAt(0).toLowerCase() + name.slice(1);
+  }
+
   private formatHeaderLabel(key: string): string {
     return key
       .replace(/([A-Z])/g, ' $1')
@@ -237,30 +250,88 @@ export class ContentEffects {
       .trim();
   }
 
-  private mapFieldTypeToInputType(
-    fieldType: string
-  ): 'text' | 'textarea' | 'file' | 'collection' | 'id' {
+  private mapFieldTypeToInputType(fieldType: string): FieldType {
     const lowerFieldType = fieldType.toLowerCase();
 
-    if (lowerFieldType.includes('byte[]') || lowerFieldType.includes('blob')) {
-      return 'file';
+    if (
+      !lowerFieldType.includes('string') &&
+      !lowerFieldType.includes('byte[]') &&
+      !lowerFieldType.includes('blob') &&
+      !lowerFieldType.includes('icollection') &&
+      !lowerFieldType.includes('guid') &&
+      ![
+        'int',
+        'integer',
+        'number',
+        'float',
+        'double',
+        'decimal',
+        'long',
+        'short',
+        'byte',
+        'boolean',
+        'bool',
+        'date',
+        'datetime',
+        'time',
+        'char',
+        'enum',
+      ].includes(lowerFieldType)
+    ) {
+      return FieldType.relation;
     }
 
+    // File types
+    if (
+      lowerFieldType.includes('byte[]') ||
+      lowerFieldType.includes('blob') ||
+      lowerFieldType === 'binary'
+    ) {
+      return FieldType.file;
+    }
+
+    // Long text
     if (
       lowerFieldType === 'string' &&
       ['description', 'content', 'text', 'textarea'].some((keyword) =>
         lowerFieldType.includes(keyword)
       )
     ) {
-      return 'textarea';
+      return FieldType.textarea;
     }
 
+    // Collection
     if (lowerFieldType.includes('icollection')) {
-      return 'collection';
+      return FieldType.collection;
     }
-    if (lowerFieldType.includes('Guid')) return 'id';
 
-    return 'text';
+    // IDs
+    if (lowerFieldType.includes('guid') || lowerFieldType === 'uuid') {
+      return FieldType.id;
+    }
+
+    // Boolean
+    if (lowerFieldType === 'boolean' || lowerFieldType === 'bool') {
+      return FieldType.checkbox;
+    }
+
+    // Date/Time
+    if (['date', 'datetime', 'time'].includes(lowerFieldType)) {
+      return FieldType.date;
+    }
+
+    // Enum
+    if (lowerFieldType === 'enum') {
+      return FieldType.select;
+    }
+
+    // Single character
+    if (lowerFieldType === 'char') {
+      return FieldType.text;
+    }
+
+    // Default
+    return FieldType.text;
   }
 
   constructor(

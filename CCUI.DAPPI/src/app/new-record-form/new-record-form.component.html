@@ -7,20 +7,34 @@
             <mat-label>{{ field.label }}</mat-label>
             <ng-container [ngSwitch]="field.type">
               <input 
-                *ngSwitchCase="'text'" 
+                *ngSwitchCase="fieldType.text" 
                 matInput 
                 [placeholder]="field.placeholder || ''" 
                 [formControlName]="field.key" 
                 [required]="field.required" 
               />
               <textarea 
-                *ngSwitchCase="'textarea'" 
+                *ngSwitchCase="fieldType.textarea" 
                 matInput 
                 [placeholder]="field.placeholder || ''" 
                 [formControlName]="field.key" 
                 rows="5" 
                 [required]="field.required"
               ></textarea>
+              <ng-container *ngSwitchCase="fieldType.collection">
+                <mat-select [formControlName]="field.key" [multiple]="field.multiple">
+                  <mat-option *ngFor="let item of field.relatedItems" [value]="item">
+                    {{ getRelationDisplayValue(item, field) }}
+                  </mat-option>
+                </mat-select>
+              </ng-container>
+              <ng-container *ngSwitchCase="fieldType.relation">
+                <mat-select [formControlName]="field.key">
+                  <mat-option *ngFor="let item of field.relatedItems" [value]="item">
+                    {{ getRelationDisplayValue(item, field) }}
+                  </mat-option>
+                </mat-select>
+              </ng-container>
             </ng-container>
             <mat-error *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched">
               {{ getErrorMessage(field.key) }}
@@ -84,23 +98,29 @@
             <mat-label>{{ field.label }}</mat-label>
             <ng-container [ngSwitch]="field.type">
               <input 
-                *ngSwitchCase="'text'" 
+                *ngSwitchCase="fieldType.text" 
                 matInput 
                 [placeholder]="field.placeholder || ''" 
                 [formControlName]="field.key" 
                 [required]="field.required" 
               />
               <textarea 
-                *ngSwitchCase="'textarea'" 
+                *ngSwitchCase="fieldType.textarea" 
                 matInput 
                 [placeholder]="field.placeholder || ''" 
                 [formControlName]="field.key" 
                 rows="5" 
                 [required]="field.required"
               ></textarea>
-              <ng-container *ngSwitchCase="'collection'" appearance="outline">
-                <mat-label>{{ field.label }}</mat-label>
-                <mat-select [formControlName]="field.key" [attr.multiple]="field.multiple ? '' : null">
+              <ng-container *ngSwitchCase="fieldType.collection">
+                <mat-select [formControlName]="field.key" [multiple]="field.multiple">
+                  <mat-option *ngFor="let item of field.relatedItems" [value]="item">
+                    {{ getRelationDisplayValue(item, field) }}
+                  </mat-option>
+                </mat-select>
+              </ng-container>
+              <ng-container *ngSwitchCase="fieldType.relation">
+                <mat-select [formControlName]="field.key">
                   <mat-option *ngFor="let item of field.relatedItems" [value]="item">
                     {{ getRelationDisplayValue(item, field) }}
                   </mat-option>

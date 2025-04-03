@@ -42,7 +42,7 @@ import {
 })
 export class ContentManagerComponent implements OnInit, OnDestroy {
   disabled = false;
-  isSearching: boolean = false;
+  isSearching = false;
 
   private subscription: Subscription = new Subscription();
 

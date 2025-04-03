@@ -181,14 +181,13 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
     private static string GenerateCollectionAddCode(SourceModel model)
     {
         var collectionProperties = model.PropertiesInfos
-            .Where(x => x.PropertyType.Name.Contains("ICollection") || x.PropertyType.Name.Contains("List"))
+            .Where(x => ContainsCollectionTypeName(x))
             .ToList();
 
         if (!collectionProperties.Any())
             return string.Empty;
 
         var sb = new StringBuilder();
-
         foreach (var prop in collectionProperties)
         {
             string entityType = prop.GenericTypeName;
@@ -201,7 +200,7 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
 
             string propNameLower = prop.PropertyName.ToLower();
 
-            sb.AppendLine($@"        var {propNameLower}Ids = model.{prop.PropertyName}?.Select(m => m.Id).ToList();
+            sb.AppendLine($@"var {propNameLower}Ids = model.{prop.PropertyName}?.Select(m => m.Id).ToList();
         modelToSave.{prop.PropertyName} = new List<{entityType}>();
 
         if ({propNameLower}Ids != null && {propNameLower}Ids.Count > 0)
@@ -212,12 +211,19 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
                 
                 dbContext.Attach({entityType.ToLower()});
                 
-                modelToSave.{prop.PropertyName}.Add({entityType.ToLower()});
+                modelToSave.{prop.PropertyName}.ToList().Add({entityType.ToLower()});
             }}
         }}");
         }
 
         return sb.ToString();
+    }
+
+    private static bool ContainsCollectionTypeName(PropertyInfo x)
+    {
+        return x.PropertyType.Name.Contains("IEnumerable")
+        || x.PropertyType.Name.Contains("List")
+        || x.PropertyType.Name.Contains("ICollection");
     }
 
     private static string GetRootNamespace(INamespaceSymbol namespaceSymbol)

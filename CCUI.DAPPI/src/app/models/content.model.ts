@@ -10,10 +10,22 @@ export interface PaginatedResponse {
   data: ContentItem[];
 }
 
+export enum FieldType {
+  'text',
+  'textarea',
+  'file',
+  'collection',
+  'id',
+  'relation',
+  'number',
+  'checkbox',
+  'date',
+  'select',
+}
 export interface TableHeader {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'file' | 'collection' | 'id';
+  type: FieldType;
   isRequired: boolean;
   relatedTo?: string;
 }

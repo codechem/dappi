@@ -46,7 +46,7 @@
           </mat-checkbox>
         </th>
         <ng-container *ngIf="headers$ | async as headers">
-          <ng-container *ngFor="let header of headers | slice:1">
+          <ng-container *ngFor="let header of getFilteredHeaders(headers) | slice:1">
             <th class="cell" [style.max-width.px]="getColumnWidth(header)" role="columnheader">
               {{ header.label }}
             </th>
@@ -65,9 +65,9 @@
           </mat-checkbox>
         </td>
         <ng-container *ngIf="headers$ | async as headers">
-          <ng-container *ngFor="let header of headers | slice:1">
+          <ng-container *ngFor="let header of getFilteredHeaders(headers) | slice:1">
             <td class="cell" [style.max-width.px]="getColumnWidth(header)" role="cell">
-              <ng-container *ngIf="header.type === 'file'; else textDisplay">
+              <ng-container *ngIf="header.type === fieldType.file; else textDisplay">
                 <img *ngIf="getCellDisplay(item, header)" [src]="getCellDisplay(item, header)" class="file-preview"
                   alt="{{ header.label }}" />
               </ng-container>

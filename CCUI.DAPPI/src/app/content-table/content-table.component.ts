@@ -25,8 +25,8 @@ import {
   selectSelectedType,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
-import { map, Observable, Subscription, take, takeUntil } from 'rxjs';
-import { ContentItem, TableHeader } from '../models/content.model';
+import { Subscription } from 'rxjs';
+import { ContentItem, FieldType, TableHeader } from '../models/content.model';
 
 @Component({
   selector: 'app-content-table',
@@ -45,7 +45,7 @@ import { ContentItem, TableHeader } from '../models/content.model';
 })
 export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   private subscription: Subscription = new Subscription();
-
+  fieldType = FieldType;
   Math = Math;
   selectedType: string | undefined = undefined;
   searchText: string | undefined = undefined;
@@ -235,6 +235,12 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  getFilteredHeaders(headers: TableHeader[]): TableHeader[] {
+    if (!headers) return [];
+
+    return headers.filter((header) => header.type !== FieldType.relation);
+  }
+
   getColumnWidth(header: any): number {
     switch (header.type) {
       case 'file':
@@ -272,7 +278,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   getCellDisplay(item: ContentItem, header: TableHeader) {
     const value = item[header.key];
 
-    if (header.type === 'file' && value) {
+    if (header.type === FieldType.file && value) {
       return this.convertToImage(value);
     }
 
