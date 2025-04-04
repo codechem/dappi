@@ -200,13 +200,13 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       {
         icon: '⟷',
         label: 'Many-to-many',
-        description: `Each ${this.selectedType} can relate to multiple ${modelName}s and vice versa`,
+        description: `Each ${this.selectedType} can relate to multiple or none ${modelName}s and vice versa`,
         value: 'many-to-many',
       },
       {
         icon: '→',
         label: 'One-to-many',
-        description: `One ${this.selectedType} can relate to multiple ${modelName}s`,
+        description: `One ${this.selectedType} can relate to multiple  or none ${modelName}s`,
         value: 'one-to-many',
       },
       {

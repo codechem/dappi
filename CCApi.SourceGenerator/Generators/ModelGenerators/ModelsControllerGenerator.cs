@@ -440,12 +440,12 @@ namespace {rootNamespace}.Controllers
             {{
                 throw new InvalidOperationException($""The property '{{fieldName}}' of type '{{fieldType}}' already exists in the class."");
             }}
-            // var iR = isRequired ? ""required"" : """";
-            var iR = """";
-            var propertyCode = $""    public {{iR}} {{fieldType}} {{fieldName}} {{{{ get; set; }}}}"";
+            // var requiredField = isRequired ? ""required"" : """";
+            var requiredField = """";
+            var propertyCode = $""    public {{requiredField}} {{fieldType}} {{fieldName}} {{{{ get; set; }}}}"";
 
             if(fieldType.Contains(""ICollection"")) {{
-            propertyCode = $""    public {{iR}} {{fieldType}} {{fieldName}} {{{{ get; set; }}}} = new List<{{collectionType}}>();"";
+            propertyCode = $""    public {{requiredField}} {{fieldType}} {{fieldName}} {{{{ get; set; }}}} = new List<{{collectionType}}>();"";
             }}
             var insertPosition = classCode.LastIndexOf(""}}"", StringComparison.Ordinal); 
             var updatedCode = classCode.Insert(insertPosition, Environment.NewLine + propertyCode + Environment.NewLine);

@@ -7,6 +7,7 @@ import { Store } from '@ngrx/store';
 import * as ContentActions from './content.actions';
 import { selectItemsPerPage, selectSelectedType } from './content.selectors';
 import { DataResponse, FieldType } from '../../models/content.model';
+import { BASE_API_URL } from '../../../Constants';
 
 @Injectable()
 export class ContentEffects {
@@ -15,7 +16,7 @@ export class ContentEffects {
       ofType(ContentActions.loadContent),
       withLatestFrom(this.store.select(selectSelectedType)),
       mergeMap(([action, selectedType]) => {
-        const endpoint = `http://localhost:5101/api/${selectedType
+        const endpoint = `${BASE_API_URL}${selectedType
           .toLowerCase()
           .replace(/\s+/g, '-')}`;
 
@@ -49,7 +50,7 @@ export class ContentEffects {
     this.actions$.pipe(
       ofType(ContentActions.loadRelatedItems),
       mergeMap((action) => {
-        const endpoint = `http://localhost:5101/api/${action.selectedType
+        const endpoint = `${BASE_API_URL}${action.selectedType
           .toLowerCase()
           .replace(/\s+/g, '-')}`;
 
@@ -74,7 +75,7 @@ export class ContentEffects {
     this.actions$.pipe(
       ofType(ContentActions.loadHeaders),
       mergeMap((action) => {
-        const endpoint = `http://localhost:5101/api/models/fields/${action.selectedType}`;
+        const endpoint = `${BASE_API_URL}models/fields/${action.selectedType}`;
         return this.http.get<DataResponse>(endpoint).pipe(
           map((response) => {
             const headers = response.$values.map((field) => {
@@ -105,7 +106,7 @@ export class ContentEffects {
     this.actions$.pipe(
       ofType(ContentActions.deleteContent),
       mergeMap((action) => {
-        const endpoint = `http://localhost:5101/api/${action.contentType
+        const endpoint = `${BASE_API_URL}${action.contentType
           .toLowerCase()
           .replace(/\s+/g, '-')}/${action.id}`;
 
@@ -124,7 +125,7 @@ export class ContentEffects {
       ofType(ContentActions.deleteMultipleContent),
       mergeMap((action) => {
         const deletePromises = action.ids.map((id) => {
-          const endpoint = `http://localhost:5101/api/${action.contentType
+          const endpoint = `${BASE_API_URL}${action.contentType
             .toLowerCase()
             .replace(/\s+/g, '-')}/${id}`;
 
@@ -170,7 +171,7 @@ export class ContentEffects {
       ofType(ContentActions.createContent),
       withLatestFrom(this.store.select(selectItemsPerPage)),
       mergeMap(([action, itemsPerPage]) => {
-        const endpoint = `http://localhost:5101/api/${action.contentType
+        const endpoint = `${BASE_API_URL}${action.contentType
           .toLowerCase()
           .replace(/\s+/g, '-')}`;
 
@@ -204,7 +205,7 @@ export class ContentEffects {
       ofType(ContentActions.updateContent),
       withLatestFrom(this.store.select(selectItemsPerPage)),
       mergeMap(([action, itemsPerPage]) => {
-        const endpoint = `http://localhost:5101/api/${action.contentType
+        const endpoint = `${BASE_API_URL}${action.contentType
           .toLowerCase()
           .replace(/\s+/g, '-')}/${action.id}`;
 
