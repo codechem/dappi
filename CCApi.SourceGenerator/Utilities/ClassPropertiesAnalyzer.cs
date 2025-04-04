@@ -9,17 +9,30 @@ public static class ClassPropertiesAnalyzer
 {
     public static string GetIncludesIfAny(List<PropertyInfo> propertiesInfos)
     {
-        var propertiesWithForeignKey = propertiesInfos.Where(p => !string.IsNullOrEmpty(p.PropertyForeignKey));
-        if (!propertiesWithForeignKey.Any()) return string.Empty;
+        var propertiesWithForeignKey = propertiesInfos
+            .Where(p => !string.IsNullOrEmpty(p.PropertyForeignKey));
+
+        var collectionProperties = propertiesInfos
+            .Where(ContainsCollectionTypeName);
+
+        if (!propertiesWithForeignKey.Any() && !collectionProperties.Any())
+            return string.Empty;
 
         var responseBuilder = new StringBuilder();
+
         foreach (var propertyInfo in propertiesWithForeignKey)
         {
             responseBuilder.Append(@$".Include(p => p.{propertyInfo.PropertyForeignKey})");
         }
+
+        foreach (var propertyInfo in collectionProperties)
+        {
+            responseBuilder.Append(@$".Include(p => p.{propertyInfo.PropertyName})");
+        }
+
         return responseBuilder.ToString();
     }
-    
+
     public static string PrintPropertyInfos(List<PropertyInfo> propertiesInfos)
     {
         var builder = new StringBuilder();
@@ -108,5 +121,12 @@ public static class ClassPropertiesAnalyzer
                 };
             }).ToList();
         return propertiesInfo;
+    }
+
+    private static bool ContainsCollectionTypeName(PropertyInfo propertyInfo)
+    {
+        return propertyInfo.PropertyType.Name.Contains("IEnumerable")
+            || propertyInfo.PropertyType.Name.Contains("List")
+            || propertyInfo.PropertyType.Name.Contains("ICollection");
     }
 }

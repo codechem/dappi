@@ -201,17 +201,17 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
             string propNameLower = prop.PropertyName.ToLower();
 
             sb.AppendLine($@"var {propNameLower}Ids = model.{prop.PropertyName}?.Select(m => m.Id).ToList();
-        modelToSave.{prop.PropertyName} = new List<{entityType}>();
-
+        
         if ({propNameLower}Ids != null && {propNameLower}Ids.Count > 0)
         {{
-            foreach (var {entityType.ToLower()}Id in {propNameLower}Ids)
+            // Fetch existing entities from database instead of creating new ones
+            var existing{entityType}s = await dbContext.{entityType}s
+                .Where(e => {propNameLower}Ids.Contains(e.Id))
+                .ToListAsync();
+
+            if (existing{entityType}s.Any())
             {{
-                var {entityType.ToLower()} = new {entityType} {{ Id = {entityType.ToLower()}Id }};
-                
-                dbContext.Attach({entityType.ToLower()});
-                
-                modelToSave.{prop.PropertyName}.ToList().Add({entityType.ToLower()});
+                modelToSave.{prop.PropertyName} = existing{entityType}s;
             }}
         }}");
         }
