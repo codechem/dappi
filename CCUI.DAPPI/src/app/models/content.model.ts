@@ -30,11 +30,6 @@ export interface TableHeader {
   relatedTo?: string;
 }
 
-export interface DataResponse {
-  $id: string;
-  $values: any[];
-}
-
 export interface ApiResponse<T> {
   total: number;
   offset: number;

@@ -6,7 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngrx/store';
 import * as ContentActions from './content.actions';
 import { selectItemsPerPage, selectSelectedType } from './content.selectors';
-import { DataResponse, FieldType } from '../../models/content.model';
+import {FieldType, ModelField, PaginatedResponse, TableHeader} from '../../models/content.model';
 import { BASE_API_URL } from '../../../Constants';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class ContentEffects {
           .replace(/\s+/g, '-')}`;
 
         return this.http
-          .get<any>(endpoint, {
+          .get<PaginatedResponse>(endpoint, {
             params: {
               offset: ((action.page - 1) * action.limit).toString(),
               limit: action.limit.toString(),
@@ -34,7 +34,7 @@ export class ContentEffects {
               ContentActions.loadContentSuccess({
                 items: {
                   ...response,
-                  data: response.data.$values,
+                  data: response.data,
                 },
               })
             ),
@@ -54,12 +54,12 @@ export class ContentEffects {
           .toLowerCase()
           .replace(/\s+/g, '-')}`;
 
-        return this.http.get<any>(endpoint).pipe(
+        return this.http.get<PaginatedResponse>(endpoint).pipe(
           map((response) =>
             ContentActions.loadRelatedItemsSuccess({
               relatedItems: {
                 ...response,
-                data: response.data.$values,
+                data: response.data,
               },
             })
           ),
@@ -76,9 +76,9 @@ export class ContentEffects {
       ofType(ContentActions.loadHeaders),
       mergeMap((action) => {
         const endpoint = `${BASE_API_URL}models/fields/${action.selectedType}`;
-        return this.http.get<DataResponse>(endpoint).pipe(
+        return this.http.get<ModelField[]>(endpoint).pipe(
           map((response) => {
-            const headers = response.$values.map((field) => {
+            const headers = response.map((field) => {
               const fieldType = this.mapFieldTypeToInputType(field.fieldType);
               const isRelation = fieldType === FieldType.relation;
 

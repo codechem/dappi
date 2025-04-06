@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text;
+using CCApi.SourceGenerator.Generators;
 using CCApi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -8,43 +9,21 @@ using static CCApi.SourceGenerator.Utilities.ClassPropertiesAnalyzer;
 namespace CCApi.SourceGenerator;
 
 [Generator]
-public class CrudGenerator : IIncrementalGenerator
+public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
 {
-    public void Initialize(IncrementalGeneratorInitializationContext context)
-    {
-        var syntaxProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
-            "CCApi.SourceGenerator.Attributes.CCControllerAttribute",
-            predicate: (node, _) => node is ClassDeclarationSyntax,
-            transform: (ctx, _) => 
-            {
-                var classDeclaration = (ClassDeclarationSyntax)ctx.TargetNode;
-                var classSymbol = (ISymbol)ctx.TargetSymbol;
-                var namedClassTypeSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
-                var attributeData = ctx.Attributes.FirstOrDefault();
-
-                return new SourceModel
-                {
-                    ClassName = classDeclaration.Identifier.Text,
-                    ModelNamespace = classSymbol.ContainingNamespace.ToString() ?? string.Empty,
-                    RootNamespace = GetRootNamespace(classSymbol.ContainingNamespace),
-                    PropertiesInfos = GoThroughPropertiesAndGatherInfo(namedClassTypeSymbol)
-                };
-            });
-        
-        var compilation = context.CompilationProvider.Combine(syntaxProvider.Collect());
-        context.RegisterSourceOutput(compilation, Execute);
-    }
-
-    private static void Execute(SourceProductionContext context, (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input)
+    protected override void Execute(SourceProductionContext context, (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input)
     {
         var (compilation, collectedData) = input;
-
+        var dbContextData = GetNamespaceOfDbContext(compilation);
+        if (dbContextData is null)
+            throw new NullReferenceException("DbContext data is null");
+        
         foreach (var item in collectedData)
         {
             var collectionAddCode = GenerateCollectionAddCode(item);
             var generatedCode = $@"
 using Microsoft.AspNetCore.Mvc;
-using CCApi.WebApiExample.Data; //TODO: AppDbContext here
+using {dbContextData.Value.dbContextNamespace};
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -64,7 +43,7 @@ namespace {item.RootNamespace}.Controllers;
 
 [ApiController]
 [Route(""api/[controller]"")]
-public partial class {item.ClassName}Controller(AppDbContext dbContext) : ControllerBase
+public partial class {item.ClassName}Controller({dbContextData.Value.dbContextClassName} dbContext) : ControllerBase
 {{
      [HttpGet]
      public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
@@ -181,7 +160,7 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
     private static string GenerateCollectionAddCode(SourceModel model)
     {
         var collectionProperties = model.PropertiesInfos
-            .Where(x => ContainsCollectionTypeName(x))
+            .Where(ContainsCollectionTypeName)
             .ToList();
 
         if (!collectionProperties.Any())
@@ -225,32 +204,61 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
         || x.PropertyType.Name.Contains("List")
         || x.PropertyType.Name.Contains("ICollection");
     }
-
-    private static string GetRootNamespace(INamespaceSymbol namespaceSymbol)
+    
+    private static (string dbContextNamespace, string dbContextClassName)? GetNamespaceOfDbContext(Compilation compilation)
     {
-        if (namespaceSymbol is null || namespaceSymbol.IsGlobalNamespace)
-        {
-            return string.Empty;
-        }
+        var dbContextSymbol = compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
+        if (dbContextSymbol == null)
+            return null; // EF Core probably not referenced
 
-        var result = string.Empty;
-        var current = namespaceSymbol;
-        
-        while (current.ContainingNamespace != null)
+        foreach (var syntaxTree in compilation.SyntaxTrees)
         {
-            if(NamespacesAnotatingAfterRoot.Any(p => p.Equals(current.Name, StringComparison.OrdinalIgnoreCase)))
+            var semanticModel = compilation.GetSemanticModel(syntaxTree);
+            var root = syntaxTree.GetRoot();
+
+            var classDeclarations = root.DescendantNodes().OfType<ClassDeclarationSyntax>();
+
+            foreach (var classDecl in classDeclarations)
             {
-                current = current.ContainingNamespace;
-                continue;
-            }
+                var classSymbol = semanticModel.GetDeclaredSymbol(classDecl) as INamedTypeSymbol;
+                if (classSymbol == null)
+                    continue;
 
-            result = string.Concat(current.ContainingNamespace.Name + ".", result);
-            current = current.ContainingNamespace;
+                // Inherits DbContext?
+                if (IsDerivedFrom(classSymbol, dbContextSymbol))
+                {
+                    return (GetFullNamespace(classSymbol), classSymbol.Name);
+                }
+            }
         }
 
-        // stupid shit
-        return result.Remove(0, 1).Remove(result.Length - 2, 1);
+        return null;
     }
 
-    private static List<string> NamespacesAnotatingAfterRoot = ["Models", "Services", "Controllers"];
+    private static bool IsDerivedFrom(INamedTypeSymbol? symbol, INamedTypeSymbol baseType)
+    {
+        while (symbol != null)
+        {
+            if (SymbolEqualityComparer.Default.Equals(symbol.BaseType, baseType))
+                return true;
+
+            symbol = symbol.BaseType;
+        }
+
+        return false;
+    }
+
+    private static string GetFullNamespace(INamedTypeSymbol symbol)
+    {
+        var namespaces = new Stack<string>();
+        var ns = symbol.ContainingNamespace;
+
+        while (ns != null && !ns.IsGlobalNamespace)
+        {
+            namespaces.Push(ns.Name);
+            ns = ns.ContainingNamespace;
+        }
+
+        return string.Join(".", namespaces);
+    }
 }

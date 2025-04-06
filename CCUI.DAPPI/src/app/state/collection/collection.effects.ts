@@ -12,10 +12,10 @@ import {
 import { HttpClient } from '@angular/common/http';
 import { select, Store } from '@ngrx/store';
 import * as CollectionActions from './collection.actions';
-import { DataResponse } from '../../models/content.model';
 import { selectSelectedType } from '../content/content.selectors';
 import * as ContentActions from '../content/content.actions';
 import { BASE_API_URL } from '../../../Constants';
+import {ModelField} from '../../models/content.model';
 
 @Injectable()
 export class CollectionEffects {
@@ -23,10 +23,10 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.loadCollectionTypes),
       mergeMap(() => {
-        return this.http.get<DataResponse>(`${BASE_API_URL}models`).pipe(
+        return this.http.get<string[]>(`${BASE_API_URL}models`).pipe(
           map((collectionTypes) => {
             return CollectionActions.loadCollectionTypesSuccess({
-              collectionTypes: collectionTypes.$values,
+              collectionTypes: collectionTypes,
             });
           }),
           catchError((error) =>
@@ -62,10 +62,10 @@ export class CollectionEffects {
       ofType(CollectionActions.loadFields),
       mergeMap((action) => {
         const endpoint = `${BASE_API_URL}models/fields/${action.modelType}`;
-        return this.http.get<DataResponse>(endpoint).pipe(
+        return this.http.get<ModelField[]>(endpoint).pipe(
           map((fields) =>
             CollectionActions.loadFieldsSuccess({
-              fields: [...fields.$values],
+              fields: [...fields],
             })
           ),
           catchError((error) =>

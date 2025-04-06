@@ -1,6 +1,8 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
+using CCApi.SourceGenerator.Exceptions;
+using CCApi.SourceGenerator.Extensions;
 
 namespace CCApi.SourceGenerator.Generators.ModelGenerators
 {
@@ -15,9 +17,11 @@ namespace CCApi.SourceGenerator.Generators.ModelGenerators
         private void GenerateController(SourceProductionContext context, Compilation compilation)
         {
             var rootNamespace = compilation.AssemblyName ?? "DefaultNamespace";
-
+            var dbContextInformation = compilation.GetDbContextInformation();
+            if (dbContextInformation is null)
+                throw new DbContextOfApplicationNotFoundException();
             var sourceText = SourceText.From(
-$@"using CCApi.WebApiExample.Data;
+$@"using {dbContextInformation.ResidingNamespace};
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -35,7 +39,7 @@ public class MigrationController : ControllerBase
     private readonly string _projectDirectory;
 
     public MigrationController(
-        AppDbContext context,
+        {dbContextInformation.ClassName} context,
         IHostApplicationLifetime appLifetime)
     {{
         _appLifetime = appLifetime;
