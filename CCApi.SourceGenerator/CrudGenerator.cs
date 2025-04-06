@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text;
+using CCApi.SourceGenerator.Extensions;
 using CCApi.SourceGenerator.Generators;
 using CCApi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
@@ -14,7 +15,7 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
     protected override void Execute(SourceProductionContext context, (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input)
     {
         var (compilation, collectedData) = input;
-        var dbContextData = GetNamespaceOfDbContext(compilation);
+        var dbContextData = compilation.GetDbContextInformation();
         if (dbContextData is null)
             throw new NullReferenceException("DbContext data is null");
         
@@ -23,7 +24,7 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
             var collectionAddCode = GenerateCollectionAddCode(item);
             var generatedCode = $@"
 using Microsoft.AspNetCore.Mvc;
-using {dbContextData.Value.dbContextNamespace};
+using {dbContextData.ResidingNamespace};
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -43,7 +44,7 @@ namespace {item.RootNamespace}.Controllers;
 
 [ApiController]
 [Route(""api/[controller]"")]
-public partial class {item.ClassName}Controller({dbContextData.Value.dbContextClassName} dbContext) : ControllerBase
+public partial class {item.ClassName}Controller({dbContextData.ClassName} dbContext) : ControllerBase
 {{
      [HttpGet]
      public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
@@ -205,60 +206,4 @@ public partial class {item.ClassName}Controller({dbContextData.Value.dbContextCl
         || x.PropertyType.Name.Contains("ICollection");
     }
     
-    private static (string dbContextNamespace, string dbContextClassName)? GetNamespaceOfDbContext(Compilation compilation)
-    {
-        var dbContextSymbol = compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
-        if (dbContextSymbol == null)
-            return null; // EF Core probably not referenced
-
-        foreach (var syntaxTree in compilation.SyntaxTrees)
-        {
-            var semanticModel = compilation.GetSemanticModel(syntaxTree);
-            var root = syntaxTree.GetRoot();
-
-            var classDeclarations = root.DescendantNodes().OfType<ClassDeclarationSyntax>();
-
-            foreach (var classDecl in classDeclarations)
-            {
-                var classSymbol = semanticModel.GetDeclaredSymbol(classDecl) as INamedTypeSymbol;
-                if (classSymbol == null)
-                    continue;
-
-                // Inherits DbContext?
-                if (IsDerivedFrom(classSymbol, dbContextSymbol))
-                {
-                    return (GetFullNamespace(classSymbol), classSymbol.Name);
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private static bool IsDerivedFrom(INamedTypeSymbol? symbol, INamedTypeSymbol baseType)
-    {
-        while (symbol != null)
-        {
-            if (SymbolEqualityComparer.Default.Equals(symbol.BaseType, baseType))
-                return true;
-
-            symbol = symbol.BaseType;
-        }
-
-        return false;
-    }
-
-    private static string GetFullNamespace(INamedTypeSymbol symbol)
-    {
-        var namespaces = new Stack<string>();
-        var ns = symbol.ContainingNamespace;
-
-        while (ns != null && !ns.IsGlobalNamespace)
-        {
-            namespaces.Push(ns.Name);
-            ns = ns.ContainingNamespace;
-        }
-
-        return string.Join(".", namespaces);
-    }
 }
