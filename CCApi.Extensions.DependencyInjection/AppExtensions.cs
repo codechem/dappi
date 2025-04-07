@@ -19,8 +19,7 @@ public static class AppExtensions
         if (app.Configuration.IsDappiUiConfigured())
             app.UseCors(Constants.CorsPolicies.AllowDappiAngularApp);
 
-        if (
-            app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI(c =>
