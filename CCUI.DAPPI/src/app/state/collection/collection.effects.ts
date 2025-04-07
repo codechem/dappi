@@ -17,6 +17,7 @@ import * as ContentActions from '../content/content.actions';
 import { BASE_API_URL } from '../../../Constants';
 import {ModelField} from '../../models/content.model';
 
+
 @Injectable()
 export class CollectionEffects {
   loadCollectionTypes$ = createEffect(() =>
@@ -65,7 +66,7 @@ export class CollectionEffects {
         return this.http.get<ModelField[]>(endpoint).pipe(
           map((fields) =>
             CollectionActions.loadFieldsSuccess({
-              fields: [...fields],
+              fields: [...fields.$values],
             })
           ),
           catchError((error) =>

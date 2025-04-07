@@ -21,7 +21,7 @@ export class ContentEffects {
           .replace(/\s+/g, '-')}`;
 
         return this.http
-          .get<PaginatedResponse>(endpoint, {
+          .get<any>(endpoint, {
             params: {
               offset: ((action.page - 1) * action.limit).toString(),
               limit: action.limit.toString(),
@@ -53,8 +53,8 @@ export class ContentEffects {
         const endpoint = `${BASE_API_URL}${action.selectedType
           .toLowerCase()
           .replace(/\s+/g, '-')}`;
-
         return this.http.get<PaginatedResponse>(endpoint).pipe(
+
           map((response) =>
             ContentActions.loadRelatedItemsSuccess({
               relatedItems: {
