@@ -2,6 +2,9 @@ using System.Collections.Immutable;
 using System.Text;
 using CCApi.SourceGenerator.Extensions;
 using CCApi.SourceGenerator.Generators;
+using CCApi.SourceGenerator.Models;
+using Microsoft.CodeAnalysis;
+using static CCApi.SourceGenerator.Utilities.ClassPropertiesAnalyzer;
 
 namespace CCApi.SourceGenerator;
 
