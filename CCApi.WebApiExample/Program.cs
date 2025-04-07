@@ -3,7 +3,7 @@ using CCApi.WebApiExample.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDappi<ApplicationDbContext>(builder.Configuration);
+builder.Services.AddDappi<AppDbContext>(builder.Configuration);
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -13,7 +13,7 @@ builder.Services.AddControllers()
 
 var app = builder.Build();
 
-app.UseDappi<ApplicationDbContext>();
+app.UseDappi<AppDbContext>();
 
 app.UseHttpsRedirection();
 app.MapControllers();
