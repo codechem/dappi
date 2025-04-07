@@ -12,7 +12,7 @@ dappi is a powerful tool designed to streamline backend API development by autom
 ## Installation
 
 1. Create a .NET API Project, add nuget package
-
+nope, not working yet
     ```dotnet add package Codechem.Dappi.Generator --version 1.0.0```
 
 ## Usage
