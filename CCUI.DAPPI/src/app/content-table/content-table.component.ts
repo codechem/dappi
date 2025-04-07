@@ -18,14 +18,15 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Store } from '@ngrx/store';
 import {
   selectHeaders,
+  selectIsSearching,
   selectItems,
   selectItemsPerPage,
   selectLoading,
   selectSelectedType,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
-import { map, Observable, Subscription, take, takeUntil } from 'rxjs';
-import { ContentItem, TableHeader } from '../models/content.model';
+import { Subscription } from 'rxjs';
+import { ContentItem, FieldType, TableHeader } from '../models/content.model';
 
 @Component({
   selector: 'app-content-table',
@@ -44,7 +45,7 @@ import { ContentItem, TableHeader } from '../models/content.model';
 })
 export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   private subscription: Subscription = new Subscription();
-
+  fieldType = FieldType;
   Math = Math;
   selectedType: string | undefined = undefined;
   searchText: string | undefined = undefined;
@@ -52,6 +53,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   items: ContentItem[] = [];
 
   selectedType$ = this.store.select(selectSelectedType);
+  isSearching$ = this.store.select(selectIsSearching);
   itemsPerPage$ = this.store.select(selectItemsPerPage);
   items$ = this.store.select(selectItems);
   headers$ = this.store.select(selectHeaders);
@@ -84,6 +86,10 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   ngOnInit(): void {
     this.subscription.add(
       this.selectedType$.subscribe((type) => (this.selectedType = type))
+    );
+
+    this.subscription.add(
+      this.isSearching$.subscribe((searching) => (this.isSearching = searching))
     );
 
     this.subscription.add(
@@ -229,6 +235,12 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  getFilteredHeaders(headers: TableHeader[]): TableHeader[] {
+    if (!headers) return [];
+
+    return headers.filter((header) => header.type !== FieldType.relation);
+  }
+
   getColumnWidth(header: any): number {
     switch (header.type) {
       case 'file':
@@ -266,7 +278,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   getCellDisplay(item: ContentItem, header: TableHeader) {
     const value = item[header.key];
 
-    if (header.type === 'file' && value) {
+    if (header.type === FieldType.file && value) {
       return this.convertToImage(value);
     }
 
@@ -340,14 +352,14 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   toggleSearch(): void {
-    this.isSearching = true;
+    this.store.dispatch(ContentActions.setIsSearching({ isSearching: true }));
   }
 
   clearSearch(): void {
     this.store.dispatch(ContentActions.setSearchText({ searchText: '' }));
     this.searchText = '';
     this.currentPage = 1;
-    this.isSearching = false;
+    this.store.dispatch(ContentActions.setIsSearching({ isSearching: false }));
     this.store.dispatch(
       ContentActions.loadContent({
         selectedType: this.selectedType ?? '',

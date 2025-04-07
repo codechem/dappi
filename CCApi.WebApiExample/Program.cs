@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using CCApi.WebApiExample.Data;
 using CCApi.WebApiExample.Interfaces;
 using CCApi.WebApiExample.Services;
@@ -39,6 +40,12 @@ builder.Services.AddCors(options =>
                         .AllowAnyHeader()
                         .AllowAnyMethod());
 });
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+    });
 
 var app = builder.Build();
 

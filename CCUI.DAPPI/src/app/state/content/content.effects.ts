@@ -5,8 +5,9 @@ import { map, mergeMap, catchError, withLatestFrom } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngrx/store';
 import * as ContentActions from './content.actions';
-import { ModelField, PaginatedResponse } from '../../models/content.model';
 import { selectItemsPerPage, selectSelectedType } from './content.selectors';
+import { DataResponse, FieldType } from '../../models/content.model';
+import { BASE_API_URL } from '../../../Constants';
 
 @Injectable()
 export class ContentEffects {
@@ -15,12 +16,12 @@ export class ContentEffects {
       ofType(ContentActions.loadContent),
       withLatestFrom(this.store.select(selectSelectedType)),
       mergeMap(([action, selectedType]) => {
-        const endpoint = `http://localhost:5101/api/${selectedType
+        const endpoint = `${BASE_API_URL}${selectedType
           .toLowerCase()
           .replace(/\s+/g, '-')}`;
 
         return this.http
-          .get<PaginatedResponse>(endpoint, {
+          .get<any>(endpoint, {
             params: {
               offset: ((action.page - 1) * action.limit).toString(),
               limit: action.limit.toString(),
@@ -29,7 +30,14 @@ export class ContentEffects {
           })
 
           .pipe(
-            map((items) => ContentActions.loadContentSuccess({ items })),
+            map((response) =>
+              ContentActions.loadContentSuccess({
+                items: {
+                  ...response,
+                  data: response.data.$values,
+                },
+              })
+            ),
             catchError((error) =>
               of(ContentActions.loadContentFailure({ error: error.message }))
             )
@@ -38,20 +46,52 @@ export class ContentEffects {
     )
   );
 
+  loadRelatedItems$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ContentActions.loadRelatedItems),
+      mergeMap((action) => {
+        const endpoint = `${BASE_API_URL}${action.selectedType
+          .toLowerCase()
+          .replace(/\s+/g, '-')}`;
+
+        return this.http.get<any>(endpoint).pipe(
+          map((response) =>
+            ContentActions.loadRelatedItemsSuccess({
+              relatedItems: {
+                ...response,
+                data: response.data.$values,
+              },
+            })
+          ),
+          catchError((error) =>
+            of(ContentActions.loadRelatedItemsFailure({ error: error.message }))
+          )
+        );
+      })
+    )
+  );
+
   loadHeaders$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ContentActions.loadHeaders),
       mergeMap((action) => {
-        const endpoint = `http://localhost:5101/api/models/fields/${action.selectedType}`;
-        return this.http.get<ModelField[]>(endpoint).pipe(
-          map((fields) => {
-            const headers = fields.map((field) => ({
-              key:
-                field.fieldName.charAt(0).toLowerCase() +
-                field.fieldName.slice(1),
-              label: this.formatHeaderLabel(field.fieldName),
-              type: this.mapFieldTypeToInputType(field.fieldType),
-            }));
+        const endpoint = `${BASE_API_URL}models/fields/${action.selectedType}`;
+        return this.http.get<DataResponse>(endpoint).pipe(
+          map((response) => {
+            const headers = response.$values.map((field) => {
+              const fieldType = this.mapFieldTypeToInputType(field.fieldType);
+              const isRelation = fieldType === FieldType.relation;
+
+              return {
+                key: this.toCamelCase(field.fieldName),
+                label: this.formatHeaderLabel(field.fieldName),
+                type: fieldType,
+                relatedTo: isRelation
+                  ? field.fieldType
+                  : this.getRelatedType(field.fieldType),
+                isRequired: field.isRequired ?? false,
+              };
+            });
             return ContentActions.loadHeadersSuccess({ headers });
           }),
           catchError((error) =>
@@ -66,7 +106,7 @@ export class ContentEffects {
     this.actions$.pipe(
       ofType(ContentActions.deleteContent),
       mergeMap((action) => {
-        const endpoint = `http://localhost:5101/api/${action.contentType
+        const endpoint = `${BASE_API_URL}${action.contentType
           .toLowerCase()
           .replace(/\s+/g, '-')}/${action.id}`;
 
@@ -85,7 +125,7 @@ export class ContentEffects {
       ofType(ContentActions.deleteMultipleContent),
       mergeMap((action) => {
         const deletePromises = action.ids.map((id) => {
-          const endpoint = `http://localhost:5101/api/${action.contentType
+          const endpoint = `${BASE_API_URL}${action.contentType
             .toLowerCase()
             .replace(/\s+/g, '-')}/${id}`;
 
@@ -131,7 +171,7 @@ export class ContentEffects {
       ofType(ContentActions.createContent),
       withLatestFrom(this.store.select(selectItemsPerPage)),
       mergeMap(([action, itemsPerPage]) => {
-        const endpoint = `http://localhost:5101/api/${action.contentType
+        const endpoint = `${BASE_API_URL}${action.contentType
           .toLowerCase()
           .replace(/\s+/g, '-')}`;
 
@@ -165,7 +205,7 @@ export class ContentEffects {
       ofType(ContentActions.updateContent),
       withLatestFrom(this.store.select(selectItemsPerPage)),
       mergeMap(([action, itemsPerPage]) => {
-        const endpoint = `http://localhost:5101/api/${action.contentType
+        const endpoint = `${BASE_API_URL}${action.contentType
           .toLowerCase()
           .replace(/\s+/g, '-')}/${action.id}`;
 
@@ -193,6 +233,16 @@ export class ContentEffects {
     )
   );
 
+  private getRelatedType(fieldType: string): string | undefined {
+    return fieldType.includes('ICollection')
+      ? fieldType.match(/<([^>]+)>/)?.[1]
+      : undefined;
+  }
+
+  private toCamelCase(name: string): string {
+    return name.charAt(0).toLowerCase() + name.slice(1);
+  }
+
   private formatHeaderLabel(key: string): string {
     return key
       .replace(/([A-Z])/g, ' $1')
@@ -201,25 +251,88 @@ export class ContentEffects {
       .trim();
   }
 
-  private mapFieldTypeToInputType(
-    fieldType: string
-  ): 'text' | 'textarea' | 'file' {
+  private mapFieldTypeToInputType(fieldType: string): FieldType {
     const lowerFieldType = fieldType.toLowerCase();
 
-    if (lowerFieldType.includes('byte[]') || lowerFieldType.includes('blob')) {
-      return 'file';
+    if (
+      !lowerFieldType.includes('string') &&
+      !lowerFieldType.includes('byte[]') &&
+      !lowerFieldType.includes('blob') &&
+      !lowerFieldType.includes('icollection') &&
+      !lowerFieldType.includes('guid') &&
+      ![
+        'int',
+        'integer',
+        'number',
+        'float',
+        'double',
+        'decimal',
+        'long',
+        'short',
+        'byte',
+        'boolean',
+        'bool',
+        'date',
+        'datetime',
+        'time',
+        'char',
+        'enum',
+      ].includes(lowerFieldType)
+    ) {
+      return FieldType.relation;
     }
 
+    // File types
+    if (
+      lowerFieldType.includes('byte[]') ||
+      lowerFieldType.includes('blob') ||
+      lowerFieldType === 'binary'
+    ) {
+      return FieldType.file;
+    }
+
+    // Long text
     if (
       lowerFieldType === 'string' &&
       ['description', 'content', 'text', 'textarea'].some((keyword) =>
         lowerFieldType.includes(keyword)
       )
     ) {
-      return 'textarea';
+      return FieldType.textarea;
     }
 
-    return 'text';
+    // Collection
+    if (lowerFieldType.includes('icollection')) {
+      return FieldType.collection;
+    }
+
+    // IDs
+    if (lowerFieldType.includes('guid') || lowerFieldType === 'uuid') {
+      return FieldType.id;
+    }
+
+    // Boolean
+    if (lowerFieldType === 'boolean' || lowerFieldType === 'bool') {
+      return FieldType.checkbox;
+    }
+
+    // Date/Time
+    if (['date', 'datetime', 'time'].includes(lowerFieldType)) {
+      return FieldType.date;
+    }
+
+    // Enum
+    if (lowerFieldType === 'enum') {
+      return FieldType.select;
+    }
+
+    // Single character
+    if (lowerFieldType === 'char') {
+      return FieldType.text;
+    }
+
+    // Default
+    return FieldType.text;
   }
 
   constructor(

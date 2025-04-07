@@ -16,6 +16,7 @@ import {
   selectSelectedType,
   selectTotalItems,
   selectError,
+  selectIsSearching,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
 import {
@@ -41,13 +42,13 @@ import {
 })
 export class ContentManagerComponent implements OnInit, OnDestroy {
   disabled = false;
-  searchText = '';
+  isSearching = false;
 
-  private destroy$ = new Subject<void>();
   private subscription: Subscription = new Subscription();
 
   items: ContentItem[] = [];
 
+  isSearching$ = this.store.select(selectIsSearching);
   items$: Observable<PaginatedResponse | undefined> =
     this.store.select(selectItems);
   headers$: Observable<TableHeader[]> = this.store.select(selectHeaders);
@@ -60,6 +61,10 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
   constructor(private router: Router, private store: Store) {}
 
   ngOnInit(): void {
+    this.subscription.add(
+      this.isSearching$.subscribe((searching) => (this.isSearching = searching))
+    );
+
     this.subscription.add(
       this.selectedType$.subscribe((selectedType) => {
         if (selectedType) {

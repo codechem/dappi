@@ -10,10 +10,29 @@ export interface PaginatedResponse {
   data: ContentItem[];
 }
 
+export enum FieldType {
+  'text',
+  'textarea',
+  'file',
+  'collection',
+  'id',
+  'relation',
+  'number',
+  'checkbox',
+  'date',
+  'select',
+}
 export interface TableHeader {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'file';
+  type: FieldType;
+  isRequired: boolean;
+  relatedTo?: string;
+}
+
+export interface DataResponse {
+  $id: string;
+  $values: any[];
 }
 
 export interface ApiResponse<T> {
@@ -28,12 +47,6 @@ export interface ModelField {
   fieldType: string;
 }
 
-export interface TableHeader {
-  key: string;
-  label: string;
-  type: 'text' | 'textarea' | 'file';
-}
-
 export interface PaginatedResponse {
   total: number;
   offset: number;
@@ -43,4 +56,6 @@ export interface PaginatedResponse {
 export interface ModelField {
   fieldName: string;
   fieldType: string;
+  relatedTo?: string;
+  isRequired?: boolean;
 }

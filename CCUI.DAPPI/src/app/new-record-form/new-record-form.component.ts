@@ -11,25 +11,32 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { ContentItem, TableHeader } from '../models/content.model';
+import { ContentItem, FieldType, TableHeader } from '../models/content.model';
 import { Store } from '@ngrx/store';
 import {
   selectCurrentItem,
   selectHeaders,
+  selectItems,
+  selectRelatedItems,
   selectSelectedType,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
 import { Subscription } from 'rxjs';
+import { MatOption } from '@angular/material/core';
+import { MatSelectModule } from '@angular/material/select';
 
 interface ContentField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'file';
+  type: FieldType;
   placeholder?: string;
   required: boolean;
   validators?: any[];
   maxFileSize?: number;
   acceptedFileTypes?: string[];
+  relatedItems?: any[];
+  multiple?: boolean;
+  relatedTo?: string;
 }
 
 @Component({
@@ -43,6 +50,8 @@ interface ContentField {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
+    MatOption,
+    MatSelectModule,
   ],
   templateUrl: './new-record-form.component.html',
   styleUrls: ['./new-record-form.component.scss'],
@@ -52,10 +61,13 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
   fields: TableHeader[] = [];
   selectedType = '';
-
+  fieldType = FieldType;
   headers$ = this.store.select(selectHeaders);
   selectedType$ = this.store.select(selectSelectedType);
   currentItem: ContentItem | undefined = undefined;
+  relationFields: ContentField[] = [];
+  contentTypes$ = this.store.select(selectItems);
+  relatedItems$ = this.store.select(selectRelatedItems);
 
   private subscription: Subscription = new Subscription();
   currentItem$ = this.store.select(selectCurrentItem);
@@ -85,6 +97,22 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
+  getRelationDisplayValue(item: any, field: ContentField): string {
+    if (!item) return '';
+
+    const displayKeys = ['name', 'title', 'label', 'displayName', 'value'];
+
+    for (const key of displayKeys) {
+      if (item[key] !== undefined && item[key] !== null) {
+        return String(item[key]);
+      }
+    }
+
+    if (item.id) return item.id;
+
+    return JSON.stringify(item);
+  }
+
   populateFormWithData(itemData: any): void {
     Object.keys(this.contentForm.controls).forEach((key) => {
       if (itemData[key] !== undefined) {
@@ -108,22 +136,82 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
       this.headers$.subscribe((fields) => {
         this.fields = fields;
         this.contentFields = this.fields
-          .filter((field) => field.key !== 'id')
-          .map((field) => ({
-            key: field.key,
-            label: field.label,
-            type: field.type,
-            placeholder: `Enter ${field.label}`,
-            required: true,
-            validators: [Validators.required],
-          }));
+          .filter((field) => field.type !== FieldType.id)
+          .map((field) => {
+            const contentField: ContentField = {
+              key: field.key,
+              label: field.label,
+              type: field.type,
+              placeholder: `Enter ${field.label}`,
+              required: field.isRequired,
+              validators: field.isRequired ? [Validators.required] : undefined,
+              relatedTo: field.relatedTo,
+            };
+
+            if (
+              field.type === FieldType.collection ||
+              field.type === FieldType.relation
+            ) {
+              contentField.multiple = field.type === FieldType.collection;
+              if (field.relatedTo) {
+                this.store.dispatch(
+                  ContentActions.loadRelatedItems({
+                    selectedType: field.relatedTo,
+                  })
+                );
+              }
+            }
+
+            return contentField;
+          });
+
+        this.relationFields = this.contentFields.filter(
+          (field) =>
+            field.type === FieldType.collection ||
+            field.type === FieldType.relation
+        );
 
         this.fileFields = this.contentFields.filter(
-          (field) => field.type === 'file'
+          (field) => field.type === FieldType.file
         );
 
         const nonFileFields = this.contentFields.filter(
-          (field) => field.type !== 'file'
+          (field) => field.type !== FieldType.file
+        );
+        const halfLength = Math.ceil(nonFileFields.length / 2);
+
+        this.leftColumnFields = nonFileFields.slice(0, halfLength);
+        this.rightColumnFields = nonFileFields.slice(halfLength);
+        this.buildForm();
+      })
+    );
+
+    this.subscription.add(
+      this.relatedItems$.subscribe((items) => {
+        this.contentFields = this.contentFields.map((item) => {
+          if (
+            item.type === FieldType.collection ||
+            item.type === FieldType.relation
+          ) {
+            return {
+              ...item,
+              relatedItems: items?.data,
+            };
+          } else return item;
+        });
+
+        this.relationFields = this.contentFields.filter(
+          (field) =>
+            field.type === FieldType.collection ||
+            field.type === FieldType.relation
+        );
+
+        this.fileFields = this.contentFields.filter(
+          (field) => field.type === FieldType.file
+        );
+
+        const nonFileFields = this.contentFields.filter(
+          (field) => field.type !== FieldType.file
         );
         const halfLength = Math.ceil(nonFileFields.length / 2);
 
@@ -153,7 +241,15 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
       const validators = field.required
         ? [Validators.required, ...(field.validators || [])]
         : field.validators || [];
-      group[field.key] = ['', validators];
+
+      if (
+        field.type === FieldType.collection ||
+        field.type === FieldType.relation
+      ) {
+        group[field.key] = [field.multiple ? [] : null, validators];
+      } else {
+        group[field.key] = ['', validators];
+      }
     });
 
     this.contentForm = this.fb.group(group);
@@ -251,43 +347,55 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.fileFieldTouched = true;
 
     if (this.isFormValid()) {
-      const formData = {
-        id: crypto.randomUUID(),
-        ...this.contentForm.value,
-      };
+      const formData = Object.keys(this.contentForm.value).reduce(
+        (acc: any, key) => {
+          const value = this.contentForm.value[key];
+          const field = this.contentFields.find((f) => f.key === key);
+
+          if (field?.type === FieldType.relation && value && value.id) {
+            const relationKey = this.fields.find(
+              (f) => f.key.includes(field.key) && f.type === FieldType.id
+            )?.key;
+            if (relationKey) acc[relationKey] = value.id;
+          } else if (
+            typeof value === 'object' &&
+            value !== null &&
+            !Array.isArray(value)
+          ) {
+            acc[key] = [{ ...value }];
+          } else {
+            acc[key] = value;
+          }
+
+          return acc;
+        },
+        {}
+      );
 
       this.submitToBackend(formData);
     }
   }
 
   private submitToBackend(formData: any): void {
-    const formDataToSend = new FormData();
-
-    Object.keys(formData).forEach((key) => {
-      if (formData[key] instanceof File) {
-        formDataToSend.append(key, formData[key], formData[key].name);
-      } else if (formData[key] !== null && formData[key] !== undefined) {
-        formDataToSend.append(key, formData[key]);
-      }
-    });
+    const body = { ...formData };
 
     if (this.currentItem !== undefined) {
       this.store.dispatch(
         ContentActions.updateContent({
           id: this.currentItem.id,
-          formData: formDataToSend,
+          formData: body,
           contentType: this.selectedType,
         })
       );
     } else {
       this.store.dispatch(
         ContentActions.createContent({
-          formData: formDataToSend,
+          formData: body,
           contentType: this.selectedType,
         })
       );
     }
-    
+
     this.store.dispatch(
       ContentActions.setCurrentItem({ currentItem: undefined })
     );

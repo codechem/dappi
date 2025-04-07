@@ -179,12 +179,67 @@ namespace {rootNamespace}.Controllers
                     return NotFound(""Model class not found."");
                 }}
 
-                var existingCode = System.IO.File.ReadAllText(modelFilePath);
+                if (request.FieldType == ""OneToOne"")
+                {{
+                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $""{{request.RelatedTo}}.cs"");
+                    var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
+                    var existingCode = System.IO.File.ReadAllText(modelFilePath);
+                    
+                    var updatedCode = AddFieldToClass(existingCode, $""{{request.FieldName}}Id"", $""Guid{{(!request.IsRequired ? ""?"" : """")}}"", """", request.IsRequired);
+                    System.IO.File.WriteAllText(modelFilePath, updatedCode);
+                    
+                    existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                var updatedCode = AddFieldToClass(existingCode, request.FieldName, request.FieldType);
+                    updatedCode = AddFieldToClass(existingCode, request.FieldName, $""{{request.RelatedTo}}{{(!request.IsRequired ? ""?"" : """")}}"","""", request.IsRequired);
+                    System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
-                System.IO.File.WriteAllText(modelFilePath, updatedCode);
+                    var relatedToCode = AddFieldToClass(existingRelatedToCode, request.FieldName, $""{{modelName}}{{(!request.IsRequired ? ""?"" : """")}}"","""", request.IsRequired);
 
+                    System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
+                    UpdateDbContextOneToOne(modelName, request.FieldName, request.RelatedTo);
+                }}
+                else if (request.FieldType == ""OneToMany"")
+                {{
+                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $""{{request.RelatedTo}}.cs"");
+                    var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
+                    var existingCode = System.IO.File.ReadAllText(modelFilePath);
+
+                    var updatedCode = AddFieldToClass(existingCode, $""{{request.FieldName}}Id"", $""Guid{{(!request.IsRequired ? ""?"" : """")}}"", """", request.IsRequired);
+                    System.IO.File.WriteAllText(modelFilePath, updatedCode);
+
+                    existingCode = System.IO.File.ReadAllText(modelFilePath);
+                    
+                    updatedCode = AddFieldToClass(existingCode, request.FieldName, $""{{request.RelatedTo}}{{(!request.IsRequired ? ""?"" : """")}}"", """", request.IsRequired);
+                    System.IO.File.WriteAllText(modelFilePath, updatedCode);
+
+                    var relatedToCode = AddFieldToClass(existingRelatedToCode, request.FieldName, $""ICollection<{{modelName}}{{(!request.IsRequired ? ""?"" : """")}}>"", $""{{modelName}}{{(!request.IsRequired ? ""?"" : """")}}"", request.IsRequired);
+
+                    System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
+                    UpdateDbContextOneToMany(modelName, request.FieldName, request.RelatedTo);
+                }}
+                else if (request.FieldType == ""ManyToMany"")
+                {{
+                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $""{{request.RelatedTo}}.cs"");
+    
+                    var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
+                    var existingCode = System.IO.File.ReadAllText(modelFilePath);
+
+                    var updatedCode = AddFieldToClass(existingCode, $""{{request.RelatedTo}}s"", $""ICollection<{{request.RelatedTo}}{{(!request.IsRequired ? ""?"" : """")}}>"", $""{{request.RelatedTo}}{{(!request.IsRequired ? ""?"" : """")}}"", request.IsRequired);
+                    System.IO.File.WriteAllText(modelFilePath, updatedCode);
+
+                    var relatedToCode = AddFieldToClass(existingRelatedToCode, $""{{modelName}}s"", $""ICollection<{{modelName}}{{(!request.IsRequired ? ""?"" : """")}}>"", $""{{modelName}}{{(!request.IsRequired ? ""?"" : """")}}"", request.IsRequired);
+                    System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
+
+                    UpdateDbContextManyToMany(modelName, request.RelatedTo);
+                }}
+                else
+                {{
+                    var existingCode = System.IO.File.ReadAllText(modelFilePath);
+
+                    var updatedCode = AddFieldToClass(existingCode, request.FieldName, $""{{request.FieldType}}{{(!request.IsRequired ? ""?"" : """")}}"", """", request.IsRequired);
+
+                    System.IO.File.WriteAllText(modelFilePath, updatedCode);
+                }}
                 return Ok(new
                 {{
                     Message = $""Field '{{request.FieldName}}' of type '{{request.FieldType}}' added successfully to '{{modelName}}' model."",
@@ -197,13 +252,201 @@ namespace {rootNamespace}.Controllers
             }}
         }}
 
-        private string AddFieldToClass(string classCode, string fieldName, string fieldType)
+        private void UpdateDbContextManyToMany(string modelName, string relatedTo)
+        {{
+            var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), ""Data"", ""AppDbContext.cs"");
+            if (!System.IO.File.Exists(dbContextFilePath))
+            {{
+                throw new FileNotFoundException($""DbContext file not found at {{dbContextFilePath}}"");
+            }}
+
+            string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
+
+            int onModelCreatingIndex = dbContextContent.IndexOf(""protected override void OnModelCreating(ModelBuilder modelBuilder)"");
+            if (onModelCreatingIndex == -1)
+            {{
+            var lastClosingBrace = dbContextContent.LastIndexOf(""}}"");
+
+            var onModelCreatingMethod = $@""
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {{{{
+        modelBuilder.Entity<{{modelName}}>()
+            .HasMany(m => m.{{relatedTo}}s)
+            .WithMany(r => r.{{modelName}}s)
+            .UsingEntity(j => j.ToTable(""""{{modelName}}{{relatedTo}}s""""));
+
+        base.OnModelCreating(modelBuilder);
+    }}}}"";
+
+            dbContextContent = dbContextContent.Insert(lastClosingBrace, onModelCreatingMethod);
+        }}
+        else
+        {{
+            int methodStartBrace = dbContextContent.IndexOf('{{', onModelCreatingIndex);
+            int currentPos = methodStartBrace + 1;
+            int openBraces = 1;
+
+            while (openBraces > 0 && currentPos < dbContextContent.Length)
+        {{
+            if (dbContextContent[currentPos] == '{{')
+                openBraces++;
+            else if (dbContextContent[currentPos] == '}}')
+                openBraces--;
+
+            currentPos++;
+        }}
+
+        string baseCall = ""base.OnModelCreating(modelBuilder);"";
+        int baseCallIndex = dbContextContent.LastIndexOf(baseCall, currentPos);
+
+        int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
+
+        var configCode = $@""
+        modelBuilder.Entity<{{modelName}}>()
+            .HasMany(m => m.{{relatedTo}}s)
+            .WithMany(r => r.{{modelName}}s)
+            .UsingEntity(j => j.ToTable(""""{{modelName}}{{relatedTo}}s""""));"";
+
+        dbContextContent = dbContextContent.Insert(insertPosition, configCode);
+    }}
+
+    System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
+}}
+
+        private void UpdateDbContextOneToOne(string modelName, string propertyName, string relatedTo)
+        {{
+            var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), ""Data"", ""AppDbContext.cs"");
+            if (!System.IO.File.Exists(dbContextFilePath))
+            {{
+                throw new FileNotFoundException($""DbContext file not found at {{dbContextFilePath}}"");
+            }}
+
+            string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
+
+            int onModelCreatingIndex = dbContextContent.IndexOf(""protected override void OnModelCreating(ModelBuilder modelBuilder)"");
+            if (onModelCreatingIndex == -1)
+            {{
+                var lastClosingBrace = dbContextContent.LastIndexOf(""}}"");
+
+                var onModelCreatingMethod = $@""
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {{{{
+        modelBuilder.Entity<{{modelName}}>()
+            .HasOne<{{relatedTo}}>(s => s.{{propertyName}})
+            .WithOne(e => e.{{propertyName}})
+            .HasForeignKey<{{modelName}}>(ad => ad.{{propertyName}}Id);
+
+        base.OnModelCreating(modelBuilder);
+    }}}}"";
+
+                dbContextContent = dbContextContent.Insert(lastClosingBrace, onModelCreatingMethod);
+            }}
+            else
+            {{
+                int methodStartBrace = dbContextContent.IndexOf('{{', onModelCreatingIndex);
+                int currentPos = methodStartBrace + 1;
+                int openBraces = 1;
+
+                while (openBraces > 0 && currentPos < dbContextContent.Length)
+                {{
+                    if (dbContextContent[currentPos] == '{{')
+                        openBraces++;
+                    else if (dbContextContent[currentPos] == '}}')
+                        openBraces--;
+
+                    currentPos++;
+                }}
+
+                string baseCall = ""base.OnModelCreating(modelBuilder);"";
+                int baseCallIndex = dbContextContent.LastIndexOf(baseCall, currentPos);
+
+                int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
+
+                var configCode =
+                $@""
+        modelBuilder.Entity<{{modelName}}>()
+            .HasOne<{{relatedTo}}>(s => s.{{propertyName}})
+            .WithOne(e => e.{{propertyName}});"";
+
+                dbContextContent = dbContextContent.Insert(insertPosition, configCode);
+            }}
+
+            System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
+        }}
+
+        private void UpdateDbContextOneToMany(string modelName, string propertyName, string relatedTo)
+        {{
+            var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), ""Data"", ""AppDbContext.cs"");
+            if (!System.IO.File.Exists(dbContextFilePath))
+            {{
+                throw new FileNotFoundException($""DbContext file not found at {{dbContextFilePath}}"");
+            }}
+
+            string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
+
+            int onModelCreatingIndex = dbContextContent.IndexOf(""protected override void OnModelCreating(ModelBuilder modelBuilder)"");
+            if (onModelCreatingIndex == -1)
+            {{
+                var lastClosingBrace = dbContextContent.LastIndexOf(""}}"");
+
+                var onModelCreatingMethod = $@""
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {{{{
+        modelBuilder.Entity<{{modelName}}>()
+            .HasOne<{{relatedTo}}>(s => s.{{propertyName}})
+            .WithMany(e => e.{{propertyName}});
+
+        base.OnModelCreating(modelBuilder);
+    }}}}"";
+
+                dbContextContent = dbContextContent.Insert(lastClosingBrace, onModelCreatingMethod);
+            }}
+            else
+            {{
+                int methodStartBrace = dbContextContent.IndexOf('{{', onModelCreatingIndex);
+                int currentPos = methodStartBrace + 1;
+                int openBraces = 1;
+
+                while (openBraces > 0 && currentPos < dbContextContent.Length)
+                {{
+                    if (dbContextContent[currentPos] == '{{')
+                        openBraces++;
+                    else if (dbContextContent[currentPos] == '}}')
+                        openBraces--;
+
+                    currentPos++;
+                }}
+
+                string baseCall = ""base.OnModelCreating(modelBuilder);"";
+                int baseCallIndex = dbContextContent.LastIndexOf(baseCall, currentPos);
+
+                int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
+
+                var configCode =
+                $@""
+        modelBuilder.Entity<{{modelName}}>()
+            .HasOne<{{relatedTo}}>(s => s.{{propertyName}})
+            .WithMany(e => e.{{propertyName}});"";
+
+                dbContextContent = dbContextContent.Insert(insertPosition, configCode);
+            }}
+
+            System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
+        }}
+
+        private string AddFieldToClass(string classCode, string fieldName, string fieldType, string collectionType = """", bool isRequired = false)
         {{
             if (PropertyCheckExtensions.PropertyExists(classCode, fieldName, fieldType))
             {{
                 throw new InvalidOperationException($""The property '{{fieldName}}' of type '{{fieldType}}' already exists in the class."");
             }}
-            var propertyCode = $""    public {{fieldType}} {{fieldName}} {{{{ get; set; }}}}"";
+            // var requiredField = isRequired ? ""required"" : """";
+            var requiredField = """";
+            var propertyCode = $""    public {{requiredField}} {{fieldType}} {{fieldName}} {{{{ get; set; }}}}"";
+
+            if(fieldType.Contains(""ICollection"")) {{
+            propertyCode = $""    public {{requiredField}} {{fieldType}} {{fieldName}} {{{{ get; set; }}}} = new List<{{collectionType}}>();"";
+            }}
             var insertPosition = classCode.LastIndexOf(""}}"", StringComparison.Ordinal); 
             var updatedCode = classCode.Insert(insertPosition, Environment.NewLine + propertyCode + Environment.NewLine);
 
@@ -313,20 +556,29 @@ namespace {rootNamespace}.Controllers
         private List<object> ExtractFieldsFromModel(string classCode)
         {{
             var fieldList = new List<object>();
-            var propertyPattern = new Regex(@""public\s+([\w<>\[\]]+)\s+(\w+)\s*\{{\s*get;\s*set;\s*}}"", RegexOptions.Multiline);
+            var propertyPattern = new Regex(@""public\s+(required\s+)?([\w<>\[\]?]+)\s+(\w+)\s*\{{\s*get;\s*set;\s*\}}"", RegexOptions.Multiline);
 
             var matches = propertyPattern.Matches(classCode);
             foreach (Match match in matches)
             {{
-                if (match.Groups.Count == 3)
+                if (match.Groups.Count >= 4)
                 {{
-                    var fieldType = match.Groups[1].Value;
-                    var fieldName = match.Groups[2].Value;
-                    fieldList.Add(new {{ FieldName = fieldName, FieldType = fieldType }});
-                }}
+                    var hasRequiredKeyword = !string.IsNullOrEmpty(match.Groups[1].Value);
+            var fieldType = match.Groups[2].Value;
+            var fieldName = match.Groups[3].Value;
+
+            bool isRequired = hasRequiredKeyword || !fieldType.EndsWith(""?"");
+
+            if (!isRequired && fieldType.EndsWith(""?""))
+            {{
+                fieldType = fieldType.TrimEnd('?');
             }}
-            return fieldList;
+
+            fieldList.Add(new {{ FieldName = fieldName, FieldType = fieldType, IsRequired = isRequired }});
         }}
+    }}
+    return fieldList;
+}}
     }}
 
     public class ModelRequest
@@ -338,6 +590,8 @@ namespace {rootNamespace}.Controllers
     {{
         public string FieldName {{ get; set; }}
         public string FieldType {{ get; set; }}
+        public string RelatedTo {{ get; set; }}
+        public bool IsRequired {{ get; set; }} = false;
     }}
 
     [AttributeUsage(AttributeTargets.Class)]

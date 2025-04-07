@@ -27,7 +27,9 @@
 </div>
 
 <div class="scrollable-list">
-  <ng-container *ngIf="selectedType$ | async as selectedType">
+  @let selectedType = (selectedType$ | async);
+  @if(selectedType)
+  {
     <ng-container *ngIf="filteredCollectionTypes.length > 0; else noResults">
       <mat-list>
         <mat-list-item class="custom-list-item" *ngFor="let type of filteredCollectionTypes; trackBy: trackByFn"
@@ -44,5 +46,5 @@
         <p class="search-hint">Try different search terms</p>
       </div>
     </ng-template>
-  </ng-container>
+  }
 </div>

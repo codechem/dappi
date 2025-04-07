@@ -7,6 +7,10 @@ export const selectItems = createSelector(
   selectContentState,
   (state) => state.items
 );
+export const selectRelatedItems = createSelector(
+  selectContentState,
+  (state) => state.relatedItems
+);
 
 export const selectHeaders = createSelector(
   selectContentState,
@@ -41,4 +45,9 @@ export const selectItemsPerPage = createSelector(
 export const selectCurrentItem = createSelector(
   selectContentState,
   (state) => state.currentItem
+);
+
+export const selectIsSearching = createSelector(
+  selectContentState,
+  (state) => state.isSearching
 );

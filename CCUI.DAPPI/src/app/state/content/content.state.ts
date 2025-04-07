@@ -9,6 +9,8 @@ export interface ContentState {
   totalItems: number;
   itemsPerPage: number;
   currentItem: ContentItem | undefined;
+  isSearching: boolean;
+  relatedItems: PaginatedResponse | undefined;
 }
 
 export const initialContentState: ContentState = {
@@ -20,4 +22,6 @@ export const initialContentState: ContentState = {
   error: null,
   totalItems: 0,
   itemsPerPage: 10,
+  isSearching: false,
+  relatedItems: undefined,
 };

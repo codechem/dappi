@@ -1,77 +1,131 @@
-@use '@angular/material' as mat;
-@use './variables' as vars;
+@use "@angular/material" as mat;
+@use "./variables" as vars;
 
 html {
-  @include mat.theme((
-    color: (
-      theme-type: light,
-      primary: mat.$azure-palette,
-      tertiary: mat.$blue-palette,
-    ),
-    typography: Roboto,
-    density: 0,
-  ));
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
 }
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
 
 :root {
   box-sizing: border-box;
   width: 100%;
+
+  .mat-mdc-select-value {
+    color: vars.$text-primary;
+  }
+
+  mat-dialog-container {
+    max-height: 80vh;
+  }
   ::-webkit-scrollbar {
     width: 6px;
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: rgba(vars.$primary-main, 0.3);
+    background-color: rgba(vars.$primary-main, 0.3) !important;
     border-radius: 3px;
   }
+  ::-webkit-scrollbar-track {
+    background: green;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(vars.$primary-main, 0.3) transparent;
+  }
+  @include mat.form-field-overrides(
+    (
+      outlined-label-text-color: rgba(#ffffff, 0.7),
+      outlined-hover-label-text-color: rgba(#ffffff, 0.7),
+      outlined-input-text-color: vars.$text-primary,
+      filled-hover-label-text-color: rgba(#ffffff, 0.7),
+      filled-focus-active-indicator-color: rgba(#ffffff, 0.7),
+      outlined-hover-outline-color: rgba(vars.$primary-main, 1),
+      filled-active-indicator-color: rgba(vars.$primary-main, 1),
+      outlined-focus-outline-color: rgba(vars.$primary-main, 1),
+      outlined-focus-label-text-color: rgba(vars.$primary-main, 1),
+      filled-error-hover-label-text-color: vars.$error-light,
+      filled-error-focus-label-text-color: vars.$error-light,
+      filled-error-label-text-color: vars.$error-light,
+      filled-error-caret-color: vars.$error-light,
+      filled-error-active-indicator-color: vars.$error-light,
+      filled-error-focus-active-indicator-color: vars.$error-light,
+      filled-error-hover-active-indicator-color: vars.$error-light,
+      outlined-error-caret-color: vars.$error-light,
+      outlined-error-focus-label-text-color: vars.$error-light,
+      outlined-error-label-text-color: vars.$error-light,
+      outlined-error-hover-label-text-color: vars.$error-light,
+      outlined-error-focus-outline-color: vars.$error-light,
+      outlined-error-hover-outline-color: vars.$error-light,
+      outlined-error-outline-color: vars.$error-light,
+      error-text-color: vars.$error-light,
+      error-focus-trailing-icon-color: vars.$error-light,
+      error-hover-trailing-icon-color: vars.$error-light,
+      error-trailing-icon-color: vars.$error-light,
+      filled-input-text-color: vars.$text-primary,
+      filled-input-text-placeholder-color: vars.$text-primary,
+      filled-focus-label-text-color: vars.$text-primary,
+      filled-label-text-color: vars.$text-primary,
+      filled-disabled-label-text-color: vars.$text-primary,
+      outlined-disabled-label-text-color: vars.$text-primary,
+      outlined-input-text-placeholder-color: vars.$text-primary,
+      select-option-text-color: vars.$text-primary,
+    )
+  );
 
-  @include mat.form-field-overrides((
-    filled-caret-color: orange,
-    outlined-label-text-color: rgba(#FFFFFF, 0.7),
-    outlined-hover-label-text-color: rgba(#FFFFFF, 0.7),
-    outlined-input-text-color: rgba(#FFFFFF, 0.7),
-    filled-hover-label-text-color: rgba(#FFFFFF, 0.7),
-    filled-focus-active-indicator-color: rgba(#FFFFFF, 0.7),
-    outlined-hover-outline-color: rgba(vars.$primary-main, 1),
-    filled-active-indicator-color: rgba(vars.$primary-main, 1),
-    outlined-focus-outline-color: rgba(vars.$primary-main, 1),
-    outlined-focus-label-text-color: rgba(vars.$primary-main, 1),
-  ));
+  @include mat.checkbox-overrides(
+    (
+      unselected-icon-color: rgba(#ffffff, 0.56),
+      unselected-focus-icon-color: rgba(#ffffff, 0.56),
+      selected-pressed-icon-color: rgba(vars.$primary-main, 1),
+      selected-icon-color: rgba(vars.$primary-main, 1),
+      selected-focus-icon-color: rgba(vars.$primary-main, 1),
+      selected-hover-icon-color: rgba(vars.$primary-main, 1),
+      unselected-hover-icon-color: rgba(#ffffff, 0.56),
+      selected-checkmark-color: vars.$background-default,
+      selected-hover-state-layer-color: vars.$background-default,
+      unselected-pressed-state-layer-color: vars.$background-default,
+      unselected-hover-state-layer-color: vars.$background-default,
+      selected-pressed-state-layer-color: vars.$background-default,
+      selected-focus-state-layer-color: vars.$background-default,
+      unselected-focus-state-layer-color: vars.$background-default,
+      selected-hover-state-layer-opacity: 1,
+      unselected-hover-state-layer-opacity: 1,
+      selected-focus-state-layer-opacity: 0,
+      unselected-pressed-state-layer-opacity: 0,
+      selected-pressed-state-layer-opacity: 0,
+      label-text-color: vars.$text-primary,
+    )
+  );
 
-  @include mat.checkbox-overrides((
-    unselected-icon-color: rgba(#FFFFFF, 0.56),
-    unselected-focus-icon-color: rgba(#FFFFFF, 0.56),
-    selected-pressed-icon-color: rgba(vars.$primary-main, 1),
-    selected-icon-color: rgba(vars.$primary-main, 1),
-    selected-focus-icon-color: rgba(vars.$primary-main, 1),
-    selected-hover-icon-color: rgba(vars.$primary-main, 1),
-    unselected-hover-icon-color: rgba(#FFFFFF, 0.56),
-    selected-checkmark-color: vars.$background-default,
-    selected-hover-state-layer-color: #2d2c30,
-    unselected-pressed-state-layer-color: #2d2c30,
-    unselected-hover-state-layer-color: #2d2c30,
-    selected-pressed-state-layer-color: #2d2c30,
-    selected-focus-state-layer-color: #2d2c30,
-    unselected-focus-state-layer-color: #2d2c30,
-    selected-hover-state-layer-opacity: 1,
-    unselected-hover-state-layer-opacity: 1,
-    selected-focus-state-layer-opacity: 0,
-    unselected-pressed-state-layer-opacity: 0,
-    selected-pressed-state-layer-opacity: 0,
-    label-text-color: vars.$text-primary,
-    disabled-label-color: vars.$text-primary
-  ));
+  @include mat.progress-spinner-overrides(
+    (
+      active-indicator-color: vars.$primary-main,
+    )
+  );
 
-  @include mat.progress-spinner-overrides((
-    active-indicator-color: vars.$primary-main,
-  ));
-
-  @include mat.dialog-overrides((
-    container-color: vars.$background-paper-elevation-1,
-  ));
+  @include mat.dialog-overrides(
+    (
+      container-color: vars.$background-paper-elevation-1,
+    )
+  );
 }
 :root {
   background-color: vars.$background-default;
@@ -79,7 +133,7 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
 hr {
   width: 100%;
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: vars.$background-hover;
 }
 
 .floating-menu-container {
@@ -95,8 +149,8 @@ hr {
 .floating-menu {
   position: absolute;
   z-index: 1001;
-  pointer-events: auto; 
-  background-color: #2e2e2e; 
+  pointer-events: auto;
+  background-color: vars.$background-paper-elevation-8;
   border-radius: 4px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }

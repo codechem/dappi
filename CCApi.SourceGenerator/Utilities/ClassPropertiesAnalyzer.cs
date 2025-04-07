@@ -9,17 +9,30 @@ public static class ClassPropertiesAnalyzer
 {
     public static string GetIncludesIfAny(List<PropertyInfo> propertiesInfos)
     {
-        var propertiesWithForeignKey = propertiesInfos.Where(p => !string.IsNullOrEmpty(p.PropertyForeignKey));
-        if (!propertiesWithForeignKey.Any()) return string.Empty;
+        var propertiesWithForeignKey = propertiesInfos
+            .Where(p => !string.IsNullOrEmpty(p.PropertyForeignKey));
+
+        var collectionProperties = propertiesInfos
+            .Where(ContainsCollectionTypeName);
+
+        if (!propertiesWithForeignKey.Any() && !collectionProperties.Any())
+            return string.Empty;
 
         var responseBuilder = new StringBuilder();
+
         foreach (var propertyInfo in propertiesWithForeignKey)
         {
             responseBuilder.Append(@$".Include(p => p.{propertyInfo.PropertyForeignKey})");
         }
+
+        foreach (var propertyInfo in collectionProperties)
+        {
+            responseBuilder.Append(@$".Include(p => p.{propertyInfo.PropertyName})");
+        }
+
         return responseBuilder.ToString();
     }
-    
+
     public static string PrintPropertyInfos(List<PropertyInfo> propertiesInfos)
     {
         var builder = new StringBuilder();
@@ -40,6 +53,36 @@ public static class ClassPropertiesAnalyzer
         return builder.ToString();
     }
 
+    private static string GetSimpleTypeName(ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+        {
+            return namedTypeSymbol.Name;
+        }
+
+        return typeSymbol.ToDisplayString();
+    }
+
+    private static string GetFormattedTypeName(ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+        {
+            string baseName = namedTypeSymbol.Name;
+
+            if (namedTypeSymbol.IsGenericType && namedTypeSymbol.TypeArguments.Length > 0)
+            {
+                string genericArguments = string.Join(", ", namedTypeSymbol.TypeArguments
+                    .Select(t => GetSimpleTypeName(t)));
+                return $"{genericArguments}";
+            }
+
+            return baseName;
+        }
+
+        return typeSymbol.ToDisplayString();
+    }
+
+
     public static List<PropertyInfo> GoThroughPropertiesAndGatherInfo(INamedTypeSymbol classSymbol)
     {
         var propertiesInfo = classSymbol.GetMembers()
@@ -48,6 +91,7 @@ public static class ClassPropertiesAnalyzer
             {
                 var propertyName = property.Name;
                 var propertyType = property.Type;
+                var genericTypeName = GetFormattedTypeName(propertyType);
                 var propertyForeignKey = string.Empty;
                 var propertyAttributes = property.GetAttributes()
                     // .Select(attr => attr.AttributeClass?.ToDisplayString())
@@ -72,11 +116,17 @@ public static class ClassPropertiesAnalyzer
                     PropertyName = propertyName,
                     PropertyType = propertyType,
                     PropertyAttributes = propertyAttributes,
-                    PropertyForeignKey = propertyForeignKey
+                    PropertyForeignKey = propertyForeignKey,
+                    GenericTypeName = genericTypeName
                 };
             }).ToList();
-        
-        Debugger.Launch();
         return propertiesInfo;
+    }
+
+    private static bool ContainsCollectionTypeName(PropertyInfo propertyInfo)
+    {
+        return propertyInfo.PropertyType.Name.Contains("IEnumerable")
+            || propertyInfo.PropertyType.Name.Contains("List")
+            || propertyInfo.PropertyType.Name.Contains("ICollection");
     }
 }

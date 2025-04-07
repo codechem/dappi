@@ -12,9 +12,10 @@ import {
 import { HttpClient } from '@angular/common/http';
 import { select, Store } from '@ngrx/store';
 import * as CollectionActions from './collection.actions';
-import { ModelField } from '../../models/content.model';
+import { DataResponse } from '../../models/content.model';
 import { selectSelectedType } from '../content/content.selectors';
 import * as ContentActions from '../content/content.actions';
+import { BASE_API_URL } from '../../../Constants';
 
 @Injectable()
 export class CollectionEffects {
@@ -22,10 +23,10 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.loadCollectionTypes),
       mergeMap(() => {
-        return this.http.get<string[]>('http://localhost:5101/api/models').pipe(
+        return this.http.get<DataResponse>(`${BASE_API_URL}models`).pipe(
           map((collectionTypes) => {
             return CollectionActions.loadCollectionTypesSuccess({
-              collectionTypes,
+              collectionTypes: collectionTypes.$values,
             });
           }),
           catchError((error) =>
@@ -60,11 +61,11 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.loadFields),
       mergeMap((action) => {
-        const endpoint = `http://localhost:5101/api/models/fields/${action.modelType}`;
-        return this.http.get<ModelField[]>(endpoint).pipe(
+        const endpoint = `${BASE_API_URL}models/fields/${action.modelType}`;
+        return this.http.get<DataResponse>(endpoint).pipe(
           map((fields) =>
             CollectionActions.loadFieldsSuccess({
-              fields: [...fields],
+              fields: [...fields.$values],
             })
           ),
           catchError((error) =>
@@ -86,10 +87,7 @@ export class CollectionEffects {
         }
 
         return this.http
-          .post<SaveResponse>(
-            'http://localhost:5101/api/create-migrations-update-db',
-            {}
-          )
+          .post<SaveResponse>(`${BASE_API_URL}create-migrations-update-db`, {})
           .pipe(
             map((response: any) => {
               const typedResponse: SaveResponse =
@@ -123,9 +121,9 @@ export class CollectionEffects {
       ofType(CollectionActions.addCollectionType),
       switchMap((action) => {
         const payload = { modelName: action.collectionType };
-        return this.http.post('http://localhost:5101/api/models', payload).pipe(
+        return this.http.post(`${BASE_API_URL}models`, payload).pipe(
           switchMap((response) =>
-            this.http.get('http://localhost:5101/api/update-db-context').pipe(
+            this.http.get(`${BASE_API_URL}update-db-context`).pipe(
               map(() =>
                 CollectionActions.addCollectionTypeSuccess({
                   collectionType: action.collectionType,
@@ -158,17 +156,12 @@ export class CollectionEffects {
       withLatestFrom(this.store.pipe(select(selectSelectedType))),
       filter(([action, selectedType]) => !!selectedType),
       switchMap(([action, selectedType]) => {
-        const payload = {
-          fieldName: action.field.fieldName,
-          fieldType: action.field.fieldType,
-        };
-
         return this.http
-          .put(`http://localhost:5101/api/models/${selectedType}`, payload)
+          .put(`${BASE_API_URL}models/${selectedType}`, action.field)
           .pipe(
             map((response) =>
               CollectionActions.addFieldSuccess({
-                field: payload,
+                field: action.field,
               })
             ),
             catchError((error) =>

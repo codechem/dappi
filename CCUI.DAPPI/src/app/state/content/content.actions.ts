@@ -14,6 +14,12 @@ export const loadContent = createAction(
     searchText: string;
   }>()
 );
+export const loadRelatedItems = createAction(
+  '[Content] Load Related Items',
+  props<{
+    selectedType: string;
+  }>()
+);
 
 export const loadContentSuccess = createAction(
   '[Content] Load Content Success',
@@ -22,8 +28,19 @@ export const loadContentSuccess = createAction(
   }>()
 );
 
+export const loadRelatedItemsSuccess = createAction(
+  '[Content] Load Related Items Success',
+  props<{
+    relatedItems: PaginatedResponse;
+  }>()
+);
+
 export const loadContentFailure = createAction(
   '[Content] Load Content Failure',
+  props<{ error: string }>()
+);
+export const loadRelatedItemsFailure = createAction(
+  '[Content] Load Related Items Failure',
   props<{ error: string }>()
 );
 
@@ -50,6 +67,11 @@ export const setContentType = createAction(
 export const setCurrentItem = createAction(
   '[Content] Set Current Item',
   props<{ currentItem: ContentItem | undefined }>()
+);
+
+export const setIsSearching = createAction(
+  '[Content] Set Is Searching',
+  props<{ isSearching: boolean }>()
 );
 
 export const setSearchText = createAction(
