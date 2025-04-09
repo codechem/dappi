@@ -285,3 +285,40 @@
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
 }
+
+.clickable-cell {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: vars.$primary-main;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+  
+  .cell-icon {
+    margin-top: 6px;
+    margin-left: 4px;
+    font-size: 18px;
+  }
+}
+
+.relation-details, .collection-list {
+  .relation-item {
+    margin-bottom: 8px;
+    
+    strong {
+      color: vars.$primary-main;
+    }
+  }
+}
+
+.collection-item {
+  padding: 12px 0;
+  
+  hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 16px 0 0;
+  }
+}

@@ -27,6 +27,7 @@ import {
 import * as ContentActions from '../state/content/content.actions';
 import { Subscription } from 'rxjs';
 import { ContentItem, FieldType, TableHeader } from '../models/content.model';
+import { DrawerComponent } from '../relation-drawer/drawer.component';
 
 @Component({
   selector: 'app-content-table',
@@ -39,6 +40,7 @@ import { ContentItem, FieldType, TableHeader } from '../models/content.model';
     FormsModule,
     MatMenuModule,
     MenuComponent,
+    DrawerComponent,
   ],
   templateUrl: './content-table.component.html',
   styleUrl: './content-table.component.scss',
@@ -51,6 +53,13 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   searchText: string | undefined = undefined;
   limit: number | undefined = undefined;
   items: ContentItem[] = [];
+
+  objectKeys = Object.keys;
+
+  isDrawerOpen = false;
+  drawerTitle = '';
+  drawerData: any = null;
+  drawerType: FieldType | null = null;
 
   selectedType$ = this.store.select(selectSelectedType);
   isSearching$ = this.store.select(selectIsSearching);
@@ -83,6 +92,38 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     this.subscription.unsubscribe();
   }
 
+  onCellClick(item: ContentItem, header: TableHeader): void {
+    if (
+      header.type === FieldType.relation ||
+      header.type === FieldType.collection
+    ) {
+      this.drawerTitle = header.label;
+      this.drawerData = item[header.key].$values;
+      this.drawerType = header.type;
+      this.isDrawerOpen = true;
+    }
+  }
+
+  closeDrawer(): void {
+    this.isDrawerOpen = false;
+  }
+
+  getRelationDisplay(item: ContentItem, header: TableHeader): string {
+    const value = item[header.key];
+
+    if (!value) return 'None';
+
+    if (header.type === FieldType.relation) {
+      return value.title || value.name || 'View relation';
+    }
+
+    if (header.type === FieldType.collection) {
+      return `${Array.isArray(value.$values) ? value.$values.length : 0} items`;
+    }
+
+    return String(value);
+  }
+
   ngOnInit(): void {
     this.subscription.add(
       this.selectedType$.subscribe((type) => (this.selectedType = type))
@@ -105,6 +146,18 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     this.subscription.add(
       this.loading$.subscribe((loading) => (this.isLoading = loading))
     );
+  }
+
+  openDrawer(item: ContentItem, header: TableHeader): void {
+    if (
+      header.type === FieldType.relation ||
+      header.type === FieldType.collection
+    ) {
+      this.drawerTitle = header.label;
+      this.drawerData = item[header.key].$values;
+      this.drawerType = header.type;
+      this.isDrawerOpen = true;
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -280,6 +333,14 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
 
     if (header.type === FieldType.file && value) {
       return this.convertToImage(value);
+    }
+
+    if (header.type === FieldType.relation && value) {
+      return value.title || 'View relation';
+    }
+
+    if (header.type === FieldType.collection && value) {
+      return `${value.$values.length || 0} items`;
     }
 
     return value;

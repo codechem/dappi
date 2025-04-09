@@ -1,0 +1,14 @@
+<div class="drawer-container" [class.drawer-open]="isOpen">
+  <div class="drawer-backdrop" (click)="close()"></div>
+  <div class="drawer" [style.width]="width">
+    <div class="drawer-header">
+      <h2>{{ title }}</h2>
+      <button class="close-button" (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="drawer-content">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</div>

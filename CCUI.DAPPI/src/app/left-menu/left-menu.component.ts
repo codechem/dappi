@@ -34,6 +34,12 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
       route: '/content-manager',
       id: 'content-manager',
     },
+    {
+      icon: 'article',
+      tooltip: 'Schema Importer',
+      route: '/schema-importer',
+      id: 'schema-importer',
+    },
   ];
 
   private destroy$ = new Subject<void>();

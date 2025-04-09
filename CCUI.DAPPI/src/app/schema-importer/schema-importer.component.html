@@ -1,0 +1,86 @@
+<div class="schema-importer-container">
+    <div class="header">
+        <h1>Schema Importer</h1>
+        <p class="description">Import your content schema from JSON</p>
+    </div>
+    <div class="container">
+        <div class="input-section">
+            <div class="json-input-container">
+                <div class="input-label">
+                    <span>Paste your JSON schema below</span>
+                    @if (parsedSchema) {
+                        <button class="action-button" (click)="toggleJsonPreview()">
+                            <mat-icon>{{ showJsonPreview ? 'visibility_off' : 'visibility' }}</mat-icon>
+                            {{ showJsonPreview ? 'Hide' : 'View' }} JSON
+                        </button>
+                    }
+                </div>
+                <textarea class="json-textarea" [(ngModel)]="jsonInput"
+                    placeholder='{"collectionName": "articles", "info": {"singularName": "article", ...}}'
+                    [class.error]="!isValidJson && jsonInput" [class.success]="isValidJson && parsedSchema"
+                    (change)="parseJsonInput()"></textarea>
+                <div class="validation-message" [class.error]="!isValidJson"
+                    [class.success]="isValidJson && parsedSchema">
+                    {{ validationMessage }}
+                </div>
+                <div class="actions">
+                    <button class="primary-button" (click)="parseJsonInput()">
+                        Parse Schema
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        @if (parsedSchema) {
+            <div class="schema-preview">
+                <div class="preview-header">
+                    <h2>{{ parsedSchema.info.displayName }} Schema</h2>
+                    <p class="collection-info">
+                        <span class="collection-type">{{ parsedSchema.kind }}</span>
+                        <span class="collection-uid">{{ parsedSchema.uid }}</span>
+                    </p>
+                    <p class="collection-description">{{ parsedSchema.info.description }}</p>
+                </div>
+
+                @if (showJsonPreview) {
+                    <div class="json-preview">
+                        <pre>{{ getPrettyJson() }}</pre>
+                    </div>
+                } @else {
+                    <div class="attributes-list">
+                        <div class="attribute-header">
+                            <div class="attribute-name-header">Field Name</div>
+                            <div class="attribute-type-header">Type</div>
+                            <div class="attribute-required-header">Required</div>
+                        </div>
+
+                        <div class="attribute-container">
+                            @for (attr of attributeList; track attr.name) {
+                                <div class="attribute-item">
+                                    <div class="attribute-name">
+                                        <mat-icon class="attribute-icon">{{ getAttributeIcon(attr.type) }}</mat-icon>
+                                        <span>{{ attr.name }}</span>
+                                    </div>
+                                    <div class="attribute-type">{{ getAttributeTypeLabel(attr) }}</div>
+                                    <div class="attribute-required">
+                                        @if (attr.required) {
+                                            <mat-icon class="required-icon">check_circle</mat-icon>
+                                        } @else {
+                                            <mat-icon class="not-required-icon">remove_circle_outline</mat-icon>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="schema-actions">
+                    <button class="primary-button save-button" (click)="saveSchema()">
+                        Save Schema
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
