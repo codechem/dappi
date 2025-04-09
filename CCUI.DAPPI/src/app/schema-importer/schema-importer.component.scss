@@ -1,0 +1,315 @@
+@use "../../variables" as vars;
+@use "sass:color";
+
+:host {
+  height: 100%;
+  width: 100%;
+}
+
+.schema-importer-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px;
+  color: white;
+  overflow: hidden;
+}
+
+.header {
+  margin-bottom: 24px;
+  flex-shrink: 0;
+
+  h1 {
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .description {
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+.container {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.input-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  max-height: calc(100vh - 150px);
+  overflow: hidden;
+}
+
+.json-input-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  
+  .input-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  .json-textarea {
+    min-height: 200px;
+    max-height: calc(100vh - 300px);
+    background-color: vars.$background-paper-elevation-1;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    padding: 16px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    resize: vertical;
+    overflow-y: auto;
+    
+    &:focus {
+      outline: none;
+      border-color: vars.$primary-main;
+    }
+    
+    &.error {
+      border-color: vars.$error-light;
+    }
+    
+    &.success {
+      border-color: vars.$success-main;
+    }
+  }
+
+  .validation-message {
+    margin-top: 8px;
+    font-size: 14px;
+    min-height: 20px;
+    
+    &.error {
+      color: vars.$error-light;
+    }
+    
+    &.success {
+      color: vars.$success-main;
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 16px;
+  }
+}
+
+.primary-button {
+  background-color: vars.$primary-main;
+  color: vars.$primary-contrast-text;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: color.adjust(vars.$primary-main, $lightness: -10%);
+  }
+  
+  &:focus {
+    outline: 2px solid rgba(vars.$primary-main, 0.5);
+    outline-offset: 2px;
+  }
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: vars.$primary-main;
+  border: 1px solid vars.$primary-main;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(vars.$primary-main, 0.1);
+  }
+  
+  mat-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.schema-preview {
+  border-radius: 8px;
+  background-color: vars.$background-paper-elevation-1;
+  flex: 1;
+  min-width: 0;
+  max-height: calc(100vh - 150px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  
+  .preview-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+    
+    h2 {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    
+    .collection-info {
+      display: flex;
+      gap: 16px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 8px;
+      
+      .collection-type {
+        color: vars.$primary-main;
+        background-color: rgba(vars.$primary-main, 0.1);
+        padding: 2px 8px;
+        border-radius: 12px;
+      }
+      
+      .collection-uid {
+        font-family: 'Roboto Mono', monospace;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+    
+    .collection-description {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+    }
+  }
+  
+  .json-preview {
+    padding: 16px;
+    background-color: rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    flex: 1;
+    
+    pre {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      margin: 0;
+      white-space: pre-wrap;
+    }
+  }
+  
+  .attributes-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    
+    .attribute-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr 100px;
+      padding: 16px 8px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: sticky;
+      top: 0;
+      background-color: vars.$background-paper-elevation-1;
+      z-index: 1;
+    }
+    
+    .attribute-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px;
+    }
+    
+    .attribute-item {
+      display: grid;
+      grid-template-columns: 1fr 1fr 100px;
+      padding: 12px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      transition: background-color 0.2s ease;
+      
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+      
+      .attribute-name {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        
+        .attribute-icon {
+          color: vars.$primary-main;
+          font-size: 20px;
+          flex-shrink: 0;
+        }
+        
+        span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+      
+      .attribute-type {
+        color: rgba(255, 255, 255, 0.7);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding-right: 8px;
+      }
+      
+      .attribute-required {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        .required-icon {
+          color: vars.$success-main;
+        }
+        
+        .not-required-icon {
+          color: rgba(255, 255, 255, 0.3);
+        }
+      }
+    }
+  }
+  
+  .schema-actions {
+    padding: 16px;
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+    
+    .save-button {
+      padding: 10px 24px;
+    }
+  }
+}
