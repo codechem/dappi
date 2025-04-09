@@ -19,11 +19,7 @@ import {
   selectIsSearching,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
-import {
-  ContentItem,
-  PaginatedResponse,
-  TableHeader,
-} from '../models/content.model';
+import { ContentItem, PaginatedResponse, TableHeader } from '../models/content.model';
 
 @Component({
   selector: 'app-content-manager',
@@ -49,8 +45,7 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
   items: ContentItem[] = [];
 
   isSearching$ = this.store.select(selectIsSearching);
-  items$: Observable<PaginatedResponse | undefined> =
-    this.store.select(selectItems);
+  items$: Observable<PaginatedResponse | undefined> = this.store.select(selectItems);
   headers$: Observable<TableHeader[]> = this.store.select(selectHeaders);
   error$ = this.store.select(selectError);
   retry: number = 0;
@@ -58,19 +53,20 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
   selectedType$: Observable<string> = this.store.select(selectSelectedType);
   totalItems$: Observable<number> = this.store.select(selectTotalItems);
 
-  constructor(private router: Router, private store: Store) {}
+  constructor(
+    private router: Router,
+    private store: Store,
+  ) {}
 
   ngOnInit(): void {
     this.subscription.add(
-      this.isSearching$.subscribe((searching) => (this.isSearching = searching))
+      this.isSearching$.subscribe((searching) => (this.isSearching = searching)),
     );
 
     this.subscription.add(
       this.selectedType$.subscribe((selectedType) => {
         if (selectedType) {
-          this.store.dispatch(
-            ContentActions.loadHeaders({ selectedType: selectedType })
-          );
+          this.store.dispatch(ContentActions.loadHeaders({ selectedType: selectedType }));
 
           this.store.dispatch(
             ContentActions.loadContent({
@@ -78,15 +74,15 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
               page: 1,
               limit: 10,
               searchText: '',
-            })
+            }),
           );
         }
-      })
+      }),
     );
     this.subscription.add(
       this.items$.subscribe((items) => {
         this.items = items?.data ?? [];
-      })
+      }),
     );
   }
 

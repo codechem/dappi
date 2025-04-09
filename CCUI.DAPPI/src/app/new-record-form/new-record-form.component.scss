@@ -1,4 +1,4 @@
-@use "../../variables" as vars;
+@use '../../variables' as vars;
 
 .form-container {
   margin: 0 auto;
@@ -35,7 +35,7 @@
       grid-column: 1;
     }
   }
-} 
+}
 
 .file-upload-container {
   display: flex;

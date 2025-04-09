@@ -2,54 +2,70 @@
   <form [formGroup]="contentForm" (ngSubmit)="onSubmit()">
     <div class="form-grid">
       <div class="form-column left-column">
-        <ng-container *ngFor="let field of leftColumnFields">
+        @for (field of leftColumnFields; track field) {
           <mat-form-field appearance="outline">
             <mat-label>{{ field.label }}</mat-label>
-            <ng-container [ngSwitch]="field.type">
-              <input 
-                *ngSwitchCase="fieldType.text" 
-                matInput 
-                [placeholder]="field.placeholder || ''" 
-                [formControlName]="field.key" 
-                [required]="field.required" 
-              />
-              <textarea 
-                *ngSwitchCase="fieldType.textarea" 
-                matInput 
-                [placeholder]="field.placeholder || ''" 
-                [formControlName]="field.key" 
-                rows="5" 
-                [required]="field.required"
-              ></textarea>
-              <ng-container *ngSwitchCase="fieldType.collection">
+            @switch (field.type) {
+              @case (fieldType.text) {
+                <input
+                  matInput
+                  [placeholder]="field.placeholder || ''"
+                  [formControlName]="field.key"
+                  [required]="field.required"
+                />
+              }
+              @case (fieldType.textarea) {
+                <textarea
+                  matInput
+                  [placeholder]="field.placeholder || ''"
+                  [formControlName]="field.key"
+                  rows="5"
+                  [required]="field.required"
+                ></textarea>
+              }
+              @case (fieldType.collection) {
                 <mat-select [formControlName]="field.key" [multiple]="field.multiple">
-                  <mat-option *ngFor="let item of field.relatedItems" [value]="item">
-                    {{ getRelationDisplayValue(item, field) }}
-                  </mat-option>
+                  @for (item of field.relatedItems; track item) {
+                    <mat-option [value]="item">
+                      {{ getRelationDisplayValue(item, field) }}
+                    </mat-option>
+                  }
                 </mat-select>
-              </ng-container>
-              <ng-container *ngSwitchCase="fieldType.relation">
+              }
+              @case (fieldType.relation) {
                 <mat-select [formControlName]="field.key">
-                  <mat-option *ngFor="let item of field.relatedItems" [value]="item">
-                    {{ getRelationDisplayValue(item, field) }}
-                  </mat-option>
+                  @for (item of field.relatedItems; track item) {
+                    <mat-option [value]="item">
+                      {{ getRelationDisplayValue(item, field) }}
+                    </mat-option>
+                  }
                 </mat-select>
-              </ng-container>
-            </ng-container>
-            <mat-error *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched">
-              {{ getErrorMessage(field.key) }}
-            </mat-error>
+              }
+            }
+            @if (contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched) {
+              <mat-error>
+                {{ getErrorMessage(field.key) }}
+              </mat-error>
+            }
           </mat-form-field>
-        </ng-container>
+        }
       </div>
 
       <div class="form-column right-column">
-        <ng-container *ngFor="let field of fileFields">
+        @for (field of fileFields; track field) {
           <div class="file-upload-container">
-            <div class="file-label">{{ field.label }} <span *ngIf="field.required" class="required-field">*</span></div>
-            <div class="file-upload-area" [class.has-file]="filePreviewUrl" 
-                 [class.invalid-file]="fileFieldTouched && field.required && !selectedFile">
-              <ng-container *ngIf="!filePreviewUrl">
+            <div class="file-label">
+              {{ field.label }}
+              @if (field.required) {
+                <span class="required-field">*</span>
+              }
+            </div>
+            <div
+              class="file-upload-area"
+              [class.has-file]="filePreviewUrl"
+              [class.invalid-file]="fileFieldTouched && field.required && !selectedFile"
+            >
+              @if (!filePreviewUrl) {
                 <div class="upload-instructions">
                   <mat-icon>upload_file_filled</mat-icon>
                   <div>
@@ -64,8 +80,8 @@
                     (change)="onFileChange($event, field.key)"
                   />
                 </div>
-              </ng-container>
-              <ng-container *ngIf="filePreviewUrl">
+              }
+              @if (filePreviewUrl) {
                 <div class="file-preview">
                   <div class="file-preview-content">
                     <img [src]="filePreviewUrl" alt="Preview" class="preview-thumbnail" />
@@ -85,56 +101,66 @@
                     </button>
                   </div>
                 </div>
-              </ng-container>
+              }
             </div>
-            <div *ngIf="fileFieldTouched && field.required && !selectedFile" class="file-error-message">
-              Please select a file
-            </div>
+            @if (fileFieldTouched && field.required && !selectedFile) {
+              <div class="file-error-message">Please select a file</div>
+            }
           </div>
-        </ng-container>
-        
-        <ng-container *ngFor="let field of rightColumnFields">
+        }
+
+        @for (field of rightColumnFields; track field) {
           <mat-form-field appearance="outline">
             <mat-label>{{ field.label }}</mat-label>
-            <ng-container [ngSwitch]="field.type">
-              <input 
-                *ngSwitchCase="fieldType.text" 
-                matInput 
-                [placeholder]="field.placeholder || ''" 
-                [formControlName]="field.key" 
-                [required]="field.required" 
-              />
-              <textarea 
-                *ngSwitchCase="fieldType.textarea" 
-                matInput 
-                [placeholder]="field.placeholder || ''" 
-                [formControlName]="field.key" 
-                rows="5" 
-                [required]="field.required"
-              ></textarea>
-              <ng-container *ngSwitchCase="fieldType.collection">
+            @switch (field.type) {
+              @case (fieldType.text) {
+                <input
+                  matInput
+                  [placeholder]="field.placeholder || ''"
+                  [formControlName]="field.key"
+                  [required]="field.required"
+                />
+              }
+              @case (fieldType.textarea) {
+                <textarea
+                  matInput
+                  [placeholder]="field.placeholder || ''"
+                  [formControlName]="field.key"
+                  rows="5"
+                  [required]="field.required"
+                ></textarea>
+              }
+              @case (fieldType.collection) {
                 <mat-select [formControlName]="field.key" [multiple]="field.multiple">
-                  <mat-option *ngFor="let item of field.relatedItems" [value]="item">
-                    {{ getRelationDisplayValue(item, field) }}
-                  </mat-option>
+                  @for (item of field.relatedItems; track item) {
+                    <mat-option [value]="item">
+                      {{ getRelationDisplayValue(item, field) }}
+                    </mat-option>
+                  }
                 </mat-select>
-              </ng-container>
-              <ng-container *ngSwitchCase="fieldType.relation">
+              }
+              @case (fieldType.relation) {
                 <mat-select [formControlName]="field.key">
-                  <mat-option *ngFor="let item of field.relatedItems" [value]="item">
-                    {{ getRelationDisplayValue(item, field) }}
-                  </mat-option>
+                  @for (item of field.relatedItems; track item) {
+                    <mat-option [value]="item">
+                      {{ getRelationDisplayValue(item, field) }}
+                    </mat-option>
+                  }
                 </mat-select>
-                <mat-error *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched">
-                  {{ getErrorMessage(field.key) }}
-                </mat-error>
-              </ng-container>
-            </ng-container>
-            <mat-error *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched">
-              {{ getErrorMessage(field.key) }}
-            </mat-error>
+                @if (contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched) {
+                  <mat-error>
+                    {{ getErrorMessage(field.key) }}
+                  </mat-error>
+                }
+              }
+            }
+            @if (contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched) {
+              <mat-error>
+                {{ getErrorMessage(field.key) }}
+              </mat-error>
+            }
           </mat-form-field>
-        </ng-container>
+        }
       </div>
     </div>
   </form>

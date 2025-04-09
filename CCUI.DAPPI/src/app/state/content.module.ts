@@ -13,7 +13,7 @@ import { CollectionEffects } from './collection/collection.effects';
     CommonModule,
     StoreModule.forFeature('content', contentReducer),
     StoreModule.forFeature('collection', collectionReducer),
-    EffectsModule.forFeature([ContentEffects, CollectionEffects])
-  ]
+    EffectsModule.forFeature([ContentEffects, CollectionEffects]),
+  ],
 })
-export class ContentModule { }
+export class ContentModule {}

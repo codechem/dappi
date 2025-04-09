@@ -6,7 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngrx/store';
 import * as ContentActions from './content.actions';
 import { selectItemsPerPage, selectSelectedType } from './content.selectors';
-import {FieldType, ModelField, PaginatedResponse, TableHeader} from '../../models/content.model';
+import { FieldType, ModelField, PaginatedResponse, TableHeader } from '../../models/content.model';
 import { BASE_API_URL } from '../../../Constants';
 
 @Injectable()
@@ -16,9 +16,7 @@ export class ContentEffects {
       ofType(ContentActions.loadContent),
       withLatestFrom(this.store.select(selectSelectedType)),
       mergeMap(([action, selectedType]) => {
-        const endpoint = `${BASE_API_URL}${selectedType
-          .toLowerCase()
-          .replace(/\s+/g, '-')}`;
+        const endpoint = `${BASE_API_URL}${selectedType.toLowerCase().replace(/\s+/g, '-')}`;
 
         return this.http
           .get<any>(endpoint, {
@@ -36,39 +34,34 @@ export class ContentEffects {
                   ...response,
                   data: response.data,
                 },
-              })
+              }),
             ),
-            catchError((error) =>
-              of(ContentActions.loadContentFailure({ error: error.message }))
-            )
+            catchError((error) => of(ContentActions.loadContentFailure({ error: error.message }))),
           );
-      })
-    )
+      }),
+    ),
   );
 
   loadRelatedItems$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ContentActions.loadRelatedItems),
       mergeMap((action) => {
-        const endpoint = `${BASE_API_URL}${action.selectedType
-          .toLowerCase()
-          .replace(/\s+/g, '-')}`;
+        const endpoint = `${BASE_API_URL}${action.selectedType.toLowerCase().replace(/\s+/g, '-')}`;
         return this.http.get<PaginatedResponse>(endpoint).pipe(
-
           map((response) =>
             ContentActions.loadRelatedItemsSuccess({
               relatedItems: {
                 ...response,
                 data: response.data,
               },
-            })
+            }),
           ),
           catchError((error) =>
-            of(ContentActions.loadRelatedItemsFailure({ error: error.message }))
-          )
+            of(ContentActions.loadRelatedItemsFailure({ error: error.message })),
+          ),
         );
-      })
-    )
+      }),
+    ),
   );
 
   loadHeaders$ = createEffect(() =>
@@ -86,20 +79,16 @@ export class ContentEffects {
                 key: this.toCamelCase(field.fieldName),
                 label: this.formatHeaderLabel(field.fieldName),
                 type: fieldType,
-                relatedTo: isRelation
-                  ? field.fieldType
-                  : this.getRelatedType(field.fieldType),
+                relatedTo: isRelation ? field.fieldType : this.getRelatedType(field.fieldType),
                 isRequired: field.isRequired ?? false,
               };
             });
             return ContentActions.loadHeadersSuccess({ headers });
           }),
-          catchError((error) =>
-            of(ContentActions.loadHeadersFailure({ error: error.message }))
-          )
+          catchError((error) => of(ContentActions.loadHeadersFailure({ error: error.message }))),
         );
-      })
-    )
+      }),
+    ),
   );
 
   deleteContent$ = createEffect(() =>
@@ -112,12 +101,10 @@ export class ContentEffects {
 
         return this.http.delete(endpoint).pipe(
           map(() => ContentActions.deleteContentSuccess({ id: action.id })),
-          catchError((error) =>
-            of(ContentActions.deleteContentFailure({ error: error.message }))
-          )
+          catchError((error) => of(ContentActions.deleteContentFailure({ error: error.message }))),
         );
-      })
-    )
+      }),
+    ),
   );
 
   deleteMultipleContent$ = createEffect(() =>
@@ -133,37 +120,29 @@ export class ContentEffects {
         });
 
         return Promise.all(deletePromises)
-          .then(() =>
-            ContentActions.deleteMultipleContentSuccess({ ids: action.ids })
-          )
+          .then(() => ContentActions.deleteMultipleContentSuccess({ ids: action.ids }))
           .catch((error) =>
             ContentActions.deleteMultipleContentFailure({
               error: error.message,
-            })
+            }),
           );
-      })
-    )
+      }),
+    ),
   );
 
   reloadAfterDelete$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(
-        ContentActions.deleteContentSuccess,
-        ContentActions.deleteMultipleContentSuccess
-      ),
-      withLatestFrom(
-        this.store.select(selectItemsPerPage),
-        this.store.select(selectSelectedType)
-      ),
+      ofType(ContentActions.deleteContentSuccess, ContentActions.deleteMultipleContentSuccess),
+      withLatestFrom(this.store.select(selectItemsPerPage), this.store.select(selectSelectedType)),
       map(([_, limit, selectedType]) =>
         ContentActions.loadContent({
           selectedType,
           page: 1,
           limit,
           searchText: '',
-        })
-      )
-    )
+        }),
+      ),
+    ),
   );
 
   createContent$ = createEffect(() =>
@@ -171,9 +150,7 @@ export class ContentEffects {
       ofType(ContentActions.createContent),
       withLatestFrom(this.store.select(selectItemsPerPage)),
       mergeMap(([action, itemsPerPage]) => {
-        const endpoint = `${BASE_API_URL}${action.contentType
-          .toLowerCase()
-          .replace(/\s+/g, '-')}`;
+        const endpoint = `${BASE_API_URL}${action.contentType.toLowerCase().replace(/\s+/g, '-')}`;
 
         return this.http
           .post(endpoint, action.formData, {
@@ -193,11 +170,11 @@ export class ContentEffects {
               });
             }),
             catchError((error) =>
-              of(ContentActions.createContentFailure({ error: error.message }))
-            )
+              of(ContentActions.createContentFailure({ error: error.message })),
+            ),
           );
-      })
-    )
+      }),
+    ),
   );
 
   updateContent$ = createEffect(() =>
@@ -226,17 +203,15 @@ export class ContentEffects {
               });
             }),
             catchError((error) =>
-              of(ContentActions.updateContentFailure({ error: error.message }))
-            )
+              of(ContentActions.updateContentFailure({ error: error.message })),
+            ),
           );
-      })
-    )
+      }),
+    ),
   );
 
   private getRelatedType(fieldType: string): string | undefined {
-    return fieldType.includes('ICollection')
-      ? fieldType.match(/<([^>]+)>/)?.[1]
-      : undefined;
+    return fieldType.includes('ICollection') ? fieldType.match(/<([^>]+)>/)?.[1] : undefined;
   }
 
   private toCamelCase(name: string): string {
@@ -295,7 +270,7 @@ export class ContentEffects {
     if (
       lowerFieldType === 'string' &&
       ['description', 'content', 'text', 'textarea'].some((keyword) =>
-        lowerFieldType.includes(keyword)
+        lowerFieldType.includes(keyword),
       )
     ) {
       return FieldType.textarea;
@@ -338,6 +313,6 @@ export class ContentEffects {
   constructor(
     private actions$: Actions,
     private http: HttpClient,
-    private store: Store
+    private store: Store,
   ) {}
 }

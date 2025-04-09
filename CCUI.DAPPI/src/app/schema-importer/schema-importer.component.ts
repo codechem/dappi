@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -46,16 +46,9 @@ interface SchemaCollection {
 @Component({
   selector: 'app-schema-importer',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatCheckboxModule,
-    MatMenuModule
-  ],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatCheckboxModule, MatMenuModule],
   templateUrl: './schema-importer.component.html',
-  styleUrls: ['./schema-importer.component.scss']
+  styleUrls: ['./schema-importer.component.scss'],
 })
 export class SchemaImporterComponent {
   jsonInput: string = '';
@@ -146,7 +139,7 @@ export class SchemaImporterComponent {
 
     this.attributeList = [];
     const attributes = this.parsedSchema.attributes;
-    
+
     for (const key in attributes) {
       if (attributes.hasOwnProperty(key)) {
         const attr = attributes[key];
@@ -162,7 +155,7 @@ export class SchemaImporterComponent {
           maxLength: attr.maxLength,
           target: attr.target,
           relation: attr.relation,
-          inversedBy: attr.inversedBy
+          inversedBy: attr.inversedBy,
         });
       }
     }
@@ -216,23 +209,23 @@ export class SchemaImporterComponent {
     if (attr.type === 'relation' && attr.relation) {
       return `${attr.relation} relation to ${attr.target?.split('.').pop()}`;
     }
-    
+
     if (attr.type === 'media' && attr.allowedTypes?.length) {
       return `Media (${attr.allowedTypes.join(', ')})`;
     }
-    
+
     if (attr.type === 'dynamiczone' && attr.components?.length) {
       return `Dynamic Zone (${attr.components.length} components)`;
     }
-    
+
     if (attr.type === 'text' && attr.maxLength) {
       return `Text (max ${attr.maxLength} chars)`;
     }
-    
+
     if (attr.type === 'uid' && attr.targetField) {
       return `UID from ${attr.targetField}`;
     }
-    
+
     return attr.type;
   }
 

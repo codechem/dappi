@@ -1,5 +1,5 @@
-@use "../../variables" as vars;
-@use "sass:color";
+@use '../../variables' as vars;
+@use 'sass:color';
 
 :host {
   display: block;
@@ -156,7 +156,7 @@
 
 .small-cell {
   width: 50px;
-  
+
   .mat-mdc-checkbox {
     margin-right: 8px;
   }
@@ -253,17 +253,17 @@
   color: vars.$primary-main;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:hover:not(:disabled) {
     background-color: rgba(vars.$primary-main, 0.1);
     border-color: vars.$primary-main;
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   &.active {
     background-color: vars.$primary-main;
     color: vars.$primary-contrast-text;
@@ -291,11 +291,11 @@
   align-items: center;
   cursor: pointer;
   color: vars.$primary-main;
-  
+
   &:hover {
     text-decoration: underline;
   }
-  
+
   .cell-icon {
     margin-top: 6px;
     margin-left: 4px;
@@ -303,10 +303,11 @@
   }
 }
 
-.relation-details, .collection-list {
+.relation-details,
+.collection-list {
   .relation-item {
     margin-bottom: 8px;
-    
+
     strong {
       color: vars.$primary-main;
     }
@@ -315,7 +316,7 @@
 
 .collection-item {
   padding: 12px 0;
-  
+
   hr {
     border: none;
     border-top: 1px solid rgba(255, 255, 255, 0.1);

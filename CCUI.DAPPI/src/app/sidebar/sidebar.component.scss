@@ -1,4 +1,4 @@
-@use "../../variables" as vars;
+@use '../../variables' as vars;
 
 :host {
   display: flex;
@@ -178,10 +178,10 @@
       color: vars.$primary-main !important;
     }
   }
-  
+
   &.selected {
     background-color: rgba(vars.$primary-main, 0.2) !important;
-    
+
     .mdc-list-item__primary-text {
       color: vars.$primary-main !important;
       font-weight: 500;
@@ -214,4 +214,3 @@
     opacity: 0.7;
   }
 }
-

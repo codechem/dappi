@@ -1,5 +1,5 @@
-@use "../../variables" as vars;
-@use "sass:color";
+@use '../../variables' as vars;
+@use 'sass:color';
 
 .add-collection-type-dialog {
   background-color: vars.$background-paper-elevation-1;
@@ -31,7 +31,7 @@
 
   .form-field {
     margin-bottom: 16px;
-    
+
     label {
       display: block;
       font-size: 12px;
@@ -70,5 +70,5 @@
   }
 }
 form {
-  margin-top: 20px
+  margin-top: 20px;
 }

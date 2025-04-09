@@ -1,73 +1,65 @@
 import { createAction, props } from '@ngrx/store';
 import { ModelField } from '../../models/content.model';
 
-export const loadCollectionTypes = createAction(
-  '[Collection] Load Collection Types'
-);
+export const loadCollectionTypes = createAction('[Collection] Load Collection Types');
 
 export const loadCollectionTypesSuccess = createAction(
   '[Collection] Load Collection Types Success',
-  props<{ collectionTypes: string[] }>()
+  props<{ collectionTypes: string[] }>(),
 );
 
 export const loadCollectionTypesFailure = createAction(
   '[Collection] Load Collection Types Failure',
-  props<{ error: string }>()
+  props<{ error: string }>(),
 );
 
-export const loadFields = createAction(
-  '[Collection] Load Fields',
-  props<{ modelType: string }>()
-);
+export const loadFields = createAction('[Collection] Load Fields', props<{ modelType: string }>());
 
 export const loadFieldsSuccess = createAction(
   '[Collection] Load Fields Success',
-  props<{ fields: ModelField[] }>()
+  props<{ fields: ModelField[] }>(),
 );
 
 export const loadFieldsFailure = createAction(
   '[Collection] Load Fields Failure',
-  props<{ error: string }>()
+  props<{ error: string }>(),
 );
 
 export const addCollectionType = createAction(
   '[Collection] Add Collection Type',
-  props<{ collectionType: string }>()
+  props<{ collectionType: string }>(),
 );
 
 export const addCollectionTypeSuccess = createAction(
   '[Collection] Add Collection Type Success',
-  props<{ collectionType: string }>()
+  props<{ collectionType: string }>(),
 );
 
 export const addCollectionTypeFailure = createAction(
   '[Collection] Add Collection Type Failure',
-  props<{ error: string }>()
+  props<{ error: string }>(),
 );
 
-export const addField = createAction(
-  '[Collection] Add Field',
-  props<{ field: ModelField }>()
-);
+export const addField = createAction('[Collection] Add Field', props<{ field: ModelField }>());
 
 export const addFieldSuccess = createAction(
   '[Collection] Add Field Success',
-  props<{ field: ModelField }>()
+  props<{ field: ModelField }>(),
 );
 
 export const addFieldFailure = createAction(
   '[Collection] Add Field Failure',
-  props<{ error: string }>()
+  props<{ error: string }>(),
 );
 
 export const saveContent = createAction('[Collection] Save Content');
 
 export const saveContentSuccess = createAction(
   '[Collection] Save Content Success',
-  props<{ restarting?: boolean }>()
+  props<{ restarting?: boolean }>(),
 );
 
 export const saveContentFailure = createAction(
   '[Collection] Save Content Failure',
-  props<{ error: any }>()
+  props<{ error: any }>(),
 );

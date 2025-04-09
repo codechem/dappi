@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
-import { CommonModule } from '@angular/common';
+
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
@@ -16,7 +16,7 @@ interface MenuItem {
 @Component({
   selector: 'app-left-menu',
   standalone: true,
-  imports: [CommonModule, MatTooltipModule, MatIconModule, RouterModule],
+  imports: [MatTooltipModule, MatIconModule, RouterModule],
   templateUrl: './left-menu.component.html',
   styleUrls: ['./left-menu.component.scss'],
 })
@@ -51,12 +51,12 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
       this.router.events
         .pipe(
           filter((event) => event instanceof NavigationEnd),
-          takeUntil(this.destroy$)
+          takeUntil(this.destroy$),
         )
         .subscribe((event: any) => {
           const currentPath = event.url.split('/')[1] || 'home';
           this.updateActiveIcon(currentPath);
-        })
+        }),
     );
 
     const initialPath = this.router.url.split('/')[1] || 'home';
@@ -76,9 +76,7 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
   }
 
   private updateActiveIcon(path: string): void {
-    const menuItem = this.menuItems.find(
-      (item) => item.route === `/${path}` || item.id === path
-    );
+    const menuItem = this.menuItems.find((item) => item.route === `/${path}` || item.id === path);
 
     if (menuItem) {
       this.activeIcon = menuItem.id;

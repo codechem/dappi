@@ -31,7 +31,7 @@ export class StatsCardComponent implements OnDestroy, OnInit {
     private router: Router,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
-    private store: Store
+    private store: Store,
   ) {}
 
   numberOfCollectionTypes: number = 0;
@@ -42,9 +42,7 @@ export class StatsCardComponent implements OnDestroy, OnInit {
   ngOnInit(): void {
     this.store.dispatch(CollectionActions.loadCollectionTypes());
     this.subscription.add(
-      this.models$.subscribe(
-        (items) => (this.numberOfCollectionTypes = items.length)
-      )
+      this.models$.subscribe((items) => (this.numberOfCollectionTypes = items.length)),
     );
   }
 

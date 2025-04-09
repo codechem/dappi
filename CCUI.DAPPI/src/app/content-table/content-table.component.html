@@ -1,18 +1,24 @@
 <div class="action-buttons">
   <div class="left-controls">
     @if (!isSearching) {
-    <button class="icon-button" (click)="toggleSearch()" aria-label="Search">
-      <mat-icon>search</mat-icon>
-    </button>
-    } @else {
-    <div class="search-container">
-      <mat-icon class="search-icon">search</mat-icon>
-      <input type="text" placeholder="Type to search..." [(ngModel)]="searchText"
-        (ngModelChange)="onSearchTextChange($event)" aria-label="Search content" autofocus />
-      <button class="clear-button" (click)="clearSearch()" aria-label="Clear search">
-        <mat-icon>close</mat-icon>
+      <button class="icon-button" (click)="toggleSearch()" aria-label="Search">
+        <mat-icon>search</mat-icon>
       </button>
-    </div>
+    } @else {
+      <div class="search-container">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          type="text"
+          placeholder="Type to search..."
+          [(ngModel)]="searchText"
+          (ngModelChange)="onSearchTextChange($event)"
+          aria-label="Search content"
+          autofocus
+        />
+        <button class="clear-button" (click)="clearSearch()" aria-label="Clear search">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
     }
 
     <button class="filter-button" aria-label="Filter content">
@@ -21,17 +27,21 @@
     </button>
 
     @if (selectedItems.size > 0) {
-    <button class="delete-selected-button" (click)="deleteSelectedItems()" aria-label="Delete selected items">
-      <mat-icon>delete</mat-icon>
-      <span>Delete selected</span>
-    </button>
+      <button
+        class="delete-selected-button"
+        (click)="deleteSelectedItems()"
+        aria-label="Delete selected items"
+      >
+        <mat-icon>delete</mat-icon>
+        <span>Delete selected</span>
+      </button>
     }
   </div>
 
   @if (selectedType$ | async; as selectedType) {
-  <button class="create-button" (click)="navigateToCreate()" aria-label="Create new content">
-    + Create new {{ selectedType }}
-  </button>
+    <button class="create-button" (click)="navigateToCreate()" aria-label="Create new content">
+      + Create new {{ selectedType }}
+    </button>
   }
 </div>
 
@@ -40,17 +50,20 @@
     <thead>
       <tr class="header-row" role="row">
         <th class="small-cell" role="columnheader">
-          <mat-checkbox [checked]="selectAll"
+          <mat-checkbox
+            [checked]="selectAll"
             [indeterminate]="selectedItems.size > 0 && selectedItems.size < items.length"
-            (change)="toggleSelectAll($event)" aria-label="Select all items">
+            (change)="toggleSelectAll($event)"
+            aria-label="Select all items"
+          >
           </mat-checkbox>
         </th>
         @if (headers$ | async; as headers) {
-        @for (header of getFilteredHeaders(headers) | slice:1; track header) {
-        <th class="cell" [style.max-width.px]="getColumnWidth(header)" role="columnheader">
-          {{ header.label }}
-        </th>
-        }
+          @for (header of getFilteredHeaders(headers) | slice: 1; track header) {
+            <th class="cell" [style.max-width.px]="getColumnWidth(header)" role="columnheader">
+              {{ header.label }}
+            </th>
+          }
         }
         <th class="small-cell actions-cell" role="columnheader">
           <span class="sr-only">Actions</span>
@@ -59,122 +72,159 @@
     </thead>
     <tbody>
       @for (item of items; track item.id) {
-      <tr class="content-row" role="row"
-        [attr.aria-selected]="activeMenuItemId === item.id || selectedItems.has(item.id)"
-        [class.selected]="selectedItems.has(item.id)">
-        <td class="small-cell" role="cell">
-          <mat-checkbox [checked]="selectedItems.has(item.id)" (change)="toggleSelectItem($event, item.id)">
-          </mat-checkbox>
-        </td>
-        @if (headers$ | async; as headers) {
-        @for (header of getFilteredHeaders(headers) | slice:1; track header) {
-        <td class="cell" [style.max-width.px]="getColumnWidth(header)" role="cell">
-          @if (header.type === fieldType.file) {
-          @if (getCellDisplay(item, header)) {
-          <img [src]="getCellDisplay(item, header)" class="file-preview" alt="{{ header.label }}" />
+        <tr
+          class="content-row"
+          role="row"
+          [attr.aria-selected]="activeMenuItemId === item.id || selectedItems.has(item.id)"
+          [class.selected]="selectedItems.has(item.id)"
+        >
+          <td class="small-cell" role="cell">
+            <mat-checkbox
+              [checked]="selectedItems.has(item.id)"
+              (change)="toggleSelectItem($event, item.id)"
+            >
+            </mat-checkbox>
+          </td>
+          @if (headers$ | async; as headers) {
+            @for (header of getFilteredHeaders(headers) | slice: 1; track header) {
+              <td class="cell" [style.max-width.px]="getColumnWidth(header)" role="cell">
+                @if (header.type === fieldType.file) {
+                  @if (getCellDisplay(item, header)) {
+                    <img
+                      [src]="getCellDisplay(item, header)"
+                      class="file-preview"
+                      alt="{{ header.label }}"
+                    />
+                  }
+                } @else {
+                  @if (header.type === fieldType.relation || header.type === fieldType.collection) {
+                    <span class="clickable-cell" (click)="openDrawer(item, header)">
+                      {{ getCellDisplay(item, header) }}
+                      <mat-icon class="cell-icon">chevron_right</mat-icon>
+                    </span>
+                  } @else {
+                    {{ getCellDisplay(item, header) }}
+                  }
+                }
+              </td>
+            }
           }
-          } @else {
-          @if (header.type === fieldType.relation || header.type === fieldType.collection) {
-          <span class="clickable-cell" (click)="openDrawer(item, header)">
-            {{ getCellDisplay(item, header) }}
-            <mat-icon class="cell-icon">chevron_right</mat-icon>
-          </span>
-          } @else {
-          {{ getCellDisplay(item, header) }}
-          }
-          }
-        </td>
-        }
-        }
-        <td class="small-cell actions-cell" role="cell">
-          <button mat-icon-button (click)="toggleMenu(item, $event)" aria-haspopup="true"
-            [attr.aria-expanded]="activeMenuItemId === item.id">
-            <mat-icon>more_vert</mat-icon>
-          </button>
-        </td>
-      </tr>
+          <td class="small-cell actions-cell" role="cell">
+            <button
+              mat-icon-button
+              (click)="toggleMenu(item, $event)"
+              aria-haspopup="true"
+              [attr.aria-expanded]="activeMenuItemId === item.id"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+          </td>
+        </tr>
       }
     </tbody>
   </table>
 
   @if (isLoading) {
-  <div class="loading-indicator">
-    <p>Loading data...</p>
-  </div>
+    <div class="loading-indicator">
+      <p>Loading data...</p>
+    </div>
   }
 
   @if (!isLoading && items.length === 0) {
-  <div class="no-results">
-    <p>No items found. Try adjusting your search criteria.</p>
-  </div>
+    <div class="no-results">
+      <p>No items found. Try adjusting your search criteria.</p>
+    </div>
   }
 
   @if (totalPages > 1) {
-  <div class="pagination-controls">
-    <button class="pagination-button" [disabled]="currentPage === 1" (click)="previousPage()"
-      aria-label="Previous page">
-      <mat-icon>chevron_left</mat-icon>
-    </button>
+    <div class="pagination-controls">
+      <button
+        class="pagination-button"
+        [disabled]="currentPage === 1"
+        (click)="previousPage()"
+        aria-label="Previous page"
+      >
+        <mat-icon>chevron_left</mat-icon>
+      </button>
 
-    @for (page of paginationArray; track page) {
-    @if (page === -1) {
-    <span class="pagination-ellipsis">...</span>
-    } @else {
-    <button class="pagination-button" [class.active]="currentPage === page" (click)="goToPage(page)">
-      {{ page }}
-    </button>
-    }
-    }
+      @for (page of paginationArray; track page) {
+        @if (page === -1) {
+          <span class="pagination-ellipsis">...</span>
+        } @else {
+          <button
+            class="pagination-button"
+            [class.active]="currentPage === page"
+            (click)="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+        }
+      }
 
-    <button class="pagination-button" [disabled]="currentPage === totalPages" (click)="nextPage()"
-      aria-label="Next page">
-      <mat-icon>chevron_right</mat-icon>
-    </button>
+      <button
+        class="pagination-button"
+        [disabled]="currentPage === totalPages"
+        (click)="nextPage()"
+        aria-label="Next page"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
 
-    <span class="pagination-info">
-      {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, totalItems) }} of {{
-      totalItems
-      }} items
-    </span>
-  </div>
+      <span class="pagination-info">
+        {{ (currentPage - 1) * itemsPerPage + 1 }}-{{
+          Math.min(currentPage * itemsPerPage, totalItems)
+        }}
+        of {{ totalItems }} items
+      </span>
+    </div>
   }
 </div>
 
 @if (activeMenuItemId !== undefined) {
-<div class="floating-menu-container" (click)="$event.stopPropagation()">
-  <div class="floating-menu" [style.top.px]="menuPosition.top" [style.left.px]="menuPosition.left" role="menu">
-    <app-menu [item]="getSelectedItem()" (edit)="onEdit($event)" (delete)="onDelete($event)" editText="Edit"
-      deleteText="Delete">
-    </app-menu>
+  <div class="floating-menu-container" (click)="$event.stopPropagation()">
+    <div
+      class="floating-menu"
+      [style.top.px]="menuPosition.top"
+      [style.left.px]="menuPosition.left"
+      role="menu"
+    >
+      <app-menu
+        [item]="getSelectedItem()"
+        (edit)="onEdit($event)"
+        (delete)="onDelete($event)"
+        editText="Edit"
+        deleteText="Delete"
+      >
+      </app-menu>
+    </div>
   </div>
-</div>
 }
 
 <app-drawer [isOpen]="isDrawerOpen" [title]="drawerTitle" (closed)="closeDrawer()">
   @if (drawerType === fieldType.relation && drawerData) {
-  <div class="relation-details">
-    @for (key of objectKeys(drawerData); track key) {
-    <div class="relation-item">
-      <strong>{{ key }}: </strong> {{ drawerData[key] }}
+    <div class="relation-details">
+      @for (key of objectKeys(drawerData); track key) {
+        <div class="relation-item">
+          <strong>{{ key }}: </strong> {{ drawerData[key] }}
+        </div>
+      }
     </div>
-    }
-  </div>
   }
 
   @if (drawerType === fieldType.collection && drawerData) {
-  <div class="collection-list">
-    @for (item of drawerData; track item; let isLast = $last) {
-    <div class="collection-item">
-      @for (key of objectKeys(item); track key) {
-      <div class="relation-item">
-        <strong>{{ key }}: </strong> {{ item[key] }}
-      </div>
-      }
-      @if (!isLast) {
-      <hr>
+    <div class="collection-list">
+      @for (item of drawerData; track item; let isLast = $last) {
+        <div class="collection-item">
+          @for (key of objectKeys(item); track key) {
+            <div class="relation-item">
+              <strong>{{ key }}: </strong> {{ item[key] }}
+            </div>
+          }
+          @if (!isLast) {
+            <hr />
+          }
+        </div>
       }
     </div>
-    }
-  </div>
   }
 </app-drawer>

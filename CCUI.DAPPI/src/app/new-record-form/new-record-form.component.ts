@@ -1,4 +1,4 @@
-import { CommonModule, Location } from '@angular/common';
+import { Location } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   FormBuilder,
@@ -47,7 +47,6 @@ interface ContentField {
     MatInputModule,
     MatIconModule,
     MatButtonModule,
-    CommonModule,
     FormsModule,
     ReactiveFormsModule,
     MatOption,
@@ -88,7 +87,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private location: Location,
-    private store: Store
+    private store: Store,
   ) {
     this.contentForm = this.fb.group({});
   }
@@ -121,11 +120,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     });
 
     const fileField = this.fileFields[0]?.key;
-    if (
-      fileField &&
-      itemData[fileField] &&
-      typeof itemData[fileField] === 'string'
-    ) {
+    if (fileField && itemData[fileField] && typeof itemData[fileField] === 'string') {
       this.filePreviewUrl = itemData[fileField];
       this.uploadStatus = 'Complete';
     }
@@ -148,16 +143,13 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
               relatedTo: field.relatedTo,
             };
 
-            if (
-              field.type === FieldType.collection ||
-              field.type === FieldType.relation
-            ) {
+            if (field.type === FieldType.collection || field.type === FieldType.relation) {
               contentField.multiple = field.type === FieldType.collection;
               if (field.relatedTo) {
                 this.store.dispatch(
                   ContentActions.loadRelatedItems({
                     selectedType: field.relatedTo,
-                  })
+                  }),
                 );
               }
             }
@@ -166,33 +158,24 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           });
 
         this.relationFields = this.contentFields.filter(
-          (field) =>
-            field.type === FieldType.collection ||
-            field.type === FieldType.relation
+          (field) => field.type === FieldType.collection || field.type === FieldType.relation,
         );
 
-        this.fileFields = this.contentFields.filter(
-          (field) => field.type === FieldType.file
-        );
+        this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
 
-        const nonFileFields = this.contentFields.filter(
-          (field) => field.type !== FieldType.file
-        );
+        const nonFileFields = this.contentFields.filter((field) => field.type !== FieldType.file);
         const halfLength = Math.ceil(nonFileFields.length / 2);
 
         this.leftColumnFields = nonFileFields.slice(0, halfLength);
         this.rightColumnFields = nonFileFields.slice(halfLength);
         this.buildForm();
-      })
+      }),
     );
 
     this.subscription.add(
       this.relatedItems$.subscribe((items) => {
         this.contentFields = this.contentFields.map((item) => {
-          if (
-            item.type === FieldType.collection ||
-            item.type === FieldType.relation
-          ) {
+          if (item.type === FieldType.collection || item.type === FieldType.relation) {
             return {
               ...item,
               relatedItems: items?.data,
@@ -201,28 +184,20 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
         });
 
         this.relationFields = this.contentFields.filter(
-          (field) =>
-            field.type === FieldType.collection ||
-            field.type === FieldType.relation
+          (field) => field.type === FieldType.collection || field.type === FieldType.relation,
         );
 
-        this.fileFields = this.contentFields.filter(
-          (field) => field.type === FieldType.file
-        );
+        this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
 
-        const nonFileFields = this.contentFields.filter(
-          (field) => field.type !== FieldType.file
-        );
+        const nonFileFields = this.contentFields.filter((field) => field.type !== FieldType.file);
         const halfLength = Math.ceil(nonFileFields.length / 2);
 
         this.leftColumnFields = nonFileFields.slice(0, halfLength);
         this.rightColumnFields = nonFileFields.slice(halfLength);
         this.buildForm();
-      })
+      }),
     );
-    this.subscriptions.add(
-      this.selectedType$.subscribe((type) => (this.selectedType = type))
-    );
+    this.subscriptions.add(this.selectedType$.subscribe((type) => (this.selectedType = type)));
 
     this.subscription.add(
       this.currentItem$.subscribe((item) => {
@@ -230,7 +205,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           this.currentItem = item;
           this.populateFormWithData(item);
         }
-      })
+      }),
     );
   }
 
@@ -242,10 +217,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
         ? [Validators.required, ...(field.validators || [])]
         : field.validators || [];
 
-      if (
-        field.type === FieldType.collection ||
-        field.type === FieldType.relation
-      ) {
+      if (field.type === FieldType.collection || field.type === FieldType.relation) {
         group[field.key] = [field.multiple ? [] : null, validators];
       } else {
         group[field.key] = ['', validators];
@@ -347,30 +319,23 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.fileFieldTouched = true;
 
     if (this.isFormValid()) {
-      const formData = Object.keys(this.contentForm.value).reduce(
-        (acc: any, key) => {
-          const value = this.contentForm.value[key];
-          const field = this.contentFields.find((f) => f.key === key);
+      const formData = Object.keys(this.contentForm.value).reduce((acc: any, key) => {
+        const value = this.contentForm.value[key];
+        const field = this.contentFields.find((f) => f.key === key);
 
-          if (field?.type === FieldType.relation && value && value.id) {
-            const relationKey = this.fields.find(
-              (f) => f.key.includes(field.key) && f.type === FieldType.id
-            )?.key;
-            if (relationKey) acc[relationKey] = value.id;
-          } else if (
-            typeof value === 'object' &&
-            value !== null &&
-            !Array.isArray(value)
-          ) {
-            acc[key] = [{ ...value }];
-          } else {
-            acc[key] = value;
-          }
+        if (field?.type === FieldType.relation && value && value.id) {
+          const relationKey = this.fields.find(
+            (f) => f.key.includes(field.key) && f.type === FieldType.id,
+          )?.key;
+          if (relationKey) acc[relationKey] = value.id;
+        } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          acc[key] = [{ ...value }];
+        } else {
+          acc[key] = value;
+        }
 
-          return acc;
-        },
-        {}
-      );
+        return acc;
+      }, {});
 
       this.submitToBackend(formData);
     }
@@ -385,20 +350,18 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           id: this.currentItem.id,
           formData: body,
           contentType: this.selectedType,
-        })
+        }),
       );
     } else {
       this.store.dispatch(
         ContentActions.createContent({
           formData: body,
           contentType: this.selectedType,
-        })
+        }),
       );
     }
 
-    this.store.dispatch(
-      ContentActions.setCurrentItem({ currentItem: undefined })
-    );
+    this.store.dispatch(ContentActions.setCurrentItem({ currentItem: undefined }));
     this.resetForm();
     this.location.back();
     this.store.dispatch(
@@ -407,7 +370,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
         page: 1,
         limit: 10,
         searchText: '',
-      })
+      }),
     );
   }
 }
