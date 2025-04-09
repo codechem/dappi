@@ -1,50 +1,29 @@
 using System.Collections.Immutable;
 using System.Text;
+using CCApi.SourceGenerator.Extensions;
+using CCApi.SourceGenerator.Generators;
 using CCApi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static CCApi.SourceGenerator.Utilities.ClassPropertiesAnalyzer;
 
 namespace CCApi.SourceGenerator;
 
 [Generator]
-public class CrudGenerator : IIncrementalGenerator
+public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
 {
-    public void Initialize(IncrementalGeneratorInitializationContext context)
-    {
-        var syntaxProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
-            "CCApi.SourceGenerator.Attributes.CCControllerAttribute",
-            predicate: (node, _) => node is ClassDeclarationSyntax,
-            transform: (ctx, _) => 
-            {
-                var classDeclaration = (ClassDeclarationSyntax)ctx.TargetNode;
-                var classSymbol = (ISymbol)ctx.TargetSymbol;
-                var namedClassTypeSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
-                var attributeData = ctx.Attributes.FirstOrDefault();
-
-                return new SourceModel
-                {
-                    ClassName = classDeclaration.Identifier.Text,
-                    ModelNamespace = classSymbol.ContainingNamespace.ToString() ?? string.Empty,
-                    RootNamespace = GetRootNamespace(classSymbol.ContainingNamespace),
-                    PropertiesInfos = GoThroughPropertiesAndGatherInfo(namedClassTypeSymbol)
-                };
-            });
-        
-        var compilation = context.CompilationProvider.Combine(syntaxProvider.Collect());
-        context.RegisterSourceOutput(compilation, Execute);
-    }
-
-    private static void Execute(SourceProductionContext context, (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input)
+    protected override void Execute(SourceProductionContext context, (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input)
     {
         var (compilation, collectedData) = input;
-
+        var dbContextData = compilation.GetDbContextInformation();
+        if (dbContextData is null)
+            throw new NullReferenceException("DbContext data is null");
+        
         foreach (var item in collectedData)
         {
             var collectionAddCode = GenerateCollectionAddCode(item);
             var generatedCode = $@"
 using Microsoft.AspNetCore.Mvc;
-using CCApi.WebApiExample.Data; //TODO: AppDbContext here
+using {dbContextData.ResidingNamespace};
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -64,7 +43,7 @@ namespace {item.RootNamespace}.Controllers;
 
 [ApiController]
 [Route(""api/[controller]"")]
-public partial class {item.ClassName}Controller(AppDbContext dbContext) : ControllerBase
+public partial class {item.ClassName}Controller({dbContextData.ClassName} dbContext) : ControllerBase
 {{
      [HttpGet]
      public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
@@ -181,7 +160,7 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
     private static string GenerateCollectionAddCode(SourceModel model)
     {
         var collectionProperties = model.PropertiesInfos
-            .Where(x => ContainsCollectionTypeName(x))
+            .Where(ContainsCollectionTypeName)
             .ToList();
 
         if (!collectionProperties.Any())
@@ -225,32 +204,5 @@ public partial class {item.ClassName}Controller(AppDbContext dbContext) : Contro
         || x.PropertyType.Name.Contains("List")
         || x.PropertyType.Name.Contains("ICollection");
     }
-
-    private static string GetRootNamespace(INamespaceSymbol namespaceSymbol)
-    {
-        if (namespaceSymbol is null || namespaceSymbol.IsGlobalNamespace)
-        {
-            return string.Empty;
-        }
-
-        var result = string.Empty;
-        var current = namespaceSymbol;
-        
-        while (current.ContainingNamespace != null)
-        {
-            if(NamespacesAnotatingAfterRoot.Any(p => p.Equals(current.Name, StringComparison.OrdinalIgnoreCase)))
-            {
-                current = current.ContainingNamespace;
-                continue;
-            }
-
-            result = string.Concat(current.ContainingNamespace.Name + ".", result);
-            current = current.ContainingNamespace;
-        }
-
-        // stupid shit
-        return result.Remove(0, 1).Remove(result.Length - 2, 1);
-    }
-
-    private static List<string> NamespacesAnotatingAfterRoot = ["Models", "Services", "Controllers"];
+    
 }

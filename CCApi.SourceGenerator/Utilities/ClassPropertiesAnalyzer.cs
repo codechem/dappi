@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using CCApi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
@@ -122,7 +121,7 @@ public static class ClassPropertiesAnalyzer
             }).ToList();
         return propertiesInfo;
     }
-
+    
     private static bool ContainsCollectionTypeName(PropertyInfo propertyInfo)
     {
         return propertyInfo.PropertyType.Name.Contains("IEnumerable")

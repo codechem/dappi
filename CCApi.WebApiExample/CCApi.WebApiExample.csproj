@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\CCApi.Extensions.DependencyInjection\CCApi.Extensions.DependencyInjection.csproj" />
         <ProjectReference Include="..\CCApi.SourceGenerator\CCApi.SourceGenerator.csproj" OutputItemType="Analyzer" />
     </ItemGroup>
 
