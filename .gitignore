@@ -1,7 +1,11 @@
-# Ignore build outputs
+# ========================
+# Global Build Artifacts
+# ========================
 bin/
 obj/
 out/
+*.Generated.cs
+
 
 # Rider and JetBrains IDE files
 .idea/
@@ -11,39 +15,55 @@ out/
 # Visual Studio files
 .vscode/
 .vs/
+.idea/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
+*.sln.DotSettings
+*.sln.DotSettings.user
 
-# Logs and temporary files
+# ========================
+# Logs and Temp Files
+# ========================
 *.log
 *.tlog
 *.loghost
+*.tmp
+*.temp
+*.swp
+*.rej
+*.orig
 
-# Dependency directories
-node_modules/
-packages/
-
-# OS files
+# ========================
+# OS & Misc
+# ========================
 .DS_Store
 Thumbs.db
-*.swp
 
-# Git-specific files
-*.orig
-*.rej
+# ========================
+# Node.js & Angular (CCUI.DAPPI)
+# ========================
+**/node_modules/
+**/dist/
+**/.angular/
+**/.angular-cache/
+**/.env
+**/.env.*
 
-# Generated files by source generator
-*.Generated.cs
-
-# Settings and environment files (do not include sensitive info)
-appsettings.Development.json
-appsettings.*.json
-.env
-
-# Postgres-related files
+# ========================
+# .NET App Settings & EF
+# ========================
+**/appsettings.json
+**/appsettings.*.json
+**/Migrations/
+**/packages/
+**/TestResults/
+**/coverage/
+**/.coverage
+*.bak
 *.sql-journal
+*.pgsql
 *.bak
 *.pgsql
 

@@ -19,9 +19,6 @@ public class Author
     [Required]
     [Range(0, 120)]
     public int Age { get; set; }
-    
-    // Navigation property: One author can have many books
-    // Required to have jsonIgnore and be nullable
-    [JsonIgnore]
+
     public ICollection<Book>? Books { get; set; }
 }
