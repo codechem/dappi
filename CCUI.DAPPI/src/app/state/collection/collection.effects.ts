@@ -55,7 +55,7 @@ export class CollectionEffects {
         return this.http.get<ModelField[]>(endpoint).pipe(
           map((fields) =>
             CollectionActions.loadFieldsSuccess({
-              fields: [...fields.$values],
+              fields: [...fields],
             }),
           ),
           catchError((error) => of(CollectionActions.loadFieldsFailure({ error: error.message }))),

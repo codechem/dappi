@@ -95,7 +95,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   onCellClick(item: ContentItem, header: TableHeader): void {
     if (header.type === FieldType.relation || header.type === FieldType.collection) {
       this.drawerTitle = header.label;
-      this.drawerData = item[header.key].$values;
+      this.drawerData = item[header.key];
       this.drawerType = header.type;
       this.isDrawerOpen = true;
     }
@@ -115,7 +115,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if (header.type === FieldType.collection) {
-      return `${Array.isArray(value.$values) ? value.$values.length : 0} items`;
+      return `${Array.isArray(value) ? value.length : 0} items`;
     }
 
     return String(value);
@@ -142,7 +142,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   openDrawer(item: ContentItem, header: TableHeader): void {
     if (header.type === FieldType.relation || header.type === FieldType.collection) {
       this.drawerTitle = header.label;
-      this.drawerData = item[header.key].$values;
+      this.drawerData = item[header.key];
       this.drawerType = header.type;
       this.isDrawerOpen = true;
     }
@@ -316,7 +316,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if (header.type === FieldType.collection && value) {
-      return `${value.$values.length || 0} items`;
+      return `${value.length || 0} items`;
     }
 
     return value;
