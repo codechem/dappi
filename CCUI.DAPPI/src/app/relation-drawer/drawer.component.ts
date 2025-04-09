@@ -14,9 +14,9 @@ export class DrawerComponent {
   @Input() title = '';
   @Input() width = '35%';
   @Output() closed = new EventEmitter<void>();
-  
+
   objectKeys = Object.keys;
-  
+
   close(): void {
     this.closed.emit();
   }

@@ -1,18 +1,8 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  Input,
-  Output,
-  EventEmitter,
-  ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import {
-  CdkDragDrop,
-  DragDropModule,
-  moveItemInArray,
-} from '@angular/cdk/drag-drop';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { PillComponent } from '../pill/pill.component';
 
 export interface FieldItem {
@@ -26,13 +16,7 @@ export interface FieldItem {
 @Component({
   selector: 'app-fields-list',
   standalone: true,
-  imports: [
-    CommonModule,
-    MatIconModule,
-    MatButtonModule,
-    DragDropModule,
-    PillComponent,
-  ],
+  imports: [CommonModule, MatIconModule, MatButtonModule, DragDropModule, PillComponent],
   templateUrl: './fields-list.component.html',
   styleUrls: ['./fields-list.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

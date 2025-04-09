@@ -6,19 +6,19 @@
           <mat-form-field appearance="outline">
             <mat-label>{{ field.label }}</mat-label>
             <ng-container [ngSwitch]="field.type">
-              <input 
-                *ngSwitchCase="fieldType.text" 
-                matInput 
-                [placeholder]="field.placeholder || ''" 
-                [formControlName]="field.key" 
-                [required]="field.required" 
+              <input
+                *ngSwitchCase="fieldType.text"
+                matInput
+                [placeholder]="field.placeholder || ''"
+                [formControlName]="field.key"
+                [required]="field.required"
               />
-              <textarea 
-                *ngSwitchCase="fieldType.textarea" 
-                matInput 
-                [placeholder]="field.placeholder || ''" 
-                [formControlName]="field.key" 
-                rows="5" 
+              <textarea
+                *ngSwitchCase="fieldType.textarea"
+                matInput
+                [placeholder]="field.placeholder || ''"
+                [formControlName]="field.key"
+                rows="5"
                 [required]="field.required"
               ></textarea>
               <ng-container *ngSwitchCase="fieldType.collection">
@@ -36,7 +36,9 @@
                 </mat-select>
               </ng-container>
             </ng-container>
-            <mat-error *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched">
+            <mat-error
+              *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched"
+            >
               {{ getErrorMessage(field.key) }}
             </mat-error>
           </mat-form-field>
@@ -46,9 +48,14 @@
       <div class="form-column right-column">
         <ng-container *ngFor="let field of fileFields">
           <div class="file-upload-container">
-            <div class="file-label">{{ field.label }} <span *ngIf="field.required" class="required-field">*</span></div>
-            <div class="file-upload-area" [class.has-file]="filePreviewUrl" 
-                 [class.invalid-file]="fileFieldTouched && field.required && !selectedFile">
+            <div class="file-label">
+              {{ field.label }} <span *ngIf="field.required" class="required-field">*</span>
+            </div>
+            <div
+              class="file-upload-area"
+              [class.has-file]="filePreviewUrl"
+              [class.invalid-file]="fileFieldTouched && field.required && !selectedFile"
+            >
               <ng-container *ngIf="!filePreviewUrl">
                 <div class="upload-instructions">
                   <mat-icon>upload_file_filled</mat-icon>
@@ -87,29 +94,32 @@
                 </div>
               </ng-container>
             </div>
-            <div *ngIf="fileFieldTouched && field.required && !selectedFile" class="file-error-message">
+            <div
+              *ngIf="fileFieldTouched && field.required && !selectedFile"
+              class="file-error-message"
+            >
               Please select a file
             </div>
           </div>
         </ng-container>
-        
+
         <ng-container *ngFor="let field of rightColumnFields">
           <mat-form-field appearance="outline">
             <mat-label>{{ field.label }}</mat-label>
             <ng-container [ngSwitch]="field.type">
-              <input 
-                *ngSwitchCase="fieldType.text" 
-                matInput 
-                [placeholder]="field.placeholder || ''" 
-                [formControlName]="field.key" 
-                [required]="field.required" 
+              <input
+                *ngSwitchCase="fieldType.text"
+                matInput
+                [placeholder]="field.placeholder || ''"
+                [formControlName]="field.key"
+                [required]="field.required"
               />
-              <textarea 
-                *ngSwitchCase="fieldType.textarea" 
-                matInput 
-                [placeholder]="field.placeholder || ''" 
-                [formControlName]="field.key" 
-                rows="5" 
+              <textarea
+                *ngSwitchCase="fieldType.textarea"
+                matInput
+                [placeholder]="field.placeholder || ''"
+                [formControlName]="field.key"
+                rows="5"
                 [required]="field.required"
               ></textarea>
               <ng-container *ngSwitchCase="fieldType.collection">
@@ -125,12 +135,16 @@
                     {{ getRelationDisplayValue(item, field) }}
                   </mat-option>
                 </mat-select>
-                <mat-error *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched">
+                <mat-error
+                  *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched"
+                >
                   {{ getErrorMessage(field.key) }}
                 </mat-error>
               </ng-container>
             </ng-container>
-            <mat-error *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched">
+            <mat-error
+              *ngIf="contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched"
+            >
               {{ getErrorMessage(field.key) }}
             </mat-error>
           </mat-form-field>

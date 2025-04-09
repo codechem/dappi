@@ -9,12 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
   standalone: true,
-  imports: [
-    CommonModule,
-    StatsCardComponent,
-    RecentContentTableComponent,
-    MatIconModule,
-  ],
+  imports: [CommonModule, StatsCardComponent, RecentContentTableComponent, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardComponent implements OnInit {

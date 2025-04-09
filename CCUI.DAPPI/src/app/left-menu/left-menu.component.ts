@@ -51,12 +51,12 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
       this.router.events
         .pipe(
           filter((event) => event instanceof NavigationEnd),
-          takeUntil(this.destroy$)
+          takeUntil(this.destroy$),
         )
         .subscribe((event: any) => {
           const currentPath = event.url.split('/')[1] || 'home';
           this.updateActiveIcon(currentPath);
-        })
+        }),
     );
 
     const initialPath = this.router.url.split('/')[1] || 'home';
@@ -76,9 +76,7 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
   }
 
   private updateActiveIcon(path: string): void {
-    const menuItem = this.menuItems.find(
-      (item) => item.route === `/${path}` || item.id === path
-    );
+    const menuItem = this.menuItems.find((item) => item.route === `/${path}` || item.id === path);
 
     if (menuItem) {
       this.activeIcon = menuItem.id;

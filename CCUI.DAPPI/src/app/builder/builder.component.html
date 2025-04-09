@@ -44,12 +44,10 @@
         aria-label="Save content"
         (click)="saveContent()"
       >
-      <ng-container *ngIf="!isSaving; else savingSpinner">
-      Save your content
-    </ng-container>
-    <ng-template #savingSpinner>
-      <mat-spinner diameter="20"></mat-spinner> Applying migrations...
-    </ng-template>
+        <ng-container *ngIf="!isSaving; else savingSpinner"> Save your content </ng-container>
+        <ng-template #savingSpinner>
+          <mat-spinner diameter="20"></mat-spinner> Applying migrations...
+        </ng-template>
       </button>
     </footer>
   </div>

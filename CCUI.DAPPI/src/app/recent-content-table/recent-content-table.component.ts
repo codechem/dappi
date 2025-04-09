@@ -28,13 +28,7 @@ interface ContentType {
   styleUrl: './recent-content-table.component.scss',
 })
 export class RecentContentTableComponent {
-  displayedColumns: string[] = [
-    'title',
-    'description',
-    'status',
-    'lastEdited',
-    'actions',
-  ];
+  displayedColumns: string[] = ['title', 'description', 'status', 'lastEdited', 'actions'];
   dataSource = new MatTableDataSource<ContentType>([
     {
       title: 'description',

@@ -1,20 +1,24 @@
 <div class="layout">
-  <app-sidebar headerText="Content Manager">
-  </app-sidebar>
+  <app-sidebar headerText="Content Manager"> </app-sidebar>
 
-  <div class="container" *ngIf="(selectedType$ | async) as selectedType">
+  <div class="container" *ngIf="selectedType$ | async as selectedType">
     <header class="header">
       <div class="title-block">
         <h1>{{ selectedType || 'Select a Type' }}</h1>
         <p>Create the content of your design</p>
       </div>
-      <button mat-icon-button class="settings-button" aria-label="Settings" [disabled]="!selectedType">
+      <button
+        mat-icon-button
+        class="settings-button"
+        aria-label="Settings"
+        [disabled]="!selectedType"
+      >
         <mat-icon>more_vert</mat-icon>
       </button>
     </header>
 
     <ng-container *ngIf="isLoading$ | async as isLoading">
-      <ng-container *ngIf="(isLoading$ | async)">
+      <ng-container *ngIf="isLoading$ | async">
         <div class="content loading-content">
           <mat-spinner diameter="40"></mat-spinner>
           <p>Loading content for {{ selectedType }}...</p>
@@ -22,19 +26,23 @@
       </ng-container>
     </ng-container>
 
-      <ng-container *ngIf="!items?.length && !isSearching; else contentPresent">
-        <div class="content">
-          <img src="assets/illustration.svg" alt="No content" />
-          <h2>There are no {{ selectedType }} items created yet</h2>
-          <p>Add your first {{ selectedType }} to this Collection-Type</p>
-          <app-button [text]="'+ Add new ' + selectedType" (click)="navigateToCreate()" aria-label="Add new content"></app-button>
-        </div>
-      </ng-container>
-      <ng-template #contentPresent>
-        <div class="content-list">
-          <app-content-table></app-content-table>
-        </div>
-      </ng-template>
+    <ng-container *ngIf="!items?.length && !isSearching; else contentPresent">
+      <div class="content">
+        <img src="assets/illustration.svg" alt="No content" />
+        <h2>There are no {{ selectedType }} items created yet</h2>
+        <p>Add your first {{ selectedType }} to this Collection-Type</p>
+        <app-button
+          [text]="'+ Add new ' + selectedType"
+          (click)="navigateToCreate()"
+          aria-label="Add new content"
+        ></app-button>
+      </div>
+    </ng-container>
+    <ng-template #contentPresent>
+      <div class="content-list">
+        <app-content-table></app-content-table>
+      </div>
+    </ng-template>
     <ng-container *ngIf="(isLoading$ | async) && !selectedType">
       <div class="content">
         <img src="assets/illustration.svg" alt="No type selected" />
@@ -45,7 +53,12 @@
 
     <footer class="footer">
       <hr />
-      <button mat-button class="save-button" [disabled]="disabled || !selectedType" aria-label="Save content">
+      <button
+        mat-button
+        class="save-button"
+        [disabled]="disabled || !selectedType"
+        aria-label="Save content"
+      >
         Save your content
       </button>
     </footer>

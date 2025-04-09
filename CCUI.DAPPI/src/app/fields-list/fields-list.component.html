@@ -19,9 +19,7 @@
 
           <ng-container *ngIf="field.iconText || field.iconName">
             <div class="fields-container__icon">
-              <ng-container *ngIf="field.iconText">{{
-                field.iconText
-              }}</ng-container>
+              <ng-container *ngIf="field.iconText">{{ field.iconText }}</ng-container>
               <mat-icon *ngIf="field.iconName">{{ field.iconName }}</mat-icon>
             </div>
           </ng-container>
@@ -54,9 +52,7 @@
         </div> -->
       </div>
 
-      <div *ngIf="fields.length === 0" class="fields-container__empty">
-        No fields available
-      </div>
+      <div *ngIf="fields.length === 0" class="fields-container__empty">No fields available</div>
     </div>
   </div>
 </div>

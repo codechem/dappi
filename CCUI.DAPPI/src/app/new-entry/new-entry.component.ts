@@ -34,12 +34,13 @@ export class NewEntryComponent implements OnInit, OnDestroy {
 
   selectedType$ = this.store.select(selectSelectedType);
 
-  constructor(private location: Location, private store: Store) {}
+  constructor(
+    private location: Location,
+    private store: Store,
+  ) {}
 
   ngOnInit(): void {
-    this.subscription.add(
-      this.selectedType$.subscribe((type) => (this.typeName = type))
-    );
+    this.subscription.add(this.selectedType$.subscribe((type) => (this.typeName = type)));
   }
 
   ngOnDestroy(): void {
@@ -56,9 +57,7 @@ export class NewEntryComponent implements OnInit, OnDestroy {
     if (this.showMenu) {
       this.showMenu = false;
     } else {
-      const buttonRect = (
-        event.currentTarget as HTMLElement
-      ).getBoundingClientRect();
+      const buttonRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
       this.menuPosition = {
         top: buttonRect.bottom + window.scrollY,
         left: buttonRect.right - 150 + window.scrollX,

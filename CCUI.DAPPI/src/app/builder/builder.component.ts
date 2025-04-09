@@ -4,10 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { ButtonComponent } from '../button/button.component';
 import { MatDialog } from '@angular/material/dialog';
 import { AddFieldDialogComponent } from '../add-field-dialog/add-field-dialog.component';
-import {
-  FieldItem,
-  FieldsListComponent,
-} from '../fields-list/fields-list.component';
+import { FieldItem, FieldsListComponent } from '../fields-list/fields-list.component';
 import { CommonModule } from '@angular/common';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { filter, Subscription, take } from 'rxjs';
@@ -15,10 +12,7 @@ import { MatSpinner } from '@angular/material/progress-spinner';
 import { ModelField } from '../models/content.model';
 import { select, Store } from '@ngrx/store';
 import * as CollectionActions from '../state/collection/collection.actions';
-import {
-  selectHeaders,
-  selectSelectedType,
-} from '../state/content/content.selectors';
+import { selectHeaders, selectSelectedType } from '../state/content/content.selectors';
 import {
   selectFields,
   selectSaveError,
@@ -59,47 +53,48 @@ export class BuilderComponent implements OnInit, OnDestroy {
 
   private subscription: Subscription = new Subscription();
 
-  constructor(private dialog: MatDialog, private store: Store) {}
+  constructor(
+    private dialog: MatDialog,
+    private store: Store,
+  ) {}
 
   async ngOnInit(): Promise<void> {
     this.subscription.add(
       this.selectedType$.subscribe((selectedType) => {
-        this.store.dispatch(
-          CollectionActions.loadFields({ modelType: selectedType })
-        );
-      })
+        this.store.dispatch(CollectionActions.loadFields({ modelType: selectedType }));
+      }),
     );
     this.subscription.add(
       this.fieldsData$.subscribe((fields) => {
         this.formatFields(fields);
-      })
+      }),
     );
     this.subscription.add(
       this.store
         .pipe(
           select(selectServerRestarting),
           filter((restarting) => restarting),
-          take(1)
+          take(1),
         )
         .subscribe(() => {
           alert(
-            'Migrations applied. Application restarting... Please wait a moment before making additional changes.'
+            'Migrations applied. Application restarting... Please wait a moment before making additional changes.',
           );
 
           location.reload();
-        })
+        }),
     );
     this.subscription.add(
       this.store
         .pipe(
           select(selectSaveError),
           filter((error) => !!error),
-          take(1)
+          take(1),
         )
         .subscribe(() => {
           alert('Failed to save content. Please try again.');
           this.closeModal();
-        })
+        }),
     );
   }
 
@@ -114,7 +109,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
     this.subscription.add(
       dialogRef.afterClosed().subscribe(async (result) => {
         this.disabled = false;
-      })
+      }),
     );
   }
 

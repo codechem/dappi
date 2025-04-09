@@ -126,5 +126,5 @@ export const contentReducer = createReducer(
   on(ContentActions.setIsSearching, (state, { isSearching }) => ({
     ...state,
     isSearching,
-  }))
+  })),
 );

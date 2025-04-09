@@ -1,5 +1,5 @@
-@use "../../variables" as vars;
-@use "sass:color";
+@use '../../variables' as vars;
+@use 'sass:color';
 
 :host {
   display: flex;
@@ -147,16 +147,16 @@ app-sidebar {
   border-radius: 8px;
   text-align: center;
   max-width: 400px;
-  
+
   h2 {
     margin-top: 20px;
     color: rgba(vars.$text-primary, 1);
     font-size: 24px;
   }
-  
+
   p {
     margin-top: 10px;
-    color: rgba(vars.$text-secondary, 1);;
+    color: rgba(vars.$text-secondary, 1);
   }
 }
 

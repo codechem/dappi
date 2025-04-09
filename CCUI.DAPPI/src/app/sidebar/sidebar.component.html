@@ -9,9 +9,22 @@
   <ng-template #searchField>
     <div class="search-container">
       <mat-icon class="search-icon">search</mat-icon>
-      <input #searchInput type="text" placeholder="Search collection types..." [(ngModel)]="searchText" (blur)="closeSearch()"
-        (input)="onSearchTextChange(searchText)" (keydown)="onKeyDown($event)" autocomplete="off" />
-      <button *ngIf="searchText" class="clear-button" aria-label="Clear search" (click)="clearSearch()">
+      <input
+        #searchInput
+        type="text"
+        placeholder="Search collection types..."
+        [(ngModel)]="searchText"
+        (blur)="closeSearch()"
+        (input)="onSearchTextChange(searchText)"
+        (keydown)="onKeyDown($event)"
+        autocomplete="off"
+      />
+      <button
+        *ngIf="searchText"
+        class="clear-button"
+        aria-label="Clear search"
+        (click)="clearSearch()"
+      >
         <mat-icon class="close-icon">close</mat-icon>
       </button>
     </div>
@@ -27,13 +40,17 @@
 </div>
 
 <div class="scrollable-list">
-  @let selectedType = (selectedType$ | async);
-  @if(selectedType)
-  {
+  @let selectedType = selectedType$ | async;
+  @if (selectedType) {
     <ng-container *ngIf="filteredCollectionTypes.length > 0; else noResults">
       <mat-list>
-        <mat-list-item class="custom-list-item" *ngFor="let type of filteredCollectionTypes; trackBy: trackByFn"
-          [attr.aria-label]="type" [ngClass]="{'selected': selectedType === type}" (click)="selectCollectionType(type)">
+        <mat-list-item
+          class="custom-list-item"
+          *ngFor="let type of filteredCollectionTypes; trackBy: trackByFn"
+          [attr.aria-label]="type"
+          [ngClass]="{ selected: selectedType === type }"
+          (click)="selectCollectionType(type)"
+        >
           {{ type }}
         </mat-list-item>
       </mat-list>
