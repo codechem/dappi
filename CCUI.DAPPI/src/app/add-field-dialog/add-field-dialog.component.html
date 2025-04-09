@@ -11,85 +11,85 @@
       <h3 class="section-title">1. Select field type</h3>
       <div class="field-type-grid-wrapper">
         <div class="field-type-grid">
-          <div
-            *ngFor="let ft of fieldTypes; let i = index"
-            class="box"
-            [class.selected]="selectedFieldTypeIndex === i"
-            (click)="selectFieldType(i)"
-            [attr.aria-selected]="selectedFieldTypeIndex === i"
-            role="option"
-            tabindex="0"
-            (keydown.enter)="selectFieldType(i)"
-          >
-            <mat-icon class="field-type-box">
-              {{ ft.icon }}
-            </mat-icon>
-            <div class="label">{{ ft.label }}</div>
-            <div class="description">{{ ft.description }}</div>
-          </div>
+          @for (ft of fieldTypes; track ft; let i = $index) {
+            <div
+              class="box"
+              [class.selected]="selectedFieldTypeIndex === i"
+              (click)="selectFieldType(i)"
+              [attr.aria-selected]="selectedFieldTypeIndex === i"
+              role="option"
+              tabindex="0"
+              (keydown.enter)="selectFieldType(i)"
+            >
+              <mat-icon class="field-type-box">
+                {{ ft.icon }}
+              </mat-icon>
+              <div class="label">{{ ft.label }}</div>
+              <div class="description">{{ ft.description }}</div>
+            </div>
+          }
         </div>
       </div>
-      <ng-container *ngIf="selectedFieldTypeIndex !== 8">
+      @if (selectedFieldTypeIndex !== 8) {
         <h3 class="section-title">2. Field settings</h3>
         <mat-form-field appearance="outline" class="input-field">
           <mat-label>Field name</mat-label>
           <input matInput formControlName="fieldName" placeholder="Enter field name" />
-          <mat-error *ngIf="fieldForm.get('fieldName')?.hasError('required')">
-            Field name is required
-          </mat-error>
-          <mat-error *ngIf="fieldForm.get('fieldName')?.hasError('maxlength')">
-            Field name cannot exceed 50 characters
-          </mat-error>
+          @if (fieldForm.get('fieldName')?.hasError('required')) {
+            <mat-error> Field name is required </mat-error>
+          }
+          @if (fieldForm.get('fieldName')?.hasError('maxlength')) {
+            <mat-error> Field name cannot exceed 50 characters </mat-error>
+          }
         </mat-form-field>
-
         <div class="required-field">
           <mat-checkbox formControlName="requiredField">Required field</mat-checkbox>
           <small>You will not be able to create an entry if this field is empty</small>
         </div>
-      </ng-container>
+      }
 
-      <ng-container *ngIf="selectedFieldTypeIndex === 8">
+      @if (selectedFieldTypeIndex === 8) {
         <h3 class="section-title">2. Configure relationship for {{ selectedType$ | async }}</h3>
-
         <mat-form-field appearance="outline" class="input-field">
           <mat-label>Relation name</mat-label>
           <input matInput formControlName="fieldName" placeholder="Enter relation name" />
-          <mat-error *ngIf="fieldForm.get('fieldName')?.hasError('required')">
-            Relation name is required
-          </mat-error>
-          <mat-error *ngIf="fieldForm.get('fieldName')?.hasError('maxlength')">
-            Relation name cannot exceed 50 characters
-          </mat-error>
+          @if (fieldForm.get('fieldName')?.hasError('required')) {
+            <mat-error> Relation name is required </mat-error>
+          }
+          @if (fieldForm.get('fieldName')?.hasError('maxlength')) {
+            <mat-error> Relation name cannot exceed 50 characters </mat-error>
+          }
         </mat-form-field>
-
         <mat-form-field appearance="outline" class="input-field">
           <mat-label>Related model</mat-label>
           <mat-select formControlName="relatedModel">
-            <mat-option *ngFor="let model of availableModels" [value]="model.value">
-              {{ model.label }}
-            </mat-option>
+            @for (model of availableModels; track model) {
+              <mat-option [value]="model.value">
+                {{ model.label }}
+              </mat-option>
+            }
           </mat-select>
-          <mat-error *ngIf="fieldForm.get('relatedModel')?.hasError('required')">
-            Related model is required
-          </mat-error>
+          @if (fieldForm.get('relatedModel')?.hasError('required')) {
+            <mat-error> Related model is required </mat-error>
+          }
         </mat-form-field>
-
         <div class="relation-type-container">
           <h4>Relation type</h4>
           <div class="relation-type-grid">
-            <div
-              *ngFor="let rt of relationTypes; let i = index"
-              class="relation-box"
-              [class.selected]="selectedRelationTypeIndex === i"
-              (click)="selectRelationType(i)"
-            >
-              <div class="relation-icon">{{ rt.icon }}</div>
-              <div class="relation-label">{{ rt.label }}</div>
-              <div class="relation-description">{{ rt.description }}</div>
-            </div>
+            @for (rt of relationTypes; track rt; let i = $index) {
+              <div
+                class="relation-box"
+                [class.selected]="selectedRelationTypeIndex === i"
+                (click)="selectRelationType(i)"
+              >
+                <div class="relation-icon">{{ rt.icon }}</div>
+                <div class="relation-label">{{ rt.label }}</div>
+                <div class="relation-description">{{ rt.description }}</div>
+              </div>
+            }
           </div>
         </div>
-      </ng-container>
+      }
     </form>
   </div>
 

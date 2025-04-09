@@ -3,7 +3,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { CommonModule } from '@angular/common';
+
 import { PillComponent } from '../pill/pill.component';
 
 interface ContentType {
@@ -21,7 +21,6 @@ interface ContentType {
     MatButtonModule,
     MatCardModule,
     MatTableModule,
-    CommonModule,
     PillComponent,
   ],
   templateUrl: './recent-content-table.component.html',

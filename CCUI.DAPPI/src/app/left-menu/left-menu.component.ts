@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
-import { CommonModule } from '@angular/common';
+
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
@@ -16,7 +16,7 @@ interface MenuItem {
 @Component({
   selector: 'app-left-menu',
   standalone: true,
-  imports: [CommonModule, MatTooltipModule, MatIconModule, RouterModule],
+  imports: [MatTooltipModule, MatIconModule, RouterModule],
   templateUrl: './left-menu.component.html',
   styleUrls: ['./left-menu.component.scss'],
 })

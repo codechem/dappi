@@ -1,7 +1,7 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { CommonModule } from '@angular/common';
+
 import { NewRecordFormComponent } from '../new-record-form/new-record-form.component';
 import { Location } from '@angular/common';
 import { MenuComponent } from '../menu/menu.component';
@@ -17,7 +17,6 @@ import { Subscription } from 'rxjs';
     SidebarComponent,
     MatIconModule,
     MatButtonModule,
-    CommonModule,
     NewRecordFormComponent,
     MenuComponent,
   ],

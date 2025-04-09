@@ -6,53 +6,51 @@
       (cdkDropListDropped)="drop($event)"
       [cdkDropListData]="fields"
     >
-      <div
-        class="fields-container__row"
-        *ngFor="let field of fields; trackBy: trackByField"
-        cdkDrag
-        [cdkDragData]="field"
-      >
-        <div class="fields-container__column fields-container__column--left">
-          <div class="fields-container__drag-handle" cdkDragHandle>
-            <mat-icon>drag_indicator</mat-icon>
-          </div>
-
-          <ng-container *ngIf="field.iconText || field.iconName">
-            <div class="fields-container__icon">
-              <ng-container *ngIf="field.iconText">{{ field.iconText }}</ng-container>
-              <mat-icon *ngIf="field.iconName">{{ field.iconName }}</mat-icon>
+      @for (field of fields; track trackByField($index, field)) {
+        <div class="fields-container__row" cdkDrag [cdkDragData]="field">
+          <div class="fields-container__column fields-container__column--left">
+            <div class="fields-container__drag-handle" cdkDragHandle>
+              <mat-icon>drag_indicator</mat-icon>
             </div>
-          </ng-container>
-
-          <span class="fields-container__name">{{ field.name }}</span>
-        </div>
-
-        <div class="fields-container__column fields-container__column--middle">
-          <app-pill [text]="field.type"></app-pill>
-        </div>
-
-        <!-- <div class="fields-container__column fields-container__column--right">
+            @if (field.iconText || field.iconName) {
+              <div class="fields-container__icon">
+                @if (field.iconText) {
+                  {{ field.iconText }}
+                }
+                @if (field.iconName) {
+                  <mat-icon>{{ field.iconName }}</mat-icon>
+                }
+              </div>
+            }
+            <span class="fields-container__name">{{ field.name }}</span>
+          </div>
+          <div class="fields-container__column fields-container__column--middle">
+            <app-pill [text]="field.type"></app-pill>
+          </div>
+          <!-- <div class="fields-container__column fields-container__column--right">
           <button
             mat-icon-button
             class="fields-container__action-button"
             (click)="onEdit(field)"
             aria-label="Edit field"
-          >
+            >
             <mat-icon>edit</mat-icon>
           </button>
-
           <button
             mat-icon-button
             class="fields-container__action-button"
             (click)="onDelete(field)"
             aria-label="Delete field"
-          >
+            >
             <mat-icon>delete</mat-icon>
           </button>
         </div> -->
-      </div>
+        </div>
+      }
 
-      <div *ngIf="fields.length === 0" class="fields-container__empty">No fields available</div>
+      @if (fields.length === 0) {
+        <div class="fields-container__empty">No fields available</div>
+      }
     </div>
   </div>
 </div>

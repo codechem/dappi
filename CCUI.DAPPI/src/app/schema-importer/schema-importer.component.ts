@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -46,14 +46,7 @@ interface SchemaCollection {
 @Component({
   selector: 'app-schema-importer',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatCheckboxModule,
-    MatMenuModule,
-  ],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatCheckboxModule, MatMenuModule],
   templateUrl: './schema-importer.component.html',
   styleUrls: ['./schema-importer.component.scss'],
 })

@@ -1,4 +1,4 @@
-import { CommonModule, Location } from '@angular/common';
+import { Location } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   FormBuilder,
@@ -47,7 +47,6 @@ interface ContentField {
     MatInputModule,
     MatIconModule,
     MatButtonModule,
-    CommonModule,
     FormsModule,
     ReactiveFormsModule,
     MatOption,

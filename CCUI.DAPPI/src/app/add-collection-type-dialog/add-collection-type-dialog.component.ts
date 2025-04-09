@@ -12,7 +12,7 @@ import {
   ReactiveFormsModule,
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { CommonModule } from '@angular/common';
+
 import { Store } from '@ngrx/store';
 import * as CollectionActions from '../state/collection/collection.actions';
 
@@ -27,7 +27,6 @@ import * as CollectionActions from '../state/collection/collection.actions';
     MatIconModule,
     FormsModule,
     ReactiveFormsModule,
-    CommonModule,
   ],
   templateUrl: './add-collection-type-dialog.component.html',
   styleUrl: './add-collection-type-dialog.component.scss',
