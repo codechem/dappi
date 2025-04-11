@@ -42,7 +42,6 @@ public static class Program
 
         var parser = new Parser(with => with.HelpWriter = null);
         var parserResult = parser.ParseArguments<InitCommand, StartCommand>(args);
-        
         var helpText = BuildAndGetHelpText(parserResult, dappiHeader);
         
         parserResult.WithNotParsed(result =>
@@ -54,48 +53,50 @@ public static class Program
                 await AnsiConsole.Status()
                     .StartAsync("Initializing Dappi Project.", async ctx =>
                     {
-                        var startInfo = new ProcessStartInfo
-                        {
-                            FileName = "dotnet",
-                            Arguments = $"new webapi -n {command.ProjectName} --force",
-                            WorkingDirectory = command.ProjectPath,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        };
-
-                        using var process = new Process();
-                        process.StartInfo = startInfo;
-                        process.OutputDataReceived += (sender, e) => Console.WriteLine(e.Data);
-                        process.ErrorDataReceived += (sender, e) => Console.Error.WriteLine(e.Data);
-                        process.Start();
-                        process.BeginOutputReadLine();
-                        process.BeginErrorReadLine();
-                        process.WaitForExit();
-                        
-                        var startInfo1 = new ProcessStartInfo
-                        {
-                            FileName = "dotnet",
-                            WorkingDirectory = command.ProjectPath,
-                            Arguments = $"add {command.ProjectPath}\\{command.ProjectName}\\{command.ProjectName}.csproj package Dappi.Extensions.DependencyInjection --source C:\\LocalNuget ",
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        };
-                        
-                        using var process1 = new Process();
-                        process1.StartInfo = startInfo1;
-                        process1.OutputDataReceived += (sender, e) => Console.WriteLine(e.Data);
-                        process1.ErrorDataReceived += (sender, e) => Console.Error.WriteLine(e.Data);
-                        process1.Start();
-                        process1.BeginOutputReadLine();
-                        process1.BeginErrorReadLine();
-                        process1.WaitForExit();
-
-
+                        var templateFetcher = new TemplateFetcher();
+                        await templateFetcher.GetDappiTemplate();
+                        // var startInfo = new ProcessStartInfo
+                        // {
+                        //     FileName = "dotnet",
+                        //     Arguments = $"new webapi -n {command.ProjectName} --force",
+                        //     WorkingDirectory = command.ProjectPath,
+                        //     RedirectStandardOutput = true,
+                        //     RedirectStandardError = true,
+                        //     UseShellExecute = false,
+                        //     CreateNoWindow = true
+                        // };
+                        //
+                        // using var process = new Process();
+                        // process.StartInfo = startInfo;
+                        // process.OutputDataReceived += (sender, e) => Console.WriteLine(e.Data);
+                        // process.ErrorDataReceived += (sender, e) => Console.Error.WriteLine(e.Data);
+                        // process.Start();
+                        // process.BeginOutputReadLine();
+                        // process.BeginErrorReadLine();
+                        // process.WaitForExit();
+                        //
+                        // var startInfo1 = new ProcessStartInfo
+                        // {
+                        //     FileName = "dotnet",
+                        //     WorkingDirectory = command.ProjectPath,
+                        //     Arguments = $"add {command.ProjectPath}\\{command.ProjectName}\\{command.ProjectName}.csproj package Dappi.Extensions.DependencyInjection --source C:\\LocalNuget ",
+                        //     RedirectStandardOutput = true,
+                        //     RedirectStandardError = true,
+                        //     UseShellExecute = false,
+                        //     CreateNoWindow = true
+                        // };
+                        //
+                        // using var process1 = new Process();
+                        // process1.StartInfo = startInfo1;
+                        // process1.OutputDataReceived += (sender, e) => Console.WriteLine(e.Data);
+                        // process1.ErrorDataReceived += (sender, e) => Console.Error.WriteLine(e.Data);
+                        // process1.Start();
+                        // process1.BeginOutputReadLine();
+                        // process1.BeginErrorReadLine();
+                        // process1.WaitForExit();
                     });
+                
+                    
             })
             .WithParsed<StartCommand>(command =>
             {
