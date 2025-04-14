@@ -1,0 +1,50 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h1 class="title">Welcome to dappi</h1>
+    <p class="subtitle">
+      {{ isLoginMode ? 'Login to your dappi account.' : 'Create your dappi account.' }}
+    </p>
+    <p class="toggle-prompt">
+      {{ isLoginMode ? "You don't have account?" : 'Already have an account?' }}
+      <a (click)="toggleAuthMode()" class="toggle-link">
+        {{ isLoginMode ? 'Register here' : 'Login here' }}
+      </a>
+    </p>
+
+    <form [formGroup]="authForm" (ngSubmit)="onSubmit()">
+      <div class="form-field">
+        <label for="email">Email address</label>
+        <input type="email" id="email" formControlName="email" placeholder="john@gmail.com" />
+      </div>
+
+      <div class="form-field">
+        <label for="password">Password</label>
+        <input type="password" id="password" formControlName="password" placeholder="**********" />
+      </div>
+
+      @if (!isLoginMode) {
+        <div class="form-field">
+          <label for="confirmPassword">Confirm Password</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            formControlName="confirmPassword"
+            placeholder="**********"
+          />
+          @if (authForm.hasError('passwordMismatch') && authForm.get('confirmPassword')?.touched) {
+            <div class="error-message">Passwords do not match</div>
+          }
+        </div>
+      }
+
+      <div class="terms-checkbox">
+        <input type="checkbox" id="terms" formControlName="termsAccepted" />
+        <label for="terms">I accept the Terms and Conditions</label>
+      </div>
+
+      <button type="submit" class="submit-button" [disabled]="!authForm.valid">
+        {{ isLoginMode ? 'Sign in' : 'Register' }}
+      </button>
+    </form>
+  </div>
+</div>

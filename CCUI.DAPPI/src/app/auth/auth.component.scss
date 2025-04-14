@@ -1,0 +1,135 @@
+@use '../../variables' as vars;
+
+:host {
+  display: flex;
+  flex-grow: 1;
+  height: 100vh;
+  width: 100vw;
+}
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.auth-card {
+  background-color: vars.$background-paper-elevation-1;
+  border-radius: 8px;
+  padding: 32px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 500;
+  color: vars.$text-primary;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: vars.$text-secondary;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.toggle-prompt {
+  font-size: 14px;
+  color: vars.$text-secondary;
+  margin: 0 0 32px;
+  text-align: center;
+}
+
+.toggle-link {
+  color: vars.$primary-main;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.form-field {
+  margin-bottom: 16px;
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: vars.$text-secondary;
+    margin-bottom: 8px;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    background-color: transparent;
+    color: vars.$text-primary;
+    font-size: 16px;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: vars.$primary-main;
+    }
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.38);
+    }
+  }
+}
+
+.error-message {
+  color: vars.$error-light;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.terms-checkbox {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+
+  input[type='checkbox'] {
+    margin-right: 8px;
+    width: 18px;
+    height: 18px;
+    accent-color: vars.$primary-main;
+  }
+
+  label {
+    font-size: 14px;
+    color: vars.$text-secondary;
+  }
+}
+
+.submit-button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  background-color: vars.$primary-main;
+  color: vars.$primary-contrast-text;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover:not([disabled]) {
+    background-color: darken(vars.$primary-main, 10%);
+  }
+
+  &:disabled {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.38);
+    cursor: not-allowed;
+  }
+}
