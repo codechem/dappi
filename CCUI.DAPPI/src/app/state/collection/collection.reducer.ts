@@ -11,15 +11,12 @@ export const collectionReducer = createReducer(
     errorCollectionTypes: null,
   })),
 
-  on(
-    CollectionActions.loadCollectionTypesSuccess,
-    (state, { collectionTypes }) => ({
-      ...state,
-      collectionTypes,
-      filteredCollectionTypes: collectionTypes,
-      loadingCollectionTypes: false,
-    })
-  ),
+  on(CollectionActions.loadCollectionTypesSuccess, (state, { collectionTypes }) => ({
+    ...state,
+    collectionTypes,
+    filteredCollectionTypes: collectionTypes,
+    loadingCollectionTypes: false,
+  })),
 
   on(CollectionActions.loadCollectionTypesFailure, (state, { error }) => ({
     ...state,
@@ -45,16 +42,13 @@ export const collectionReducer = createReducer(
     errorFields: error,
   })),
 
-  on(
-    CollectionActions.addCollectionTypeSuccess,
-    (state, { collectionType }) => {
-      const updatedTypes = [...state.collectionTypes, collectionType].sort();
-      return {
-        ...state,
-        collectionTypes: updatedTypes,
-      };
-    }
-  ),
+  on(CollectionActions.addCollectionTypeSuccess, (state, { collectionType }) => {
+    const updatedTypes = [...state.collectionTypes, collectionType].sort();
+    return {
+      ...state,
+      collectionTypes: updatedTypes,
+    };
+  }),
 
   on(CollectionActions.addFieldSuccess, (state, { field }) => {
     return {
@@ -80,5 +74,5 @@ export const collectionReducer = createReducer(
     ...state,
     isSaving: false,
     saveError: error,
-  }))
+  })),
 );

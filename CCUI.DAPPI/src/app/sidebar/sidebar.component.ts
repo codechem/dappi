@@ -13,14 +13,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../button/button.component';
-import {
-  Subject,
-  takeUntil,
-  debounceTime,
-  distinctUntilChanged,
-  Subscription,
-  filter,
-} from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, Subscription, filter } from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { AddCollectionTypeDialogComponent } from '../add-collection-type-dialog/add-collection-type-dialog.component';
@@ -70,13 +63,13 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     takeUntil(this.destroy$),
     debounceTime(300),
     distinctUntilChanged(),
-    filter((type) => !!type)
+    filter((type) => !!type),
   );
 
   constructor(
     private dialog: MatDialog,
     private router: Router,
-    private store: Store
+    private store: Store,
   ) {}
 
   ngOnInit(): void {
@@ -88,18 +81,14 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
           this.filteredCollectionTypes = types;
           this.collectionTypes = types;
         }
-      })
+      }),
     );
     this.subscriptions.add(
       this.searchTextChanged
-        .pipe(
-          takeUntil(this.destroy$),
-          debounceTime(300),
-          distinctUntilChanged()
-        )
+        .pipe(takeUntil(this.destroy$), debounceTime(300), distinctUntilChanged())
         .subscribe((text) => {
           this.filterCollectionTypes(text);
-        })
+        }),
     );
   }
 
@@ -168,7 +157,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     this.subscriptions.add(
       dialogRef.afterClosed().subscribe(() => {
         this.store.dispatch(loadCollectionTypes());
-      })
+      }),
     );
   }
 
@@ -178,7 +167,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
     this.filteredCollectionTypes = this.collectionTypes.filter((type) =>
-      type.toLowerCase().includes(text.toLowerCase())
+      type.toLowerCase().includes(text.toLowerCase()),
     );
   }
 }

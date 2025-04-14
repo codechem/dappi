@@ -10,7 +10,7 @@
         <mat-icon>more_vert</mat-icon>
       </button>
     </header>
-    <ng-container *ngIf="!fieldsData?.length; else fieldsPresent">
+    @if (!fieldsData.length) {
       <div class="content">
         <img src="assets/illustration.svg" alt="No content" />
         <h2>There are no fields created yet</h2>
@@ -21,9 +21,7 @@
           aria-label="Add your first field"
         ></app-button>
       </div>
-    </ng-container>
-
-    <ng-template #fieldsPresent>
+    } @else {
       <div class="fields-list">
         <app-button
           text="+ Add field"
@@ -33,7 +31,7 @@
         ></app-button>
         <app-fields-list [fields]="fieldsData"></app-fields-list>
       </div>
-    </ng-template>
+    }
 
     <footer class="footer">
       <hr />
@@ -44,23 +42,24 @@
         aria-label="Save content"
         (click)="saveContent()"
       >
-      <ng-container *ngIf="!isSaving; else savingSpinner">
-      Save your content
-    </ng-container>
-    <ng-template #savingSpinner>
-      <mat-spinner diameter="20"></mat-spinner> Applying migrations...
-    </ng-template>
+        @if (!isSaving) {
+          Save your content
+        } @else {
+          <mat-spinner diameter="20"></mat-spinner> Applying migrations...
+        }
       </button>
     </footer>
   </div>
 </div>
 
-<div class="saving-modal" *ngIf="isModalOpen">
-  <div class="modal-content">
-    <div class="spinner-container">
-      <mat-spinner diameter="50"></mat-spinner>
+@if (isModalOpen) {
+  <div class="saving-modal">
+    <div class="modal-content">
+      <div class="spinner-container">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+      <h2>Saving your content</h2>
+      <p>The page will automatically restart with the updated content</p>
     </div>
-    <h2>Saving your content</h2>
-    <p>The page will automatically restart with the updated content</p>
   </div>
-</div>
+}
