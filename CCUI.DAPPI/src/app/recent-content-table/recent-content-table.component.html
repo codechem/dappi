@@ -13,22 +13,28 @@
   </div>
   <div class="scrollable-list">
     <div class="custom-table">
-      <div *ngFor="let element of dataSource.data" class="custom-row">
-        <div class="cell">{{ element.title }}</div>
-        <div class="cell">{{ element.description }}</div>
-        <div class="cell" style="justify-content: center">
-          <span *ngIf="element.status !== '-'">
-            <app-pill [text]="element.status"></app-pill>
-          </span>
-          <span *ngIf="element.status === '-'">-</span>
+      @for (element of dataSource.data; track element) {
+        <div class="custom-row">
+          <div class="cell">{{ element.title }}</div>
+          <div class="cell">{{ element.description }}</div>
+          <div class="cell" style="justify-content: center">
+            @if (element.status !== '-') {
+              <span>
+                <app-pill [text]="element.status"></app-pill>
+              </span>
+            }
+            @if (element.status === '-') {
+              <span>-</span>
+            }
+          </div>
+          <div class="cell">{{ element.lastEdited }}</div>
+          <div class="cell actions-cell">
+            <button mat-icon-button>
+              <mat-icon>edit</mat-icon>
+            </button>
+          </div>
         </div>
-        <div class="cell">{{ element.lastEdited }}</div>
-        <div class="cell actions-cell">
-          <button mat-icon-button>
-            <mat-icon>edit</mat-icon>
-          </button>
-        </div>
-      </div>
+      }
     </div>
   </div>
 </div>

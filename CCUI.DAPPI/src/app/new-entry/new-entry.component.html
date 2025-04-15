@@ -40,19 +40,21 @@
   </div>
 </div>
 
-<div class="floating-menu-container" *ngIf="showMenu">
-  <div
-    class="floating-menu"
-    [style.top.px]="menuPosition.top"
-    [style.left.px]="menuPosition.left"
-    (click)="$event.stopPropagation()"
-  >
-    <app-menu
-      (edit)="onEdit($event)"
-      (delete)="onDelete($event)"
-      editText="Edit the model"
-      deleteText="Delete entry"
+@if (showMenu) {
+  <div class="floating-menu-container">
+    <div
+      class="floating-menu"
+      [style.top.px]="menuPosition.top"
+      [style.left.px]="menuPosition.left"
+      (click)="$event.stopPropagation()"
     >
-    </app-menu>
+      <app-menu
+        (edit)="onEdit($event)"
+        (delete)="onDelete($event)"
+        editText="Edit the model"
+        deleteText="Delete entry"
+      >
+      </app-menu>
+    </div>
   </div>
-</div>
+}

@@ -1,4 +1,4 @@
-import { ContentItem, PaginatedResponse, TableHeader } from "../../models/content.model";
+import { ContentItem, PaginatedResponse, TableHeader } from '../../models/content.model';
 
 export interface ContentState {
   items: PaginatedResponse | undefined;

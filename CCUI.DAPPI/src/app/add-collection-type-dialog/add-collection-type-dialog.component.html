@@ -11,24 +11,32 @@
       <div class="form-field">
         <mat-form-field appearance="outline" class="input-field">
           <mat-label>Display name</mat-label>
-          <input matInput id="displayName" formControlName="displayName" placeholder="Enter display name" />
-          <mat-error *ngIf="collectionForm.get('displayName')?.hasError('required')">
-            Display name is required
-          </mat-error>
-          <mat-error *ngIf="collectionForm.get('displayName')?.hasError('maxlength')">
-            Display name cannot exceed 50 characters
-          </mat-error>
-          </mat-form-field>
-          </div>
-          </form>
+          <input
+            matInput
+            id="displayName"
+            formControlName="displayName"
+            placeholder="Enter display name"
+          />
+          @if (collectionForm.get('displayName')?.hasError('required')) {
+            <mat-error> Display name is required </mat-error>
+          }
+          @if (collectionForm.get('displayName')?.hasError('maxlength')) {
+            <mat-error> Display name cannot exceed 50 characters </mat-error>
+          }
+        </mat-form-field>
+      </div>
+    </form>
     <hr />
-
   </div>
-  
+
   <div class="dialog-footer">
     <button mat-flat-button class="continue-button" [disabled]="!canSubmit" (click)="onContinue()">
-      <span *ngIf="!isSubmitting">Continue</span>
-      <span *ngIf="isSubmitting">Processing...</span>
+      @if (!isSubmitting) {
+        <span>Continue</span>
+      }
+      @if (isSubmitting) {
+        <span>Processing...</span>
+      }
     </button>
-    </div>
-    </div>
+  </div>
+</div>

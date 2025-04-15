@@ -1,53 +1,64 @@
 <div class="layout">
-  <app-sidebar headerText="Content Manager">
-  </app-sidebar>
+  <app-sidebar headerText="Content Manager"> </app-sidebar>
 
-  <div class="container" *ngIf="(selectedType$ | async) as selectedType">
-    <header class="header">
-      <div class="title-block">
-        <h1>{{ selectedType || 'Select a Type' }}</h1>
-        <p>Create the content of your design</p>
-      </div>
-      <button mat-icon-button class="settings-button" aria-label="Settings" [disabled]="!selectedType">
-        <mat-icon>more_vert</mat-icon>
-      </button>
-    </header>
-
-    <ng-container *ngIf="isLoading$ | async as isLoading">
-      <ng-container *ngIf="(isLoading$ | async)">
-        <div class="content loading-content">
-          <mat-spinner diameter="40"></mat-spinner>
-          <p>Loading content for {{ selectedType }}...</p>
+  @if (selectedType$ | async; as selectedType) {
+    <div class="container">
+      <header class="header">
+        <div class="title-block">
+          <h1>{{ selectedType || 'Select a Type' }}</h1>
+          <p>Create the content of your design</p>
         </div>
-      </ng-container>
-    </ng-container>
-
-      <ng-container *ngIf="!items?.length && !isSearching; else contentPresent">
+        <button
+          mat-icon-button
+          class="settings-button"
+          aria-label="Settings"
+          [disabled]="!selectedType"
+        >
+          <mat-icon>more_vert</mat-icon>
+        </button>
+      </header>
+      @if (isLoading$ | async; as isLoading) {
+        @if (isLoading$ | async) {
+          <div class="content loading-content">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Loading content for {{ selectedType }}...</p>
+          </div>
+        }
+      }
+      @if (!items.length && !isSearching) {
         <div class="content">
           <img src="assets/illustration.svg" alt="No content" />
           <h2>There are no {{ selectedType }} items created yet</h2>
           <p>Add your first {{ selectedType }} to this Collection-Type</p>
-          <app-button [text]="'+ Add new ' + selectedType" (click)="navigateToCreate()" aria-label="Add new content"></app-button>
+          <app-button
+            [text]="'+ Add new ' + selectedType"
+            (click)="navigateToCreate()"
+            aria-label="Add new content"
+          ></app-button>
         </div>
-      </ng-container>
-      <ng-template #contentPresent>
+      } @else {
         <div class="content-list">
           <app-content-table></app-content-table>
         </div>
-      </ng-template>
-    <ng-container *ngIf="(isLoading$ | async) && !selectedType">
-      <div class="content">
-        <img src="assets/illustration.svg" alt="No type selected" />
-        <h2>No collection type selected</h2>
-        <p>Please select a collection type from the sidebar</p>
-      </div>
-    </ng-container>
-
-    <footer class="footer">
-      <hr />
-      <button mat-button class="save-button" [disabled]="disabled || !selectedType" aria-label="Save content">
-        Save your content
-      </button>
-    </footer>
-  </div>
+      }
+      @if ((isLoading$ | async) && !selectedType) {
+        <div class="content">
+          <img src="assets/illustration.svg" alt="No type selected" />
+          <h2>No collection type selected</h2>
+          <p>Please select a collection type from the sidebar</p>
+        </div>
+      }
+      <footer class="footer">
+        <hr />
+        <button
+          mat-button
+          class="save-button"
+          [disabled]="disabled || !selectedType"
+          aria-label="Save content"
+        >
+          Save your content
+        </button>
+      </footer>
+    </div>
+  }
 </div>

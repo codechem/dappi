@@ -1,17 +1,10 @@
-import {
-  Component,
-  EventEmitter,
-  Input,
-  Output,
-  ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-menu',
   standalone: true,
-  imports: [MatIconModule, CommonModule],
+  imports: [MatIconModule],
   templateUrl: './menu.component.html',
   styleUrls: ['./menu.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

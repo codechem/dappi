@@ -1,7 +1,7 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { CommonModule } from '@angular/common';
+
 import { NewRecordFormComponent } from '../new-record-form/new-record-form.component';
 import { Location } from '@angular/common';
 import { MenuComponent } from '../menu/menu.component';
@@ -17,7 +17,6 @@ import { Subscription } from 'rxjs';
     SidebarComponent,
     MatIconModule,
     MatButtonModule,
-    CommonModule,
     NewRecordFormComponent,
     MenuComponent,
   ],
@@ -34,12 +33,13 @@ export class NewEntryComponent implements OnInit, OnDestroy {
 
   selectedType$ = this.store.select(selectSelectedType);
 
-  constructor(private location: Location, private store: Store) {}
+  constructor(
+    private location: Location,
+    private store: Store,
+  ) {}
 
   ngOnInit(): void {
-    this.subscription.add(
-      this.selectedType$.subscribe((type) => (this.typeName = type))
-    );
+    this.subscription.add(this.selectedType$.subscribe((type) => (this.typeName = type)));
   }
 
   ngOnDestroy(): void {
@@ -56,9 +56,7 @@ export class NewEntryComponent implements OnInit, OnDestroy {
     if (this.showMenu) {
       this.showMenu = false;
     } else {
-      const buttonRect = (
-        event.currentTarget as HTMLElement
-      ).getBoundingClientRect();
+      const buttonRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
       this.menuPosition = {
         top: buttonRect.bottom + window.scrollY,
         left: buttonRect.right - 150 + window.scrollX,

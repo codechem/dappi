@@ -1,4 +1,4 @@
-@use "../../variables" as vars;
+@use '../../variables' as vars;
 
 .drawer-container {
   position: fixed;
@@ -8,7 +8,7 @@
   left: 0;
   pointer-events: none;
   z-index: 1000;
-  
+
   &.drawer-open {
     pointer-events: auto;
   }
@@ -23,7 +23,7 @@
   background-color: rgba(0, 0, 0, 0.5);
   opacity: 0;
   transition: opacity 0.3s ease;
-  
+
   .drawer-open & {
     opacity: 1;
   }
@@ -40,7 +40,7 @@
   transition: right 0.3s ease;
   display: flex;
   flex-direction: column;
-  
+
   .drawer-open & {
     right: 0;
   }
@@ -52,12 +52,12 @@
   align-items: center;
   padding: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  
+
   h2 {
     margin: 0;
     font-size: 18px;
   }
-  
+
   .close-button {
     background: transparent;
     border: none;
@@ -68,7 +68,7 @@
     justify-content: center;
     padding: 4px;
     border-radius: 50%;
-    
+
     &:hover {
       background-color: rgba(255, 255, 255, 0.1);
     }
