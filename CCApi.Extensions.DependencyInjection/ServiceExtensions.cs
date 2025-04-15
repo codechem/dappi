@@ -54,6 +54,31 @@ public static class ServiceExtensions
                 if (apiDesc.GroupName == null) return docName == "Default";
                 return docName == apiDesc.GroupName;
             });
+            
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.ApiKey,
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Scheme = "Bearer",
+                BearerFormat = "JWT",
+                Description = "Enter 'Bearer' followed by your token"
+            });
+
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    new string[] { }
+                }
+            });
 
             c.TagActionsBy(api => api.GroupName ?? api.ActionDescriptor.RouteValues["controller"]);
         });

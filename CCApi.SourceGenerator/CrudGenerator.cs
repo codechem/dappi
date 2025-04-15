@@ -33,9 +33,12 @@ using {item.RootNamespace}.Filtering;
 using {item.RootNamespace}.HelperDtos;
 using {item.RootNamespace}.Extensions;
 
+using Microsoft.AspNetCore.Authorization;
+
 /*
 ==== area for testing ====
 {PrintPropertyInfos(item.PropertiesInfos)}
+{PrintDappiAuthorizeInfos(item.AuthorizeAttributes)}
 ==== area for testing ====
 */
 
@@ -46,6 +49,7 @@ namespace {item.RootNamespace}.Controllers;
 public partial class {item.ClassName}Controller({dbContextData.ClassName} dbContext) : ControllerBase
 {{
      [HttpGet]
+     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET")}
      public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
      {{
          var query = dbContext.{item.ClassName}s{GetIncludesIfAny(item.PropertiesInfos)}.AsQueryable();
@@ -78,6 +82,7 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
      }}
 
      [HttpGet(""{{id}}"")]
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GETBYID")}
      public async Task<IActionResult> Get{item.ClassName}(Guid id)
      {{
          if(id == Guid.Empty)
@@ -95,6 +100,7 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
 
 
     [HttpPost]
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "POST")}
     public async Task<IActionResult> Create([FromBody] {item.ClassName} model)
     {{
         if(model is null) 
@@ -111,7 +117,8 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
         return CreatedAtAction(nameof(Create), new {{ id = modelToSave.Id }}, modelToSave);
     }}
 
-     [HttpPut(""{{id}}"")]
+    [HttpPut(""{{id}}"")]
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "PUT")}
     public async Task<IActionResult> Update(Guid id, [FromBody] {item.ClassName} model)
      {{
          if (model == null || id == Guid.Empty)
@@ -129,6 +136,7 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
     }}
 
      [HttpDelete(""{{id}}"")]
+     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "DELETE")}
      public async Task<IActionResult> Delete(Guid id)
      {{
          var model = dbContext.{item.ClassName}s.FirstOrDefault(p => p.Id == id);

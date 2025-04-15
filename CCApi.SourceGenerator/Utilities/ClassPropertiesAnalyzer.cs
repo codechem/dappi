@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using CCApi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
@@ -50,6 +51,36 @@ public static class ClassPropertiesAnalyzer
         }
 
         return builder.ToString();
+    }
+
+    public static string PrintDappiAuthorizeInfos(List<DappiAuthorizeInfo> dappiAuthorizeInfos)
+    {
+        var builder = new StringBuilder();
+        
+        foreach (var info in dappiAuthorizeInfos)
+        {
+            builder.Append("Methods:");
+            builder.Append(string.Join(", ", info.Methods));
+            builder.Append("Roles:");
+            builder.Append(string.Join(", ", info.Roles));
+        }
+        
+        return builder.ToString();
+    }
+
+    public static string PropagateDappiAuthorizationTags(List<DappiAuthorizeInfo> dappiAuthorizeInfos,
+        string httpMethod)
+    {
+        foreach (var dappiInfo in dappiAuthorizeInfos)
+        {
+            if (dappiInfo.Methods.Contains(httpMethod.ToUpperInvariant()))
+            {
+                var rolesString = string.Join(",", dappiInfo.Roles.Select(r => $"\"{r}\""));
+                return $"[Authorize(Roles = {rolesString})]";
+            }
+        }
+        
+        return string.Empty;
     }
 
     private static string GetSimpleTypeName(ITypeSymbol typeSymbol)
