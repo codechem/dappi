@@ -1,9 +1,14 @@
+using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Http;
+using CCApi.Extensions.DependencyInjection.Services.Identity;
 namespace Microsoft.Extensions.DependencyInjection;
 
 public static class ServiceExtensions
@@ -41,7 +46,87 @@ public static class ServiceExtensions
         
         return services;
     }
-    
+
+    public static IServiceCollection AddDappiAuthentication<TUser, TRole, TContext>(
+    this IServiceCollection services,
+    IConfiguration configuration)
+    where TUser : IdentityUser, new()
+    where TRole : IdentityRole, new()
+    where TContext : DbContext
+    {
+        services.AddIdentity<TUser, TRole>(options =>
+        {
+            options.User.RequireUniqueEmail = true;
+
+            // Password settings
+            options.Password.RequireDigit = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireNonAlphanumeric = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequiredLength = 8;
+
+            // Lockout settings
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.AllowedForNewUsers = true;
+        })
+        .AddEntityFrameworkStores<TContext>()
+        .AddDefaultTokenProviders();
+
+        // JWT Authentication
+        var jwtSettings = configuration.GetSection("JwtSettings");
+        var key = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ??
+            throw new InvalidOperationException("JWT SecretKey is not configured"));
+
+        services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ClockSkew = TimeSpan.Zero
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                if (context.Exception is SecurityTokenExpiredException)
+                {
+                    context.Response.Headers.Add("Token-Expired", "true");
+                }
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+
+                var result = System.Text.Json.JsonSerializer.Serialize(new { error = "You are not authorized" });
+                return context.Response.WriteAsync(result);
+            }
+        };
+    });
+
+        services.AddScoped<TokenService<TUser>>();
+
+        services.AddAuthorization();
+
+        return services;
+    }
+
     private static IServiceCollection AddDappiSwaggerGen(this IServiceCollection services)
     {
         return services.AddSwaggerGen(c =>

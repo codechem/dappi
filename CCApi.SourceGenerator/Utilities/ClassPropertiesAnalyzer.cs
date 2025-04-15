@@ -75,8 +75,15 @@ public static class ClassPropertiesAnalyzer
         {
             if (dappiInfo.Methods.Contains(httpMethod.ToUpperInvariant()))
             {
-                var rolesString = string.Join(",", dappiInfo.Roles.Select(r => $"\"{r}\""));
-                return $"[Authorize(Roles = {rolesString})]";
+                if (dappiInfo.Roles != null && dappiInfo.Roles.Any())
+                {
+                    var rolesString = string.Join(",", dappiInfo.Roles.Select(r => $"\"{r}\""));
+                    return $"[Authorize(Roles = {rolesString})]";
+                }
+                else if (dappiInfo.IsAuthenticated)
+                {
+                    return "[Authorize]";
+                }
             }
         }
         

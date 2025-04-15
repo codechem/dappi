@@ -1,3 +1,4 @@
+using CCApi.Extensions.DependencyInjection;
 using CCApi.WebApiExample.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;

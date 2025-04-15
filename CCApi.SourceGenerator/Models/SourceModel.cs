@@ -24,4 +24,5 @@ public class DappiAuthorizeInfo
 {
     public List<string> Roles { get; set; }
     public List<string> Methods { get; set; }
+    public bool IsAuthenticated { get; set; } = true;
 }

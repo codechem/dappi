@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace CCApi.WebApiExample.Entities;
+namespace CCApi.Extensions.DependencyInjection;
 
 public class DappiUser : IdentityUser
 {
