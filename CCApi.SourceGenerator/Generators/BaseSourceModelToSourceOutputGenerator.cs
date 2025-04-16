@@ -20,12 +20,47 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
                 var classSymbol = ctx.TargetSymbol;
                 var namedClassTypeSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
 
+                var authorizeAttributes = classSymbol.GetAttributes()
+                    .Where(attr => attr.AttributeClass?.ToDisplayString() == "CCApi.SourceGenerator.Attributes.DappiAuthorizeAttribute")
+                    .Select(attr =>
+                    {
+                        List<string> roles = new();
+                        List<string> methods = new();
+
+                        if (attr.ConstructorArguments.Length >= 2)
+                        {
+                            var roleArg = attr.ConstructorArguments[0];
+                            if (roleArg.Kind == TypedConstantKind.Array)
+                            {
+                                roles = roleArg.Values
+                                    .Select(v => v.Value?.ToString() ?? string.Empty)
+                                    .ToList();
+                            }
+
+                            var methodArg = attr.ConstructorArguments[1];
+                            if (methodArg.Kind == TypedConstantKind.Array)
+                            {
+                                methods = methodArg.Values
+                                    .Select(v => v.Value?.ToString()?.ToUpperInvariant() ?? string.Empty)
+                                    .ToList();
+                            }
+                        }
+
+                        return new DappiAuthorizeInfo
+                        {
+                            Roles = roles,
+                            Methods = methods
+                        };
+                    })
+                    .ToList();
+                
                 return new SourceModel
                 {
                     ClassName = classDeclaration.Identifier.Text,
                     ModelNamespace = classSymbol.ContainingNamespace.ToString() ?? string.Empty,
                     RootNamespace = classSymbol.ContainingNamespace.GetRootNamespace(),
-                    PropertiesInfos = GoThroughPropertiesAndGatherInfo(namedClassTypeSymbol)
+                    PropertiesInfos = GoThroughPropertiesAndGatherInfo(namedClassTypeSymbol),
+                    AuthorizeAttributes = authorizeAttributes
                 };
             });
         
