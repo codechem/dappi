@@ -81,4 +81,23 @@
       height: 24px;
     }
   }
+
+  &__spacer {
+    flex-grow: 1;
+  }
+
+  &__footer {
+    margin-top: auto;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding-top: 1rem;
+  }
+
+  &__logout-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
 }

@@ -1,8 +1,6 @@
 <aside class="sidenav">
   <div class="sidenav__logo">DAPPI</div>
-
   <hr class="sidenav__divider" />
-
   <nav class="sidenav__nav">
     <ul class="sidenav__menu">
       <li class="sidenav__menu-item">
@@ -57,4 +55,15 @@
       </li>
     </ul>
   </nav>
+  <div class="sidenav__spacer"></div>
+  <div class="sidenav__footer">
+    <button
+      class="sidenav__link sidenav__logout-btn"
+      (click)="logout()"
+      matTooltip="Logout"
+      matTooltipPosition="right"
+    >
+      <mat-icon>logout</mat-icon>
+    </button>
+  </div>
 </aside>

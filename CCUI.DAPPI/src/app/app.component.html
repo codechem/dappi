@@ -1,4 +1,8 @@
 <div class="app-container">
-  <app-left-menu></app-left-menu>
-  <router-outlet></router-outlet>
+  @if (isAuthenticated) {
+    <app-left-menu></app-left-menu>
+    <router-outlet></router-outlet>
+  } @else {
+    <app-auth></app-auth>
+  }
 </div>
