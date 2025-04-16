@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
-using System;
 using CCApi.SourceGenerator.Attributes;
 namespace CCApi.WebApiExample.Entities;
+
 [CCController]
+[DappiAuthorize(authenticated: true, roles: ["Admin"], methods: ["POST"])]
+[DappiAuthorize(authenticated: true, roles: ["User"], methods: ["GET"])]
 public class Motorcycle
 {
     [Key]
