@@ -13,6 +13,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { finalize } from 'rxjs';
+import { AuthService } from '../services/auth/auth.service';
 
 export function passwordMatchValidator(): ValidatorFn {
   return (control: AbstractControl): { [key: string]: any } | null => {
@@ -37,6 +41,7 @@ export function passwordMatchValidator(): ValidatorFn {
     MatFormFieldModule,
     MatInputModule,
     MatCheckboxModule,
+    MatSnackBarModule,
   ],
   templateUrl: './auth.component.html',
   styleUrl: './auth.component.scss',
@@ -44,10 +49,14 @@ export function passwordMatchValidator(): ValidatorFn {
 export class AuthComponent implements OnInit {
   authForm!: FormGroup;
   isLoginMode = true;
+  isLoading = false;
+  errorMessage = '';
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
+    private authService: AuthService,
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit(): void {
@@ -57,13 +66,14 @@ export class AuthComponent implements OnInit {
   initializeForm(): void {
     if (this.isLoginMode) {
       this.authForm = this.fb.group({
-        email: ['', [Validators.required, Validators.email]],
+        username: ['', Validators.required],
         password: ['', Validators.required],
         termsAccepted: [false, Validators.requiredTrue],
       });
     } else {
       this.authForm = this.fb.group(
         {
+          username: ['', Validators.required],
           email: ['', [Validators.required, Validators.email]],
           password: ['', [Validators.required, Validators.minLength(8)]],
           confirmPassword: ['', Validators.required],
@@ -72,6 +82,7 @@ export class AuthComponent implements OnInit {
         { validators: passwordMatchValidator() },
       );
     }
+    this.errorMessage = '';
   }
 
   toggleAuthMode(): void {
@@ -81,40 +92,47 @@ export class AuthComponent implements OnInit {
 
   onSubmit(): void {
     if (this.authForm.valid) {
-      if (this.isLoginMode) {
-        // Create a JWT token for testing purposes
-        this.createAndStoreTestToken(this.authForm.value.email);
+      this.isLoading = true;
+      this.errorMessage = '';
 
-        window.location.reload();
+      if (this.isLoginMode) {
+        const { username, password } = this.authForm.value;
+
+        this.authService
+          .login(username, password)
+          .pipe(finalize(() => (this.isLoading = false)))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Login successful!', 'Close', { duration: 3000 });
+              setTimeout(() => {
+                this.router.navigate(['/home']);
+              }, 100);
+            },
+            error: (error: Error) => {
+              this.errorMessage = error.message;
+              this.snackBar.open(error.message, 'Close', { duration: 5000 });
+            },
+          });
       } else {
-        this.isLoginMode = true;
-        this.initializeForm();
+        const { username, email, password } = this.authForm.value;
+
+        this.authService
+          .register(username, email, password)
+          .pipe(finalize(() => (this.isLoading = false)))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Registration successful! Please login.', 'Close', {
+                duration: 3000,
+              });
+              this.isLoginMode = true;
+              this.initializeForm();
+            },
+            error: (error: Error) => {
+              this.errorMessage = error.message;
+              this.snackBar.open(error.message, 'Close', { duration: 5000 });
+            },
+          });
       }
     }
-  }
-
-  // This will be removed after we merge BE authentication
-  createAndStoreTestToken(email: string): void {
-    const header = {
-      alg: 'HS256',
-      typ: 'JWT',
-    };
-
-    const payload = {
-      sub: '1234567890',
-      name: 'Test User',
-      email: email,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60,
-    };
-
-    const encodedHeader = btoa(JSON.stringify(header));
-    const encodedPayload = btoa(JSON.stringify(payload));
-
-    const signature = btoa('test-signature');
-
-    const token = `${encodedHeader}.${encodedPayload}.${signature}`;
-
-    localStorage.setItem('jwt_token', token);
   }
 }

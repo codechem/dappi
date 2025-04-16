@@ -133,3 +133,18 @@
     cursor: not-allowed;
   }
 }
+.error-banner {
+  background-color: rgba(255, 0, 0, 0.1);
+  border: 1px solid vars.$error-light;
+  color: vars.$error-light;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.submit-button {
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
