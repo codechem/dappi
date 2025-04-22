@@ -1,10 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
-
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
+import { Store } from '@ngrx/store';
+import * as AuthActions from '../state/auth/auth.actions';
 
 interface MenuItem {
   icon: string;
@@ -35,7 +36,7 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
       id: 'content-manager',
     },
     {
-      icon: 'article',
+      icon: 'import_export',
       tooltip: 'Schema Importer',
       route: '/schema-importer',
       id: 'schema-importer',
@@ -44,7 +45,10 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private store: Store,
+  ) {}
 
   ngOnInit(): void {
     this.subscriptions.add(
@@ -65,6 +69,8 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onMenuItemClick(id: string): void {
@@ -81,5 +87,9 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
     if (menuItem) {
       this.activeIcon = menuItem.id;
     }
+  }
+
+  logout(): void {
+    this.store.dispatch(AuthActions.logout());
   }
 }

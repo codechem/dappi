@@ -1,4 +1,6 @@
 <div class="app-container">
-  <app-left-menu></app-left-menu>
+  @if (isAuthenticated$ | async) {
+    <app-left-menu></app-left-menu>
+  }
   <router-outlet></router-outlet>
 </div>
