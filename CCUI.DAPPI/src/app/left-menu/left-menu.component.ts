@@ -1,11 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
-
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
-import { AuthService } from '../services/auth/auth.service';
+import { Store } from '@ngrx/store';
+import * as AuthActions from '../state/auth/auth.actions';
 
 interface MenuItem {
   icon: string;
@@ -47,7 +47,7 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private authService: AuthService,
+    private store: Store,
   ) {}
 
   ngOnInit(): void {
@@ -90,6 +90,6 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    this.authService.logout();
+    this.store.dispatch(AuthActions.logout());
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -7,16 +7,12 @@ import {
   AbstractControl,
   ValidatorFn,
 } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { finalize } from 'rxjs';
-import { AuthService } from '../services/auth/auth.service';
+import { Store } from '@ngrx/store';
+import { Observable, Subscription } from 'rxjs';
+import { selectAuthLoading, selectAuthError } from '../state/auth/auth.selectors';
+import * as AuthActions from '../state/auth/auth.actions';
+import { Actions, ofType } from '@ngrx/effects';
 
 export function passwordMatchValidator(): ValidatorFn {
   return (control: AbstractControl): { [key: string]: any } | null => {
@@ -34,33 +30,39 @@ export function passwordMatchValidator(): ValidatorFn {
 @Component({
   selector: 'app-auth',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatCheckboxModule,
-    MatSnackBarModule,
-  ],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './auth.component.html',
   styleUrl: './auth.component.scss',
 })
-export class AuthComponent implements OnInit {
+export class AuthComponent implements OnInit, OnDestroy {
   authForm!: FormGroup;
   isLoginMode = true;
-  isLoading = false;
-  errorMessage = '';
+  isLoading$: Observable<boolean>;
+  errorMessage$: Observable<string | null>;
+  private registerSuccessSub?: Subscription;
 
   constructor(
     private fb: FormBuilder,
-    private router: Router,
-    private authService: AuthService,
-    private snackBar: MatSnackBar,
-  ) {}
+    private store: Store,
+    private actions$: Actions,
+  ) {
+    this.isLoading$ = this.store.select(selectAuthLoading);
+    this.errorMessage$ = this.store.select(selectAuthError);
+  }
 
   ngOnInit(): void {
     this.initializeForm();
+    this.registerSuccessSub = this.actions$
+      .pipe(ofType(AuthActions.registerSuccess))
+      .subscribe(() => {
+        this.isLoginMode = true;
+      });
+  }
+
+  ngOnDestroy() {
+    if (this.registerSuccessSub) {
+      this.registerSuccessSub.unsubscribe();
+    }
   }
 
   initializeForm(): void {
@@ -82,7 +84,6 @@ export class AuthComponent implements OnInit {
         { validators: passwordMatchValidator() },
       );
     }
-    this.errorMessage = '';
   }
 
   toggleAuthMode(): void {
@@ -92,46 +93,12 @@ export class AuthComponent implements OnInit {
 
   onSubmit(): void {
     if (this.authForm.valid) {
-      this.isLoading = true;
-      this.errorMessage = '';
-
       if (this.isLoginMode) {
         const { username, password } = this.authForm.value;
-
-        this.authService
-          .login(username, password)
-          .pipe(finalize(() => (this.isLoading = false)))
-          .subscribe({
-            next: () => {
-              this.snackBar.open('Login successful!', 'Close', { duration: 3000 });
-              setTimeout(() => {
-                this.router.navigate(['/home']);
-              }, 100);
-            },
-            error: (error: Error) => {
-              this.errorMessage = error.message;
-              this.snackBar.open(error.message, 'Close', { duration: 5000 });
-            },
-          });
+        this.store.dispatch(AuthActions.login({ username, password }));
       } else {
         const { username, email, password } = this.authForm.value;
-
-        this.authService
-          .register(username, email, password)
-          .pipe(finalize(() => (this.isLoading = false)))
-          .subscribe({
-            next: () => {
-              this.snackBar.open('Registration successful! Please login.', 'Close', {
-                duration: 3000,
-              });
-              this.isLoginMode = true;
-              this.initializeForm();
-            },
-            error: (error: Error) => {
-              this.errorMessage = error.message;
-              this.snackBar.open(error.message, 'Close', { duration: 5000 });
-            },
-          });
+        this.store.dispatch(AuthActions.register({ username, email, password }));
       }
     }
   }

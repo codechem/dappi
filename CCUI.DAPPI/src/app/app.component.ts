@@ -1,40 +1,34 @@
-import { Component, OnInit, PLATFORM_ID, Inject, OnDestroy } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, Inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { LeftMenuComponent } from './left-menu/left-menu.component';
 import { AuthComponent } from './auth/auth.component';
-import { Subscription } from 'rxjs';
-import { AuthService } from './services/auth/auth.service';
+import { Store } from '@ngrx/store';
+import { Observable } from 'rxjs';
+import { checkAuth } from './state/auth/auth.actions';
+import { selectIsAuthenticated } from './state/auth/auth.selectors';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, LeftMenuComponent, AuthComponent],
+  imports: [RouterOutlet, LeftMenuComponent, CommonModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit {
   title = 'CCUI.DAPPI';
-  isAuthenticated = false;
-  private authSub: Subscription | null = null;
+  isAuthenticated$: Observable<boolean>;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
-    private authService: AuthService,
-  ) {}
+    private store: Store,
+  ) {
+    this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
+  }
 
   ngOnInit() {
     if (isPlatformBrowser(this.platformId)) {
-      this.authService.checkAuthentication();
-      this.authSub = this.authService.isAuthenticated$.subscribe((isAuth) => {
-        this.isAuthenticated = isAuth;
-      });
-    }
-  }
-
-  ngOnDestroy() {
-    if (this.authSub) {
-      this.authSub.unsubscribe();
+      this.store.dispatch(checkAuth());
     }
   }
 }

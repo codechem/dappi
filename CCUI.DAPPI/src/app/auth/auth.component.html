@@ -11,8 +11,8 @@
       </a>
     </p>
 
-    @if (errorMessage) {
-      <div class="error-banner">{{ errorMessage }}</div>
+    @if (errorMessage$ | async) {
+      <div class="error-banner">{{ errorMessage$ | async }}</div>
     }
 
     <form [formGroup]="authForm" (ngSubmit)="onSubmit()">
@@ -53,8 +53,12 @@
         <label for="terms">I accept the Terms and Conditions</label>
       </div>
 
-      <button type="submit" class="submit-button" [disabled]="!authForm.valid || isLoading">
-        @if (isLoading) {
+      <button
+        type="submit"
+        class="submit-button"
+        [disabled]="!authForm.valid || (isLoading$ | async)"
+      >
+        @if (isLoading$ | async) {
           Loading...
         } @else {
           {{ isLoginMode ? 'Sign in' : 'Register' }}
