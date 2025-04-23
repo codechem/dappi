@@ -1,5 +1,4 @@
 using CCApi.Extensions.DependencyInjection;
-using CCApi.WebApiExample.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,10 +8,5 @@ public partial class AppDbContext : IdentityDbContext<DappiUser, DappiRole, stri
 {
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options) { }
-
-    public DbSet<Book> Books { get; set; }
-    public DbSet<Movie> Movies { get; set; }
-    public DbSet<Author> Authors { get; set; }
-    public DbSet<Motorcycle> Motorcycles { get; set; }
 
 }

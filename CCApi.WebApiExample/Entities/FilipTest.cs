@@ -1,13 +1,15 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
+using System;
 using CCApi.SourceGenerator.Attributes;
-namespace MyCompany.MyProject.WebApi.Entities;
+namespace CCApi.WebApiExample.Entities;
 [CCController]
-public class Portabilly
+public class FilipTest
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public Guid Id { get; set; }
 
-    public  string? Torta { get; set; }
+    public  string? StringTest { get; set; }
 }
