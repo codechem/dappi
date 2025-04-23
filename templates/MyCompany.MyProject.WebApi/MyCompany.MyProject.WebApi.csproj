@@ -17,4 +17,21 @@
     <ProjectReference Include="..\..\CCApi.SourceGenerator\CCApi.SourceGenerator.csproj" OutputItemType="Analyzer" />
   </ItemGroup>
 
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\3rdpartylicenses.txt" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\illustration.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\chunk-HYVRH5RR.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\chunk-ZEML47BP.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\favicon.ico" />
+    <_ContentIncludedByDefault Remove="wwwroot\index.html" />
+    <_ContentIncludedByDefault Remove="wwwroot\main-IUIULYLH.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\polyfills-FFHMD2TL.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\prerendered-routes.json" />
+    <_ContentIncludedByDefault Remove="wwwroot\styles-5QAPI6QW.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Entities\" />
+  </ItemGroup>
+
 </Project>

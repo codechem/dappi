@@ -9,7 +9,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
     [ApiExplorerSettings(GroupName = "Toolkit")]
     [Route("api/models")]
     [ApiController]
-    public partial class ModelsController : ControllerBase
+    public  class ModelsController : ControllerBase
     {
         private readonly string _entitiesFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "Entities");
         private readonly string _controllersFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "Controllers");

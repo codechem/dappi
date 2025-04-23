@@ -30,26 +30,8 @@ public static class AppExtensions
             });
 
         }
-
-        app.Use(async (context, next) =>
-        {
-            await next();
-        
-            if (!context.Request.Path.Value.StartsWith("/api/") && 
-                !Path.HasExtension(context.Request.Path) || 
-                context.Response.StatusCode == 404)
-            {
-                if (!context.Response.HasStarted) 
-                {
-                   context.Request.Path = "/index.html";
-                   await next();
-                }
-            }
-        });
-        
         app.UseHttpsRedirection();
         app.MapControllers();
-        app.UseStaticFiles();
 
         return app;
     }

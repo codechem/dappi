@@ -103,10 +103,8 @@ public class UpdateAppDbContextController : ControllerBase
         {
             int keywordIndex = dbContextCode.IndexOf(dbSetKeyword);
             return (keywordIndex, padding);
-        } 
-        else
-        {
-            return (replacementIndex, padding);
         }
+
+        return (replacementIndex, padding);
     }
 }
