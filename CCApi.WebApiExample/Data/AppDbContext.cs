@@ -14,4 +14,5 @@ public partial class AppDbContext : IdentityDbContext<DappiUser, DappiRole, stri
     public DbSet<Movie> Movies { get; set; }
     public DbSet<Author> Authors { get; set; }
     public DbSet<Motorcycle> Motorcycles { get; set; }
+
 }

@@ -8,8 +8,8 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class AppExtensions
 {
-    public static IApplicationBuilder UseDappi<TDbContext>(this WebApplication app, 
-        Action<SwaggerUIOptions>? configureSwagger = null, 
+    public static IApplicationBuilder UseDappi<TDbContext>(this WebApplication app,
+        Action<SwaggerUIOptions>? configureSwagger = null,
         Action<CorsPolicyBuilder>? configureCors = null)
         where TDbContext : DbContext
     {
@@ -26,16 +26,30 @@ public static class AppExtensions
             {
                 c.SwaggerEndpoint("/swagger/Toolkit/swagger.json", "Toolkit API v1");
                 c.SwaggerEndpoint("/swagger/Default/swagger.json", "Default API v1");
-                c.RoutePrefix = string.Empty;
+                c.RoutePrefix = "swagger";
             });
-            
-            using var scope = app.Services.CreateScope();
-            var database = scope.ServiceProvider.GetRequiredService<TDbContext>().Database;
-            database.Migrate();
+
         }
+
+        app.Use(async (context, next) =>
+        {
+            await next();
+        
+            if (!context.Request.Path.Value.StartsWith("/api/") && 
+                !Path.HasExtension(context.Request.Path) || 
+                context.Response.StatusCode == 404)
+            {
+                if (!context.Response.HasStarted) 
+                {
+                   context.Request.Path = "/index.html";
+                   await next();
+                }
+            }
+        });
         
         app.UseHttpsRedirection();
         app.MapControllers();
+        app.UseStaticFiles();
 
         return app;
     }
