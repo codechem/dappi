@@ -141,13 +141,18 @@ dotnet ""$app_path"" &
     {
         try
         {
-            ProcessStartInfo startInfo = new ProcessStartInfo
+            var csprojFile = Directory.GetFiles(_projectDirectory, "*.csproj").FirstOrDefault();
+            var directory = Directory.GetCurrentDirectory();
+            string v = $"ef database update";
+            var startInfo = new ProcessStartInfo
             {
+                WorkingDirectory = directory,
                 FileName = "dotnet",
-                Arguments = $"ef database update --project {_projectDirectory}/../../../CCApi.WebApiExample.csproj",
-                UseShellExecute = false,
-                CreateNoWindow = true
+                Arguments = v,
+                UseShellExecute = true,
+                CreateNoWindow = false
             };
+
             Process.Start(startInfo)?.WaitForExit();
         }
         catch (Exception ex)
