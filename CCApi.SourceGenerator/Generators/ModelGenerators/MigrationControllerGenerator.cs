@@ -11,7 +11,6 @@ namespace CCApi.SourceGenerator.Generators.ModelGenerators
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            context.RegisterImplementationSourceOutput(context.CompilationProvider, (context, compilation) => GenerateController(context, compilation));
         }
 
         private void GenerateController(SourceProductionContext context, Compilation compilation)
