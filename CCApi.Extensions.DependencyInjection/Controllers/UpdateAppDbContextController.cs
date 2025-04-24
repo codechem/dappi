@@ -55,21 +55,23 @@ public class UpdateAppDbContextController : ControllerBase
 
     private static string AddDbSetsToAppDbContextClass(string appDbContextCode, string[] missingModels)
     {
-        const string dbSetKeyword = "public DbSet";
+        var isInFileScopedNamespace = IsClassInFileScopedNamespace(appDbContextCode);
+        var (classDeclarationStartPosition, classDeclarationEndPosition, codeInBetween) = GetCodeInClassScope(appDbContextCode, isInFileScopedNamespace);
+        var padding = isInFileScopedNamespace ? new string('\t', 1) : new string('\t', 2);
+
+        var dbContextScopedCodeBuilder = new StringBuilder(codeInBetween);
+
+        foreach (var missingModelName in missingModels)
+            dbContextScopedCodeBuilder.AppendLine(
+                $"{padding}public DbSet<{missingModelName}> {missingModelName}s {{ get; set; }}");
+        
         var dbContextBuilder = new StringBuilder(appDbContextCode);
-        var dbSets = appDbContextCode.Split(Environment.NewLine)
-            .Where(x => x.Contains(dbSetKeyword))
-            .Select(x => x.Trim())
-            .ToList();
-
-        var dbSetsCharactersCountBeforeInsert = dbSets.Sum(dbSetLine => dbSetLine.Length);
-        dbSets.AddRange(missingModels.Select(model =>
-          $"public DbSet<{model}> {model}s {{ get; set; }}")
-        );
-
-        var (replaceIndex, padding) = GetTextReplacementIndexAndPaddding(dbSetKeyword, appDbContextCode);
-        dbContextBuilder.Remove(replaceIndex, dbSetsCharactersCountBeforeInsert);
-        dbContextBuilder.Insert(replaceIndex, string.Join(string.Empty, dbSets.Select(x => padding + x)));
+        // Replace the last character to add appropriate padding.
+        var endOfScopeReplacementCharacter = isInFileScopedNamespace ? "}":  new string('\t', 1) + "}";
+        dbContextBuilder.Replace("}", endOfScopeReplacementCharacter, classDeclarationEndPosition, endOfScopeReplacementCharacter.Length);
+     
+        dbContextBuilder.Remove(classDeclarationStartPosition + 1, codeInBetween.Length);
+        dbContextBuilder.Insert(classDeclarationStartPosition, dbContextScopedCodeBuilder.ToString());
 
         var apiAssemblyName = Assembly.GetEntryAssembly()!.GetName().Name;
         if (!appDbContextCode.Contains($"{apiAssemblyName}.Entities"))
@@ -79,32 +81,41 @@ public class UpdateAppDbContextController : ControllerBase
         return dbContextBuilder.ToString();
     }
 
-    private static (int keywordIndex, string padding) GetTextReplacementIndexAndPaddding(string dbSetKeyword, string dbContextCode)
+    private static (int ClassDeclarationStart, int ClassDeclarationEnd, string CodeInBetween) GetCodeInClassScope(string codeText, bool isInFileScopedNamespace)
     {
-        const char curlyBracketSymbol = '{';
-        var notFirstDbSet = dbContextCode.Contains(dbSetKeyword, StringComparison.CurrentCulture);
+        const char startScopeSymbol = '{';
+        const char endScopeSymbol = '}';
+     
+        var classDeclarationStartPosition =
+            GetFirstDeclarationSymbolPositionForClass(codeText, startScopeSymbol, isInFileScopedNamespace);
+        var classDeclarationEndPostion =
+            GetLastDeclarationSymbolPositionForClass(codeText, endScopeSymbol, isInFileScopedNamespace);
 
-        var isInFileScopedNamespace = dbContextCode.Split(Environment.NewLine)
-            .First(x => x.StartsWith("namespace"))
+        var startPosition = classDeclarationStartPosition + 1;
+        var endPosition = classDeclarationEndPostion - 1;
+
+        return (startPosition, endPosition, codeText[startPosition..endPosition]); 
+    }
+
+    private static bool IsClassInFileScopedNamespace(string codeText)
+    {
+        return codeText.Split(Environment.NewLine)
+            .Where(x => x.StartsWith("namespace"))
+            .First()
             .EndsWith(';');
+    }
 
-        // If we have a file-scoped namespace we need one tab for padding, otherwise two tabs.
-        var padding = isInFileScopedNamespace 
-            ? $"{Environment.NewLine}{new string('\t', 1)}" 
-            : $"{Environment.NewLine}{new string('\t', 2)}";
-        
-        // Basically, if we have a block scoped namespace decl. we need to get the index of the second '{' character 
-        // and add 1 to get to not overwrite the bracket.
-        var replacementIndex = isInFileScopedNamespace 
-            ? dbContextCode.IndexOf(curlyBracketSymbol) + 1
-            : dbContextCode.IndexOf(curlyBracketSymbol, dbContextCode.IndexOf(curlyBracketSymbol) + 1) + 1;
+    private static int GetFirstDeclarationSymbolPositionForClass(string classText, char symbol, bool isInFileScopedNamespace)
+    {
+        return isInFileScopedNamespace 
+            ? classText.IndexOf(symbol)
+            : classText.IndexOf(symbol, classText.IndexOf(symbol) + 1);
+    }
 
-        if (notFirstDbSet)
-        {
-            int keywordIndex = dbContextCode.IndexOf(dbSetKeyword);
-            return (keywordIndex, padding);
-        }
-
-        return (replacementIndex, padding);
+    private static int GetLastDeclarationSymbolPositionForClass(string classText, char symbol, bool isInFileScopedNamespace)
+    {
+        return isInFileScopedNamespace 
+            ? classText.LastIndexOf(symbol)
+            : classText.LastIndexOf(symbol, classText.LastIndexOf(symbol) - 1);
     }
 }
