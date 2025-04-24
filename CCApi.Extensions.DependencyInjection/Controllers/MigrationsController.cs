@@ -55,16 +55,10 @@ public class MigrationController : ControllerBase
     {
         var currentDir = Directory.GetCurrentDirectory();
         var csproj = Directory.GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
-        var csprojFileName = Path.GetFileName(csproj);
-        var dllPath = Directory
-            .GetFiles(currentDir, "*.dll", SearchOption.AllDirectories)
-            .FirstOrDefault(f => f.Contains("bin") && Path.GetFileNameWithoutExtension(f) == Path.GetFileNameWithoutExtension(csprojFileName));
-
-        var appDll = Path.GetFileName(dllPath);
         var scriptPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "DappiMigrationRunner.ps1");
         var procId = Environment.ProcessId;
     
-        var args = $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -ProjectPath \"{_projectDirectory}\" -Csproj \"{csproj}\" -AppDll \"{appDll}\" -ProcessId \"{procId}\" ";
+        var args = $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -ProjectPath \"{_projectDirectory}\" -Csproj \"{csproj}\" -ProcessId \"{procId}\" ";
         var psi = new ProcessStartInfo
         {
             FileName = "powershell.exe",

@@ -13,8 +13,8 @@ Write-Host "Generating EF migration: $migrationName"
 Push-Location $ProjectPath
 
 & $DotnetPath ef migrations add $migrationName --project $Csproj
-& $DotnetPath ef database update --project $Csproj --no-build
+& $DotnetPath ef database update --project $Csproj 
 
 Write-Host "Restarting application..."
-& $DotnetPath run --project $Csproj --no-build
+& $DotnetPath run --project $Csproj 
 Write-Host "Done. Migration applied and app restarted."
