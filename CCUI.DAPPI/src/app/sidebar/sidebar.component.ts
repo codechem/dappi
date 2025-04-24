@@ -88,7 +88,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
         } else {
           let updatedTypes = [...types];
 
-          if (this.isAdmin && !updatedTypes.includes('Users')) {
+          if (this.isAdmin && !updatedTypes.includes('Users') && this.headerText !== 'Builder') {
             updatedTypes.push('Users');
           }
 
@@ -180,7 +180,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!text) {
       let types = [...this.collectionTypes];
 
-      if (this.isAdmin && !types.includes('Users')) {
+      if (this.isAdmin && !types.includes('Users') && this.headerText !== 'Builder') {
         types.push('Users');
       }
 
