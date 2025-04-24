@@ -154,6 +154,10 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
               }
             }
 
+            if (field.type === FieldType.role) {
+              contentField.multiple = true;
+            }
+
             return contentField;
           });
 
@@ -217,7 +221,11 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
         ? [Validators.required, ...(field.validators || [])]
         : field.validators || [];
 
-      if (field.type === FieldType.collection || field.type === FieldType.relation) {
+      if (
+        field.type === FieldType.collection ||
+        field.type === FieldType.relation ||
+        field.type === FieldType.role
+      ) {
         group[field.key] = [field.multiple ? [] : null, validators];
       } else {
         group[field.key] = ['', validators];
@@ -328,6 +336,8 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
             (f) => f.key.includes(field.key) && f.type === FieldType.id,
           )?.key;
           if (relationKey) acc[relationKey] = value.id;
+        } else if (field?.type === FieldType.role) {
+          acc[key] = Array.isArray(value) ? value : value ? [value] : [];
         } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
           acc[key] = [{ ...value }];
         } else {

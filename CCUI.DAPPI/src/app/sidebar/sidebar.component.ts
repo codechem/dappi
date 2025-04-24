@@ -26,6 +26,7 @@ import {
   selectCollectionTypesError,
 } from '../state/collection/collection.selectors';
 import { loadCollectionTypes } from '../state/collection/collection.actions';
+import { selectUser } from '../state/auth/auth.selectors';
 
 @Component({
   selector: 'app-sidebar',
@@ -48,6 +49,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   private subscriptions: Subscription = new Subscription();
 
   isSearching = false;
+  isAdmin = false;
 
   selectedType$ = this.store.select(selectSelectedType);
   collectionTypes$ = this.store.select(selectCollectionTypes);
@@ -74,15 +76,28 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     this.subscriptions.add(
+      this.store
+        .select(selectUser)
+        .subscribe((user) => (this.isAdmin = user?.roles.includes('Admin') ?? false)),
+    );
+
+    this.subscriptions.add(
       this.collectionTypes$.subscribe((types) => {
         if (types.length === 0) {
           this.store.dispatch(loadCollectionTypes());
         } else {
-          this.filteredCollectionTypes = types;
-          this.collectionTypes = types;
+          let updatedTypes = [...types];
+
+          if (this.isAdmin && !updatedTypes.includes('Users')) {
+            updatedTypes.push('Users');
+          }
+
+          this.filteredCollectionTypes = updatedTypes;
+          this.collectionTypes = updatedTypes;
         }
       }),
     );
+
     this.subscriptions.add(
       this.searchTextChanged
         .pipe(takeUntil(this.destroy$), debounceTime(300), distinctUntilChanged())
@@ -163,11 +178,28 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private filterCollectionTypes(text: string): void {
     if (!text) {
-      this.filteredCollectionTypes = [...this.collectionTypes];
+      let types = [...this.collectionTypes];
+
+      if (this.isAdmin && !types.includes('Users')) {
+        types.push('Users');
+      }
+
+      this.filteredCollectionTypes = types;
       return;
     }
-    this.filteredCollectionTypes = this.collectionTypes.filter((type) =>
+
+    let filtered = this.collectionTypes.filter((type) =>
       type.toLowerCase().includes(text.toLowerCase()),
     );
+
+    if (
+      this.isAdmin &&
+      'users'.includes(text.toLowerCase()) &&
+      !this.collectionTypes.includes('Users')
+    ) {
+      filtered.push('Users');
+    }
+
+    this.filteredCollectionTypes = filtered;
   }
 }

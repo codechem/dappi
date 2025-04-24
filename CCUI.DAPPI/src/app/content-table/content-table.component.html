@@ -39,9 +39,11 @@
   </div>
 
   @if (selectedType$ | async; as selectedType) {
-    <button class="create-button" (click)="navigateToCreate()" aria-label="Create new content">
-      + Create new {{ selectedType }}
-    </button>
+    @if (selectedType !== 'Users') {
+      <button class="create-button" (click)="navigateToCreate()" aria-label="Create new content">
+        + Create new {{ selectedType }}
+      </button>
+    }
   }
 </div>
 

@@ -41,6 +41,13 @@
                   }
                 </mat-select>
               }
+              @case (fieldType.role) {
+                <mat-select [formControlName]="field.key" multiple>
+                  <mat-option value="Admin">Admin</mat-option>
+                  <mat-option value="Maintainer">Maintainer</mat-option>
+                  <mat-option value="User">User</mat-option>
+                </mat-select>
+              }
             }
             @if (contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched) {
               <mat-error>
@@ -147,11 +154,13 @@
                     </mat-option>
                   }
                 </mat-select>
-                @if (contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched) {
-                  <mat-error>
-                    {{ getErrorMessage(field.key) }}
-                  </mat-error>
-                }
+              }
+              @case (fieldType.role) {
+                <mat-select [formControlName]="field.key" multiple>
+                  <mat-option value="Admin">Admin</mat-option>
+                  <mat-option value="Maintainer">Maintainer</mat-option>
+                  <mat-option value="User">User</mat-option>
+                </mat-select>
               }
             }
             @if (contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched) {

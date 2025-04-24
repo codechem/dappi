@@ -21,6 +21,7 @@ export enum FieldType {
   'checkbox',
   'date',
   'select',
+  'role',
 }
 export interface TableHeader {
   key: string;

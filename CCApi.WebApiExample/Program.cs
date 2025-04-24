@@ -19,22 +19,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-using (var scope = app.Services.CreateScope())
-{
-    await SeedRolesAsync(scope.ServiceProvider);
-}
+await ServiceExtensions.SeedRolesAndUsersAsync<DappiUser, DappiRole>(app.Services);
 
 app.Run();
-
-static async Task SeedRolesAsync(IServiceProvider services)
-{
-    var roleManager = services.GetRequiredService<RoleManager<DappiRole>>();
-
-    foreach (var role in new[] { "Admin", "Maintainer", "User" })
-    {
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            await roleManager.CreateAsync(new DappiRole { Name = role });
-        }
-    }
-}
