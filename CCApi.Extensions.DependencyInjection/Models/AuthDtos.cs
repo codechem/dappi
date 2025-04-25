@@ -39,14 +39,6 @@ namespace CCApi.Extensions.DependencyInjection.Models
         public string Name { get; set; }
     }
 
-    public class PagedResponseDto<T>
-    {
-        public int Total { get; set; }
-        public int Offset { get; set; }
-        public int Limit { get; set; }
-        public List<T> Data { get; set; }
-    }
-
     public class UserRoleUpdateDto
     {
         public string Role { get; set; }
