@@ -16,7 +16,10 @@
     </ItemGroup>
         
     <ItemGroup>
-        <None Update="DappiMigrationRunner.ps1">
+        <None Update="Scripts/Start-DappiMigrationRunner.ps1">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Scripts/restart-app.sh">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

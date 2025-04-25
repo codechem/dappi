@@ -63,7 +63,7 @@ public class UpdateAppDbContextController : ControllerBase
 
         foreach (var missingModelName in missingModels)
             dbContextScopedCodeBuilder.AppendLine(
-                $"{padding}public DbSet<{missingModelName}> {missingModelName}s {{ get; set; }}");
+                $"{Environment.NewLine}{padding}public DbSet<{missingModelName}> {missingModelName}s {{ get; set; }}");
         
         var dbContextBuilder = new StringBuilder(appDbContextCode);
         // Replace the last character to add appropriate padding.
@@ -74,8 +74,8 @@ public class UpdateAppDbContextController : ControllerBase
         dbContextBuilder.Insert(classDeclarationStartPosition, dbContextScopedCodeBuilder.ToString());
 
         var apiAssemblyName = Assembly.GetEntryAssembly()!.GetName().Name;
+        // Still, we assume that the Domain objects live in a folder called Entities.
         if (!appDbContextCode.Contains($"{apiAssemblyName}.Entities"))
-            // Still, we assume that the Domain objects live in a folder called Entities.
             dbContextBuilder.Insert(0, $"using {apiAssemblyName}.Entities;{Environment.NewLine}");
 
         return dbContextBuilder.ToString();
