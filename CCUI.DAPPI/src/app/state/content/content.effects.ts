@@ -229,6 +229,10 @@ export class ContentEffects {
   private mapFieldTypeToInputType(fieldType: string): FieldType {
     const lowerFieldType = fieldType.toLowerCase();
 
+    if (lowerFieldType.includes('userroles')) {
+      return FieldType.role;
+    }
+
     if (
       !lowerFieldType.includes('string') &&
       !lowerFieldType.includes('byte[]') &&

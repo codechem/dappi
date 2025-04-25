@@ -42,6 +42,16 @@ export class AuthInterceptor implements HttpInterceptor {
                 duration: 5000,
               });
             }
+
+            if (error.status === 403) {
+              this.snackBar.open(
+                'Oops! It looks like you don’t have permission to do that. Reach out to your administrator if you need access.',
+                'Close',
+                {
+                  duration: 5000,
+                },
+              );
+            }
             return throwError(() => error);
           }),
         );

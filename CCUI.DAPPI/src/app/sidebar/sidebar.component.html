@@ -51,6 +51,9 @@
             [ngClass]="{ selected: selectedType === type }"
             (click)="selectCollectionType(type)"
           >
+            @if (type === 'Users') {
+              <mat-icon class="item-icon">people</mat-icon>
+            }
             {{ type }}
           </mat-list-item>
         }
