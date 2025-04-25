@@ -40,6 +40,7 @@ export class AuthComponent implements OnInit, OnDestroy {
   isLoading$: Observable<boolean>;
   errorMessage$: Observable<string | null>;
   private registerSuccessSub?: Subscription;
+  showPasswordRequirements = false;
 
   constructor(
     private fb: FormBuilder,
@@ -57,6 +58,12 @@ export class AuthComponent implements OnInit, OnDestroy {
       .subscribe(() => {
         this.isLoginMode = true;
       });
+
+    if (!this.isLoginMode) {
+      this.authForm.get('password')?.valueChanges.subscribe(() => {
+        this.showPasswordRequirements = true;
+      });
+    }
   }
 
   ngOnDestroy() {
@@ -83,12 +90,14 @@ export class AuthComponent implements OnInit, OnDestroy {
         },
         { validators: passwordMatchValidator() },
       );
+      this.showPasswordRequirements = false;
     }
   }
 
   toggleAuthMode(): void {
     this.isLoginMode = !this.isLoginMode;
     this.initializeForm();
+    this.store.dispatch(AuthActions.registerFailure({ error: '' }));
   }
 
   onSubmit(): void {
@@ -100,6 +109,11 @@ export class AuthComponent implements OnInit, OnDestroy {
         const { username, email, password } = this.authForm.value;
         this.store.dispatch(AuthActions.register({ username, email, password }));
       }
+    } else {
+      Object.keys(this.authForm.controls).forEach((key) => {
+        const control = this.authForm.get(key);
+        control?.markAsTouched();
+      });
     }
   }
 }
