@@ -8,7 +8,6 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddOpenApi();
         builder.Services.AddDappi<AppDbContext>(builder.Configuration);
         builder.Services.AddDappiAuthentication<DappiUser, DappiRole, AppDbContext>(builder.Configuration);
 

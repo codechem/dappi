@@ -82,7 +82,7 @@ public class MigrationController : ControllerBase
         var startInfo = new ProcessStartInfo
         {
             WorkingDirectory = Directory.GetCurrentDirectory(),
-            FileName = "dotnet.exe",
+            FileName = "dotnet",
             Arguments = $"ef migrations add {GetMigrationName()}",
             UseShellExecute = false,
             CreateNoWindow = true
@@ -98,7 +98,8 @@ public class MigrationController : ControllerBase
             var directory = Path.GetDirectoryName(exePath);
             var processId = Environment.ProcessId;
             var scriptPath = Path.Combine(directory, "Scripts", "restart-app.sh");
-           
+            Process.Start("chmod", new[] { "+x", scriptPath })?.WaitForExit();
+
             var startInfo = new ProcessStartInfo
             {
                 FileName = "/bin/bash",

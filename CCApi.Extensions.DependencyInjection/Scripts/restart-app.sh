@@ -6,4 +6,4 @@ app_path=$2
 while kill -0 ""$pid"" 2>/dev/null; do sleep 1; done
 
 # Start the new instance
-dotnet ""$app_path"" &
+dotnet run ""$app_path"" 
