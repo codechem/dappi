@@ -9,12 +9,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Http;
 using CCApi.Extensions.DependencyInjection.Services.Identity;
+using CCApi.Extensions.DependencyInjection.Constants;
+
 namespace Microsoft.Extensions.DependencyInjection;
 
 public static class ServiceExtensions
 {
     public static IServiceCollection AddDappi<TDbContext>(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration configuration,
         Action<JsonOptions>? jsonOptions = null,
         Action<DbContextOptionsBuilder>? dbContextOptions = null)
@@ -29,10 +31,10 @@ public static class ServiceExtensions
             .AddJsonOptions(jsonOptions ?? (options =>
             {
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-            }) );
-        
+            }));
+
         services.AddEndpointsApiExplorer();
-        
+
         if (configuration.IsDappiUiConfigured())
         {
             services.AddCors(options =>
@@ -43,7 +45,7 @@ public static class ServiceExtensions
                         .AllowAnyMethod());
             });
         }
-        
+
         return services;
     }
 
@@ -126,7 +128,7 @@ public static class ServiceExtensions
         return services;
     }
 
-    public static async Task SeedRolesAndUsersAsync<TUser, TRole>(IServiceProvider serviceProvider)
+    public static async Task SeedRolesAndUsersAsync<TUser, TRole>(this IServiceProvider serviceProvider)
         where TUser : IdentityUser, new()
         where TRole : IdentityRole, new()
     {
@@ -134,7 +136,7 @@ public static class ServiceExtensions
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<TRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<TUser>>();
 
-        string[] roles = { "Admin", "Maintainer", "User" };
+        string[] roles = UserRoles.All;
         foreach (var roleName in roles)
         {
             if (!await roleManager.RoleExistsAsync(roleName))
@@ -178,7 +180,7 @@ public static class ServiceExtensions
                 if (apiDesc.GroupName == null) return docName == "Default";
                 return docName == apiDesc.GroupName;
             });
-            
+
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Type = SecuritySchemeType.ApiKey,
