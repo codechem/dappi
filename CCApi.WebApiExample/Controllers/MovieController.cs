@@ -9,4 +9,4 @@ public partial class MovieController
     {
         return Ok("Hello Dule from partial class");
     }
-}
+} 

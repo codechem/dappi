@@ -9,7 +9,6 @@ namespace CCApi.SourceGenerator.Generators.ModelGenerators
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            context.RegisterImplementationSourceOutput(context.CompilationProvider, (context, compilation) => GenerateController(context, compilation));
         }
 
         private void GenerateController(SourceProductionContext context, Compilation compilation)
@@ -517,27 +516,25 @@ namespace {rootNamespace}.Controllers
             }}
         }}
 
-        private string GenerateClassCode(Type modelType)
-        {{
-            var sb = new StringBuilder();
-            sb.AppendLine(""using System.ComponentModel.DataAnnotations;"");
-            sb.AppendLine(""using System.ComponentModel.DataAnnotations.Schema;"");
-            sb.AppendLine(""using System.Text.Json.Serialization;"");
-            sb.AppendLine(""using System;"");
-            sb.AppendLine(""using CCApi.SourceGenerator.Attributes;"");
-            sb.AppendLine(""namespace CCApi.WebApiExample.Entities;"");
-            sb.AppendLine(""[CCController]"");
-            sb.AppendLine($""public class {{modelType.Name}}"");
-            sb.AppendLine(""{{"");
-            sb.AppendLine(""    [Key]"");
-            sb.AppendLine(""    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]"");
-            sb.AppendLine(""    public Guid Id {{ get; set; }}"");
+         private string GenerateClassCode(Type modelType)
+         {{
+             var asm = Assembly.GetExecutingAssembly().GetName().Name;
+             var sb = new StringBuilder();
+             sb.AppendLine(""using System.ComponentModel.DataAnnotations;"");
+             sb.AppendLine(""using System.ComponentModel.DataAnnotations.Schema;"");
+             sb.AppendLine(""using CCApi.SourceGenerator.Attributes;"");
+             sb.AppendLine($""namespace {{asm}}.Entities;"");
+             sb.AppendLine(""[CCController]"");
+             sb.AppendLine($""public class {{modelType.Name}}"");
+             sb.AppendLine(""{{"");
+             sb.AppendLine(""    [Key]"");
+             sb.AppendLine(""    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]"");
+             sb.AppendLine(""    public Guid Id {{ get; set; }}"");
 
-            sb.AppendLine(""}}"");
+             sb.AppendLine(""}}"");
 
-            return sb.ToString();
-        }}
-
+             return sb.ToString();
+         }}
         [HttpGet(""fields/{{modelName}}"")]
         public IActionResult GetModelFields(string modelName)
         {{

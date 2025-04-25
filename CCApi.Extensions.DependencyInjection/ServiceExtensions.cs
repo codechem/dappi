@@ -128,46 +128,6 @@ public static class ServiceExtensions
         return services;
     }
 
-    public static async Task SeedRolesAndUsersAsync<TUser, TRole>(this IServiceProvider serviceProvider)
-        where TUser : IdentityUser, new()
-        where TRole : IdentityRole, new()
-    {
-        using var scope = serviceProvider.CreateScope();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<TRole>>();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<TUser>>();
-
-        string[] roles = UserRoles.All;
-        foreach (var roleName in roles)
-        {
-            if (!await roleManager.RoleExistsAsync(roleName))
-            {
-                var role = new TRole();
-                typeof(TRole).GetProperty("Name")?.SetValue(role, roleName);
-
-                await roleManager.CreateAsync(role);
-            }
-        }
-
-        const string adminEmail = "admin@gmail.com";
-        const string adminUsername = "admin";
-        const string adminPassword = "Dappi@123";
-
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-        if (adminUser == null)
-        {
-            var user = new TUser();
-            typeof(TUser).GetProperty("UserName")?.SetValue(user, adminUsername);
-            typeof(TUser).GetProperty("Email")?.SetValue(user, adminEmail);
-            typeof(TUser).GetProperty("EmailConfirmed")?.SetValue(user, true);
-
-            var result = await userManager.CreateAsync(user, adminPassword);
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(user, "Admin");
-            }
-        }
-    }
-
     private static IServiceCollection AddDappiSwaggerGen(this IServiceCollection services)
     {
         return services.AddSwaggerGen(c =>
