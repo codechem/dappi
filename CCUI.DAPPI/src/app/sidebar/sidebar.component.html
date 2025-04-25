@@ -41,29 +41,27 @@
 
 <div class="scrollable-list">
   @let selectedType = selectedType$ | async;
-  @if (selectedType) {
-    @if (filteredCollectionTypes.length > 0) {
-      <mat-list>
-        @for (type of filteredCollectionTypes; track trackByFn($index, type)) {
-          <mat-list-item
-            class="custom-list-item"
-            [attr.aria-label]="type"
-            [ngClass]="{ selected: selectedType === type }"
-            (click)="selectCollectionType(type)"
-          >
-            @if (type === 'Users') {
-              <mat-icon class="item-icon">people</mat-icon>
-            }
-            {{ type }}
-          </mat-list-item>
-        }
-      </mat-list>
-    } @else {
-      <div class="no-results">
-        <mat-icon>search_off</mat-icon>
-        <p>No collection types found</p>
-        <p class="search-hint">Try different search terms</p>
-      </div>
-    }
+  @if (filteredCollectionTypes.length > 0) {
+    <mat-list>
+      @for (type of filteredCollectionTypes; track trackByFn($index, type)) {
+        <mat-list-item
+          class="custom-list-item"
+          [attr.aria-label]="type"
+          [ngClass]="{ selected: selectedType === type }"
+          (click)="selectCollectionType(type)"
+        >
+          @if (type === 'Users') {
+            <mat-icon class="item-icon">people</mat-icon>
+          }
+          {{ type }}
+        </mat-list-item>
+      }
+    </mat-list>
+  } @else {
+    <div class="no-results">
+      <mat-icon>search_off</mat-icon>
+      <p>No collection types found</p>
+      <p class="search-hint">Try different search terms</p>
+    </div>
   }
 </div>
