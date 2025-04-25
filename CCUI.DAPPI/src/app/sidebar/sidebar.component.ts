@@ -47,6 +47,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() headerText: string = 'Builder';
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
   private subscriptions: Subscription = new Subscription();
+  private isLoadingTypes = false;
 
   isSearching = false;
   isAdmin = false;
@@ -83,8 +84,18 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.subscriptions.add(
       this.collectionTypes$.subscribe((types) => {
-        if (types.length === 0) {
+        if (types.length === 0 && !this.isLoadingTypes) {
+          this.isLoadingTypes = true;
           this.store.dispatch(loadCollectionTypes());
+
+          let updatedTypes = [...this.collectionTypes];
+
+          if (this.isAdmin && !updatedTypes.includes('Users') && this.headerText !== 'Builder') {
+            updatedTypes.push('Users');
+          }
+
+          this.filteredCollectionTypes = updatedTypes;
+          this.collectionTypes = updatedTypes;
         } else {
           let updatedTypes = [...types];
 
@@ -94,6 +105,14 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
           this.filteredCollectionTypes = updatedTypes;
           this.collectionTypes = updatedTypes;
+        }
+      }),
+    );
+
+    this.subscriptions.add(
+      this.collectionTypesError$.subscribe((error) => {
+        if (error) {
+          this.isLoadingTypes = false;
         }
       }),
     );
