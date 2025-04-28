@@ -1,37 +1,61 @@
 using System;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
+using System.IO.Compression;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Octokit;
+using FileMode = System.IO.FileMode;
 
 namespace Dappi.Cli;
 
 public class TemplateFetcher
 {
+    private static readonly string TemplatesFileRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $".{Path.DirectorySeparatorChar}Dappi");
+    private static readonly string TemplateName = Path.Combine(TemplatesFileRoot, "MyCompany.MyProject.WebApi");
+
     public async Task<string> GetDappiTemplate()
     {
-        string owner = "codechem";
-        string repo = "dappi";
-        string branch = "main"; // change if needed
-        string zipUrl = $"https://github.com/{owner}/{repo}/archive/refs/heads/{branch}.zip";
-        string outputFile = $"{repo}-{branch}.zip";
-
-        Console.WriteLine($"Downloading {zipUrl}...");
-
-        using (HttpClient client = new HttpClient())
+        var projectTemplateFilename = Path.Combine(TemplatesFileRoot, $"{TemplateName}.zip");
+        var zipUrl = Path.Combine("https://api.github.com/repos/codechem/dappi/zipball/main");
+        
+        if (File.Exists(projectTemplateFilename))
+            return projectTemplateFilename;
+        
+        if (!Directory.Exists(TemplatesFileRoot))
+            Directory.CreateDirectory(TemplatesFileRoot);
+        
+        DownLoadHelper.DownLoadZipFile(zipUrl, projectTemplateFilename);
+     
+        return projectTemplateFilename;
+    }
+    
+    public class DownLoadHelper
+    {
+        public static void DownLoadZipFile(string zip_url, string filePath)
         {
-            using (HttpResponseMessage response = await client.GetAsync(zipUrl))
+            using (var webClient = new WebClient())
             {
-                response.EnsureSuccessStatusCode();
+                webClient.Headers.Add("Accept-Language", " en-US");
+                webClient.Headers.Add("Accept", " text/html, application/xhtml+xml, */*");
+                webClient.Headers.Add("User-Agent", "MiConsolesApplicationes");
 
-                await using (var fs = new FileStream(outputFile, FileMode.Create))
+                Console.WriteLine($"Start download zip file:{zip_url}");
+                Console.WriteLine($"Downloading...");
+                
+                try
                 {
-                    await response.Content.CopyToAsync(fs);
+                    webClient.DownloadFile(zip_url, filePath);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    throw;
                 }
 
-                Console.WriteLine($"Downloaded repository to: {Path.GetFullPath(outputFile)}");
+                Console.WriteLine($"Download success and save as {filePath}");
             }
         }
-        
-        return string.Empty;
     }
 }

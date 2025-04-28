@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net9;net8.0;net6.0</TargetFrameworks>
+    <TargetFramework>net9.0</TargetFramework>
     <AssemblyInformationalVersionAttribute>1.0.0</AssemblyInformationalVersionAttribute>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dappi</ToolCommandName>
@@ -10,7 +10,10 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="McMaster.Extensions.Hosting.CommandLine" Version="4.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4" />
     <PackageReference Include="Octokit" Version="14.0.0" />
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="Spectre.Console" Version="0.49.1" />
   </ItemGroup>
 
