@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - workflow_for_building_UI_and_replacing_ui_template
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,19 +18,19 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 20
-        cache: 'npm'
-        cache-dependency-path: '**/package.json'
 
     - name: Install dependencies
+      working-directory: ./CCUI.DAPPI
       run: npm install
 
     - name: Build project
+      working-directory: ./CCUI.DAPPI
       run: npm run build
 
     - name: Commit and push changes
       run: |
         git config --global user.name 'GitHub Actions'
         git config --global user.email 'github-actions@github.com'
-        git add ../templates/MyCompany.MyProject.WebApi/wwwroot -f
+        git add templates/MyCompany.MyProject.WebApi/wwwroot -f || git add ../templates/MyCompany.MyProject.WebApi/wwwroot -f
         git commit -m "Update build output [skip ci]" || echo "No changes to commit"
         git push
