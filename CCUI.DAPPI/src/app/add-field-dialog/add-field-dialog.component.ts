@@ -11,6 +11,8 @@ import {
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
+  AbstractControl,
+  ValidationErrors,
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
@@ -27,6 +29,112 @@ interface FieldType {
   description: string;
   value: string;
   netType: string;
+}
+
+function csharpPropertyNameValidator(control: AbstractControl): ValidationErrors | null {
+  const value = control.value;
+
+  if (!value) return null;
+
+  const validStart = /^[a-zA-Z_]/.test(value);
+
+  const validChars = /^[a-zA-Z0-9_]+$/.test(value);
+
+  const csharpKeywords = [
+    'abstract',
+    'as',
+    'base',
+    'bool',
+    'break',
+    'byte',
+    'case',
+    'catch',
+    'char',
+    'checked',
+    'class',
+    'const',
+    'continue',
+    'decimal',
+    'default',
+    'delegate',
+    'do',
+    'double',
+    'else',
+    'enum',
+    'event',
+    'explicit',
+    'extern',
+    'false',
+    'finally',
+    'fixed',
+    'float',
+    'for',
+    'foreach',
+    'goto',
+    'if',
+    'implicit',
+    'in',
+    'int',
+    'interface',
+    'internal',
+    'is',
+    'lock',
+    'long',
+    'namespace',
+    'new',
+    'null',
+    'object',
+    'operator',
+    'out',
+    'override',
+    'params',
+    'private',
+    'protected',
+    'public',
+    'readonly',
+    'ref',
+    'return',
+    'sbyte',
+    'sealed',
+    'short',
+    'sizeof',
+    'stackalloc',
+    'static',
+    'string',
+    'struct',
+    'switch',
+    'this',
+    'throw',
+    'true',
+    'try',
+    'typeof',
+    'uint',
+    'ulong',
+    'unchecked',
+    'unsafe',
+    'ushort',
+    'using',
+    'virtual',
+    'void',
+    'volatile',
+    'while',
+  ];
+
+  const notReservedKeyword = !csharpKeywords.includes(value.toLowerCase());
+
+  if (!validStart) {
+    return { invalidStart: true };
+  }
+
+  if (!validChars) {
+    return { invalidChars: true };
+  }
+
+  if (!notReservedKeyword) {
+    return { reservedKeyword: true };
+  }
+
+  return null;
 }
 
 @Component({
@@ -141,7 +249,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     private store: Store,
   ) {
     this.fieldForm = this.fb.group({
-      fieldName: ['', [Validators.required, Validators.maxLength(50)]],
+      fieldName: ['', [Validators.required, Validators.maxLength(50), csharpPropertyNameValidator]],
       requiredField: [false],
       relatedModel: [''],
     });
@@ -153,6 +261,26 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     description: string;
     value: string;
   }[] = [];
+
+  getFieldNameErrorMessage(): string {
+    const control = this.fieldForm.get('fieldName');
+    if (control?.hasError('required')) {
+      return 'Field name is required';
+    }
+    if (control?.hasError('maxlength')) {
+      return 'Field name cannot exceed 50 characters';
+    }
+    if (control?.hasError('invalidStart')) {
+      return 'Field name must start with a letter or underscore';
+    }
+    if (control?.hasError('invalidChars')) {
+      return 'Field name can only contain letters, numbers, and underscores';
+    }
+    if (control?.hasError('reservedKeyword')) {
+      return 'Field name cannot be a C# reserved keyword';
+    }
+    return '';
+  }
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();

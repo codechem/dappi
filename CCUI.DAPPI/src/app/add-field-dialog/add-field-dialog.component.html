@@ -35,11 +35,10 @@
         <mat-form-field appearance="outline" class="input-field">
           <mat-label>Field name</mat-label>
           <input matInput formControlName="fieldName" placeholder="Enter field name" />
-          @if (fieldForm.get('fieldName')?.hasError('required')) {
-            <mat-error> Field name is required </mat-error>
-          }
-          @if (fieldForm.get('fieldName')?.hasError('maxlength')) {
-            <mat-error> Field name cannot exceed 50 characters </mat-error>
+          @if (fieldForm.get('fieldName')?.invalid) {
+            <mat-error>
+              {{ getFieldNameErrorMessage() }}
+            </mat-error>
           }
         </mat-form-field>
         <div class="required-field">
@@ -53,11 +52,10 @@
         <mat-form-field appearance="outline" class="input-field">
           <mat-label>Relation name</mat-label>
           <input matInput formControlName="fieldName" placeholder="Enter relation name" />
-          @if (fieldForm.get('fieldName')?.hasError('required')) {
-            <mat-error> Relation name is required </mat-error>
-          }
-          @if (fieldForm.get('fieldName')?.hasError('maxlength')) {
-            <mat-error> Relation name cannot exceed 50 characters </mat-error>
+          @if (fieldForm.get('fieldName')?.invalid) {
+            <mat-error>
+              {{ getFieldNameErrorMessage() }}
+            </mat-error>
           }
         </mat-form-field>
         <mat-form-field appearance="outline" class="input-field">

@@ -120,7 +120,9 @@ export class CollectionEffects {
           ),
           catchError((error) => {
             console.error('Error creating model:', error);
-            alert('Failed to create model. Please try again.');
+            alert(
+              'Model creation failed. The specified model name is not valid. Please check the name and try again.',
+            );
             return of(CollectionActions.addCollectionTypeFailure({ error }));
           }),
         );
