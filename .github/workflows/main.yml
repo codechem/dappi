@@ -19,10 +19,6 @@ jobs:
       with:
         dotnet-version: 8.0.x
         
-    - name: Set version from tag
-      id: set_version
-      run: echo "1.0.0" >> $GITHUB_ENV
-      
     - name: Restore dependencies
       run: dotnet restore
       
