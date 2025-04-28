@@ -58,7 +58,7 @@ export class AuthService {
               validationErrors.push(error.error[key]);
             }
           }
-          errorMessage = validationErrors.join('. ');
+          errorMessage = validationErrors.map((e) => e.description).join(' ');
         } else {
           errorMessage = error.error?.message || 'Bad request';
         }

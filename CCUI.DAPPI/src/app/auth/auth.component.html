@@ -11,26 +11,49 @@
       </a>
     </p>
 
-    @if (errorMessage$ | async) {
-      <div class="error-banner">{{ errorMessage$ | async }}</div>
+    @if (errorMessage$ | async; as message) {
+      <div class="error-banner">{{ message }}</div>
     }
 
     <form [formGroup]="authForm" (ngSubmit)="onSubmit()">
       <div class="form-field">
         <label for="username">Username</label>
         <input type="text" id="username" formControlName="username" placeholder="johndoe" />
+        @if (authForm.get('username')?.invalid && authForm.get('username')?.touched) {
+          <div class="error-message">Username is required</div>
+        }
       </div>
 
       @if (!isLoginMode) {
         <div class="form-field">
           <label for="email">Email address</label>
           <input type="email" id="email" formControlName="email" placeholder="john@gmail.com" />
+          @if (authForm.get('email')?.invalid && authForm.get('email')?.touched) {
+            <div class="error-message">
+              @if (authForm.get('email')?.errors?.['required']) {
+                Email is required
+              } @else if (authForm.get('email')?.errors?.['email']) {
+                Please enter a valid email address
+              }
+            </div>
+          }
         </div>
       }
 
       <div class="form-field">
         <label for="password">Password</label>
         <input type="password" id="password" formControlName="password" placeholder="**********" />
+        @if (
+          !isLoginMode && authForm.get('password')?.invalid && authForm.get('password')?.touched
+        ) {
+          <div class="error-message">
+            @if (authForm.get('password')?.errors?.['required']) {
+              Password is required
+            } @else if (authForm.get('password')?.errors?.['minlength']) {
+              Password must be at least 8 characters long
+            }
+          </div>
+        }
       </div>
 
       @if (!isLoginMode) {
@@ -42,8 +65,12 @@
             formControlName="confirmPassword"
             placeholder="**********"
           />
-          @if (authForm.hasError('passwordMismatch') && authForm.get('confirmPassword')?.touched) {
-            <div class="error-message">Passwords do not match</div>
+          @if (authForm.get('confirmPassword')?.touched) {
+            @if (authForm.get('confirmPassword')?.errors?.['required']) {
+              <div class="error-message">Please confirm your password</div>
+            } @else if (authForm.hasError('passwordMismatch')) {
+              <div class="error-message">Passwords do not match</div>
+            }
           }
         </div>
       }
@@ -51,6 +78,9 @@
       <div class="terms-checkbox">
         <input type="checkbox" id="terms" formControlName="termsAccepted" />
         <label for="terms">I accept the Terms and Conditions</label>
+        @if (authForm.get('termsAccepted')?.invalid && authForm.get('termsAccepted')?.touched) {
+          <div class="error-message">You must accept the terms and conditions</div>
+        }
       </div>
 
       <button
@@ -64,6 +94,11 @@
           {{ isLoginMode ? 'Sign in' : 'Register' }}
         }
       </button>
+      @if (!authForm.valid && authForm.touched) {
+        <div class="error-message form-validation-summary">
+          Please fix the validation errors before submitting
+        </div>
+      }
     </form>
   </div>
 </div>
