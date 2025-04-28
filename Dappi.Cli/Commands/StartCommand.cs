@@ -1,3 +1,7 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using McMaster.Extensions.CommandLineUtils;
 
 namespace Dappi.Cli.Commands;
@@ -11,9 +15,29 @@ public class StartCommand
     
     private void OnExecute(CommandLineApplication app)
     {
-        if (string.IsNullOrEmpty(ProjectPath))
+        Console.WriteLine("Running start");
+        var projectPath = GetProjectPath();
+        var startInfo = new ProcessStartInfo()
         {
-            app.ShowHelp();
+            WorkingDirectory = projectPath,
+            UseShellExecute = false,
+            Arguments = $"run",
+            FileName = "dotnet",
+        };
+        var process = Process.Start(startInfo);
+        process?.WaitForExit();
+    }
+
+    private string GetProjectPath()
+    {
+        var projectPath = string.IsNullOrEmpty(ProjectPath) ? Directory.GetCurrentDirectory() : ProjectPath;
+
+        if (Directory.GetCurrentDirectory().EndsWith("WebApi"))
+        {
+            return projectPath;
         }
+
+        var csProjFile = Directory.GetFiles(projectPath, "*.sln", SearchOption.AllDirectories).FirstOrDefault();
+        return Path.GetDirectoryName(csProjFile);
     }
 }

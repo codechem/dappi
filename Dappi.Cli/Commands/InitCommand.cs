@@ -16,15 +16,17 @@ public class InitCommand
     
     private async Task OnExecute(CommandLineApplication app)
     {
-        if (string.IsNullOrEmpty(ProjectName) || string.IsNullOrEmpty(ProjectPath))
+        if (string.IsNullOrEmpty(ProjectName))
         {
             app.ShowHelp();
             return;
         }
+        
+        var projectPath = string.IsNullOrEmpty(ProjectPath) ? Directory.GetCurrentDirectory() : ProjectPath; 
         var templateFetcher = new TemplateFetcher();
         
         var template = await templateFetcher.GetDappiTemplate();
-        var outputFolder = Path.Combine(ProjectName, ProjectPath);
+        var outputFolder = Path.Combine(ProjectName, projectPath);
         var placeholder = "MyCompany.MyProject.WebApi";
         
         ExtractHelper.ExtractZipFile(template, outputFolder, "templates");
