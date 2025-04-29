@@ -1,0 +1,39 @@
+name: Build and Deploy
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-nuget:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build DependencyInjection project
+      run: dotnet build CCApi.Extensions.DependencyInjection --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
+      
+    - name: Build SourceGenerator project
+      run: dotnet build CCApi.SourceGenerator --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
+      
+    - name: Pack DependencyInjection
+      run: dotnet pack CCApi.Extensions.DependencyInjection --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
+      
+    - name: Pack SourceGenerator
+      run: dotnet pack CCApi.SourceGenerator --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
+      
+    - name: Publish to GitHub Packages
+      run: |
+        dotnet nuget push ./nupkgs/*.nupkg \
+        --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+        --api-key ${{ secrets.GITHUB_TOKEN }}

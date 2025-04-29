@@ -6,6 +6,15 @@
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <AssemblyName>CCApi.SourceGenerator</AssemblyName>
         <RootNamespace>CCApi.SourceGenerator</RootNamespace>
+
+        <!-- Required package metadata -->
+        <PackageId>CC.Dappi.SourceGenerator</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>CodeChem</Authors>
+        <Description>SourceGenerator for DAPPI</Description>
+
+        <RepositoryUrl>https://github.com/codechem/dappi</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
     <ItemGroup>
