@@ -1,7 +1,9 @@
 name: Build and Deploy
+
 on:
-  release: 
-    types: [published]
+  push:
+    tags:
+      - '*'
 
 jobs:
   publish-nuget:
