@@ -54,8 +54,8 @@ public class ExtractHelper
                     }
                 }
 
-                string fullZipToPath = Path.Combine(outFolder, entryFileName);
-                string directoryName = Path.GetDirectoryName(fullZipToPath);
+                var fullZipToPath = Path.Combine(outFolder, entryFileName);
+                var directoryName = Path.GetDirectoryName(fullZipToPath);
                 if (directoryName.Length > 0)
                 {
                     Directory.CreateDirectory(directoryName);

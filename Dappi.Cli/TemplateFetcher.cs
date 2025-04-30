@@ -1,61 +1,70 @@
 using System;
-using System.Diagnostics.Eventing.Reader;
 using System.IO;
-using System.IO.Compression;
+using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Octokit;
-using FileMode = System.IO.FileMode;
 
 namespace Dappi.Cli;
 
-public class TemplateFetcher
+public static class TemplateFetcher
 {
-    private static readonly string TemplatesFileRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $".{Path.DirectorySeparatorChar}Dappi");
-    private static readonly string TemplateName = Path.Combine(TemplatesFileRoot, "MyCompany.MyProject.WebApi");
-
-    public async Task<string> GetDappiTemplate()
+    public static async Task<string> GetDappiTemplate()
     {
-        var projectTemplateFilename = Path.Combine(TemplatesFileRoot, $"{TemplateName}.zip");
-        var zipUrl = Path.Combine("https://api.github.com/repos/codechem/dappi/zipball/main");
+        var release = await GetRelease();
+        var projectTemplateFilename = Path.Combine(Constants.TemplatesFileRoot, $"{Constants.TemplateName}.{release.TagName}.zip");
         
         if (File.Exists(projectTemplateFilename))
             return projectTemplateFilename;
-        
-        if (!Directory.Exists(TemplatesFileRoot))
-            Directory.CreateDirectory(TemplatesFileRoot);
-        
-        DownLoadHelper.DownLoadZipFile(zipUrl, projectTemplateFilename);
-     
+
+        if (!Directory.Exists(Constants.TemplatesFileRoot))
+            Directory.CreateDirectory(Constants.TemplatesFileRoot);
+
+        DownLoadZipFile(release.ZipballUrl, projectTemplateFilename);
+
         return projectTemplateFilename;
     }
-    
-    public class DownLoadHelper
+
+    private static async Task<Release> GetRelease()
     {
-        public static void DownLoadZipFile(string zip_url, string filePath)
+        var github = new GitHubClient(new ProductHeaderValue(Constants.CliCommandName));
+        
+        // TODO: Remove this constant - just easier for now to switch on/off while we're testing.
+        if (Constants.UsePrerelease)
         {
-            using (var webClient = new WebClient())
-            {
-                webClient.Headers.Add("Accept-Language", " en-US");
-                webClient.Headers.Add("Accept", " text/html, application/xhtml+xml, */*");
-                webClient.Headers.Add("User-Agent", "MiConsolesApplicationes");
-
-                Console.WriteLine($"Start download zip file:{zip_url}");
-                Console.WriteLine($"Downloading...");
-                
-                try
-                {
-                    webClient.DownloadFile(zip_url, filePath);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    throw;
-                }
-
-                Console.WriteLine($"Download success and save as {filePath}");
-            }
+            var releases = await github.Repository.Release
+                .GetAll(Constants.DappiRepoOwner, Constants.DappiRepoName);
+            var release = releases
+                .Where(rel => rel.Prerelease)
+                .OrderByDescending(rel => rel.PublishedAt)
+                .FirstOrDefault();
+            
+            return release;
         }
+        
+        return await github.Repository.Release.GetLatest(Constants.DappiRepoOwner, Constants.DappiRepoName);
+    }
+
+    private static void DownLoadZipFile(string zipUrl, string filePath)
+    {
+        using var webClient = new WebClient();
+        webClient.Headers.Add("Accept-Language", " en-US");
+        webClient.Headers.Add("Accept", " text/html, application/xhtml+xml, */*");
+        webClient.Headers.Add("User-Agent", "MiConsolesApplicationes");
+
+        Console.WriteLine($"Start download zip file:{zipUrl}");
+        Console.WriteLine($"Downloading...");
+
+        try
+        {
+            webClient.DownloadFile(zipUrl, filePath);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            throw;
+        }
+
+        Console.WriteLine($"Download success and save as {filePath}");
     }
 }
