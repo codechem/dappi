@@ -32,7 +32,7 @@ public class StartCommand
     {
         var projectPath = string.IsNullOrEmpty(ProjectPath) ? Directory.GetCurrentDirectory() : ProjectPath;
 
-        if (Directory.GetCurrentDirectory().EndsWith("WebApi"))
+        if (Directory.GetCurrentDirectory().EndsWith("InventoryTestis123"))
         {
             return projectPath;
         }

@@ -7,31 +7,17 @@ namespace Dappi.Cli;
 
 public static class Program
 {
-    private const string CliCommandName = "dappi";
-
-    private const string CliName = "Dappi CLI";
-
-    private const string DappiBanner = @"
-           ____                    _ 
-          |  _ \  __ _ _ __  _ __ (_)
-          | | | |/ _` | '_ \| '_ \| |
-          | |_| | (_| | |_) | |_) | |
-          |____/ \__,_| .__/| .__/|_|
-                      |_|   |_|      
-        ";
-
     public static async Task Main(string[] args)
     {
         try
         {
             await Host
                 .CreateDefaultBuilder()
-                .ConfigureServices((context, services) => { })
                 .RunCommandLineApplicationAsync<MainCommand>(args, app =>
                 {
-                    app.Name = CliCommandName;
+                    app.Name = Constants.CliCommandName;
                     app.Description = $"A Dotnet API Pre-Programming Interface";
-                    app.FullName = DappiBanner + $"{Environment.NewLine}{CliName}";
+                    app.FullName = Constants.DappiBanner + $"{Environment.NewLine}{Constants.CliName}";
                 });
         }
         catch (Exception e)

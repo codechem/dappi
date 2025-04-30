@@ -23,15 +23,11 @@ public class InitCommand
         }
         
         var projectPath = string.IsNullOrEmpty(ProjectPath) ? Directory.GetCurrentDirectory() : ProjectPath; 
-        var templateFetcher = new TemplateFetcher();
-        
-        var template = await templateFetcher.GetDappiTemplate();
+        var template = await TemplateFetcher.GetDappiTemplate();
         var outputFolder = Path.Combine(ProjectName, projectPath);
-        var placeholder = "MyCompany.MyProject.WebApi";
         
         ExtractHelper.ExtractZipFile(template, outputFolder, "templates");
-        RenameHelper.RenameFolders(outputFolder, placeholder, ProjectName, renameBackup: true, excludedSubFolders: []);
+        
+        RenameHelper.RenameFolders(outputFolder, Constants.ProjectNamePlaceholder, ProjectName, renameBackup: true, excludedSubFolders: []);
     }
-    
-   
 }
