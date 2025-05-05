@@ -310,6 +310,10 @@ export class ContentEffects {
       return FieldType.text;
     }
 
+    if (lowerFieldType === 'int') {
+      return FieldType.number;
+    }
+
     // Default
     return FieldType.text;
   }

@@ -18,6 +18,22 @@
   }
 }
 
+.checkbox-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+
+  .check-icon {
+    color: vars.$success-main;
+    font-size: 20px;
+  }
+
+  .x-icon {
+    color: vars.$error-light;
+    font-size: 20px;
+  }
+}
+
 .icon-button,
 .filter-button {
   height: 40px;
