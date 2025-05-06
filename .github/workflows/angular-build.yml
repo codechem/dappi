@@ -1,4 +1,4 @@
-name: Build and Auto-Merge Angular Output
+name: Build and Update Angular
 
 on:
   push:
@@ -84,10 +84,7 @@ jobs:
         echo "Created PR: ${{ steps.create_pr.outputs.pr_url }}"
         echo "PR_NUMBER=$(echo '${{ steps.create_pr.outputs.pr_url }}' | grep -o '[0-9]*$')" >> $GITHUB_ENV
 
-    - name: Enable Auto-Merge
+    - name: Created PR
       if: env.PR_NUMBER
       run: |
-        echo "Enabling auto-merge for PR #${{ env.PR_NUMBER }}"
-        gh pr merge ${{ env.PR_NUMBER }} --auto --merge
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        echo "PR #${{ env.PR_NUMBER }} created successfully!"
