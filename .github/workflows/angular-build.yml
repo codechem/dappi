@@ -1,0 +1,89 @@
+name: Build and Update Angular
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+        cache-dependency-path: './CCUI.DAPPI/package-lock.json'
+
+    - name: Install dependencies
+      working-directory: ./CCUI.DAPPI
+      run: npm ci
+
+    - name: Build project
+      working-directory: ./CCUI.DAPPI
+      run: npm run build
+
+    - name: Check for changes
+      id: check_changes
+      run: |
+        if git status --porcelain | grep -q "templates/MyCompany.MyProject.WebApi/wwwroot"; then
+          echo "changes=true" >> $GITHUB_OUTPUT
+        else
+          echo "changes=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create and Push Branch with Changes
+      if: steps.check_changes.outputs.changes == 'true'
+      id: create_branch
+      run: |
+        # Configure git
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'github-actions@github.com'
+        
+        # Create a new branch
+        BRANCH_NAME="build-update-$(date +'%Y%m%d-%H%M%S')"
+        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+        git checkout -b $BRANCH_NAME
+        
+        # Add and commit changes
+        git add templates/MyCompany.MyProject.WebApi/wwwroot -f || git add ../templates/MyCompany.MyProject.WebApi/wwwroot -f
+        git commit -m "Update Angular build output [skip ci]"
+        
+        # Push the branch
+        git push -u origin $BRANCH_NAME
+
+    - name: Create Pull Request
+      if: steps.check_changes.outputs.changes == 'true'
+      uses: repo-sync/pull-request@v2
+      id: create_pr
+      with:
+        source_branch: ${{ env.BRANCH_NAME }}
+        destination_branch: "main"
+        pr_title: "Update Angular build output"
+        pr_body: |
+          This PR updates the Angular build output.
+          
+          *Automated PR created by GitHub Actions*
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Print PR URL
+      if: steps.create_pr.outputs.pr_url
+      run: |
+        echo "Created PR: ${{ steps.create_pr.outputs.pr_url }}"
+        echo "PR_NUMBER=$(echo '${{ steps.create_pr.outputs.pr_url }}' | grep -o '[0-9]*$')" >> $GITHUB_ENV
+
+    - name: Created PR
+      if: env.PR_NUMBER
+      run: |
+        echo "PR #${{ env.PR_NUMBER }} created successfully!"
