@@ -48,16 +48,20 @@ jobs:
       if: steps.check_changes.outputs.changes == 'true'
       id: create_branch
       run: |
+        # Configure git
         git config --global user.name 'GitHub Actions'
         git config --global user.email 'github-actions@github.com'
         
+        # Create a new branch
         BRANCH_NAME="build-update-$(date +'%Y%m%d-%H%M%S')"
         echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
         git checkout -b $BRANCH_NAME
         
+        # Add and commit changes
         git add templates/MyCompany.MyProject.WebApi/wwwroot -f || git add ../templates/MyCompany.MyProject.WebApi/wwwroot -f
         git commit -m "Update Angular build output [skip ci]"
         
+        # Push the branch
         git push -u origin $BRANCH_NAME
 
     - name: Create Pull Request
@@ -72,13 +76,18 @@ jobs:
           This PR updates the Angular build output.
           
           *Automated PR created by GitHub Actions*
-        pr_label: "automated-pr, auto-merge"
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Enable Auto-Merge
-      if: steps.create_pr.outputs.pr_number
+    - name: Print PR URL
+      if: steps.create_pr.outputs.pr_url
       run: |
-        echo "Enabling auto-merge for PR #${{ steps.create_pr.outputs.pr_number }}"
-        gh pr merge ${{ steps.create_pr.outputs.pr_number }} --auto --merge
+        echo "Created PR: ${{ steps.create_pr.outputs.pr_url }}"
+        echo "PR_NUMBER=$(echo '${{ steps.create_pr.outputs.pr_url }}' | grep -o '[0-9]*$')" >> $GITHUB_ENV
+
+    - name: Enable Auto-Merge
+      if: env.PR_NUMBER
+      run: |
+        echo "Enabling auto-merge for PR #${{ env.PR_NUMBER }}"
+        gh pr merge ${{ env.PR_NUMBER }} --auto --merge
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
