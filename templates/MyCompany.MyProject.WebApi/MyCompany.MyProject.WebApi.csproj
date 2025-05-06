@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\CCApi.Extensions.DependencyInjection\CCApi.Extensions.DependencyInjection.csproj" />
-    <ProjectReference Include="..\..\CCApi.SourceGenerator\CCApi.SourceGenerator.csproj" OutputItemType="Analyzer" />
+    <PackageReference Include="Dappi.Extensions.DependencyInjection" />
+    <PackageReference Include="Dappi.Extensions.SourceGenerator" />
   </ItemGroup>
 
 </Project>
