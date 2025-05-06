@@ -15,8 +15,7 @@ public class StartCommand
     
     private void OnExecute(CommandLineApplication app)
     {
-        Console.WriteLine("Running start");
-        var projectPath = GetProjectPath();
+        var projectPath = string.IsNullOrEmpty(ProjectPath) ? Directory.GetCurrentDirectory() : ProjectPath;
         var startInfo = new ProcessStartInfo()
         {
             WorkingDirectory = projectPath,
@@ -26,18 +25,5 @@ public class StartCommand
         };
         var process = Process.Start(startInfo);
         process?.WaitForExit();
-    }
-
-    private string GetProjectPath()
-    {
-        var projectPath = string.IsNullOrEmpty(ProjectPath) ? Directory.GetCurrentDirectory() : ProjectPath;
-
-        if (Directory.GetCurrentDirectory().EndsWith("InventoryTestis123"))
-        {
-            return projectPath;
-        }
-
-        var csProjFile = Directory.GetFiles(projectPath, "*.sln", SearchOption.AllDirectories).FirstOrDefault();
-        return Path.GetDirectoryName(csProjFile);
     }
 }

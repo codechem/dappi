@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
 
         <!-- Required package metadata -->
-        <PackageId>CC.Dappi.Extensions.DependencyInjection</PackageId>
+        <PackageId>Dappi.Extensions.DependencyInjection</PackageId>
         <Authors>CodeChem</Authors>
         <Description>DependencyInjection for Dappi</Description>
     </PropertyGroup>

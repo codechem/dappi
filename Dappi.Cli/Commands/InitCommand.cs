@@ -24,7 +24,7 @@ public class InitCommand
         
         var projectPath = string.IsNullOrEmpty(ProjectPath) ? Directory.GetCurrentDirectory() : ProjectPath; 
         var template = await TemplateFetcher.GetDappiTemplate();
-        var outputFolder = Path.Combine(ProjectName, projectPath);
+        var outputFolder = Path.Combine(projectPath, ProjectName);
         
         ExtractHelper.ExtractZipFile(template, outputFolder, "templates");
         
