@@ -44,11 +44,13 @@ jobs:
           echo "changes=false" >> $GITHUB_OUTPUT
         fi
 
-    - name: Create new branch and PR
+    - name: Create new branch
       if: steps.check_changes.outputs.changes == 'true'
-      id: create_pr
+      id: create_branch
       run: |
         BRANCH_NAME="build-update-$(date +'%Y%m%d-%H%M%S')"
+        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+        
         git checkout -b $BRANCH_NAME
         
         git config --global user.name 'GitHub Actions'
@@ -58,8 +60,6 @@ jobs:
         git commit -m "Update Angular build output [skip ci]"
         
         git push -u origin $BRANCH_NAME
-        
-        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
     - name: Create Pull Request
       if: steps.check_changes.outputs.changes == 'true'
@@ -68,6 +68,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         title: "Update Angular build output"
+        commit-message: "Update Angular build output"
         body: |
           This PR updates the Angular build output.
           
@@ -76,18 +77,15 @@ jobs:
         base: main
         draft: false
         labels: automated-pr, auto-merge
+      
+    - name: Print PR number
+      if: steps.cpr.outputs.pull-request-number
+      run: echo "PR_NUMBER=${{ steps.cpr.outputs.pull-request-number }}"
 
     - name: Enable Auto-Merge
-      if: steps.check_changes.outputs.changes == 'true'
+      if: steps.cpr.outputs.pull-request-number
       run: |
-        PR_NUMBER=$(echo '${{ steps.cpr.outputs.pull-request-number }}')
-        
-        if [ -n "$PR_NUMBER" ]; then
-          echo "Enabling auto-merge for PR #$PR_NUMBER"
-          
-          gh pr merge $PR_NUMBER --auto --merge
-        else
-          echo "No PR number found, skipping auto-merge step"
-        fi
+        echo "Enabling auto-merge for PR #${{ steps.cpr.outputs.pull-request-number }}"
+        gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --auto --merge
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
