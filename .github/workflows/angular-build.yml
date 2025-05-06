@@ -44,17 +44,16 @@ jobs:
           echo "changes=false" >> $GITHUB_OUTPUT
         fi
 
-    - name: Create new branch
+    - name: Create and Push Branch with Changes
       if: steps.check_changes.outputs.changes == 'true'
       id: create_branch
       run: |
-        BRANCH_NAME="build-update-$(date +'%Y%m%d-%H%M%S')"
-        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-        
-        git checkout -b $BRANCH_NAME
-        
         git config --global user.name 'GitHub Actions'
         git config --global user.email 'github-actions@github.com'
+        
+        BRANCH_NAME="build-update-$(date +'%Y%m%d-%H%M%S')"
+        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+        git checkout -b $BRANCH_NAME
         
         git add templates/MyCompany.MyProject.WebApi/wwwroot -f || git add ../templates/MyCompany.MyProject.WebApi/wwwroot -f
         git commit -m "Update Angular build output [skip ci]"
@@ -63,29 +62,23 @@ jobs:
 
     - name: Create Pull Request
       if: steps.check_changes.outputs.changes == 'true'
-      id: cpr
-      uses: peter-evans/create-pull-request@v5
+      uses: repo-sync/pull-request@v2
+      id: create_pr
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        title: "Update Angular build output"
-        commit-message: "Update Angular build output"
-        body: |
+        source_branch: ${{ env.BRANCH_NAME }}
+        destination_branch: "main"
+        pr_title: "Update Angular build output"
+        pr_body: |
           This PR updates the Angular build output.
           
           *Automated PR created by GitHub Actions*
-        branch: ${{ env.BRANCH_NAME }}
-        base: main
-        draft: false
-        labels: automated-pr, auto-merge
-      
-    - name: Print PR number
-      if: steps.cpr.outputs.pull-request-number
-      run: echo "PR_NUMBER=${{ steps.cpr.outputs.pull-request-number }}"
+        pr_label: "automated-pr, auto-merge"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Enable Auto-Merge
-      if: steps.cpr.outputs.pull-request-number
+      if: steps.create_pr.outputs.pr_number
       run: |
-        echo "Enabling auto-merge for PR #${{ steps.cpr.outputs.pull-request-number }}"
-        gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --auto --merge
+        echo "Enabling auto-merge for PR #${{ steps.create_pr.outputs.pr_number }}"
+        gh pr merge ${{ steps.create_pr.outputs.pr_number }} --auto --merge
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
