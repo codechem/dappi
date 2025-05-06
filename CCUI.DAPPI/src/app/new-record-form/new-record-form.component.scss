@@ -247,3 +247,28 @@
   color: white;
   width: 100%;
 }
+
+.checkbox-container {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+
+  mat-checkbox {
+    margin-left: 4px;
+  }
+
+  .checkbox-error {
+    margin-left: 8px;
+    font-size: 12px;
+  }
+}
+
+.form-column {
+  .mat-form-field {
+    width: 100%;
+  }
+
+  .checkbox-container {
+    width: 100%;
+  }
+}

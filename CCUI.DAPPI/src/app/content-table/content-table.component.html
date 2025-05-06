@@ -104,6 +104,18 @@
                       {{ getCellDisplay(item, header) }}
                       <mat-icon class="cell-icon">chevron_right</mat-icon>
                     </span>
+                  } @else if (header.type === fieldType.checkbox) {
+                    <span
+                      class="checkbox-indicator"
+                      [class.checked]="getCellDisplay(item, header)"
+                      ariaLabel="{{ getCellDisplay(item, header) ? 'Yes' : 'No' }}"
+                    >
+                      @if (getCellDisplay(item, header)) {
+                        <mat-icon class="check-icon">check_circle</mat-icon>
+                      } @else {
+                        <mat-icon class="x-icon">cancel</mat-icon>
+                      }
+                    </span>
                   } @else {
                     {{ getCellDisplay(item, header) }}
                   }

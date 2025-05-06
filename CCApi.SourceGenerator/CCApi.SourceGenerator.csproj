@@ -6,6 +6,11 @@
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <AssemblyName>CCApi.SourceGenerator</AssemblyName>
         <RootNamespace>CCApi.SourceGenerator</RootNamespace>
+
+        <!-- Required package metadata -->
+        <PackageId>CC.Dappi.SourceGenerator</PackageId>
+        <Authors>CodeChem</Authors>
+        <Description>SourceGenerator for DAPPI</Description>
     </PropertyGroup>
 
     <ItemGroup>

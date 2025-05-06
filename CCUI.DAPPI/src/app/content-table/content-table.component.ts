@@ -275,16 +275,18 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     return headers.filter((header) => header.type !== FieldType.relation);
   }
 
-  getColumnWidth(header: any): number {
+  getColumnWidth(header: TableHeader): number {
     switch (header.type) {
-      case 'file':
+      case FieldType.file:
         return 150;
-      case 'date':
-        return 180;
-      case 'description':
+      case FieldType.date:
+        return 220;
+      case FieldType.textarea:
         return 250;
-      case 'title':
+      case FieldType.text:
         return 200;
+      case FieldType.checkbox:
+        return 80;
       default:
         return 150;
     }
@@ -307,19 +309,58 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   getCellDisplay(item: ContentItem, header: TableHeader) {
     const value = item[header.key];
 
-    if (header.type === FieldType.file && value) {
-      return this.convertToImage(value);
+    if (value === null || value === undefined) {
+      return '-';
     }
 
-    if (header.type === FieldType.relation && value) {
-      return value.title || 'View relation';
-    }
+    switch (header.type) {
+      case FieldType.file:
+        return this.convertToImage(value);
 
-    if (header.type === FieldType.collection && value) {
-      return `${value.length || 0} items`;
-    }
+      case FieldType.date:
+        return this.formatDate(value);
 
-    return value;
+      case FieldType.checkbox:
+        return value;
+
+      case FieldType.relation:
+        return value.title || 'View relation';
+
+      case FieldType.collection:
+        return `${value.length || 0} items`;
+
+      default:
+        return value;
+    }
+  }
+
+  formatDate(dateStr: string): string {
+    if (!dateStr) return '-';
+
+    try {
+      const date = new Date(dateStr);
+
+      if (isNaN(date.getTime())) {
+        return dateStr;
+      }
+
+      return (
+        date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }) +
+        ' at ' +
+        date.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        })
+      );
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateStr;
+    }
   }
 
   navigateToCreate(): void {
