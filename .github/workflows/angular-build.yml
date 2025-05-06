@@ -1,0 +1,93 @@
+name: Build and Auto-Merge Angular Output
+
+on:
+  push:
+    branches:
+      - main
+      - angular-build-workflow
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+        cache-dependency-path: './CCUI.DAPPI/package-lock.json'
+
+    - name: Install dependencies
+      working-directory: ./CCUI.DAPPI
+      run: npm ci
+
+    - name: Build project
+      working-directory: ./CCUI.DAPPI
+      run: npm run build
+
+    - name: Check for changes
+      id: check_changes
+      run: |
+        if git status --porcelain | grep -q "templates/MyCompany.MyProject.WebApi/wwwroot"; then
+          echo "changes=true" >> $GITHUB_OUTPUT
+        else
+          echo "changes=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create new branch and PR
+      if: steps.check_changes.outputs.changes == 'true'
+      id: create_pr
+      run: |
+        BRANCH_NAME="build-update-$(date +'%Y%m%d-%H%M%S')"
+        git checkout -b $BRANCH_NAME
+        
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'github-actions@github.com'
+        
+        git add templates/MyCompany.MyProject.WebApi/wwwroot -f || git add ../templates/MyCompany.MyProject.WebApi/wwwroot -f
+        git commit -m "Update Angular build output [skip ci]"
+        
+        git push -u origin $BRANCH_NAME
+        
+        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+    - name: Create Pull Request
+      if: steps.check_changes.outputs.changes == 'true'
+      id: cpr
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        title: "Update Angular build output"
+        body: |
+          This PR updates the Angular build output.
+          
+          *Automated PR created by GitHub Actions*
+        branch: ${{ env.BRANCH_NAME }}
+        base: main
+        draft: false
+        labels: automated-pr, auto-merge
+
+    - name: Enable Auto-Merge
+      if: steps.check_changes.outputs.changes == 'true'
+      run: |
+        PR_NUMBER=$(echo '${{ steps.cpr.outputs.pull-request-number }}')
+        
+        if [ -n "$PR_NUMBER" ]; then
+          echo "Enabling auto-merge for PR #$PR_NUMBER"
+          
+          gh pr merge $PR_NUMBER --auto --merge
+        else
+          echo "No PR number found, skipping auto-merge step"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
