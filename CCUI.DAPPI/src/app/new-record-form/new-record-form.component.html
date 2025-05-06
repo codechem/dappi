@@ -23,6 +23,42 @@
                   [required]="field.required"
                 ></textarea>
               }
+              @case (fieldType.number) {
+                <input
+                  matInput
+                  type="number"
+                  [placeholder]="field.placeholder || ''"
+                  [formControlName]="field.key"
+                  [required]="field.required"
+                  min="0"
+                  step="any"
+                />
+              }
+              @case (fieldType.date) {
+                <ng-container>
+                  <input
+                    matInput
+                    [matDatepicker]="picker"
+                    [placeholder]="field.placeholder || ''"
+                    [formControlName]="field.key"
+                    [required]="field.required"
+                  />
+                  <ng-container matSuffix>
+                    <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
+                  </ng-container>
+                  <mat-datepicker #picker></mat-datepicker>
+                </ng-container>
+              }
+
+              @case (fieldType.select) {
+                <mat-select [formControlName]="field.key">
+                  @for (item of field.relatedItems; track item) {
+                    <mat-option [value]="item">
+                      {{ getRelationDisplayValue(item, field) }}
+                    </mat-option>
+                  }
+                </mat-select>
+              }
               @case (fieldType.collection) {
                 <mat-select [formControlName]="field.key" [multiple]="field.multiple">
                   @for (item of field.relatedItems; track item) {
@@ -48,6 +84,9 @@
                   <mat-option value="User">User</mat-option>
                 </mat-select>
               }
+              @default {
+                <span>Unsupported field type</span>
+              }
             }
             @if (contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched) {
               <mat-error>
@@ -55,6 +94,19 @@
               </mat-error>
             }
           </mat-form-field>
+        }
+
+        @for (field of leftColumnCheckboxFields; track field) {
+          <div class="checkbox-container">
+            <mat-checkbox [formControlName]="field.key" [required]="field.required">
+              {{ field.label }}
+            </mat-checkbox>
+            @if (contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched) {
+              <div class="mat-error checkbox-error">
+                {{ getErrorMessage(field.key) }}
+              </div>
+            }
+          </div>
         }
       </div>
 
@@ -137,6 +189,42 @@
                   [required]="field.required"
                 ></textarea>
               }
+              @case (fieldType.number) {
+                <input
+                  matInput
+                  type="number"
+                  [placeholder]="field.placeholder || ''"
+                  [formControlName]="field.key"
+                  [required]="field.required"
+                  min="0"
+                  step="any"
+                />
+              }
+              @case (fieldType.date) {
+                <ng-container>
+                  <input
+                    matInput
+                    [matDatepicker]="picker"
+                    [placeholder]="field.placeholder || ''"
+                    [formControlName]="field.key"
+                    [required]="field.required"
+                  />
+                  <ng-container matSuffix>
+                    <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
+                  </ng-container>
+                  <mat-datepicker #picker></mat-datepicker>
+                </ng-container>
+              }
+
+              @case (fieldType.select) {
+                <mat-select [formControlName]="field.key">
+                  @for (item of field.relatedItems; track item) {
+                    <mat-option [value]="item">
+                      {{ getRelationDisplayValue(item, field) }}
+                    </mat-option>
+                  }
+                </mat-select>
+              }
               @case (fieldType.collection) {
                 <mat-select [formControlName]="field.key" [multiple]="field.multiple">
                   @for (item of field.relatedItems; track item) {
@@ -169,6 +257,18 @@
               </mat-error>
             }
           </mat-form-field>
+        }
+        @for (field of rightColumnCheckboxFields; track field) {
+          <div class="checkbox-container">
+            <mat-checkbox [formControlName]="field.key" [required]="field.required">
+              {{ field.label }}
+            </mat-checkbox>
+            @if (contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched) {
+              <div class="mat-error checkbox-error">
+                {{ getErrorMessage(field.key) }}
+              </div>
+            }
+          </div>
         }
       </div>
     </div>

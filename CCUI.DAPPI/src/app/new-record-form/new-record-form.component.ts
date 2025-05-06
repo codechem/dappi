@@ -24,6 +24,10 @@ import * as ContentActions from '../state/content/content.actions';
 import { Subscription } from 'rxjs';
 import { MatOption } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDatepickerToggle } from '@angular/material/datepicker';
 
 interface ContentField {
   key: string;
@@ -51,6 +55,10 @@ interface ContentField {
     ReactiveFormsModule,
     MatOption,
     MatSelectModule,
+    MatCheckboxModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatDatepickerToggle,
   ],
   templateUrl: './new-record-form.component.html',
   styleUrls: ['./new-record-form.component.scss'],
@@ -76,6 +84,8 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   leftColumnFields: ContentField[] = [];
   rightColumnFields: ContentField[] = [];
   fileFields: ContentField[] = [];
+  leftColumnCheckboxFields: ContentField[] = [];
+  rightColumnCheckboxFields: ContentField[] = [];
 
   selectedFile: File | null = null;
   filePreviewUrl: string | null = null;
@@ -115,7 +125,13 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   populateFormWithData(itemData: any): void {
     Object.keys(this.contentForm.controls).forEach((key) => {
       if (itemData[key] !== undefined) {
-        this.contentForm.get(key)?.setValue(itemData[key]);
+        const field = this.contentFields.find((f) => f.key === key);
+        if (field && field.type === FieldType.date && itemData[key]) {
+          const dateValue = new Date(itemData[key]);
+          this.contentForm.get(key)?.setValue(dateValue);
+        } else {
+          this.contentForm.get(key)?.setValue(itemData[key]);
+        }
       }
     });
 
@@ -167,11 +183,21 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
         this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
 
-        const nonFileFields = this.contentFields.filter((field) => field.type !== FieldType.file);
-        const halfLength = Math.ceil(nonFileFields.length / 2);
+        const checkboxFields = this.contentFields.filter(
+          (field) => field.type === FieldType.checkbox,
+        );
+        const nonCheckboxNonFileFields = this.contentFields.filter(
+          (field) => field.type !== FieldType.file && field.type !== FieldType.checkbox,
+        );
 
-        this.leftColumnFields = nonFileFields.slice(0, halfLength);
-        this.rightColumnFields = nonFileFields.slice(halfLength);
+        const halfNonCheckboxLength = Math.ceil(nonCheckboxNonFileFields.length / 2);
+        const halfCheckboxLength = Math.ceil(checkboxFields.length / 2);
+
+        this.leftColumnFields = nonCheckboxNonFileFields.slice(0, halfNonCheckboxLength);
+        this.rightColumnFields = nonCheckboxNonFileFields.slice(halfNonCheckboxLength);
+        this.leftColumnCheckboxFields = checkboxFields.slice(0, halfCheckboxLength);
+        this.rightColumnCheckboxFields = checkboxFields.slice(halfCheckboxLength);
+
         this.buildForm();
       }),
     );
@@ -179,7 +205,11 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.relatedItems$.subscribe((items) => {
         this.contentFields = this.contentFields.map((item) => {
-          if (item.type === FieldType.collection || item.type === FieldType.relation) {
+          if (
+            item.type === FieldType.collection ||
+            item.type === FieldType.relation ||
+            item.type === FieldType.select
+          ) {
             return {
               ...item,
               relatedItems: items?.data,
@@ -193,11 +223,21 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
         this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
 
-        const nonFileFields = this.contentFields.filter((field) => field.type !== FieldType.file);
-        const halfLength = Math.ceil(nonFileFields.length / 2);
+        const checkboxFields = this.contentFields.filter(
+          (field) => field.type === FieldType.checkbox,
+        );
+        const nonCheckboxNonFileFields = this.contentFields.filter(
+          (field) => field.type !== FieldType.file && field.type !== FieldType.checkbox,
+        );
 
-        this.leftColumnFields = nonFileFields.slice(0, halfLength);
-        this.rightColumnFields = nonFileFields.slice(halfLength);
+        const halfNonCheckboxLength = Math.ceil(nonCheckboxNonFileFields.length / 2);
+        const halfCheckboxLength = Math.ceil(checkboxFields.length / 2);
+
+        this.leftColumnFields = nonCheckboxNonFileFields.slice(0, halfNonCheckboxLength);
+        this.rightColumnFields = nonCheckboxNonFileFields.slice(halfNonCheckboxLength);
+        this.leftColumnCheckboxFields = checkboxFields.slice(0, halfCheckboxLength);
+        this.rightColumnCheckboxFields = checkboxFields.slice(halfCheckboxLength);
+
         this.buildForm();
       }),
     );
@@ -221,12 +261,20 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
         ? [Validators.required, ...(field.validators || [])]
         : field.validators || [];
 
-      if (
+      if (field.type === FieldType.checkbox) {
+        group[field.key] = [false, validators];
+      } else if (
         field.type === FieldType.collection ||
         field.type === FieldType.relation ||
         field.type === FieldType.role
       ) {
         group[field.key] = [field.multiple ? [] : null, validators];
+      } else if (field.type === FieldType.number) {
+        const numberValidators = [...validators];
+        numberValidators.push(Validators.pattern('^[0-9]+(\\.[0-9]+)?$'));
+        group[field.key] = [0, numberValidators];
+      } else if (field.type === FieldType.date) {
+        group[field.key] = [null, validators];
       } else {
         group[field.key] = ['', validators];
       }
@@ -338,6 +386,12 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           if (relationKey) acc[relationKey] = value.id;
         } else if (field?.type === FieldType.role) {
           acc[key] = Array.isArray(value) ? value : value ? [value] : [];
+        } else if (field?.type === FieldType.date && value) {
+          if (value instanceof Date) {
+            acc[key] = value.toISOString();
+          } else {
+            acc[key] = value;
+          }
         } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
           acc[key] = [{ ...value }];
         } else {
