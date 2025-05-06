@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - angular-build-workflow
 
 permissions:
   contents: write
