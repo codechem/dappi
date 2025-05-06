@@ -1,39 +1,35 @@
-name: Build and Deploy
+name: Build and Update Angular Output
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
 
 jobs:
-  publish-nuget:
+  build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
       with:
-        dotnet-version: 8.0.x
-        
-    - name: Restore dependencies
-      run: dotnet restore
-      
-    - name: Build DependencyInjection project
-      run: dotnet build CCApi.Extensions.DependencyInjection --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
-      
-    - name: Build SourceGenerator project
-      run: dotnet build CCApi.SourceGenerator --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
-      
-    - name: Pack DependencyInjection
-      run: dotnet pack CCApi.Extensions.DependencyInjection --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
-      
-    - name: Pack SourceGenerator
-      run: dotnet pack CCApi.SourceGenerator --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
-      
-    - name: Publish to GitHub Packages
+        node-version: 20
+
+    - name: Install dependencies
+      working-directory: ./CCUI.DAPPI
+      run: npm install
+
+    - name: Build project
+      working-directory: ./CCUI.DAPPI
+      run: npm run build
+
+    - name: Commit and push changes
       run: |
-        dotnet nuget push ./nupkgs/*.nupkg \
-        --source "https://api.nuget.org/v3/index.json" \
-        --api-key ${{ secrets.NUGET_API_KEY }}
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'github-actions@github.com'
+        git add templates/MyCompany.MyProject.WebApi/wwwroot -f || git add ../templates/MyCompany.MyProject.WebApi/wwwroot -f
+        git commit -m "Update build output [skip ci]" || echo "No changes to commit"
+        git push
