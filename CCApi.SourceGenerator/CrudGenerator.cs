@@ -17,16 +17,19 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
         var dbContextData = compilation.GetDbContextInformation();
         if (dbContextData is null)
             throw new NullReferenceException("DbContext data is null");
-        
+
         foreach (var item in collectedData)
         {
             var collectionAddCode = GenerateCollectionAddCode(item);
+            var mediaInfoIncludeCode = GenerateMediaInfoIncludeCode(item);
             var generatedCode = $@"
 using Microsoft.AspNetCore.Mvc;
 using {dbContextData.ResidingNamespace};
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using CCApi.Extensions.DependencyInjection.Models;
+using CCApi.Extensions.DependencyInjection.Interfaces;
 using {item.ModelNamespace};
 
 using {item.RootNamespace}.Filtering;
@@ -34,6 +37,9 @@ using {item.RootNamespace}.HelperDtos;
 using {item.RootNamespace}.Extensions;
 
 using Microsoft.AspNetCore.Authorization;
+using System.IO;
+using Newtonsoft.Json;
+using System.Reflection;
 
 /*
 ==== area for testing ====
@@ -46,66 +52,65 @@ namespace {item.RootNamespace}.Controllers;
 
 [ApiController]
 [Route(""api/[controller]"")]
-public partial class {item.ClassName}Controller({dbContextData.ClassName} dbContext) : ControllerBase
+public partial class {item.ClassName}Controller({dbContextData.ClassName} dbContext, IMediaUploadService uploadService) : ControllerBase
 {{
-     [HttpGet]
-     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET")}
-     public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
-     {{
-         var query = dbContext.{item.ClassName}s{GetIncludesIfAny(item.PropertiesInfos)}.AsQueryable();
+    [HttpGet]
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET")}
+    public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
+    {{
+        {mediaInfoIncludeCode}
 
-         if (filter != null)
-         {{
+        if (filter != null)
+        {{
             query = LinqExtensions.ApplyFiltering(query, filter);
-         }}
+        }}
 
-         if (!string.IsNullOrEmpty(filter.SortBy))
-         {{
+        if (!string.IsNullOrEmpty(filter.SortBy))
+        {{
             query = LinqExtensions.ApplySorting(query, filter.SortBy, filter.SortDirection);
-         }}
+        }}
 
-         var total = await query.CountAsync();
-         var data = await query
-             .Skip(filter.Offset)
-             .Take(filter.Limit)
-             .ToListAsync();
+        var total = await query.CountAsync();
+        var data = await query
+            .Skip(filter.Offset)
+            .Take(filter.Limit)
+            .ToListAsync();
 
-         var listDto = new ListResponseDTO<{item.ClassName}>
-         {{
-             Data = data,
-             Limit = filter.Limit,
-             Offset = filter.Offset,
-             Total = total
-         }};
+        var listDto = new ListResponseDTO<{item.ClassName}>
+        {{
+            Data = data,
+            Limit = filter.Limit,
+            Offset = filter.Offset,
+            Total = total
+        }};
 
         return Ok(listDto);
-     }}
+    }}
 
-     [HttpGet(""{{id}}"")]
+    [HttpGet(""{{id}}"")]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GETBYID")}
-     public async Task<IActionResult> Get{item.ClassName}(Guid id)
-     {{
-         if(id == Guid.Empty)
+    public async Task<IActionResult> Get{item.ClassName}(Guid id)
+    {{
+        if (id == Guid.Empty)
             return BadRequest();
-        
-         var result = await dbContext.{item.ClassName}s
-                        {GetIncludesIfAny(item.PropertiesInfos)}
-                        .FirstOrDefaultAsync(p => p.Id == id);
-         if (result is null)
+
+        {mediaInfoIncludeCode}
+
+        var result = await query.FirstOrDefaultAsync(p => p.Id == id);
+
+        if (result is null)
             return NotFound();
 
-         // transform to DTO before return
-         return Ok(result);
-     }}
-
+        return Ok(result);
+    }}
 
     [HttpPost]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "POST")}
     public async Task<IActionResult> Create([FromBody] {item.ClassName} model)
     {{
-        if(model is null) 
+        if (model is null)
             return BadRequest();
-        
+
         var modelToSave = new {item.ClassName}();
         modelToSave = model;
 
@@ -120,49 +125,103 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
     [HttpPut(""{{id}}"")]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "PUT")}
     public async Task<IActionResult> Update(Guid id, [FromBody] {item.ClassName} model)
-     {{
-         if (model == null || id == Guid.Empty)
+    {{
+        if (model == null || id == Guid.Empty)
             return BadRequest(""Invalid data provided."");
 
-         var existingModel = await dbContext.{item.ClassName}s.FirstOrDefaultAsync(p => p.Id == id);
-         if (existingModel == null)
+        var existingModel = await dbContext.{item.ClassName}s.FirstOrDefaultAsync(p => p.Id == id);
+        if (existingModel == null)
             return NotFound($""{item.ClassName}s with ID {{id}} not found."");
 
-         model.Id = id;
-         dbContext.Entry(existingModel).CurrentValues.SetValues(model);
+        model.Id = id;
+        dbContext.Entry(existingModel).CurrentValues.SetValues(model);
 
-         await dbContext.SaveChangesAsync();
-         return Ok(existingModel);
+        await dbContext.SaveChangesAsync();
+        return Ok(existingModel);
     }}
 
-     [HttpDelete(""{{id}}"")]
-     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "DELETE")}
-     public async Task<IActionResult> Delete(Guid id)
-     {{
-         var model = dbContext.{item.ClassName}s.FirstOrDefault(p => p.Id == id);
-         if (model is null)
+    [HttpDelete(""{{id}}"")]
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "DELETE")}
+    public async Task<IActionResult> Delete(Guid id)
+    {{
+        var model = dbContext.{item.ClassName}s.FirstOrDefault(p => p.Id == id);
+        if (model is null)
             return NotFound();
 
-         dbContext.{item.ClassName}s.Remove(model);
-         await dbContext.SaveChangesAsync();
+        dbContext.{item.ClassName}s.Remove(model);
+        await dbContext.SaveChangesAsync();
 
-         return Ok();
-     }}
+        return Ok();
+    }}
 
-     private dynamic GetDbSetForType(string typeName)
-     {{
+    [HttpPost(""upload-file/{{id}}"")]
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "POST")}
+    public async Task<IActionResult> UploadFile(Guid id, IFormFile file, [FromForm] string fieldName)
+    {{
+        if (string.IsNullOrEmpty(fieldName))
+            return BadRequest(""Field name is required."");
+
+        try
+        {{
+            var entity = await dbContext.{item.ClassName}s.FindAsync(id);
+
+            if (entity == null)
+                return NotFound($""{item.ClassName} with ID {{id}} not found."");
+
+            var property = typeof({item.ClassName}).GetProperty(fieldName);
+            if (property == null)
+                return BadRequest($""Property {{fieldName}} does not exist."");
+
+            if (property.PropertyType != typeof(MediaInfo))
+                return BadRequest($""Property {{fieldName}} must be a MediaInfo type to store media information."");
+
+            var mediaInfo = await uploadService.UploadMediaAsync(id, file);
+            property.SetValue(entity, mediaInfo);
+
+            await dbContext.Set<MediaInfo>().AddAsync(mediaInfo);
+            await dbContext.SaveChangesAsync();
+
+            dbContext.Entry(entity).State = EntityState.Modified;
+            await dbContext.SaveChangesAsync();
+
+            return Ok(mediaInfo);
+        }}
+        catch (Exception ex)
+        {{
+            return BadRequest(new {{ message = ex.Message }});
+        }}
+    }}
+
+    private dynamic GetDbSetForType(string typeName)
+    {{
         var dbSetProperty = dbContext.GetType()
             .GetProperties()
-            .FirstOrDefault(p => 
-                p.PropertyType.IsGenericType && 
+            .FirstOrDefault(p =>
+                p.PropertyType.IsGenericType &&
                 p.PropertyType.GetGenericArguments()[0].Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
 
         return dbSetProperty?.GetValue(dbContext);
     }}
 }}
 ";
+            ;
             context.AddSource($"{item.ClassName}Controller.cs", generatedCode);
         }
+    }
+
+    private static string GenerateMediaInfoIncludeCode(SourceModel model)
+    {
+        return $@"
+        var mediaInfoProperties = typeof({model.ClassName}).GetProperties()
+            .Where(p => p.PropertyType == typeof(MediaInfo))
+            .ToList();
+            
+        var query = dbContext.{model.ClassName}s.AsQueryable();
+        
+        foreach (var prop in mediaInfoProperties)
+        {{
+            query = query.Include(prop.Name);
+        }}";
     }
 
     private static string GenerateCollectionAddCode(SourceModel model)

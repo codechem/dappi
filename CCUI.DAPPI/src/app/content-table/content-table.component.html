@@ -9,7 +9,7 @@
         <mat-icon class="search-icon">search</mat-icon>
         <input
           type="text"
-          placeholder="Type to search..."
+          placeholder="Type to search...."
           [(ngModel)]="searchText"
           (ngModelChange)="onSearchTextChange($event)"
           aria-label="Search content"
@@ -96,7 +96,15 @@
                       [src]="getCellDisplay(item, header)"
                       class="file-preview"
                       alt="{{ header.label }}"
+                      (click)="openImageViewer(getCellDisplay(item, header), header.label)"
                     />
+                    @if (isImageViewerOpen && currentImageUrl === getCellDisplay(item, header)) {
+                      <app-image-viewer
+                        [imageUrl]="currentImageUrl"
+                        [title]="currentImageTitle"
+                        (closed)="closeImageViewer()"
+                      ></app-image-viewer>
+                    }
                   }
                 } @else {
                   @if (header.type === fieldType.relation || header.type === fieldType.collection) {

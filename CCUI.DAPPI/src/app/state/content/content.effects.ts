@@ -6,7 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngrx/store';
 import * as ContentActions from './content.actions';
 import { selectItemsPerPage, selectSelectedType } from './content.selectors';
-import { FieldType, ModelField, PaginatedResponse, TableHeader } from '../../models/content.model';
+import { FieldType, ModelField, PaginatedResponse } from '../../models/content.model';
 import { BASE_API_URL } from '../../../Constants';
 
 @Injectable()
@@ -153,7 +153,7 @@ export class ContentEffects {
         const endpoint = `${BASE_API_URL}${action.contentType.toLowerCase().replace(/\s+/g, '-')}`;
 
         return this.http
-          .post(endpoint, action.formData, {
+          .post<any>(endpoint, action.formData, {
             headers: {
               // Don't set Content-Type here - Angular will set it automatically
               // with the correct boundary for multipart/form-data
@@ -161,7 +161,7 @@ export class ContentEffects {
           })
           .pipe(
             map((response) => {
-              this.store.dispatch(ContentActions.createContentSuccess());
+              this.store.dispatch(ContentActions.createContentSuccess({ id: response.id }));
               return ContentActions.loadContent({
                 selectedType: action.contentType,
                 page: 1,
@@ -177,6 +177,40 @@ export class ContentEffects {
     ),
   );
 
+  uploadFile$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ContentActions.uploadFile),
+      mergeMap((action) => {
+        const endpoint = `${BASE_API_URL}${action.contentType
+          .toLowerCase()
+          .replace(/\s+/g, '-')}/upload-file/${action.id}`;
+
+        const formData = new FormData();
+        formData.append('file', action.file);
+        formData.append('fieldName', action.fieldName);
+
+        return this.http.post(endpoint, formData).pipe(
+          map((response: any) => {
+            this.store.dispatch(
+              ContentActions.loadContent({
+                selectedType: action.contentType,
+                page: 1,
+                limit: 10,
+                searchText: '',
+              }),
+            );
+
+            return ContentActions.uploadFileSuccess({
+              fileName: response.originalFileName,
+              size: response.fileSize,
+            });
+          }),
+          catchError((error) => of(ContentActions.uploadFileFailure({ error: error.message }))),
+        );
+      }),
+    ),
+  );
+
   updateContent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ContentActions.updateContent),
@@ -187,14 +221,14 @@ export class ContentEffects {
           .replace(/\s+/g, '-')}/${action.id}`;
 
         return this.http
-          .put(endpoint, action.formData, {
+          .put<any>(endpoint, action.formData, {
             headers: {
               // Don't set Content-Type here - Angular will set it automatically
             },
           })
           .pipe(
             map((response) => {
-              this.store.dispatch(ContentActions.createContentSuccess());
+              this.store.dispatch(ContentActions.createContentSuccess({ id: response.id }));
               return ContentActions.loadContent({
                 selectedType: action.contentType,
                 page: 1,
@@ -235,7 +269,7 @@ export class ContentEffects {
 
     if (
       !lowerFieldType.includes('string') &&
-      !lowerFieldType.includes('byte[]') &&
+      !lowerFieldType.includes('mediainfo') &&
       !lowerFieldType.includes('blob') &&
       !lowerFieldType.includes('icollection') &&
       !lowerFieldType.includes('guid') &&
@@ -248,7 +282,7 @@ export class ContentEffects {
         'decimal',
         'long',
         'short',
-        'byte',
+        'mediainfo',
         'boolean',
         'bool',
         'date',
@@ -263,7 +297,7 @@ export class ContentEffects {
 
     // File types
     if (
-      lowerFieldType.includes('byte[]') ||
+      lowerFieldType.includes('mediainfo') ||
       lowerFieldType.includes('blob') ||
       lowerFieldType === 'binary'
     ) {

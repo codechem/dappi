@@ -28,6 +28,7 @@ import * as ContentActions from '../state/content/content.actions';
 import { Subscription } from 'rxjs';
 import { ContentItem, FieldType, TableHeader } from '../models/content.model';
 import { DrawerComponent } from '../relation-drawer/drawer.component';
+import { ImageViewerComponent } from '../image-viewer/image-viewer.component';
 
 @Component({
   selector: 'app-content-table',
@@ -41,6 +42,7 @@ import { DrawerComponent } from '../relation-drawer/drawer.component';
     MatMenuModule,
     MenuComponent,
     DrawerComponent,
+    ImageViewerComponent,
   ],
   templateUrl: './content-table.component.html',
   styleUrl: './content-table.component.scss',
@@ -60,6 +62,10 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   drawerTitle = '';
   drawerData: any = null;
   drawerType: FieldType | null = null;
+
+  isImageViewerOpen = false;
+  currentImageUrl: SafeUrl | string = '';
+  currentImageTitle = '';
 
   selectedType$ = this.store.select(selectSelectedType);
   isSearching$ = this.store.select(selectIsSearching);
@@ -103,6 +109,19 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
 
   closeDrawer(): void {
     this.isDrawerOpen = false;
+  }
+
+  openImageViewer(imageUrl: SafeUrl | string, title: string): void {
+    this.currentImageUrl = imageUrl;
+    this.currentImageTitle = title;
+    this.isImageViewerOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeImageViewer(): void {
+    this.isImageViewerOpen = false;
+    this.currentImageUrl = '';
+    document.body.style.overflow = '';
   }
 
   getRelationDisplay(item: ContentItem, header: TableHeader): string {
@@ -292,20 +311,6 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  convertToImage(byteArray: ArrayBuffer | string): SafeUrl {
-    if (!byteArray) return '';
-
-    if (typeof byteArray === 'string') {
-      return this.sanitizer.bypassSecurityTrustUrl(byteArray);
-    }
-
-    const base64 = btoa(
-      new Uint8Array(byteArray).reduce((data, byte) => data + String.fromCharCode(byte), ''),
-    );
-
-    return this.sanitizer.bypassSecurityTrustUrl(`data:image/jpeg;base64,${base64}`);
-  }
-
   getCellDisplay(item: ContentItem, header: TableHeader) {
     const value = item[header.key];
 
@@ -315,7 +320,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
 
     switch (header.type) {
       case FieldType.file:
-        return this.convertToImage(value);
+        return value.url;
 
       case FieldType.date:
         return this.formatDate(value);

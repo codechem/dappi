@@ -147,7 +147,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
             type = 'Checkbox';
             iconName = 'check_box';
             break;
-          case 'byte[]':
+          case 'MediaInfo':
             type = 'Media';
             iconName = 'perm_media';
             break;

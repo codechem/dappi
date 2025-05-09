@@ -523,6 +523,7 @@ namespace {rootNamespace}.Controllers
              sb.AppendLine(""using System.ComponentModel.DataAnnotations;"");
              sb.AppendLine(""using System.ComponentModel.DataAnnotations.Schema;"");
              sb.AppendLine(""using CCApi.SourceGenerator.Attributes;"");
+             sb.AppendLine(""using CCApi.Extensions.DependencyInjection.Models;"");
              sb.AppendLine($""namespace {{asm}}.Entities;"");
              sb.AppendLine(""[CCController]"");
              sb.AppendLine($""public class {{modelType.Name}}"");

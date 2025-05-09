@@ -9,7 +9,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Http;
 using CCApi.Extensions.DependencyInjection.Services.Identity;
-using CCApi.Extensions.DependencyInjection.Constants;
+using CCApi.Extensions.DependencyInjection.Interfaces;
+using CCApi.Extensions.DependencyInjection.Services;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -24,6 +25,8 @@ public static class ServiceExtensions
     {
         services.AddDbContext<TDbContext>(dbContextOptions ?? (builder =>
             builder.UseNpgsql(configuration.GetValue<string>(Constants.Configuration.PostgresConnection))));
+
+        services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
 #if DEBUG
         services.AddDappiSwaggerGen();
 #endif
