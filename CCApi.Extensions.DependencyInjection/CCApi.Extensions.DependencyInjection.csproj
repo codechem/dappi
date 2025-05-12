@@ -5,9 +5,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <!-- Required package metadata -->
-        <PackageId>Dappi.Extensions.DependencyInjection</PackageId>
+        <PackageId>Dappi.HeadlessCms</PackageId>
         <Authors>CodeChem</Authors>
-        <Description>DependencyInjection for Dappi</Description>
+        <Description>A .NET Headless CMS with Source Generation.</Description>
     </PropertyGroup>
 
     <ItemGroup>
