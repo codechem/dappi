@@ -8,20 +8,9 @@
     <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
  
-<<<<<<< HEAD
   <ItemGroup>
     <Folder Include="Controllers\" />
     <Folder Include="Entities\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Dappi.Extensions.DependencyInjection" />
-    <PackageReference Include="Dappi.Extensions.SourceGenerator" />
-=======
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-    <Folder Include="Entities\" />
->>>>>>> 938790c (chore: Remove uneeded stuff from template project)
   </ItemGroup>
 
   <ItemGroup>
