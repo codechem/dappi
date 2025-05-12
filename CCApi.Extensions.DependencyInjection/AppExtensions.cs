@@ -1,7 +1,6 @@
 using CCApi.Extensions.DependencyInjection;
 using CCApi.Extensions.DependencyInjection.Constants;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
