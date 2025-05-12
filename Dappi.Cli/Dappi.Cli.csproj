@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
     <AssemblyInformationalVersionAttribute>1.0.0</AssemblyInformationalVersionAttribute>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dappi</ToolCommandName>
@@ -11,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="McMaster.Extensions.Hosting.CommandLine" Version="4.1.1" />
+    <PackageReference Include="Microsoft.Build" Version="17.13.9" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4" />
     <PackageReference Include="Octokit" Version="14.0.0" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />

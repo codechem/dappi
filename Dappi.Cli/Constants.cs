@@ -31,5 +31,4 @@ public static class Constants
     public const string DappiRepoName = "dappi";
 
     public const bool UsePrerelease = true;
-    
 }
