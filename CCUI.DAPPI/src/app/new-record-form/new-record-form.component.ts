@@ -111,7 +111,18 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   getRelationDisplayValue(item: any, field: ContentField): string {
     if (!item) return '';
 
-    const displayKeys = ['name', 'title', 'label', 'displayName', 'value'];
+    const displayKeys = [
+      'name',
+      'title',
+      'label',
+      'displayName',
+      'value',
+      'Name',
+      'Title',
+      'Label',
+      'DisplayName',
+      'Value',
+    ];
 
     for (const key of displayKeys) {
       if (item[key] !== undefined && item[key] !== null) {
@@ -214,7 +225,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           ) {
             return {
               ...item,
-              relatedItems: items?.data,
+              relatedItems: items?.Data,
             };
           } else return item;
         });
@@ -410,25 +421,23 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   }
 
   private submitToBackend(formData: any): void {
-    if (this.currentItem === undefined) {
-      this.store.dispatch(
-        ContentActions.createContent({
-          formData: formData,
-          contentType: this.selectedType,
-        }),
-      );
+    this.store.dispatch(
+      ContentActions.createContent({
+        formData: formData,
+        contentType: this.selectedType,
+      }),
+    );
 
-      this.subscriptions.add(
-        this.actions$
-          .pipe(ofType(ContentActions.createContentSuccess), take(1))
-          .subscribe((action) => {
-            const newId = action.id;
-            if (newId && this.selectedFile) {
-              this.uploadFileIfExists(newId);
-            }
-          }),
-      );
-    }
+    this.subscriptions.add(
+      this.actions$
+        .pipe(ofType(ContentActions.createContentSuccess), take(1))
+        .subscribe((action) => {
+          const newId = action.id;
+          if (newId && this.selectedFile) {
+            this.uploadFileIfExists(newId);
+          }
+        }),
+    );
   }
 
   private uploadFileIfExists(recordId: string): void {

@@ -33,6 +33,7 @@ public static class ServiceExtensions
         services.AddControllers()
             .AddJsonOptions(jsonOptions ?? (options =>
             {
+                options.JsonSerializerOptions.PropertyNamingPolicy = null;
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
             }));
 

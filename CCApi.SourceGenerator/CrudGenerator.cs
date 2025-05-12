@@ -21,7 +21,7 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
         foreach (var item in collectedData)
         {
             var collectionAddCode = GenerateCollectionAddCode(item);
-            var mediaInfoIncludeCode = GenerateMediaInfoIncludeCode(item);
+            var mediaInfoIncludeCode = GenerateMediaInfoOrRelationIncludeCode(item);
             var generatedCode = $@"
 using Microsoft.AspNetCore.Mvc;
 using {dbContextData.ResidingNamespace};
@@ -38,7 +38,6 @@ using {item.RootNamespace}.Extensions;
 
 using Microsoft.AspNetCore.Authorization;
 using System.IO;
-using Newtonsoft.Json;
 using System.Reflection;
 
 /*
@@ -96,7 +95,9 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
 
         {mediaInfoIncludeCode}
 
-        var result = await query.FirstOrDefaultAsync(p => p.Id == id);
+        var result = await dbContext.{item.ClassName}s
+                        {GetIncludesIfAny(item.PropertiesInfos)}
+                        .FirstOrDefaultAsync(p => p.Id == id);
 
         if (result is null)
             return NotFound();
@@ -209,7 +210,7 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
         }
     }
 
-    private static string GenerateMediaInfoIncludeCode(SourceModel model)
+    private static string GenerateMediaInfoOrRelationIncludeCode(SourceModel model)
     {
         return $@"
         var mediaInfoProperties = typeof({model.ClassName}).GetProperties()
@@ -217,13 +218,14 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
             .ToList();
             
         var query = dbContext.{model.ClassName}s.AsQueryable();
+       
+       query = query{GetIncludesIfAny(model.PropertiesInfos)};
         
         foreach (var prop in mediaInfoProperties)
         {{
             query = query.Include(prop.Name);
         }}";
     }
-
     private static string GenerateCollectionAddCode(SourceModel model)
     {
         var collectionProperties = model.PropertiesInfos
@@ -271,5 +273,4 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
         || x.PropertyType.Name.Contains("List")
         || x.PropertyType.Name.Contains("ICollection");
     }
-    
 }

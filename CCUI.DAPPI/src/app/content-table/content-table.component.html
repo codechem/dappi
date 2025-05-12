@@ -73,17 +73,17 @@
       </tr>
     </thead>
     <tbody>
-      @for (item of items; track item.id) {
+      @for (item of items; track item.Id) {
         <tr
           class="content-row"
           role="row"
-          [attr.aria-selected]="activeMenuItemId === item.id || selectedItems.has(item.id)"
-          [class.selected]="selectedItems.has(item.id)"
+          [attr.aria-selected]="activeMenuItemId === item.Id || selectedItems.has(item.Id)"
+          [class.selected]="selectedItems.has(item.Id)"
         >
           <td class="small-cell" role="cell">
             <mat-checkbox
-              [checked]="selectedItems.has(item.id)"
-              (change)="toggleSelectItem($event, item.id)"
+              [checked]="selectedItems.has(item.Id)"
+              (change)="toggleSelectItem($event, item.Id)"
             >
             </mat-checkbox>
           </td>
@@ -136,7 +136,7 @@
               mat-icon-button
               (click)="toggleMenu(item, $event)"
               aria-haspopup="true"
-              [attr.aria-expanded]="activeMenuItemId === item.id"
+              [attr.aria-expanded]="activeMenuItemId === item.Id"
             >
               <mat-icon>more_vert</mat-icon>
             </button>

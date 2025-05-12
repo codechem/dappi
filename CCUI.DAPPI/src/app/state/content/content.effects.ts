@@ -32,7 +32,7 @@ export class ContentEffects {
               ContentActions.loadContentSuccess({
                 items: {
                   ...response,
-                  data: response.data,
+                  data: response.Data,
                 },
               }),
             ),
@@ -76,7 +76,7 @@ export class ContentEffects {
               const isRelation = fieldType === FieldType.relation;
 
               return {
-                key: this.toCamelCase(field.fieldName),
+                key: field.fieldName,
                 label: this.formatHeaderLabel(field.fieldName),
                 type: fieldType,
                 relatedTo: isRelation ? field.fieldType : this.getRelatedType(field.fieldType),
@@ -153,7 +153,7 @@ export class ContentEffects {
         const endpoint = `${BASE_API_URL}${action.contentType.toLowerCase().replace(/\s+/g, '-')}`;
 
         return this.http
-          .post<any>(endpoint, action.formData, {
+          .post<{ Id: string }>(endpoint, action.formData, {
             headers: {
               // Don't set Content-Type here - Angular will set it automatically
               // with the correct boundary for multipart/form-data
@@ -161,7 +161,7 @@ export class ContentEffects {
           })
           .pipe(
             map((response) => {
-              this.store.dispatch(ContentActions.createContentSuccess({ id: response.id }));
+              this.store.dispatch(ContentActions.createContentSuccess({ id: response.Id }));
               return ContentActions.loadContent({
                 selectedType: action.contentType,
                 page: 1,
@@ -246,10 +246,6 @@ export class ContentEffects {
 
   private getRelatedType(fieldType: string): string | undefined {
     return fieldType.includes('ICollection') ? fieldType.match(/<([^>]+)>/)?.[1] : undefined;
-  }
-
-  private toCamelCase(name: string): string {
-    return name.charAt(0).toLowerCase() + name.slice(1);
   }
 
   private formatHeaderLabel(key: string): string {

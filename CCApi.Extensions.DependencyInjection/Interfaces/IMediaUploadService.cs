@@ -10,6 +10,5 @@ namespace CCApi.Extensions.DependencyInjection.Interfaces
     public interface IMediaUploadService
     {
         public Task<MediaInfo> UploadMediaAsync(Guid id, IFormFile file);
-        public string GetContentType(string fileExtension);
     }
 }

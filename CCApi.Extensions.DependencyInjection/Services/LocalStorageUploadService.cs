@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Net.Mime;
 using CCApi.Extensions.DependencyInjection.Interfaces;
 using CCApi.Extensions.DependencyInjection.Models;
 using Microsoft.AspNetCore.Http;
@@ -51,14 +48,14 @@ namespace CCApi.Extensions.DependencyInjection.Services
             return mediaInfo;
         }
 
-        public string GetContentType(string fileExtension)
+        private string GetContentType(string fileExtension)
         {
             return fileExtension.ToLower() switch
             {
-                ".pdf" => "application/pdf",
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".gif" => "image/gif",
+                ".pdf" => MediaTypeNames.Application.Pdf,
+                ".jpg" or ".jpeg" => MediaTypeNames.Image.Jpeg,
+                ".png" => MediaTypeNames.Image.Png,
+                ".gif" => MediaTypeNames.Image.Gif,
                 _ => "unsupported",
             };
         }

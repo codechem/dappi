@@ -243,7 +243,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     this.selectedItems.clear();
 
     if (checked) {
-      this.items.forEach((item) => this.selectedItems.add(item.id));
+      this.items.forEach((item) => this.selectedItems.add(item.Id));
     }
   }
 
@@ -320,7 +320,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
 
     switch (header.type) {
       case FieldType.file:
-        return value.url;
+        return value.Url;
 
       case FieldType.date:
         return this.formatDate(value);
@@ -375,7 +375,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   toggleMenu(item: ContentItem, event: MouseEvent): void {
     event.stopPropagation();
 
-    if (this.activeMenuItemId === item.id) {
+    if (this.activeMenuItemId === item.Id) {
       this.activeMenuItemId = undefined;
     } else {
       const buttonRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
@@ -394,12 +394,12 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
         left: positionLeft,
       };
 
-      this.activeMenuItemId = item.id;
+      this.activeMenuItemId = item.Id;
     }
   }
 
   getSelectedItem(): ContentItem | null {
-    return this.items.find((item) => item.id === this.activeMenuItemId) || null;
+    return this.items.find((item) => item.Id === this.activeMenuItemId) || null;
   }
 
   @HostListener('document:click')
@@ -424,7 +424,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     if (confirmDelete) {
       this.store.dispatch(
         ContentActions.deleteContent({
-          id: item.id,
+          id: item.Id,
           contentType: this.selectedType ?? '',
         }),
       );
