@@ -10,6 +10,30 @@ export const loadContent = createAction(
     searchText: string;
   }>(),
 );
+
+export const uploadFile = createAction(
+  '[Content] Upload File',
+  props<{
+    id: string;
+    file: File;
+    fieldName: string;
+    contentType: string;
+  }>(),
+);
+
+export const uploadFileSuccess = createAction(
+  '[Content] Upload File Success',
+  props<{
+    fileName: string;
+    size: number;
+  }>(),
+);
+
+export const uploadFileFailure = createAction(
+  '[Content] Upload File Failure',
+  props<{ error: string }>(),
+);
+
 export const loadRelatedItems = createAction(
   '[Content] Load Related Items',
   props<{
@@ -110,8 +134,10 @@ export const createContent = createAction(
   props<{ formData: any; contentType: string }>(),
 );
 
-export const createContentSuccess = createAction('[Content] Create Content Success');
-
+export const createContentSuccess = createAction(
+  '[Content] Create Content Success',
+  props<{ id: string }>(),
+);
 export const createContentFailure = createAction(
   '[Content] Create Content Failure',
   props<{ error: string }>(),

@@ -83,7 +83,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       label: 'Media',
       description: 'For uploading images or videos',
       value: 'media',
-      netType: 'byte[]',
+      netType: 'MediaInfo',
     },
     {
       icon: 'link',
@@ -266,7 +266,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
         label: 'Media',
         description: 'For uploading images or videos',
         value: 'media',
-        netType: 'byte[]',
+        netType: 'MediaInfo',
       },
       {
         icon: 'link',

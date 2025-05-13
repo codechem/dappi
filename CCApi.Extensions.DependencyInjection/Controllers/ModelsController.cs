@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Text.RegularExpressions;
+using CCApi.Extensions.DependencyInjection.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CCApi.Extensions.DependencyInjection.Controllers
@@ -502,6 +503,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             sb.AppendLine("using System.ComponentModel.DataAnnotations;");
             sb.AppendLine("using System.ComponentModel.DataAnnotations.Schema;");
             sb.AppendLine("using CCApi.SourceGenerator.Attributes;");
+            sb.AppendLine("using CCApi.Extensions.DependencyInjection.Models;");
             sb.AppendLine($"namespace {assemblyName}.Entities;");
             sb.AppendLine("[CCController]");
             sb.AppendLine($"public class {modelType.Name}");
@@ -529,9 +531,9 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             return Ok(fieldData);
         }
 
-        private List<object> ExtractFieldsFromModel(string classCode)
+        private List<FieldsInfo> ExtractFieldsFromModel(string classCode)
         {
-            var fieldList = new List<object>();
+            var fieldList = new List<FieldsInfo>();
             var propertyPattern = new Regex(@"public\s+(required\s+)?([\w<>\[\]?]+)\s+(\w+)\s*\{\s*get;\s*set;\s*\}", RegexOptions.Multiline);
 
             var matches = propertyPattern.Matches(classCode);
@@ -550,7 +552,12 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                         fieldType = fieldType.TrimEnd('?');
                     }
 
-                    fieldList.Add(new { FieldName = fieldName, FieldType = fieldType, IsRequired = isRequired });
+                    fieldList.Add(new FieldsInfo
+                    {
+                        FieldName = fieldName,
+                        FieldType = fieldType,
+                        IsRequired = isRequired
+                    });
                 }
             }
             return fieldList;

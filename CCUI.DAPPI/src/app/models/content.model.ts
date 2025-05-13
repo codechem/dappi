@@ -1,5 +1,5 @@
 export interface ContentItem {
-  id: string;
+  Id: string;
   [key: string]: any;
 }
 
@@ -7,7 +7,7 @@ export interface PaginatedResponse {
   total: number;
   offset: number;
   limit: number;
-  data: ContentItem[];
+  Data: ContentItem[];
 }
 
 export enum FieldType {
@@ -36,11 +36,6 @@ export interface ApiResponse<T> {
   offset: number;
   limit: number;
   data: T[];
-}
-
-export interface ModelField {
-  fieldName: string;
-  fieldType: string;
 }
 
 export interface PaginatedResponse {

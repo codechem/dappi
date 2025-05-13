@@ -1,0 +1,42 @@
+<div class="image-viewer-overlay" (click)="onOverlayClick($event)">
+  <div class="image-viewer-container">
+    <div class="image-viewer-header">
+      <h2 class="image-viewer-title">{{ title }}</h2>
+      <button class="close-button" (click)="close()" aria-label="Close image viewer">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="image-viewer-content">
+      <img
+        [src]="imageUrl"
+        [style.transform]="'scale(' + zoomLevel + ')'"
+        alt="Full size image"
+        class="viewer-image"
+      />
+    </div>
+
+    <div class="image-viewer-footer">
+      <button
+        class="zoom-button"
+        (click)="zoomOut()"
+        [disabled]="zoomLevel <= 0.5"
+        aria-label="Zoom out"
+      >
+        <mat-icon>zoom_out</mat-icon>
+      </button>
+      <span class="zoom-level">{{ (zoomLevel * 100).toFixed(0) }}%</span>
+      <button
+        class="zoom-button"
+        (click)="zoomIn()"
+        [disabled]="zoomLevel >= 3"
+        aria-label="Zoom in"
+      >
+        <mat-icon>zoom_in</mat-icon>
+      </button>
+      <button class="zoom-button" (click)="resetZoom()" aria-label="Reset zoom">
+        <mat-icon>zoom_out_map</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>
