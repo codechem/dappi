@@ -8,6 +8,7 @@ import * as ContentActions from './content.actions';
 import { selectItemsPerPage, selectSelectedType } from './content.selectors';
 import { FieldType, ModelField, PaginatedResponse } from '../../models/content.model';
 import { BASE_API_URL } from '../../../Constants';
+import { MediaInfo } from '../../models/media-info.model';
 
 @Injectable()
 export class ContentEffects {
@@ -189,8 +190,8 @@ export class ContentEffects {
         formData.append('file', action.file);
         formData.append('fieldName', action.fieldName);
 
-        return this.http.post(endpoint, formData).pipe(
-          map((response: any) => {
+        return this.http.post<MediaInfo>(endpoint, formData).pipe(
+          map((response: MediaInfo) => {
             this.store.dispatch(
               ContentActions.loadContent({
                 selectedType: action.contentType,
@@ -201,8 +202,8 @@ export class ContentEffects {
             );
 
             return ContentActions.uploadFileSuccess({
-              fileName: response.originalFileName,
-              size: response.fileSize,
+              fileName: response.OriginalFileName,
+              size: response.FileSize,
             });
           }),
           catchError((error) => of(ContentActions.uploadFileFailure({ error: error.message }))),
@@ -228,7 +229,7 @@ export class ContentEffects {
           })
           .pipe(
             map((response) => {
-              this.store.dispatch(ContentActions.createContentSuccess({ id: response.id }));
+              this.store.dispatch(ContentActions.createContentSuccess({ id: response.Id }));
               return ContentActions.loadContent({
                 selectedType: action.contentType,
                 page: 1,
