@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/pill/pill.component.scss", "src/_variables.scss"],
+  "sourcesContent": ["@use '../../variables' as vars;\n\n.status-pill {\n  border: 1px solid;\n  border-radius: 12px;\n  padding: 4px 12px;\n  font-size: 12px;\n  font-weight: bold;\n}\n\n.published {\n  border-color: vars.$success-main;\n  color: vars.$success-main;\n}\n\n.draft {\n  border-color: vars.$default-enabled-border;\n  color: vars.$text-primary;\n}\n", "@use '@angular/material' as mat;\n\n$background-default: #121212;\n$background-paper-elevation-1: #1e1e1e;\n$background-paper-elevation-2: #232323;\n$background-paper-elevation-8: #2e2e2e;\n$background-hover: rgba(255, 255, 255, 0.2);\n\n$primary-main: #ac99ea;\n$info-main: #29b6f6;\n$success-main: #66bb6a;\n$primary-outlined-border: 1px solid\n  rgba(\n    $color: #d5ccf5,\n    $alpha: 0.5,\n  );\n$primary-selected: rgba(#d5ccf5, 0.16);\n$primary-focus: rgba(#d5ccf5, 0.12);\n$primary-contrast-text: #212121;\n$text-primary: #ffffff;\n$text-secondary: rgba(\n  $color: #ffffff,\n  $alpha: 0.7,\n);\n\n$divider: 1px solid rgba(#ffffff, 0.12);\n\n$action-active: rgba(#ffffff, 0.56);\n$action-disabled-background: rgba(\n  $color: #ffffff,\n  $alpha: 0.12,\n);\n$action-disabled: rgba(\n  $color: #ffffff,\n  $alpha: 0.38,\n);\n\n$error-light: #ef5350;\n\n$default-enabled-border: #616161;\n"],
+  "mappings": ";AAEA,CAAA;AACE,UAAA,IAAA;AACA,iBAAA;AACA,WAAA,IAAA;AACA,aAAA;AACA,eAAA;;AAGF,CAAA;AACE,gBCDa;ADEb,SCFa;;ADKf,CAAA;AACE,gBCuBuB;ADtBvB,SCEa;;",
+  "names": []
+}
