@@ -27,9 +27,8 @@ public static class ServiceExtensions
             builder.UseNpgsql(configuration.GetValue<string>(Constants.Configuration.PostgresConnection))));
 
         services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
-#if DEBUG
         services.AddDappiSwaggerGen();
-#endif
+      
         services.AddControllers()
             .AddJsonOptions(jsonOptions ?? (options =>
             {
@@ -38,17 +37,6 @@ public static class ServiceExtensions
             }));
 
         services.AddEndpointsApiExplorer();
-
-        if (configuration.IsDappiUiConfigured())
-        {
-            services.AddCors(options =>
-            {
-                options.AddPolicy(Constants.CorsPolicies.AllowDappiAngularApp,
-                    policy => policy.WithOrigins(configuration.GetValue<string>(Constants.Configuration.FrontendUrl)!)
-                        .AllowAnyHeader()
-                        .AllowAnyMethod());
-            });
-        }
 
         return services;
     }

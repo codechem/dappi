@@ -12,7 +12,7 @@ internal class Program
 
         var app = builder.Build();
 
-        await app.UseDappi();
+        await app.UseDappi<AppDbContext>();
         
         app.UseHttpsRedirection();
         app.MapControllers();

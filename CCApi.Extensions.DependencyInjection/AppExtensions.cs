@@ -11,26 +11,19 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class AppExtensions
 {
-    public static async Task<IApplicationBuilder> UseDappi(this WebApplication app,
-        Action<SwaggerUIOptions>? configureSwagger = null,
-        Action<CorsPolicyBuilder>? configureCors = null)
+    public static async Task<IApplicationBuilder> UseDappi<TDbContext>(this WebApplication app,
+        Action<SwaggerUIOptions>? configureSwagger = null)
+       where TDbContext : DbContext
     {
-        if (configureCors is not null)
-            app.UseCors(configureCors);
-
-        if (app.Configuration.IsDappiUiConfigured())
-            app.UseCors(Constants.CorsPolicies.AllowDappiAngularApp);
-
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
-            app.UseSwaggerUI(c =>
+            app.UseSwaggerUI(configureSwagger ?? (c =>
             {
                 c.SwaggerEndpoint("/swagger/Toolkit/swagger.json", "Toolkit API v1");
                 c.SwaggerEndpoint("/swagger/Default/swagger.json", "Default API v1");
                 c.RoutePrefix = "swagger";
-            });
-
+            }));
         }
 
         app.Use(async (context, next) =>
@@ -52,6 +45,11 @@ public static class AppExtensions
         app.UseHttpsRedirection();
         app.MapControllers();
         app.UseStaticFiles();
+
+        var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TDbContext>().Database;
+     
+        await db.MigrateAsync();
         await app.Services.SeedRolesAndUsersAsync<DappiUser, DappiRole>();
         
         return app;
