@@ -1,4 +1,5 @@
 import { ContentItem, PaginatedResponse, TableHeader } from '../../models/content.model';
+import { RecentContent } from '../../models/recent-content';
 
 export interface ContentState {
   items: PaginatedResponse | undefined;
@@ -11,6 +12,8 @@ export interface ContentState {
   currentItem: ContentItem | undefined;
   isSearching: boolean;
   relatedItems: PaginatedResponse | undefined;
+  contentTypeChanges: PaginatedResponse<Array<RecentContent> | null> | null;
+  loadingContentTypeChanges: boolean;
 }
 
 export const initialContentState: ContentState = {
@@ -24,4 +27,6 @@ export const initialContentState: ContentState = {
   itemsPerPage: 10,
   isSearching: false,
   relatedItems: undefined,
+  loadingContentTypeChanges: false,
+  contentTypeChanges: null,
 };

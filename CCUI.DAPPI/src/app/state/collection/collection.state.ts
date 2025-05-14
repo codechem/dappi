@@ -9,9 +9,12 @@ export interface CollectionState {
   isSaving: boolean;
   saveError: any;
   serverRestarting: boolean;
+  publishedCollectionTypes: string[];
+  draftCollectionTypes: string[];
 }
 
 export const initialCollectionState: CollectionState = {
+  publishedCollectionTypes: [],
   collectionTypes: [],
   loadingCollectionTypes: false,
   errorCollectionTypes: null,
@@ -20,4 +23,5 @@ export const initialCollectionState: CollectionState = {
   isSaving: false,
   saveError: null,
   serverRestarting: false,
+  draftCollectionTypes: [],
 };

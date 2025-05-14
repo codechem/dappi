@@ -1,5 +1,26 @@
 import { createAction, props } from '@ngrx/store';
 import { ContentItem, PaginatedResponse, TableHeader } from '../../models/content.model';
+import { RecentContent } from '../../models/recent-content';
+
+export const loadContentTypeChanges = createAction(
+  '[Content] Load Content Type Changes',
+  props<{
+    offset: number;
+    limit: number;
+  }>(),
+);
+
+export const loadContentTypeChangesSuccess = createAction(
+  '[Content] Load Content Type Changes Success',
+  props<{
+    changes: PaginatedResponse<Array<RecentContent> | null> | null;
+  }>(),
+);
+
+export const loadContentTypeChangesFailure = createAction(
+  '[Content] Load Content Type Changes Failure',
+  props<{ error: string }>(),
+);
 
 export const loadContent = createAction(
   '[Content] Load Content',

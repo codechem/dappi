@@ -12,18 +12,13 @@ import { MatSpinner } from '@angular/material/progress-spinner';
 import { ModelField } from '../models/content.model';
 import { select, Store } from '@ngrx/store';
 import * as CollectionActions from '../state/collection/collection.actions';
-import { selectHeaders, selectSelectedType } from '../state/content/content.selectors';
+import { selectSelectedType } from '../state/content/content.selectors';
 import {
+  selectDraftCollectionTypes,
   selectFields,
   selectSaveError,
   selectServerRestarting,
 } from '../state/collection/collection.selectors';
-
-interface SaveResponse {
-  success: boolean;
-  restarting?: boolean;
-  error?: any;
-}
 
 @Component({
   selector: 'app-builder',
@@ -50,6 +45,9 @@ export class BuilderComponent implements OnInit, OnDestroy {
   selectedType$ = this.store.select(selectSelectedType);
   fieldsData$ = this.store.select(selectFields);
 
+  draftCollectionTypes: string[] = [];
+  draftCollectionTypes$ = this.store.select(selectDraftCollectionTypes);
+
   private subscription: Subscription = new Subscription();
 
   constructor(
@@ -58,6 +56,22 @@ export class BuilderComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit(): Promise<void> {
+    this.store.dispatch(CollectionActions.loadDraftCollectionTypes());
+
+    this.subscription.add(
+      this.draftCollectionTypes$.subscribe((draftTypes) => {
+        this.draftCollectionTypes = draftTypes;
+        this.updateSaveButtonState();
+      }),
+    );
+
+    this.subscription.add(
+      this.selectedType$.subscribe((selectedType) => {
+        this.selectedType = selectedType;
+        this.updateSaveButtonState();
+      }),
+    );
+
     this.subscription.add(
       this.selectedType$.subscribe((selectedType) => {
         this.store.dispatch(CollectionActions.loadFields({ modelType: selectedType }));
@@ -110,6 +124,10 @@ export class BuilderComponent implements OnInit, OnDestroy {
         this.disabled = false;
       }),
     );
+  }
+
+  private updateSaveButtonState(): void {
+    this.disabled = !this.selectedType || !this.draftCollectionTypes.includes(this.selectedType);
   }
 
   private formatFields(fields: ModelField[]): void {

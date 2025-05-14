@@ -1,6 +1,32 @@
 import { createAction, props } from '@ngrx/store';
 import { ModelField } from '../../models/content.model';
 
+export const loadPublishedCollectionTypes = createAction(
+  '[Collection] Load Published Collection Types',
+);
+
+export const loadPublishedCollectionTypesSuccess = createAction(
+  '[Collection] Load Published Collection Types Success',
+  props<{ publishedCollectionTypes: string[] }>(),
+);
+
+export const loadPublishedCollectionTypesFailure = createAction(
+  '[Collection] Load Published Collection Types Failure',
+  props<{ error: string }>(),
+);
+
+export const loadDraftCollectionTypes = createAction('[Collection] Load Draft Collection Types');
+
+export const loadDraftCollectionTypesSuccess = createAction(
+  '[Collection] Load Draft Collection Types Success',
+  props<{ draftCollectionTypes: string[] }>(),
+);
+
+export const loadDraftCollectionTypesFailure = createAction(
+  '[Collection] Load Draft Collection Types Failure',
+  props<{ error: string }>(),
+);
+
 export const loadCollectionTypes = createAction('[Collection] Load Collection Types');
 
 export const loadCollectionTypesSuccess = createAction(

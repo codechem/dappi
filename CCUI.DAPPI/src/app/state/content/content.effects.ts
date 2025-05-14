@@ -53,7 +53,7 @@ export class ContentEffects {
             ContentActions.loadRelatedItemsSuccess({
               relatedItems: {
                 ...response,
-                data: response.data,
+                Data: response.Data,
               },
             }),
           ),
@@ -208,6 +208,33 @@ export class ContentEffects {
           }),
           catchError((error) => of(ContentActions.uploadFileFailure({ error: error.message }))),
         );
+      }),
+    ),
+  );
+
+  loadContentTypeChanges$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ContentActions.loadContentTypeChanges),
+      mergeMap((action) => {
+        const endpoint = `${BASE_API_URL}content-type-changes`;
+
+        return this.http
+          .get<any>(endpoint, {
+            params: {
+              offset: action.offset.toString(),
+              limit: action.limit.toString(),
+            },
+          })
+          .pipe(
+            map((response) =>
+              ContentActions.loadContentTypeChangesSuccess({
+                changes: response,
+              }),
+            ),
+            catchError((error) =>
+              of(ContentActions.loadContentTypeChangesFailure({ error: error.message })),
+            ),
+          );
       }),
     ),
   );

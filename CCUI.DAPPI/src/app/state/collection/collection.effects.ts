@@ -34,6 +34,50 @@ export class CollectionEffects {
     ),
   );
 
+  loadDraftCollectionTypes$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.loadDraftCollectionTypes),
+      mergeMap(() => {
+        return this.http.get<string[]>(`${BASE_API_URL}content-type-changes/draft-models`).pipe(
+          map((draftCollectionTypes) => {
+            return CollectionActions.loadDraftCollectionTypesSuccess({
+              draftCollectionTypes,
+            });
+          }),
+          catchError((error) =>
+            of(
+              CollectionActions.loadDraftCollectionTypesFailure({
+                error: error.message,
+              }),
+            ),
+          ),
+        );
+      }),
+    ),
+  );
+
+  loadPublishedCollectionTypes$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.loadPublishedCollectionTypes),
+      mergeMap(() => {
+        return this.http.get<string[]>(`${BASE_API_URL}content-type-changes/published-models`).pipe(
+          map((publishedCollectionTypes) => {
+            return CollectionActions.loadPublishedCollectionTypesSuccess({
+              publishedCollectionTypes,
+            });
+          }),
+          catchError((error) =>
+            of(
+              CollectionActions.loadPublishedCollectionTypesFailure({
+                error: error.message,
+              }),
+            ),
+          ),
+        );
+      }),
+    ),
+  );
+
   setDefaultSelectedType$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.loadCollectionTypesSuccess),
