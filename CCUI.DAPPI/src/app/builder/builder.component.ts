@@ -35,7 +35,7 @@ import {
   styleUrl: './builder.component.scss',
 })
 export class BuilderComponent implements OnInit, OnDestroy {
-  disabled = true;
+  disabled = false;
   fieldsData: FieldItem[] = [];
   selectedType = '';
   isSaving = false;
