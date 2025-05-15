@@ -285,7 +285,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                     var modifiedAtParam = command.CreateParameter();
                     modifiedAtParam.ParameterName = "@modifiedAt";
-                    modifiedAtParam.Value = DateTime.UtcNow;
+                    modifiedAtParam.Value = DateTime.Now;
                     command.Parameters.Add(modifiedAtParam);
 
                     var isPublishedParam = command.CreateParameter();
@@ -364,7 +364,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                         var modifiedAtParam = command.CreateParameter();
                         modifiedAtParam.ParameterName = "@modifiedAt";
-                        modifiedAtParam.Value = DateTime.UtcNow;
+                        modifiedAtParam.Value = DateTime.Now;
                         command.Parameters.Add(modifiedAtParam);
 
                         var modifiedByParam = command.CreateParameter();

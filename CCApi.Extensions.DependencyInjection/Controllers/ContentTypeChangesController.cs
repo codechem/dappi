@@ -29,133 +29,59 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetContentTypeChanges(
-            [FromQuery] int offset = 0,
-            [FromQuery] int limit = 10,
-            [FromQuery] string searchTerm = "",
-            [FromQuery] bool? isPublished = null)
+        public async Task<IActionResult> GetContentTypeChanges()
         {
             try
             {
-                string whereClause = "";
-                List<object> parameters = new List<object>();
-
-                searchTerm = searchTerm?.Trim().ToLower() ?? string.Empty;
-                if (!string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    whereClause += @" WHERE (LOWER(""ModelName"") LIKE @p0 OR LOWER(""ModifiedBy"") LIKE @p0)";
-                    parameters.Add($"%{searchTerm}%");
-                }
-
-                if (isPublished.HasValue)
-                {
-                    if (string.IsNullOrEmpty(whereClause))
-                        whereClause = " WHERE";
-                    else
-                        whereClause += " AND";
-
-                    whereClause += @" ""IsPublished"" = @p" + parameters.Count;
-                    parameters.Add(isPublished.Value);
-                }
-
-                string countSql = $@"SELECT COUNT(*) FROM ""ContentTypeChanges""{whereClause}";
-                var totalCount = await _dbContext.Database.ExecuteSqlRawAsync(countSql, parameters.ToArray());
-
-                var connection = _dbContext.Database.GetDbConnection();
-                if (connection.State != ConnectionState.Open)
-                    await connection.OpenAsync();
-
-                int total = 0;
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = countSql;
-
-                    for (int i = 0; i < parameters.Count; i++)
-                    {
-                        var parameter = command.CreateParameter();
-                        parameter.ParameterName = $"p{i}";
-                        parameter.Value = parameters[i];
-                        command.Parameters.Add(parameter);
-                    }
-
-                    var result = await command.ExecuteScalarAsync();
-                    if (result != null && result != DBNull.Value)
-                    {
-                        total = Convert.ToInt32(result);
-                    }
-                }
-
-                string dataSql = $@"
-                    SELECT 
-                        ""Id"", ""ModelName"", ""Fields"", ""ModifiedBy"", ""ModifiedAt"", ""IsPublished""
-                    FROM ""ContentTypeChanges""{whereClause}
-                    ORDER BY ""ModifiedAt"" DESC
-                    LIMIT @p{parameters.Count} OFFSET @p{parameters.Count + 1}";
-
+                const int limit = 10;
                 var contentTypeChanges = new List<ContentTypeChangeDto>();
 
-                using (var command = connection.CreateCommand())
+                var connection = _dbContext.Database.GetDbConnection();
+                await connection.OpenAsync();
+
+                var sql = @"
+            SELECT 
+                ""Id"", ""ModelName"", ""Fields"", ""ModifiedBy"", ""ModifiedAt"", ""IsPublished""
+            FROM ""ContentTypeChanges""
+            ORDER BY ""ModifiedAt"" DESC
+            LIMIT @limit";
+
+                using var command = connection.CreateCommand();
+                command.CommandText = sql;
+
+                var limitParam = command.CreateParameter();
+                limitParam.ParameterName = "limit";
+                limitParam.Value = limit;
+                command.Parameters.Add(limitParam);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
-                    command.CommandText = dataSql;
-
-                    for (int i = 0; i < parameters.Count; i++)
+                    contentTypeChanges.Add(new ContentTypeChangeDto
                     {
-                        var parameter = command.CreateParameter();
-                        parameter.ParameterName = $"p{i}";
-                        parameter.Value = parameters[i];
-                        command.Parameters.Add(parameter);
-                    }
-
-                    var limitParam = command.CreateParameter();
-                    limitParam.ParameterName = $"p{parameters.Count}";
-                    limitParam.Value = limit;
-                    command.Parameters.Add(limitParam);
-
-                    var offsetParam = command.CreateParameter();
-                    offsetParam.ParameterName = $"p{parameters.Count + 1}";
-                    offsetParam.Value = offset;
-                    command.Parameters.Add(offsetParam);
-
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            try
-                            {
-                                var dto = new ContentTypeChangeDto
-                                {
-                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                    ModelName = reader.GetString(reader.GetOrdinal("ModelName")),
-                                    Fields = DeserializeFields(reader.GetString(reader.GetOrdinal("Fields"))),
-                                    ModifiedBy = reader.IsDBNull(reader.GetOrdinal("ModifiedBy")) ? null : reader.GetString(reader.GetOrdinal("ModifiedBy")),
-                                    ModifiedAt = reader.GetDateTime(reader.GetOrdinal("ModifiedAt")),
-                                    IsPublished = reader.GetBoolean(reader.GetOrdinal("IsPublished"))
-                                };
-                                contentTypeChanges.Add(dto);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, "Error reading ContentTypeChange record");
-                            }
-                        }
-                    }
+                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                        ModelName = reader.GetString(reader.GetOrdinal("ModelName")),
+                        Fields = DeserializeFields(reader.GetString(reader.GetOrdinal("Fields"))),
+                        ModifiedBy = reader.IsDBNull(reader.GetOrdinal("ModifiedBy"))
+                            ? null
+                            : reader.GetString(reader.GetOrdinal("ModifiedBy")),
+                        ModifiedAt = reader.GetDateTime(reader.GetOrdinal("ModifiedAt")),
+                        IsPublished = reader.GetBoolean(reader.GetOrdinal("IsPublished"))
+                    });
                 }
 
-                var response = new PagedResponseDto<ContentTypeChangeDto>
+                return Ok(new PagedResponseDto<ContentTypeChangeDto>
                 {
-                    Total = total,
-                    Offset = offset,
+                    Total = limit,
+                    Offset = 0,
                     Limit = limit,
                     Data = contentTypeChanges
-                };
-
-                return Ok(response);
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while retrieving content type changes");
-                return StatusCode(500, new { message = "An error occurred while retrieving content type changes" });
+                _logger.LogError(ex, "Error retrieving ContentTypeChanges");
+                return StatusCode(500, new { message = "Internal server error" });
             }
         }
 
