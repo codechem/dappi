@@ -17,6 +17,16 @@ export const selectCollectionTypesError = createSelector(
   (state) => state.errorCollectionTypes,
 );
 
+export const selectPublishedCollectionTypes = createSelector(
+  selectCollectionState,
+  (state) => state.publishedCollectionTypes || [],
+);
+
+export const selectDraftCollectionTypes = createSelector(
+  selectCollectionState,
+  (state) => state.draftCollectionTypes,
+);
+
 export const selectFields = createSelector(selectCollectionState, (state) => state.fields);
 
 export const selectIsLoadingFields = createSelector(

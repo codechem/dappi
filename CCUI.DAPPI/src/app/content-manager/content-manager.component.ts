@@ -81,7 +81,7 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
     );
     this.subscription.add(
       this.items$.subscribe((items) => {
-        this.items = items?.data ?? [];
+        this.items = items?.Data ?? [];
       }),
     );
   }

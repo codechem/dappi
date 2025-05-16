@@ -4,37 +4,75 @@
     <span>Recent Content-Types</span>
   </div>
 
-  <div class="custom-row header-row" style="margin-bottom: 5px">
-    <div class="cell">Title</div>
-    <div class="cell">Description</div>
-    <div class="cell" style="justify-content: center">Status</div>
-    <div class="cell">Last edited</div>
-    <div class="cell actions-cell"></div>
-  </div>
   <div class="scrollable-list">
-    <div class="custom-table">
-      @for (element of dataSource.data; track element) {
-        <div class="custom-row">
-          <div class="cell">{{ element.title }}</div>
-          <div class="cell">{{ element.description }}</div>
-          <div class="cell" style="justify-content: center">
-            @if (element.status !== '-') {
-              <span>
-                <app-pill [text]="element.status"></app-pill>
-              </span>
-            }
-            @if (element.status === '-') {
-              <span>-</span>
-            }
-          </div>
-          <div class="cell">{{ element.lastEdited }}</div>
-          <div class="cell actions-cell">
-            <button mat-icon-button>
-              <mat-icon>edit</mat-icon>
-            </button>
-          </div>
-        </div>
-      }
-    </div>
+    @if (loading) {
+      <div class="loading-container" style="padding: 20px; text-align: center">
+        Loading content types...
+      </div>
+    } @else if (!loading && dataSource.data.length === 0) {
+      <div class="empty-container" style="padding: 20px; text-align: center">
+        No content types found.
+      </div>
+    } @else {
+      <table class="content-table" role="table" aria-label="Recent Content Types">
+        <thead>
+          <tr class="header-row" role="row">
+            <th class="cell" role="columnheader">Model Name</th>
+            <th class="cell" role="columnheader">Fields</th>
+            <th class="cell" role="columnheader">Status</th>
+            <th class="cell" role="columnheader">Last edited</th>
+            <th class="small-cell actions-cell" role="columnheader">
+              <span class="sr-only">Actions</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of dataSource.data; track item.modelName) {
+            <tr class="content-row" role="row">
+              <td class="cell" role="cell">{{ item.modelName }}</td>
+              <td class="cell field-cell" role="cell">
+                <div class="field-icons">
+                  @if (item.fieldTypes && item.fieldTypes.length > 0) {
+                    @for (fieldType of item.fieldTypes; track fieldType) {
+                      <div
+                        class="field-icon"
+                        [matTooltip]="getFieldTooltip(fieldType)"
+                        (click)="navigateToPathBuilder(item.modelName)"
+                      >
+                        <mat-icon>{{ getFieldIcon(fieldType) }}</mat-icon>
+                      </div>
+                    }
+                    @if (item.additionalFields > 0) {
+                      <span class="additional-fields">+{{ item.additionalFields }}</span>
+                    }
+                  } @else {
+                    <span>-</span>
+                  }
+                </div>
+              </td>
+              <td class="cell" role="cell">
+                @if (item.isPublished) {
+                  <div class="status-pill published">Published</div>
+                } @else {
+                  <div class="status-pill-draft draft">Draft</div>
+                }
+              </td>
+              <td class="cell" role="cell">{{ item.modifiedAt }}</td>
+              <td class="small-cell actions-cell" role="cell">
+                @if (!item.isPublished) {
+                  <button
+                    mat-icon-button
+                    (click)="editContentType(item.modelName)"
+                    aria-label="Edit content type"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
   </div>
 </div>

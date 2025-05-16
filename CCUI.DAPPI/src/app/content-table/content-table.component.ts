@@ -150,8 +150,8 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     this.subscription.add(this.itemsPerPage$.subscribe((limit) => (this.limit = limit)));
     this.subscription.add(
       this.items$.subscribe((items) => {
-        this.items = items?.data ?? [];
-        this.totalItems = items?.total ?? 0;
+        this.items = items?.Data ?? [];
+        this.totalItems = items?.Total ?? 0;
         this.calculatePagination();
       }),
     );
