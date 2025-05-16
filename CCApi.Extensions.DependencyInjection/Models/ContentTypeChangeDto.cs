@@ -4,6 +4,6 @@ public class ContentTypeChangeDto
     public string ModelName { get; set; }
     public Dictionary<string, string> Fields { get; set; }
     public string ModifiedBy { get; set; }
-    public DateTime ModifiedAt { get; set; }
+    public DateTimeOffset ModifiedAt { get; set; }
     public bool IsPublished { get; set; }
 }

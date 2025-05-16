@@ -57,6 +57,18 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
+                    DateTimeOffset modifiedAt;
+
+                    if (reader.GetFieldType(reader.GetOrdinal("ModifiedAt")) == typeof(DateTimeOffset))
+                    {
+                        modifiedAt = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("ModifiedAt"));
+                    }
+                    else
+                    {
+                        DateTime dateTime = reader.GetDateTime(reader.GetOrdinal("ModifiedAt"));
+                        modifiedAt = new DateTimeOffset(dateTime, TimeSpan.Zero);
+                    }
+
                     contentTypeChanges.Add(new ContentTypeChangeDto
                     {
                         Id = reader.GetInt32(reader.GetOrdinal("Id")),
@@ -65,7 +77,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                         ModifiedBy = reader.IsDBNull(reader.GetOrdinal("ModifiedBy"))
                             ? null
                             : reader.GetString(reader.GetOrdinal("ModifiedBy")),
-                        ModifiedAt = reader.GetDateTime(reader.GetOrdinal("ModifiedAt")),
+                        ModifiedAt = modifiedAt,
                         IsPublished = reader.GetBoolean(reader.GetOrdinal("IsPublished"))
                     });
                 }

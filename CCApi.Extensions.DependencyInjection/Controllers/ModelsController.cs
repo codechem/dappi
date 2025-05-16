@@ -265,8 +265,8 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = @"
-                        INSERT INTO ""ContentTypeChanges"" (""ModelName"", ""Fields"", ""ModifiedBy"", ""ModifiedAt"", ""IsPublished"")
-                        VALUES (@modelName, @fields, @modifiedBy, @modifiedAt, @isPublished)";
+        INSERT INTO ""ContentTypeChanges"" (""ModelName"", ""Fields"", ""ModifiedBy"", ""ModifiedAt"", ""IsPublished"")
+        VALUES (@modelName, @fields, @modifiedBy, @modifiedAt, @isPublished)";
 
                     var modelNameParam = command.CreateParameter();
                     modelNameParam.ParameterName = "@modelName";
@@ -285,7 +285,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                     var modifiedAtParam = command.CreateParameter();
                     modifiedAtParam.ParameterName = "@modifiedAt";
-                    modifiedAtParam.Value = DateTime.Now;
+                    modifiedAtParam.Value = DateTimeOffset.Now.ToUniversalTime();
                     command.Parameters.Add(modifiedAtParam);
 
                     var isPublishedParam = command.CreateParameter();
@@ -320,11 +320,11 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = @"
-                        SELECT ""Id"", ""Fields"" 
-                        FROM ""ContentTypeChanges"" 
-                        WHERE ""ModelName"" = @modelName AND ""IsPublished"" = false 
-                        ORDER BY ""ModifiedAt"" DESC 
-                        LIMIT 1";
+        SELECT ""Id"", ""Fields"" 
+        FROM ""ContentTypeChanges"" 
+        WHERE ""ModelName"" = @modelName AND ""IsPublished"" = false 
+        ORDER BY ""ModifiedAt"" DESC 
+        LIMIT 1";
 
                     var modelNameParam = command.CreateParameter();
                     modelNameParam.ParameterName = "@modelName";
@@ -353,9 +353,9 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     using (var command = connection.CreateCommand())
                     {
                         command.CommandText = @"
-                            UPDATE ""ContentTypeChanges"" 
-                            SET ""Fields"" = @fields, ""ModifiedAt"" = @modifiedAt, ""ModifiedBy"" = @modifiedBy
-                            WHERE ""Id"" = @id";
+            UPDATE ""ContentTypeChanges"" 
+            SET ""Fields"" = @fields, ""ModifiedAt"" = @modifiedAt, ""ModifiedBy"" = @modifiedBy
+            WHERE ""Id"" = @id";
 
                         var fieldsParam = command.CreateParameter();
                         fieldsParam.ParameterName = "@fields";
@@ -364,7 +364,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                         var modifiedAtParam = command.CreateParameter();
                         modifiedAtParam.ParameterName = "@modifiedAt";
-                        modifiedAtParam.Value = DateTime.Now;
+                        modifiedAtParam.Value = DateTimeOffset.Now.ToUniversalTime();
                         command.Parameters.Add(modifiedAtParam);
 
                         var modifiedByParam = command.CreateParameter();

@@ -101,7 +101,7 @@ public static class AppExtensions
         }
     }
     private static async Task CheckAndCreateContentTypeChangesTableAsync<TDbContext>(IServiceProvider serviceProvider)
-        where TDbContext : DbContext
+    where TDbContext : DbContext
     {
         try
         {
@@ -127,14 +127,14 @@ public static class AppExtensions
                 if (!tableExists)
                 {
                     await dbContext.Database.ExecuteSqlRawAsync(@"
-                    CREATE TABLE ""ContentTypeChanges"" (
-                        ""Id"" SERIAL PRIMARY KEY,
-                        ""ModelName"" VARCHAR(255) NOT NULL,
-                        ""Fields"" TEXT NOT NULL,
-                        ""ModifiedBy"" VARCHAR(450) NULL,
-                        ""ModifiedAt"" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        ""IsPublished"" BOOLEAN NOT NULL DEFAULT FALSE
-                    )");
+                CREATE TABLE ""ContentTypeChanges"" (
+                    ""Id"" SERIAL PRIMARY KEY,
+                    ""ModelName"" VARCHAR(255) NOT NULL,
+                    ""Fields"" TEXT NOT NULL,
+                    ""ModifiedBy"" VARCHAR(450) NULL,
+                    ""ModifiedAt"" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    ""IsPublished"" BOOLEAN NOT NULL DEFAULT FALSE
+                )");
 
                     Console.WriteLine("ContentTypeChanges table created successfully.");
                 }
