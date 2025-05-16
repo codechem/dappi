@@ -33,7 +33,6 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
         {
             try
             {
-                const int limit = 10;
                 var contentTypeChanges = new List<ContentTypeChangeDto>();
 
                 var connection = _dbContext.Database.GetDbConnection();
@@ -43,16 +42,11 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             SELECT 
                 ""Id"", ""ModelName"", ""Fields"", ""ModifiedBy"", ""ModifiedAt"", ""IsPublished""
             FROM ""ContentTypeChanges""
-            ORDER BY ""ModifiedAt"" DESC
-            LIMIT @limit";
+            WHERE DATE(""ModifiedAt"") = CURRENT_DATE
+            ORDER BY ""ModifiedAt"" DESC";
 
                 using var command = connection.CreateCommand();
                 command.CommandText = sql;
-
-                var limitParam = command.CreateParameter();
-                limitParam.ParameterName = "limit";
-                limitParam.Value = limit;
-                command.Parameters.Add(limitParam);
 
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
@@ -82,13 +76,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     });
                 }
 
-                return Ok(new PagedResponseDto<ContentTypeChangeDto>
-                {
-                    Total = limit,
-                    Offset = 0,
-                    Limit = limit,
-                    Data = contentTypeChanges
-                });
+                return Ok(contentTypeChanges);
             }
             catch (Exception ex)
             {

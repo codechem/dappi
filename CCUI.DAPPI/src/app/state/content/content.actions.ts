@@ -2,18 +2,12 @@ import { createAction, props } from '@ngrx/store';
 import { ContentItem, PaginatedResponse, TableHeader } from '../../models/content.model';
 import { RecentContent } from '../../models/recent-content';
 
-export const loadContentTypeChanges = createAction(
-  '[Content] Load Content Type Changes',
-  props<{
-    offset: number;
-    limit: number;
-  }>(),
-);
+export const loadContentTypeChanges = createAction('[Content] Load Content Type Changes');
 
 export const loadContentTypeChangesSuccess = createAction(
   '[Content] Load Content Type Changes Success',
   props<{
-    changes: PaginatedResponse<Array<RecentContent> | null> | null;
+    changes: Array<RecentContent> | null;
   }>(),
 );
 

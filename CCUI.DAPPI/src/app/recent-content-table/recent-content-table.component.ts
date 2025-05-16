@@ -88,18 +88,17 @@ export class RecentContentTableComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       });
 
-    this.store.dispatch(ContentActions.loadContentTypeChanges({ offset: 0, limit: 10 }));
+    this.store.dispatch(ContentActions.loadContentTypeChanges());
 
     this.store
       .pipe(select(selectContentTypeChanges), takeUntil(this.destroy$))
       .subscribe((changes) => {
-        if (changes && changes.Data)
-          if (changes?.Data?.length > 0) {
-            this.updateTableData(changes.Data);
-          } else {
-            this.dataSource.data = [];
-            this.cdr.detectChanges();
-          }
+        if (changes && changes.length > 0) {
+          this.updateTableData(changes);
+        } else {
+          this.dataSource.data = [];
+          this.cdr.detectChanges();
+        }
       });
   }
 

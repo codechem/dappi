@@ -12,7 +12,7 @@ export interface ContentState {
   currentItem: ContentItem | undefined;
   isSearching: boolean;
   relatedItems: PaginatedResponse | undefined;
-  contentTypeChanges: PaginatedResponse<Array<RecentContent> | null> | null;
+  contentTypeChanges: Array<RecentContent> | null;
   loadingContentTypeChanges: boolean;
 }
 
