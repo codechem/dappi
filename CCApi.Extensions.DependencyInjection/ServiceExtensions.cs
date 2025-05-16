@@ -11,6 +11,11 @@ using Microsoft.AspNetCore.Http;
 using CCApi.Extensions.DependencyInjection.Services.Identity;
 using CCApi.Extensions.DependencyInjection.Interfaces;
 using CCApi.Extensions.DependencyInjection.Services;
+using CCApi.Extensions.DependencyInjection.Controllers;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using System.Reflection;
+using CCApi.Extensions.DependencyInjection.Models;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -26,9 +31,11 @@ public static class ServiceExtensions
         services.AddDbContext<TDbContext>(dbContextOptions ?? (builder =>
             builder.UseNpgsql(configuration.GetValue<string>(Constants.Configuration.PostgresConnection))));
 
+        services.AddScoped<IDbContextAccessor, DbContextAccessor<TDbContext>>();
+
         services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
         services.AddDappiSwaggerGen();
-      
+
         services.AddControllers()
             .AddJsonOptions(jsonOptions ?? (options =>
             {

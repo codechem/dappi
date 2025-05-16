@@ -5,6 +5,46 @@ import { initialCollectionState } from './collection.state';
 export const collectionReducer = createReducer(
   initialCollectionState,
 
+  on(CollectionActions.loadPublishedCollectionTypes, (state) => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+
+  on(
+    CollectionActions.loadPublishedCollectionTypesSuccess,
+    (state, { publishedCollectionTypes }) => ({
+      ...state,
+      publishedCollectionTypes,
+      loading: false,
+      error: null,
+    }),
+  ),
+
+  on(CollectionActions.loadPublishedCollectionTypesFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+  })),
+
+  on(CollectionActions.loadDraftCollectionTypes, (state) => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+
+  on(CollectionActions.loadDraftCollectionTypesSuccess, (state, { draftCollectionTypes }) => ({
+    ...state,
+    draftCollectionTypes,
+    loading: false,
+  })),
+
+  on(CollectionActions.loadDraftCollectionTypesFailure, (state, { error }) => ({
+    ...state,
+    error,
+    loading: false,
+  })),
+
   on(CollectionActions.loadCollectionTypes, (state) => ({
     ...state,
     loadingCollectionTypes: true,

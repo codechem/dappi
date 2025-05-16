@@ -21,3 +21,13 @@ export const selectItemsPerPage = createSelector(selectContentState, (state) => 
 export const selectCurrentItem = createSelector(selectContentState, (state) => state.currentItem);
 
 export const selectIsSearching = createSelector(selectContentState, (state) => state.isSearching);
+
+export const selectContentTypeChanges = createSelector(
+  selectContentState,
+  (state) => state.contentTypeChanges,
+);
+
+export const selectLoadingContentTypeChanges = createSelector(
+  selectContentState,
+  (state) => state.loadingContentTypeChanges,
+);

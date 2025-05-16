@@ -24,8 +24,12 @@ import { selectSelectedType } from '../state/content/content.selectors';
 import {
   selectCollectionTypes,
   selectCollectionTypesError,
+  selectPublishedCollectionTypes,
 } from '../state/collection/collection.selectors';
-import { loadCollectionTypes } from '../state/collection/collection.actions';
+import {
+  loadCollectionTypes,
+  loadPublishedCollectionTypes,
+} from '../state/collection/collection.actions';
 import { selectUser } from '../state/auth/auth.selectors';
 
 @Component({
@@ -58,6 +62,8 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   filteredCollectionTypes: string[] = [];
   collectionTypes: string[] = [];
   searchText = '';
+  publishedCollectionTypes$ = this.store.select(selectPublishedCollectionTypes);
+  publishedCollectionTypes: string[] = [];
 
   private destroy$ = new Subject<void>();
   private searchTextChanged = new Subject<string>();
@@ -82,32 +88,44 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
         .subscribe((user) => (this.isAdmin = user?.roles.includes('Admin') ?? false)),
     );
 
-    this.subscriptions.add(
-      this.collectionTypes$.subscribe((types) => {
-        if (types.length === 0 && !this.isLoadingTypes) {
-          this.isLoadingTypes = true;
-          this.store.dispatch(loadCollectionTypes());
+    if (this.headerText === 'Builder') {
+      if (!this.isLoadingTypes) {
+        this.isLoadingTypes = true;
+        this.store.dispatch(loadCollectionTypes());
+      }
 
-          let updatedTypes = [...this.collectionTypes];
-
-          if (this.isAdmin && !updatedTypes.includes('Users') && this.headerText !== 'Builder') {
-            updatedTypes.push('Users');
+      this.subscriptions.add(
+        this.collectionTypes$.subscribe((types) => {
+          if (types.length > 0 || this.isLoadingTypes) {
+            let updatedTypes = [...types];
+            this.filteredCollectionTypes = updatedTypes;
+            this.collectionTypes = updatedTypes;
+            this.isLoadingTypes = false;
           }
+        }),
+      );
+    } else {
+      if (!this.isLoadingTypes) {
+        this.isLoadingTypes = true;
+        this.store.dispatch(loadPublishedCollectionTypes());
+      }
 
-          this.filteredCollectionTypes = updatedTypes;
-          this.collectionTypes = updatedTypes;
-        } else {
-          let updatedTypes = [...types];
+      this.subscriptions.add(
+        this.publishedCollectionTypes$.subscribe((types) => {
+          if (types.length > 0 || this.isLoadingTypes) {
+            let updatedTypes = [...types];
 
-          if (this.isAdmin && !updatedTypes.includes('Users') && this.headerText !== 'Builder') {
-            updatedTypes.push('Users');
+            if (this.isAdmin && !updatedTypes.includes('Users')) {
+              updatedTypes.push('Users');
+            }
+
+            this.filteredCollectionTypes = updatedTypes;
+            this.collectionTypes = updatedTypes;
+            this.isLoadingTypes = false;
           }
-
-          this.filteredCollectionTypes = updatedTypes;
-          this.collectionTypes = updatedTypes;
-        }
-      }),
-    );
+        }),
+      );
+    }
 
     this.subscriptions.add(
       this.collectionTypesError$.subscribe((error) => {

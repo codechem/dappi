@@ -1,7 +1,15 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { map, mergeMap, catchError, withLatestFrom, switchMap, filter } from 'rxjs/operators';
+import {
+  map,
+  mergeMap,
+  catchError,
+  withLatestFrom,
+  switchMap,
+  filter,
+  concatMap,
+} from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { select, Store } from '@ngrx/store';
 import * as CollectionActions from './collection.actions';
@@ -25,6 +33,50 @@ export class CollectionEffects {
           catchError((error) =>
             of(
               CollectionActions.loadCollectionTypesFailure({
+                error: error.message,
+              }),
+            ),
+          ),
+        );
+      }),
+    ),
+  );
+
+  loadDraftCollectionTypes$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.loadDraftCollectionTypes),
+      mergeMap(() => {
+        return this.http.get<string[]>(`${BASE_API_URL}content-type-changes/draft-models`).pipe(
+          map((draftCollectionTypes) => {
+            return CollectionActions.loadDraftCollectionTypesSuccess({
+              draftCollectionTypes,
+            });
+          }),
+          catchError((error) =>
+            of(
+              CollectionActions.loadDraftCollectionTypesFailure({
+                error: error.message,
+              }),
+            ),
+          ),
+        );
+      }),
+    ),
+  );
+
+  loadPublishedCollectionTypes$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.loadPublishedCollectionTypes),
+      mergeMap(() => {
+        return this.http.get<string[]>(`${BASE_API_URL}content-type-changes/published-models`).pipe(
+          map((publishedCollectionTypes) => {
+            return CollectionActions.loadPublishedCollectionTypesSuccess({
+              publishedCollectionTypes,
+            });
+          }),
+          catchError((error) =>
+            of(
+              CollectionActions.loadPublishedCollectionTypesFailure({
                 error: error.message,
               }),
             ),
@@ -128,6 +180,16 @@ export class CollectionEffects {
     ),
   );
 
+  reloadCollectionTypesAfterAdd$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.addCollectionTypeSuccess),
+      concatMap(() => [
+        CollectionActions.loadPublishedCollectionTypes(),
+        CollectionActions.loadDraftCollectionTypes(),
+      ]),
+    ),
+  );
+
   addField$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.addField),
@@ -143,6 +205,16 @@ export class CollectionEffects {
           catchError((error) => of(CollectionActions.addFieldFailure({ error: error.message }))),
         );
       }),
+    ),
+  );
+
+  reloadCollectionTypesAfterField$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.addFieldSuccess),
+      concatMap(() => [
+        CollectionActions.loadPublishedCollectionTypes(),
+        CollectionActions.loadDraftCollectionTypes(),
+      ]),
     ),
   );
 

@@ -9,6 +9,7 @@ import { selectItemsPerPage, selectSelectedType } from './content.selectors';
 import { FieldType, ModelField, PaginatedResponse } from '../../models/content.model';
 import { BASE_API_URL } from '../../../Constants';
 import { MediaInfo } from '../../models/media-info.model';
+import { RecentContent } from '../../models/recent-content';
 
 @Injectable()
 export class ContentEffects {
@@ -53,7 +54,7 @@ export class ContentEffects {
             ContentActions.loadRelatedItemsSuccess({
               relatedItems: {
                 ...response,
-                data: response.data,
+                Data: response.Data,
               },
             }),
           ),
@@ -207,6 +208,26 @@ export class ContentEffects {
             });
           }),
           catchError((error) => of(ContentActions.uploadFileFailure({ error: error.message }))),
+        );
+      }),
+    ),
+  );
+
+  loadContentTypeChanges$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ContentActions.loadContentTypeChanges),
+      mergeMap(() => {
+        const endpoint = `${BASE_API_URL}content-type-changes`;
+
+        return this.http.get<Array<RecentContent>>(endpoint).pipe(
+          map((response) =>
+            ContentActions.loadContentTypeChangesSuccess({
+              changes: response,
+            }),
+          ),
+          catchError((error) =>
+            of(ContentActions.loadContentTypeChangesFailure({ error: error.message })),
+          ),
         );
       }),
     ),

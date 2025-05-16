@@ -127,4 +127,22 @@ export const contentReducer = createReducer(
     ...state,
     isSearching,
   })),
+  on(ContentActions.loadContentTypeChanges, (state) => ({
+    ...state,
+    loadingContentTypeChanges: true,
+    error: null,
+  })),
+
+  on(ContentActions.loadContentTypeChangesSuccess, (state, { changes }) => ({
+    ...state,
+    contentTypeChanges: changes,
+    loadingContentTypeChanges: false,
+    error: null,
+  })),
+
+  on(ContentActions.loadContentTypeChangesFailure, (state, { error }) => ({
+    ...state,
+    loadingContentTypeChanges: false,
+    error,
+  })),
 );
