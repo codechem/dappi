@@ -148,7 +148,6 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   }
 
   relationTypes: {
-    icon: string;
     label: string;
     description: string;
     value: string;
@@ -185,37 +184,35 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
             value: type.value,
           }));
         this.selectedType = type;
-        this.updateRelationTypes(this.fieldForm.get('relatedModel')?.value);
+        this.updateRelationTypes();
       }),
     );
+    this.fieldForm.get('relatedModel')?.setValidators([Validators.required]);
+    this.updateRelationTypes();
   }
 
   private updateRelationTypes(relatedModel?: string): void {
-    const modelName = relatedModel || this.fieldForm.value?.relatedModel || 'record';
+    const modelName = relatedModel || '/';
     this.relatedTo = relatedModel;
     this.relationTypes = [
       {
-        icon: '⟷',
         label: 'Many-to-many',
-        description: `Each ${this.selectedType} can relate to multiple or none ${modelName}s and vice versa`,
+        description: `Many ${this.selectedType}s can relate to many ${modelName}s`,
         value: 'many-to-many',
       },
       {
-        icon: '→',
         label: 'One-to-many',
-        description: `One ${this.selectedType} can relate to multiple  or none ${modelName}s`,
+        description: `One ${this.selectedType} can relate to many ${modelName}s`,
         value: 'one-to-many',
       },
       {
-        icon: '⟶',
         label: 'Many-to-one',
-        description: `Multiple ${this.selectedType}s can relate to one ${modelName}`,
+        description: `Many ${this.selectedType}s can relate to one ${modelName}`,
         value: 'many-to-one',
       },
       {
-        icon: '↔',
         label: 'One-to-one',
-        description: `One ${this.selectedType} relates to exactly one ${modelName}`,
+        description: `One ${this.selectedType} relates to one ${modelName}`,
         value: 'one-to-one',
       },
     ];
@@ -308,6 +305,16 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
 
   selectFieldType(index: number): void {
     this.selectedFieldTypeIndex = index;
+
+    if (index === 8) {
+      this.fieldForm.get('relatedModel')?.setValidators([Validators.required]);
+      this.fieldForm.get('relatedModel')?.updateValueAndValidity();
+
+      this.selectedRelationTypeIndex = null;
+    } else {
+      this.fieldForm.get('relatedModel')?.clearValidators();
+      this.fieldForm.get('relatedModel')?.updateValueAndValidity();
+    }
   }
 
   onAddField(): void {
@@ -333,6 +340,10 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   }
 
   get canSubmit(): boolean {
-    return this.fieldForm.valid && this.selectedFieldTypeIndex !== null;
+    return (
+      this.fieldForm.valid &&
+      this.selectedFieldTypeIndex !== null &&
+      (this.selectedFieldTypeIndex !== 8 || this.selectedRelationTypeIndex !== null)
+    );
   }
 }

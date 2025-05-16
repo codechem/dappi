@@ -51,8 +51,10 @@
 }
 
 .header-row {
-  background: vars.$background-paper-elevation-1;
-  font-weight: 500;
+  font-weight: bold;
+  background: vars.$primary-focus;
+  padding: 12px 16px;
+  box-shadow: none;
 }
 
 .content-row {
