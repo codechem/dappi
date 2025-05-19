@@ -132,3 +132,20 @@
   min-width: 150px;
   pointer-events: auto;
 }
+
+.saving-content {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 10px;
+  margin-right: 8px;
+
+  mat-spinner {
+    margin-right: 12px;
+  }
+
+  span {
+    color: vars.$text-secondary;
+    font-size: 14px;
+  }
+}

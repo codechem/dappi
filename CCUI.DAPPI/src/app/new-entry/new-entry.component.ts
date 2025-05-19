@@ -3,12 +3,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 
 import { NewRecordFormComponent } from '../new-record-form/new-record-form.component';
-import { Location } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { MenuComponent } from '../menu/menu.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { Store } from '@ngrx/store';
 import { selectSelectedType } from '../state/content/content.selectors';
 import { Subscription } from 'rxjs';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { selectLoading } from '../state/content/content.selectors';
 
 @Component({
   selector: 'app-new-entry',
@@ -19,6 +21,8 @@ import { Subscription } from 'rxjs';
     MatButtonModule,
     NewRecordFormComponent,
     MenuComponent,
+    MatProgressSpinner,
+    CommonModule,
   ],
   templateUrl: './new-entry.component.html',
   styleUrl: './new-entry.component.scss',
@@ -32,6 +36,7 @@ export class NewEntryComponent implements OnInit, OnDestroy {
   private subscription: Subscription = new Subscription();
 
   selectedType$ = this.store.select(selectSelectedType);
+  isSaving$ = this.store.select(selectLoading);
 
   constructor(
     private location: Location,
