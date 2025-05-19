@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Build.Construction;
 using Microsoft.Extensions.Logging;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace Dappi.Cli.Commands;
@@ -52,21 +53,36 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
             var csProjFile = Directory.GetFiles(outputFolder, "*.csproj", SearchOption.AllDirectories).FirstOrDefault()!;
 
             ModifyCsprojWithNugetReferences(template, csProjFile);
-            var procStartInfo = new ProcessStartInfo()
+            var process = new Process();
+            
+            AnsiConsole.Status()
+                .Start("Generating initial migrations...", ctx => 
+                {
+                    ctx.Spinner(Spinner.Known.Circle);
+
+                    var procStartInfo = new ProcessStartInfo()
+                    {
+                        UseShellExecute = false,
+                        WorkingDirectory = Path.GetDirectoryName(outputFolder),
+                        FileName = "dotnet",
+                        Arguments = "ef migrations add Dappi_InitialMigration --project " + csProjFile,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    };
+                    process = Process.Start(procStartInfo);
+                    
+                    process?.WaitForExit();
+                 
+                });
+            
+            logger.LogDebug(process?.StandardOutput.ReadToEnd().Trim());
+            if (!string.IsNullOrWhiteSpace(process?.StandardError.ReadToEnd()))
             {
-                UseShellExecute = false,
-                WorkingDirectory = Path.GetDirectoryName(outputFolder),
-                FileName = "dotnet",
-                Arguments = "ef migrations add Dappi_InitialMigration --project " + csProjFile,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };  
-        
-            logger.LogInformation("Generating migrations...");
-            var process = Process.Start(procStartInfo);
-            process?.WaitForExit();
-            logger.LogDebug(process?.StandardOutput.ReadToEnd());
-            logger.LogInformation("Dappi Initialization finished");
+                logger.LogError(process?.StandardError.ReadToEnd().Trim());
+            }
+            
+            logger.LogInformation("Dappi Initialization finished {ProjectPath}", outputFolder);
+
             return 0;
         }
         catch (Exception e)
