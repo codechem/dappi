@@ -5,17 +5,17 @@ using ICSharpCode.SharpZipLib.Zip;
 
 namespace Dappi.Cli;
 
-public class ExtractHelper
+public static class ZipHelper
 {
-    public static void ExtractZipFile(string archiveFilenameIn, string outFolder, string explicitFolderInZip = null)
+    public static void ExtractZipFile(string archiveFilenameIn, string outFolder, string? explicitFolderInZip = null)
     {
         Console.WriteLine($"Extracting Project Template Zip:{archiveFilenameIn}...");
         Console.WriteLine($"Extracting To:{outFolder}...");
 
-        ZipFile zf = null;
+        ZipFile? zf = null;
         try
         {
-            FileStream fs = File.OpenRead(archiveFilenameIn);
+            var fs = File.OpenRead(archiveFilenameIn);
             zf = new ZipFile(fs);
             var firstZipEntry = zf[0];
 
@@ -26,19 +26,19 @@ public class ExtractHelper
                     continue; // Ignore directories
                 }
 
-                string entryFileName = zipEntry.Name;
+                var entryFileName = zipEntry.Name;
                 // to remove the folder from the entry:- entryFileName = Path.GetFileName(entryFileName);
                 // Optionally match entrynames against a selection list here to skip as desired.
                 // The unpacked length is available in the zipEntry.Size property.
 
-                byte[] buffer = new byte[4096]; // 4K is optimum
-                Stream zipStream = zf.GetInputStream(zipEntry);
+                var buffer = new byte[4096]; // 4K is optimum
+                var zipStream = zf.GetInputStream(zipEntry);
 
                 // Manipulate the output filename here as desired.
                 //remove first level folder
                 if (firstZipEntry.IsDirectory)
                 {
-                    entryFileName = entryFileName.Substring(entryFileName.IndexOf("/") + 1);
+                    entryFileName = entryFileName.Substring(entryFileName.IndexOf("/", StringComparison.OrdinalIgnoreCase) + 1);
                 }
 
                 if (!string.IsNullOrWhiteSpace(explicitFolderInZip))
@@ -47,16 +47,14 @@ public class ExtractHelper
                     {
                         continue;
                     }
-                    else
-                    {
-                        //remove explicitFolder level 
-                        entryFileName = entryFileName.Substring(entryFileName.IndexOf("/") + 1);
-                    }
+
+                    //remove explicitFolder level 
+                    entryFileName = entryFileName.Substring(entryFileName.IndexOf("/", StringComparison.OrdinalIgnoreCase) + 1);
                 }
 
                 var fullZipToPath = Path.Combine(outFolder, entryFileName);
                 var directoryName = Path.GetDirectoryName(fullZipToPath);
-                if (directoryName.Length > 0)
+                if (directoryName?.Length > 0)
                 {
                     Directory.CreateDirectory(directoryName);
                 }
@@ -64,15 +62,14 @@ public class ExtractHelper
                 // Unzip file in buffered chunks. This is just as fast as unpacking to a buffer the full size
                 // of the file, but does not waste memory.
                 // The "using" will close the stream even if an exception occurs.
-                using (FileStream streamWriter = File.Create(fullZipToPath))
-                {
-                    StreamUtils.Copy(zipStream, streamWriter, buffer);
-                }
+                using var streamWriter = File.Create(fullZipToPath);
+                
+                StreamUtils.Copy(zipStream, streamWriter, buffer);
             }
         }
         finally
         {
-            if (zf != null)
+            if (zf is not null)
             {
                 zf.IsStreamOwner = true; // Makes close also shut the underlying stream
                 zf.Close(); // Ensure we release resources

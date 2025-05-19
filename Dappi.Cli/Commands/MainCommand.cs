@@ -4,22 +4,19 @@ using McMaster.Extensions.CommandLineUtils;
 namespace Dappi.Cli.Commands;
 
 [Command]
-[VersionOptionFromMember(MemberName = "GetVersion")]
+[VersionOptionFromMember(MemberName = nameof(GetVersion))]
 [HelpOption]
 [Subcommand(typeof(InitCommand), typeof(StartCommand))]
 public class MainCommand
 {
-
     public virtual void OnExecute(CommandLineApplication app)
     {
         app.ShowHelp();
     }
 
-    private string GetVersion()
+    private static string? GetVersion()
     {
         return typeof(MainCommand)
-            .Assembly?
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .InformationalVersion;
+            .Assembly?.GetName().Version?.ToString();
     }
 }

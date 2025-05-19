@@ -1,7 +1,5 @@
-using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using McMaster.Extensions.CommandLineUtils;
 
 namespace Dappi.Cli.Commands;
@@ -11,9 +9,9 @@ namespace Dappi.Cli.Commands;
 public class StartCommand
 {
     [Option("-p|--path <PATH>", "The path to where your new project should be initialized. Defaults to the current directory.", CommandOptionType.SingleValue)]
-    public string ProjectPath { get; set; }
+    public string? ProjectPath { get; set; }
     
-    private void OnExecute(CommandLineApplication app)
+    private void OnExecute(CommandLineApplication _)
     {
         var projectPath = string.IsNullOrEmpty(ProjectPath) ? Directory.GetCurrentDirectory() : ProjectPath;
         var startInfo = new ProcessStartInfo()
