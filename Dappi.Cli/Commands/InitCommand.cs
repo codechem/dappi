@@ -24,7 +24,6 @@ public class InitCommand
     [Option("--use-prerelease", "Use a pre-release version of Dappi.", CommandOptionType.NoValue)]
     public bool UsePreRelease { get; set; }
 
-
     private async Task OnExecute(CommandLineApplication app)
     {
         if (string.IsNullOrEmpty(ProjectName))
@@ -37,9 +36,9 @@ public class InitCommand
         var template = await TemplateFetcher.GetDappiTemplate(usePreRelease: UsePreRelease);
         var outputFolder = Path.Combine(projectPath, ProjectName);
 
-        ExtractHelper.ExtractZipFile(template.physicalPath, outputFolder, "templates");
+        ZipHelper.ExtractZipFile(template.physicalPath, outputFolder, "templates");
         
-        RenameHelper.RenameFolders(outputFolder, Constants.ProjectNamePlaceholder, ProjectName, renameBackup: true, excludedSubFolders: []);
+        RenameHelper.RenameFolders(outputFolder, Constants.ProjectNamePlaceholder, ProjectName, excludedSubFolders: []);
 
         var csProjFile = Directory.GetFiles(outputFolder, "*.csproj", SearchOption.AllDirectories).FirstOrDefault()!;
 
@@ -51,7 +50,8 @@ public class InitCommand
             WorkingDirectory = Path.GetDirectoryName(outputFolder),
             FileName = "dotnet",
             Arguments = "ef migrations add Dappi_InitialMigration --project " + csProjFile,
-        };
+        };  
+        
         Console.WriteLine("Generating migrations...");
         var process = Process.Start(procStartInfo);
         process?.WaitForExit();

@@ -4,15 +4,12 @@ using System.IO;
 
 namespace Dappi.Cli;
 
-public class RenameHelper
+public static class RenameHelper
 {
     public static void RenameFolders(
-        string folderToProcess, string placeholder, string projectName, bool renameBackup, List<string> excludedSubFolders)
+        string folderToProcess, string placeholder, string projectName, List<string>? excludedSubFolders)
     {
-        if (excludedSubFolders == null)
-        {
-            excludedSubFolders = new List<string>();
-        }
+        excludedSubFolders ??= [];
         
         //Delete ExcludeFolders
         foreach (var excludeFolder in excludedSubFolders)
@@ -26,16 +23,12 @@ public class RenameHelper
         }
 
         //Rename Folder
-        (var companyNamePlaceholder, var projectNamePlaceholder, var moduleNamePlaceholder) = placeholder.NameParse();
-        (var newCompanyName, var newProjectName, var newModuleName) = projectName.NameParse();
+        var (companyNamePlaceholder, projectNamePlaceholder, moduleNamePlaceholder) = placeholder.NameParse();
+        var (newCompanyName, newProjectName, newModuleName) = projectName.NameParse();
 
-        // Console.WriteLine($"Renaming {placeholder} to {projectName}...");
         var slnRenamer = new SolutionRenamer(folderToProcess,
             companyNamePlaceholder, projectNamePlaceholder, moduleNamePlaceholder,
-            newCompanyName, newProjectName, newModuleName)
-        {
-            CreateBackup = renameBackup
-        };
+            newCompanyName, newProjectName, newModuleName);
 
         slnRenamer.Run();
     }
