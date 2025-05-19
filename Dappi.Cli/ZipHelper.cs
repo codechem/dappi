@@ -9,9 +9,6 @@ public static class ZipHelper
 {
     public static void ExtractZipFile(string archiveFilenameIn, string outFolder, string? explicitFolderInZip = null)
     {
-        Console.WriteLine($"Extracting Project Template Zip:{archiveFilenameIn}...");
-        Console.WriteLine($"Extracting To:{outFolder}...");
-
         ZipFile? zf = null;
         try
         {

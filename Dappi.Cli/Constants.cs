@@ -15,17 +15,6 @@ public static class Constants
     
     public const string CliCommandName = "dappi";
 
-    public const string CliName = "Dappi CLI";
-
-    public const string DappiBanner = @"
-           ____                    _ 
-          |  _ \  __ _ _ __  _ __ (_)
-          | | | |/ _` | '_ \| '_ \| |
-          | |_| | (_| | |_) | |_) | |
-          |____/ \__,_| .__/| .__/|_|
-                      |_|   |_|      
-        ";
-
     public const string DappiRepoOwner = "codechem";
     
     public const string DappiRepoName = "dappi";

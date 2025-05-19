@@ -1,19 +1,24 @@
 using System.Diagnostics;
 using System.IO;
-using McMaster.Extensions.CommandLineUtils;
+using Spectre.Console.Cli;
 
 namespace Dappi.Cli.Commands;
 
-[Command("start", FullName = "Project starter", Description = "Runs your Dappi project")]
-[HelpOption]
-public class StartCommand
+public class StartCommand : Command<StartCommand.Settings>
 {
-    [Option("-p|--path <PATH>", "The path to where your new project should be initialized. Defaults to the current directory.", CommandOptionType.SingleValue)]
-    public string? ProjectPath { get; set; }
-    
-    private void OnExecute(CommandLineApplication _)
+    public const string CommandName = "start";
+    public sealed class Settings : LogCommandSettings
     {
-        var projectPath = string.IsNullOrEmpty(ProjectPath) ? Directory.GetCurrentDirectory() : ProjectPath;
+        [CommandOption("-p|--path <PROJECT-PATH>")] 
+        public string? ProjectPath { get; set; }
+    }
+
+    public override int Execute(CommandContext context, Settings settings)
+    {
+        var projectPath = string.IsNullOrEmpty(settings.ProjectPath)
+            ? Directory.GetCurrentDirectory()
+            : settings.ProjectPath;
+
         var startInfo = new ProcessStartInfo()
         {
             WorkingDirectory = projectPath,
@@ -21,7 +26,10 @@ public class StartCommand
             Arguments = $"run",
             FileName = "dotnet",
         };
+
         var process = Process.Start(startInfo);
         process?.WaitForExit();
+        
+        return process!.ExitCode;
     }
 }
