@@ -36,14 +36,14 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
         
         try
         {
-            logger.LogInformation($"Creating project {settings.ProjectName}");
+            logger.LogInformation("Creating project {ProjectName}", settings.ProjectName);
 
             var projectPath = string.IsNullOrEmpty(settings.OutputPath) ? Directory.GetCurrentDirectory() : settings.OutputPath;
      
-            var template = await TemplateFetcher.GetDappiTemplate(usePreRelease: settings.UsePreRelease);
-            logger.LogInformation("Will use release with tag: {Tag}",  template.tagName);
+            var template = await TemplateFetcher.GetDappiTemplate(usePreRelease: settings.UsePreRelease, logger);
         
             var outputFolder = Path.Combine(projectPath, settings.ProjectName);
+            
             logger.LogDebug("Output folder will be {OutputFolder}", outputFolder);
 
             ZipHelper.ExtractZipFile(template.physicalPath, outputFolder, "templates");
@@ -69,16 +69,15 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                     };
-                    process = Process.Start(procStartInfo);
                     
+                    process = Process.Start(procStartInfo);
                     process?.WaitForExit();
-                 
                 });
             
-            logger.LogDebug(process?.StandardOutput.ReadToEnd().Trim());
+            logger.LogDebug("dotnet ef output: {EfOutput}", process?.StandardOutput.ReadToEnd().Trim());
             if (!string.IsNullOrWhiteSpace(process?.StandardError.ReadToEnd()))
             {
-                logger.LogError(process?.StandardError.ReadToEnd().Trim());
+                logger.LogError("dotnet ef output {EfOutput}", process?.StandardError.ReadToEnd().Trim());
             }
             
             logger.LogInformation("Dappi Initialization finished {ProjectPath}", outputFolder);
