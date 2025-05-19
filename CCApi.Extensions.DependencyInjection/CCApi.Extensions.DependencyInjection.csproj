@@ -26,5 +26,13 @@
         <None Update="Scripts/restart-app.sh">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <Content Include="Scripts/Start-DappiMigrationRunner.ps1">
+            <Pack>true</Pack>
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+        </Content>
+        <Content Include="Scripts/restart-app.sh">
+            <Pack>true</Pack>
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+        </Content>
     </ItemGroup>
 </Project>
