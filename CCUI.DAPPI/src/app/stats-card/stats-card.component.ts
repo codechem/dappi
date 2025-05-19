@@ -13,7 +13,10 @@ import { AddCollectionTypeDialogComponent } from '../add-collection-type-dialog/
 import { Subject, Subscription } from 'rxjs';
 import * as CollectionActions from '../state/collection/collection.actions';
 import { Store } from '@ngrx/store';
-import { selectCollectionTypes } from '../state/collection/collection.selectors';
+import {
+  selectCollectionTypes,
+  selectPublishedCollectionTypes,
+} from '../state/collection/collection.selectors';
 
 @Component({
   selector: 'app-stats-card',
@@ -35,14 +38,27 @@ export class StatsCardComponent implements OnDestroy, OnInit {
   ) {}
 
   numberOfCollectionTypes: number = 0;
+  numberOfPublishedCollectionTypes: number = 0;
   private subscription: Subscription = new Subscription();
 
   models$ = this.store.select(selectCollectionTypes);
+  publishedModels$ = this.store.select(selectPublishedCollectionTypes);
 
   ngOnInit(): void {
     this.store.dispatch(CollectionActions.loadCollectionTypes());
+    this.store.dispatch(CollectionActions.loadPublishedCollectionTypes());
     this.subscription.add(
-      this.models$.subscribe((items) => (this.numberOfCollectionTypes = items.length)),
+      this.models$.subscribe((items) => {
+        this.numberOfCollectionTypes = items.length;
+        this.cdr.markForCheck();
+      }),
+    );
+
+    this.subscription.add(
+      this.publishedModels$.subscribe((items) => {
+        this.numberOfPublishedCollectionTypes = items.length;
+        this.cdr.markForCheck();
+      }),
     );
   }
 

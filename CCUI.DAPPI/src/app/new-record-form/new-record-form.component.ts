@@ -21,13 +21,14 @@ import {
   selectSelectedType,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
-import { Subscription } from 'rxjs';
+import { map, Subscription, take } from 'rxjs';
 import { MatOption } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerToggle } from '@angular/material/datepicker';
+import { Actions, ofType } from '@ngrx/effects';
 
 interface ContentField {
   key: string;
@@ -98,6 +99,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private location: Location,
     private store: Store,
+    private actions$: Actions,
   ) {
     this.contentForm = this.fb.group({});
   }
@@ -109,7 +111,18 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   getRelationDisplayValue(item: any, field: ContentField): string {
     if (!item) return '';
 
-    const displayKeys = ['name', 'title', 'label', 'displayName', 'value'];
+    const displayKeys = [
+      'name',
+      'title',
+      'label',
+      'displayName',
+      'value',
+      'Name',
+      'Title',
+      'Label',
+      'DisplayName',
+      'Value',
+    ];
 
     for (const key of displayKeys) {
       if (item[key] !== undefined && item[key] !== null) {
@@ -212,7 +225,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           ) {
             return {
               ...item,
-              relatedItems: items?.data,
+              relatedItems: items?.Data,
             };
           } else return item;
         });
@@ -295,7 +308,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
       }
 
       this.selectedFile = file;
-      this.uploadStatus = 'Complete';
+      this.uploadStatus = 'Ready to upload';
 
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
@@ -305,7 +318,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
         reader.readAsDataURL(file);
       }
 
-      this.contentForm.get(fieldKey)?.setValue(file);
+      this.contentForm.get(fieldKey)?.setValue('pending-upload');
     }
   }
 
@@ -379,7 +392,9 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
         const value = this.contentForm.value[key];
         const field = this.contentFields.find((f) => f.key === key);
 
-        if (field?.type === FieldType.relation && value && value.id) {
+        if (field?.type === FieldType.file) {
+          return acc;
+        } else if (field?.type === FieldType.relation && value && value.id) {
           const relationKey = this.fields.find(
             (f) => f.key.includes(field.key) && f.type === FieldType.id,
           )?.key;
@@ -406,35 +421,59 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   }
 
   private submitToBackend(formData: any): void {
-    const body = { ...formData };
+    this.store.dispatch(
+      ContentActions.createContent({
+        formData: formData,
+        contentType: this.selectedType,
+      }),
+    );
 
-    if (this.currentItem !== undefined) {
+    this.subscriptions.add(
+      this.actions$
+        .pipe(ofType(ContentActions.createContentSuccess), take(1))
+        .subscribe((action) => {
+          const newId = action.id;
+          if (newId && this.selectedFile) {
+            this.uploadFileIfExists(newId);
+          }
+        }),
+    );
+  }
+
+  private uploadFileIfExists(recordId: string): void {
+    if (this.selectedFile && this.fileFields.length > 0) {
+      const fieldKey = this.fileFields[0].key;
+
       this.store.dispatch(
-        ContentActions.updateContent({
-          id: this.currentItem.id,
-          formData: body,
+        ContentActions.uploadFile({
+          id: recordId,
+          file: this.selectedFile,
+          fieldName: fieldKey,
           contentType: this.selectedType,
         }),
+      );
+
+      this.subscription.add(
+        this.actions$
+          .pipe(ofType(ContentActions.uploadFileSuccess), take(1))
+          .subscribe((action) => {
+            this.finishSubmission();
+          }),
       );
     } else {
-      this.store.dispatch(
-        ContentActions.createContent({
-          formData: body,
-          contentType: this.selectedType,
-        }),
+      this.subscription.add(
+        this.actions$
+          .pipe(ofType(ContentActions.createContentSuccess), take(1))
+          .subscribe((action) => {
+            this.finishSubmission();
+          }),
       );
     }
+  }
 
+  private finishSubmission(): void {
     this.store.dispatch(ContentActions.setCurrentItem({ currentItem: undefined }));
     this.resetForm();
     this.location.back();
-    this.store.dispatch(
-      ContentActions.loadContent({
-        selectedType: this.selectedType ?? '',
-        page: 1,
-        limit: 10,
-        searchText: '',
-      }),
-    );
   }
 }

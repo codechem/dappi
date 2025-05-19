@@ -151,7 +151,7 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background-color: rgba(vars.$background-paper-elevation-1, 0.95);
+  background-color: vars.$primary-focus;
 }
 
 .small-cell,

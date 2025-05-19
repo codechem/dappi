@@ -28,6 +28,7 @@ import * as ContentActions from '../state/content/content.actions';
 import { Subscription } from 'rxjs';
 import { ContentItem, FieldType, TableHeader } from '../models/content.model';
 import { DrawerComponent } from '../relation-drawer/drawer.component';
+import { ImageViewerComponent } from '../image-viewer/image-viewer.component';
 
 @Component({
   selector: 'app-content-table',
@@ -41,6 +42,7 @@ import { DrawerComponent } from '../relation-drawer/drawer.component';
     MatMenuModule,
     MenuComponent,
     DrawerComponent,
+    ImageViewerComponent,
   ],
   templateUrl: './content-table.component.html',
   styleUrl: './content-table.component.scss',
@@ -60,6 +62,10 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   drawerTitle = '';
   drawerData: any = null;
   drawerType: FieldType | null = null;
+
+  isImageViewerOpen = false;
+  currentImageUrl: SafeUrl | string = '';
+  currentImageTitle = '';
 
   selectedType$ = this.store.select(selectSelectedType);
   isSearching$ = this.store.select(selectIsSearching);
@@ -105,6 +111,19 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     this.isDrawerOpen = false;
   }
 
+  openImageViewer(imageUrl: SafeUrl | string, title: string): void {
+    this.currentImageUrl = imageUrl;
+    this.currentImageTitle = title;
+    this.isImageViewerOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeImageViewer(): void {
+    this.isImageViewerOpen = false;
+    this.currentImageUrl = '';
+    document.body.style.overflow = '';
+  }
+
   getRelationDisplay(item: ContentItem, header: TableHeader): string {
     const value = item[header.key];
 
@@ -131,8 +150,8 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     this.subscription.add(this.itemsPerPage$.subscribe((limit) => (this.limit = limit)));
     this.subscription.add(
       this.items$.subscribe((items) => {
-        this.items = items?.data ?? [];
-        this.totalItems = items?.total ?? 0;
+        this.items = items?.Data ?? [];
+        this.totalItems = items?.Total ?? 0;
         this.calculatePagination();
       }),
     );
@@ -224,7 +243,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     this.selectedItems.clear();
 
     if (checked) {
-      this.items.forEach((item) => this.selectedItems.add(item.id));
+      this.items.forEach((item) => this.selectedItems.add(item.Id));
     }
   }
 
@@ -292,20 +311,6 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  convertToImage(byteArray: ArrayBuffer | string): SafeUrl {
-    if (!byteArray) return '';
-
-    if (typeof byteArray === 'string') {
-      return this.sanitizer.bypassSecurityTrustUrl(byteArray);
-    }
-
-    const base64 = btoa(
-      new Uint8Array(byteArray).reduce((data, byte) => data + String.fromCharCode(byte), ''),
-    );
-
-    return this.sanitizer.bypassSecurityTrustUrl(`data:image/jpeg;base64,${base64}`);
-  }
-
   getCellDisplay(item: ContentItem, header: TableHeader) {
     const value = item[header.key];
 
@@ -315,7 +320,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
 
     switch (header.type) {
       case FieldType.file:
-        return this.convertToImage(value);
+        return value.Url;
 
       case FieldType.date:
         return this.formatDate(value);
@@ -370,7 +375,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   toggleMenu(item: ContentItem, event: MouseEvent): void {
     event.stopPropagation();
 
-    if (this.activeMenuItemId === item.id) {
+    if (this.activeMenuItemId === item.Id) {
       this.activeMenuItemId = undefined;
     } else {
       const buttonRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
@@ -389,12 +394,12 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
         left: positionLeft,
       };
 
-      this.activeMenuItemId = item.id;
+      this.activeMenuItemId = item.Id;
     }
   }
 
   getSelectedItem(): ContentItem | null {
-    return this.items.find((item) => item.id === this.activeMenuItemId) || null;
+    return this.items.find((item) => item.Id === this.activeMenuItemId) || null;
   }
 
   @HostListener('document:click')
@@ -419,7 +424,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     if (confirmDelete) {
       this.store.dispatch(
         ContentActions.deleteContent({
-          id: item.id,
+          id: item.Id,
           contentType: this.selectedType ?? '',
         }),
       );

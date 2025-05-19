@@ -1,5 +1,20 @@
 import { createAction, props } from '@ngrx/store';
 import { ContentItem, PaginatedResponse, TableHeader } from '../../models/content.model';
+import { RecentContent } from '../../models/recent-content';
+
+export const loadContentTypeChanges = createAction('[Content] Load Content Type Changes');
+
+export const loadContentTypeChangesSuccess = createAction(
+  '[Content] Load Content Type Changes Success',
+  props<{
+    changes: Array<RecentContent> | null;
+  }>(),
+);
+
+export const loadContentTypeChangesFailure = createAction(
+  '[Content] Load Content Type Changes Failure',
+  props<{ error: string }>(),
+);
 
 export const loadContent = createAction(
   '[Content] Load Content',
@@ -10,6 +25,30 @@ export const loadContent = createAction(
     searchText: string;
   }>(),
 );
+
+export const uploadFile = createAction(
+  '[Content] Upload File',
+  props<{
+    id: string;
+    file: File;
+    fieldName: string;
+    contentType: string;
+  }>(),
+);
+
+export const uploadFileSuccess = createAction(
+  '[Content] Upload File Success',
+  props<{
+    fileName: string;
+    size: number;
+  }>(),
+);
+
+export const uploadFileFailure = createAction(
+  '[Content] Upload File Failure',
+  props<{ error: string }>(),
+);
+
 export const loadRelatedItems = createAction(
   '[Content] Load Related Items',
   props<{
@@ -110,8 +149,10 @@ export const createContent = createAction(
   props<{ formData: any; contentType: string }>(),
 );
 
-export const createContentSuccess = createAction('[Content] Create Content Success');
-
+export const createContentSuccess = createAction(
+  '[Content] Create Content Success',
+  props<{ id: string }>(),
+);
 export const createContentFailure = createAction(
   '[Content] Create Content Failure',
   props<{ error: string }>(),

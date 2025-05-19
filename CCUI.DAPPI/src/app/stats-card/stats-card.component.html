@@ -21,7 +21,7 @@
       <mat-icon>public</mat-icon>
     </div>
     <div class="stats-content">
-      <h2>99</h2>
+      <h2>{{ numberOfPublishedCollectionTypes }}</h2>
       <span class="green-text">Published Types</span>
     </div>
   </div>
@@ -31,7 +31,7 @@
       <mat-icon>edit_notes</mat-icon>
     </div>
     <div class="stats-content">
-      <h2>1</h2>
+      <h2>{{ numberOfCollectionTypes - numberOfPublishedCollectionTypes }}</h2>
       <span class="blue">Drafts</span>
     </div>
   </div>
