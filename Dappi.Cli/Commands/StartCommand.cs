@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.IO;
 using Spectre.Console.Cli;
@@ -9,7 +10,7 @@ public class StartCommand : Command<StartCommand.Settings>
     public const string CommandName = "start";
     public sealed class Settings : LogCommandSettings
     {
-        [CommandOption("-p|--path <PROJECT-PATH>")] 
+        [CommandOption("-p|--path <PROJECT-PATH>")]
         public string? ProjectPath { get; set; }
     }
 
@@ -28,8 +29,13 @@ public class StartCommand : Command<StartCommand.Settings>
         };
 
         var process = Process.Start(startInfo);
-        process?.WaitForExit();
-        
-        return process!.ExitCode;
+        if (process is null)
+        {
+            // We should fail here, no shame in this case
+            throw new InvalidOperationException("Failed to start process.");
+        }
+        process.WaitForExit();
+
+        return process.ExitCode;
     }
 }
