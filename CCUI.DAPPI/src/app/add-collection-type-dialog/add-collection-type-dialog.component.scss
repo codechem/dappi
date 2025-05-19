@@ -4,7 +4,7 @@
 .add-collection-type-dialog {
   background-color: vars.$background-paper-elevation-1;
   color: vars.$text-primary;
-  border-radius: 4px;
+  border-radius: 8px;
   min-width: 400px;
   max-width: 90vw;
 }
@@ -38,6 +38,12 @@
       margin-bottom: 8px;
       color: rgba(255, 255, 255, 0.7);
     }
+
+    .helper-text {
+      font-size: 12px;
+      margin-top: 4px;
+      color: rgba(255, 255, 255, 0.6);
+    }
   }
 
   .input-field {
@@ -52,7 +58,7 @@
 
   .continue-button {
     background-color: vars.$primary-main;
-    color: #ffffff;
+    color: vars.$primary-contrast-text;
     font-weight: 500;
     text-transform: none;
     transition: all 0.2s ease;
@@ -60,11 +66,12 @@
     border-radius: 4px;
 
     &:hover {
-      background-color: color.adjust(vars.$primary-main, $lightness: 5%);
+      background-color: color.adjust(vars.$primary-main, $lightness: -5%);
     }
 
     &[disabled] {
-      background-color: rgba(132, 101, 236, 0.5);
+      color: vars.$action-disabled !important;
+      background-color: vars.$action-disabled-background;
       cursor: not-allowed;
     }
   }

@@ -52,7 +52,20 @@
 
 .header-row {
   font-weight: bold;
-  background: vars.$primary-focus;
+  background: vars.$background-paper-elevation-1;
+
+  &:hover {
+    background: color.adjust(vars.$background-paper-elevation-1, $lightness: 5%);
+  }
+}
+
+.edit-icon {
+  color: #ffff;
+}
+
+.small-cell,
+.cell {
+  display: table-cell;
   padding: 12px 16px;
   box-shadow: none;
 }
