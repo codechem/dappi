@@ -1,5 +1,3 @@
-namespace Dappi.Cli.Commands;
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -7,6 +5,7 @@ using System.Globalization;
 using Serilog.Events;
 using Spectre.Console.Cli;
 
+namespace Dappi.Cli.Commands;
 
 public class LogCommandSettings : CommandSettings
 {

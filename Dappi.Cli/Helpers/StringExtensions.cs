@@ -1,6 +1,6 @@
 using System;
 
-namespace Dappi.Cli;
+namespace Dappi.Cli.Helpers;
 
 public static class StringExtensions
 {

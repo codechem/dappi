@@ -7,7 +7,7 @@ using Dappi.Cli.Exceptions;
 using Microsoft.Extensions.Logging;
 using Octokit;
 
-namespace Dappi.Cli;
+namespace Dappi.Cli.Helpers;
 
 public static class TemplateFetcher
 {

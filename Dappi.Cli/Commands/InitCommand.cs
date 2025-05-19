@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Dappi.Cli.Helpers;
 using Microsoft.Build.Construction;
 using Microsoft.Extensions.Logging;
 using Spectre.Console;
