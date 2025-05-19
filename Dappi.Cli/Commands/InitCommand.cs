@@ -4,61 +4,78 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Build.Construction;
+using Microsoft.Extensions.Logging;
+using Spectre.Console.Cli;
 
 namespace Dappi.Cli.Commands;
 
-[Command("init", FullName = "Solution Initializer", Description = "Creates a new Dappi Solution")]
-[HelpOption]
-public class InitCommand
+public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand.Settings>
 {
-    [Option("-n|--name <NAME>", "The name of your new project.", CommandOptionType.SingleValue)]
-    public string? ProjectName { get; set; }
-
-    [Option("-p|--path <PATH>",
-        "The path to where your new project should be initialized. Defaults to the current directory.",
-        CommandOptionType.SingleValue)]
-    public string? ProjectPath { get; set; }
-
-    [Option("--use-prerelease", "Use a pre-release version of Dappi.", CommandOptionType.NoValue)]
-    public bool UsePreRelease { get; set; }
-
-    private async Task OnExecute(CommandLineApplication app)
+    public const string CommandName = "init";
+    public sealed class Settings : LogCommandSettings
     {
-        if (string.IsNullOrEmpty(ProjectName))
-        {
-            app.ShowHelp();
-            return;
-        }
+        [CommandOption("-n|--name <PROJECT-NAME>")]
+        public string? ProjectName { get; set; }
 
-        var projectPath = string.IsNullOrEmpty(ProjectPath) ? Directory.GetCurrentDirectory() : ProjectPath;
-        var template = await TemplateFetcher.GetDappiTemplate(usePreRelease: UsePreRelease);
-        var outputFolder = Path.Combine(projectPath, ProjectName);
-
-        ZipHelper.ExtractZipFile(template.physicalPath, outputFolder, "templates");
+        [CommandOption("-p|--path <OUTPUT-PATH>")]
+        public string? OutputPath { get; set; }
         
-        RenameHelper.RenameFolders(outputFolder, Constants.ProjectNamePlaceholder, ProjectName, excludedSubFolders: []);
-
-        var csProjFile = Directory.GetFiles(outputFolder, "*.csproj", SearchOption.AllDirectories).FirstOrDefault()!;
-
-        ModifyCsprojWithNugetReferences(template, csProjFile);
-
-        var procStartInfo = new ProcessStartInfo()
-        {
-            UseShellExecute = false,
-            WorkingDirectory = Path.GetDirectoryName(outputFolder),
-            FileName = "dotnet",
-            Arguments = "ef migrations add Dappi_InitialMigration --project " + csProjFile,
-        };  
-        
-        Console.WriteLine("Generating migrations...");
-        var process = Process.Start(procStartInfo);
-        process?.WaitForExit();
-        
-        Console.WriteLine("Dappi initialization complete.");
+        [CommandOption("--use-prerelease", IsHidden = true)]
+        public bool UsePreRelease { get; set; }
     }
+    
+    
+    public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
+    {
+        if (settings.ProjectName is null)
+        {
+            return -1;
+        }
+        
+        try
+        {
+            logger.LogInformation($"Creating project {settings.ProjectName}");
 
+            var projectPath = string.IsNullOrEmpty(settings.OutputPath) ? Directory.GetCurrentDirectory() : settings.OutputPath;
+     
+            var template = await TemplateFetcher.GetDappiTemplate(usePreRelease: settings.UsePreRelease);
+            logger.LogInformation("Will use release with tag: {Tag}",  template.tagName);
+        
+            var outputFolder = Path.Combine(projectPath, settings.ProjectName);
+            logger.LogDebug("Output folder will be {OutputFolder}", outputFolder);
+
+            ZipHelper.ExtractZipFile(template.physicalPath, outputFolder, "templates");
+        
+            RenameHelper.RenameFolders(outputFolder, Constants.ProjectNamePlaceholder, settings.ProjectName, excludedSubFolders: []);
+
+            var csProjFile = Directory.GetFiles(outputFolder, "*.csproj", SearchOption.AllDirectories).FirstOrDefault()!;
+
+            ModifyCsprojWithNugetReferences(template, csProjFile);
+            var procStartInfo = new ProcessStartInfo()
+            {
+                UseShellExecute = false,
+                WorkingDirectory = Path.GetDirectoryName(outputFolder),
+                FileName = "dotnet",
+                Arguments = "ef migrations add Dappi_InitialMigration --project " + csProjFile,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };  
+        
+            logger.LogInformation("Generating migrations...");
+            var process = Process.Start(procStartInfo);
+            process?.WaitForExit();
+            logger.LogDebug(process?.StandardOutput.ReadToEnd());
+            logger.LogInformation("Dappi Initialization finished");
+            return 0;
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, e.Message);
+            return -1;
+        }
+    }
+    
     private static void ModifyCsprojWithNugetReferences((string physicalPath, string tagName) template, string csProjFile)
     {
         var referenceReplacements = GetReplacementsForProjectReferences(template.tagName);
