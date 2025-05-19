@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Dappi.Cli;
+namespace Dappi.Cli.Helpers;
 
 public static class RenameHelper
 {
@@ -17,7 +16,6 @@ public static class RenameHelper
             var directoryToDel = Path.Combine(folderToProcess, excludeFolder);
             if (Directory.Exists(directoryToDel))
             {
-                Console.WriteLine($"Exclude SubFolder:{directoryToDel}");
                 Directory.Delete(directoryToDel, true);
             }
         }
