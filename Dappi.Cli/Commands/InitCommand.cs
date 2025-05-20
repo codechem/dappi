@@ -77,12 +77,12 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
 
             ZipHelper.ExtractZipFile(template.physicalPath, outputFolder, "templates");
             
-            RenameHelper.RenameFolders(outputFolder, Constants.ProjectNamePlaceholder, settings.ProjectName, excludedSubFolders: []);
-
             var oldSolutionFile = Path.Combine(outputFolder, $"{Constants.ProjectNamePlaceholder}.sln");
             
             if (File.Exists(oldSolutionFile))
                 File.Delete(Path.Combine(outputFolder, $"{Constants.ProjectNamePlaceholder}.sln"));
+            
+            RenameHelper.RenameFolders(outputFolder, Constants.ProjectNamePlaceholder, settings.ProjectName, excludedSubFolders: []);
             
             var csProjFile = Directory.GetFiles(outputFolder, "*.csproj", SearchOption.AllDirectories).FirstOrDefault()!;
           
