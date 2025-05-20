@@ -39,8 +39,36 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
         {
             logger.LogInformation("Creating project {ProjectName}", settings.ProjectName);
 
-            var projectPath = string.IsNullOrEmpty(settings.OutputPath) ? Directory.GetCurrentDirectory() : settings.OutputPath;
-     
+            string projectPath;
+            if (string.IsNullOrEmpty(settings.OutputPath))
+            {
+                projectPath = Directory.GetCurrentDirectory();
+            }
+            else
+            {
+                // Expand tilde to home directory if present
+                var outputPath = settings.OutputPath;
+                if (outputPath.StartsWith("~"))
+                {
+                    var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                    if (outputPath.Length == 1)
+                    {
+                        outputPath = homeDir;
+                    }
+                    else if (outputPath.Length > 1 && (outputPath[1] == '/' || outputPath[1] == '\\'))
+                    {
+                        outputPath = Path.Combine(homeDir, outputPath.Substring(2));
+                    }
+                    else
+                    {
+                        outputPath = Path.Combine(homeDir, outputPath.Substring(1));
+                    }
+                }
+
+                // Ensure we're getting an absolute path
+                projectPath = Path.GetFullPath(outputPath);
+            }     
+ 
             var template = await TemplateFetcher.GetDappiTemplate(usePreRelease: settings.UsePreRelease, logger);
         
             var outputFolder = Path.Combine(projectPath, settings.ProjectName);
