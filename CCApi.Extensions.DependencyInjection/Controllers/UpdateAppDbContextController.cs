@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CCApi.Extensions.DependencyInjection.Controllers;
 

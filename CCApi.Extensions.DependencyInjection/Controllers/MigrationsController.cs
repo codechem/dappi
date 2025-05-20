@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 
 namespace CCApi.Extensions.DependencyInjection.Controllers;

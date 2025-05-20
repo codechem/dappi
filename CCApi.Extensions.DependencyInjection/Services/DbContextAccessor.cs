@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using CCApi.Extensions.DependencyInjection.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace CCApi.Extensions.DependencyInjection.Services
 {

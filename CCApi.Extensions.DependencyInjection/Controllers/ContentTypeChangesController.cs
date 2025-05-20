@@ -1,15 +1,9 @@
+using System.Data;
+using System.Text.Json;
+using CCApi.Extensions.DependencyInjection.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using CCApi.Extensions.DependencyInjection.Models;
-using CCApi.Extensions.DependencyInjection.Interfaces;
-using CCApi.Extensions.DependencyInjection.Services;
 
 namespace CCApi.Extensions.DependencyInjection.Controllers
 {

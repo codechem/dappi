@@ -108,7 +108,7 @@ public class SolutionRenamer
             var newDir = subDirectory;
             if (subDirectory.Contains(placeHolder!))
             {
-                 newDir = subDirectory.Replace(placeHolder!, name);
+                newDir = subDirectory.Replace(placeHolder!, name);
                 Directory.Move(subDirectory, newDir);
             }
 

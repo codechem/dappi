@@ -1,13 +1,13 @@
+using System.Data;
 using CCApi.Extensions.DependencyInjection;
 using CCApi.Extensions.DependencyInjection.Constants;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
-using Swashbuckle.AspNetCore.SwaggerUI;
-using System.Data;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Hosting;
+using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

@@ -38,7 +38,7 @@ public static class TemplateFetcher
     private static async Task<Release> GetRelease(bool usePreRelease)
     {
         var github = new GitHubClient(new ProductHeaderValue(Constants.CliCommandName));
-        
+
         if (!usePreRelease)
         {
             try

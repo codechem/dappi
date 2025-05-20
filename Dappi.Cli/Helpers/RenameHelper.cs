@@ -9,7 +9,7 @@ public static class RenameHelper
         string folderToProcess, string placeholder, string projectName, List<string>? excludedSubFolders)
     {
         excludedSubFolders ??= [];
-        
+
         //Delete ExcludeFolders
         foreach (var excludeFolder in excludedSubFolders)
         {

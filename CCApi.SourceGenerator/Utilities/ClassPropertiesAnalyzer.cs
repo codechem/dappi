@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text;
 using CCApi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;

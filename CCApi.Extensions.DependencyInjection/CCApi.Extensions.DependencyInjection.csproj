@@ -20,7 +20,9 @@
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.5" />
     </ItemGroup>
-        
+    <Target Name="Format">
+        <Exec Command="csharpier"/>
+    </Target>
     <ItemGroup>
         <None Update="Scripts/Start-DappiMigrationRunner.ps1">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
