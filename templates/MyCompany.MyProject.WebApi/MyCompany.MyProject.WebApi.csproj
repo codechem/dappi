@@ -12,5 +12,10 @@
     <ProjectReference Include="..\..\CCApi.Extensions.DependencyInjection\CCApi.Extensions.DependencyInjection.csproj" />
     <ProjectReference Include="..\..\CCApi.SourceGenerator\CCApi.SourceGenerator.csproj" OutputItemType="Analyzer" />
   </ItemGroup>
+ 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+    <Folder Include="Entities\" />
+  </ItemGroup>
 
 </Project>

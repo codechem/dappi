@@ -1,11 +1,10 @@
 using System.Collections.Generic;
-using System.Globalization;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Cli.Help;
 using Spectre.Console.Rendering;
 
-namespace Dappi.Cli;
+namespace Dappi.Cli.CommandHelpProviders;
 
 internal class DappiBannerAndVersionProvider(ICommandAppSettings settings) : HelpProvider(settings)
 {

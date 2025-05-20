@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Spectre.Console.Cli;
 
 namespace Dappi.Cli.Commands;
@@ -18,12 +19,15 @@ public class StartCommand : Command<StartCommand.Settings>
         var projectPath = string.IsNullOrEmpty(settings.ProjectPath)
             ? Directory.GetCurrentDirectory()
             : settings.ProjectPath;
+        
+        var csProjFile = Directory.GetFiles(projectPath, "*.csproj", SearchOption.AllDirectories)
+            .FirstOrDefault()!;
 
         var startInfo = new ProcessStartInfo()
         {
             WorkingDirectory = projectPath,
             UseShellExecute = false,
-            Arguments = $"run",
+            Arguments = $"run --project {csProjFile}",
             FileName = "dotnet",
         };
 

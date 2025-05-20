@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -72,8 +71,7 @@ public static class TemplateFetcher
         webClient.Headers.Add("User-Agent", Constants.CliCommandName);
 
         logger?.LogDebug("Start download {ZipUrl}", zipUrl);
-        Console.WriteLine($"Start download zip file:{zipUrl}");
-        Console.WriteLine($"Downloading...");
+        logger?.LogDebug($"Start download zip file:{zipUrl}");
 
         webClient.DownloadFile(zipUrl, filePath);
         logger?.LogDebug("Downloaded {ZipUrl} to {FilePath}", zipUrl, filePath);

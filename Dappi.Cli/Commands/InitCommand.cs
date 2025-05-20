@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Dappi.Cli.Exceptions;
 using Dappi.Cli.Helpers;
 using Microsoft.Build.Construction;
 using Microsoft.Extensions.Logging;
@@ -26,7 +27,6 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
         [CommandOption("--use-prerelease", IsHidden = true)]
         public bool UsePreRelease { get; set; }
     }
-    
     
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
@@ -52,9 +52,50 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
             RenameHelper.RenameFolders(outputFolder, Constants.ProjectNamePlaceholder, settings.ProjectName, excludedSubFolders: []);
 
             var csProjFile = Directory.GetFiles(outputFolder, "*.csproj", SearchOption.AllDirectories).FirstOrDefault()!;
-
+          
             ModifyCsprojWithNugetReferences(template, csProjFile);
-            var process = new Process();
+
+            AnsiConsole.Status()
+                .Start($"Creating your solution {settings.ProjectName}", ctx =>
+                {
+                    ctx.Spinner(Spinner.Known.Circle);
+
+                    var procStartInfo = new ProcessStartInfo()
+                    {
+                        FileName = "dotnet",
+                        Arguments = $"new sln -n \"{settings.ProjectName}\"",
+                        WorkingDirectory = outputFolder,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    };
+                    
+                    var process = Process.Start(procStartInfo);
+                    process?.WaitForExit();
+                    
+                    if (process?.ExitCode != Environment.ExitCode)
+                    {
+                        throw new DappiInitializationFailedException(
+                            $"Command: {procStartInfo.FileName} Arguments: {procStartInfo.Arguments} {process?.StandardError.ReadToEnd()}");
+                    }
+
+                    var addProjectToSlnStartInfo = new ProcessStartInfo()
+                    {
+                        FileName = "dotnet",
+                        Arguments = $"sln add \"{csProjFile}\"",
+                        WorkingDirectory = outputFolder,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    };
+                    
+                    var processAdd = Process.Start(addProjectToSlnStartInfo);
+                    processAdd?.WaitForExit();
+                  
+                    if (processAdd?.ExitCode != Environment.ExitCode)
+                    {
+                        throw new DappiInitializationFailedException(
+                            $"{addProjectToSlnStartInfo.FileName}: {addProjectToSlnStartInfo.Arguments} output: {processAdd?.StandardError.ReadToEnd()}");
+                    }
+                });
             
             AnsiConsole.Status()
                 .Start("Generating initial migrations...", ctx => 
@@ -71,22 +112,25 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
                         RedirectStandardError = true,
                     };
                     
-                    process = Process.Start(procStartInfo);
+                    var process = Process.Start(procStartInfo);
                     process?.WaitForExit();
+                    if (process?.ExitCode != Environment.ExitCode)
+                    {
+                        throw new DappiInitializationFailedException(
+                            $"{procStartInfo.FileName}: {procStartInfo.Arguments} output: {process?.StandardOutput.ReadToEnd()}");
+                    }
                 });
-            
-            logger.LogDebug("dotnet ef output: {EfOutput}", process?.StandardOutput.ReadToEnd().Trim());
-            if (!string.IsNullOrWhiteSpace(process?.StandardError.ReadToEnd()))
-            {
-                logger.LogError("dotnet ef output {EfOutput}", process?.StandardError.ReadToEnd().Trim());
-            }
-            
-            logger.LogInformation("Dappi Initialization finished {ProjectPath}", outputFolder);
+
+            logger.LogInformation("Your Dappi project has been initialized in {ProjectPath}", outputFolder);
+            logger.LogInformation(
+                "You can start your project by using {DappiStartCommand} or navigate to {ProjectPath} and run your project through dotnet or your IDE of choice ", 
+                $"dappi {StartCommand.CommandName} --path {outputFolder}", outputFolder);
 
             return 0;
         }
         catch (Exception e)
         {
+            logger.LogInformation("Dappi Initialization failed");
             logger.LogError(e, e.Message);
             return -1;
         }
