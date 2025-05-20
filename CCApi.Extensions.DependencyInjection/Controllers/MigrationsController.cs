@@ -123,7 +123,7 @@ public class MigrationController : ControllerBase
         {
             var currentDir = Directory.GetCurrentDirectory();
             var csproj = Directory.GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
-            
+
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
@@ -139,7 +139,7 @@ public class MigrationController : ControllerBase
         }
     }
 
-    private string GetMigrationName() 
+    private string GetMigrationName()
     {
         var formattedDate = DateTime.Now.ToString("yyyyMMddHHmmss");
         return $"DappiGeneratedMigration_{formattedDate}";

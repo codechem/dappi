@@ -2,7 +2,6 @@ import { Component, OnInit, PLATFORM_ID, Inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { LeftMenuComponent } from './left-menu/left-menu.component';
-import { AuthComponent } from './auth/auth.component';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { checkAuth } from './state/auth/auth.actions';

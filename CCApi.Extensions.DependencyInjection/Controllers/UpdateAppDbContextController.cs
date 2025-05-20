@@ -64,12 +64,12 @@ public class UpdateAppDbContextController : ControllerBase
         foreach (var missingModelName in missingModels)
             dbContextScopedCodeBuilder.AppendLine(
                 $"{Environment.NewLine}{padding}public DbSet<{missingModelName}> {missingModelName}s {{ get; set; }}");
-        
+
         var dbContextBuilder = new StringBuilder(appDbContextCode);
         // Replace the last character to add appropriate padding.
-        var endOfScopeReplacementCharacter = isInFileScopedNamespace ? "}":  new string('\t', 1) + "}";
+        var endOfScopeReplacementCharacter = isInFileScopedNamespace ? "}" : new string('\t', 1) + "}";
         dbContextBuilder.Replace("}", endOfScopeReplacementCharacter, classDeclarationEndPosition, endOfScopeReplacementCharacter.Length);
-     
+
         dbContextBuilder.Remove(classDeclarationStartPosition + 1, codeInBetween.Length);
         dbContextBuilder.Insert(classDeclarationStartPosition, dbContextScopedCodeBuilder.ToString());
 
@@ -85,7 +85,7 @@ public class UpdateAppDbContextController : ControllerBase
     {
         const char startScopeSymbol = '{';
         const char endScopeSymbol = '}';
-     
+
         var classDeclarationStartPosition =
             GetFirstDeclarationSymbolPositionForClass(codeText, startScopeSymbol, isInFileScopedNamespace);
         var classDeclarationEndPostion =
@@ -94,7 +94,7 @@ public class UpdateAppDbContextController : ControllerBase
         var startPosition = classDeclarationStartPosition + 1;
         var endPosition = classDeclarationEndPostion - 1;
 
-        return (startPosition, endPosition, codeText[startPosition..endPosition]); 
+        return (startPosition, endPosition, codeText[startPosition..endPosition]);
     }
 
     private static bool IsClassInFileScopedNamespace(string codeText)
@@ -107,14 +107,14 @@ public class UpdateAppDbContextController : ControllerBase
 
     private static int GetFirstDeclarationSymbolPositionForClass(string classText, char symbol, bool isInFileScopedNamespace)
     {
-        return isInFileScopedNamespace 
+        return isInFileScopedNamespace
             ? classText.IndexOf(symbol)
             : classText.IndexOf(symbol, classText.IndexOf(symbol) + 1);
     }
 
     private static int GetLastDeclarationSymbolPositionForClass(string classText, char symbol, bool isInFileScopedNamespace)
     {
-        return isInFileScopedNamespace 
+        return isInFileScopedNamespace
             ? classText.LastIndexOf(symbol)
             : classText.LastIndexOf(symbol, classText.LastIndexOf(symbol) - 1);
     }

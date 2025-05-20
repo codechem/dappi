@@ -59,7 +59,7 @@ public static class AppExtensions
 
         return app;
     }
-    
+
     public static async Task SeedRolesAndUsersAsync<TUser, TRole>(this IServiceProvider serviceProvider)
         where TUser : IdentityUser, new()
         where TRole : IdentityRole, new()

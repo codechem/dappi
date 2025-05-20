@@ -4,8 +4,8 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using CCApi.Extensions.DependencyInjection.Models;
 using CCApi.Extensions.DependencyInjection.Interfaces;
+using CCApi.Extensions.DependencyInjection.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,8 +17,14 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
     public class ModelsController : ControllerBase
     {
         private readonly DbContext _dbContext;
-        private readonly string _entitiesFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "Entities");
-        private readonly string _controllersFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "Controllers");
+        private readonly string _entitiesFolderPath = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "Entities"
+        );
+        private readonly string _controllersFolderPath = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "Controllers"
+        );
 
         public ModelsController(IDbContextAccessor dbContextAccessor)
         {
@@ -40,9 +46,10 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     return NotFound("Entities directory not found.");
                 }
 
-                var modelNames = Directory.GetFiles(_entitiesFolderPath, "*.cs")
-                                          .Select(Path.GetFileNameWithoutExtension)
-                                          .ToList();
+                var modelNames = Directory
+                    .GetFiles(_entitiesFolderPath, "*.cs")
+                    .Select(Path.GetFileNameWithoutExtension)
+                    .ToList();
 
                 return Ok(modelNames);
             }
@@ -62,11 +69,14 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
             if (!IsValidClassName(request.ModelName))
             {
-                return BadRequest($"The model name '{request.ModelName}' is not a valid C# class name.");
+                return BadRequest(
+                    $"The model name '{request.ModelName}' is not a valid C# class name."
+                );
             }
-            var modelNames = Directory.GetFiles(_entitiesFolderPath, "*.cs")
-                                      .Select(Path.GetFileNameWithoutExtension)
-                                      .ToList();
+            var modelNames = Directory
+                .GetFiles(_entitiesFolderPath, "*.cs")
+                .Select(Path.GetFileNameWithoutExtension)
+                .ToList();
 
             if (modelNames.Contains(request.ModelName))
             {
@@ -87,13 +97,19 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                 System.IO.File.WriteAllText(filePath, classCode);
 
-                await AddContentTypeChangeAsync(request.ModelName, new Dictionary<string, string>(), false);
+                await AddContentTypeChangeAsync(
+                    request.ModelName,
+                    new Dictionary<string, string>(),
+                    false
+                );
 
-                return Ok(new
-                {
-                    Message = $"Model class '{modelType.Name}' created successfully.",
-                    FilePath = filePath
-                });
+                return Ok(
+                    new
+                    {
+                        Message = $"Model class '{modelType.Name}' created successfully.",
+                        FilePath = filePath,
+                    }
+                );
             }
             catch (Exception ex)
             {
@@ -120,15 +136,28 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                 System.IO.File.Delete(modelFilePath);
 
-                var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "AppDbContext.cs");
+                var dbContextFilePath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "Data",
+                    "AppDbContext.cs"
+                );
 
                 string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
-                string pattern = $@"\s*public\s+DbSet<{modelName}>\s+{modelName}s\s+\{{\s+get;\s+set;\s+\}}";
-                dbContextContent = Regex.Replace(dbContextContent, pattern, string.Empty, RegexOptions.Multiline);
+                string pattern =
+                    $@"\s*public\s+DbSet<{modelName}>\s+{modelName}s\s+\{{\s+get;\s+set;\s+\}}";
+                dbContextContent = Regex.Replace(
+                    dbContextContent,
+                    pattern,
+                    string.Empty,
+                    RegexOptions.Multiline
+                );
 
                 System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
 
-                var controllerFilePath = Path.Combine(_controllersFolderPath, $"{modelName}Controller.cs");
+                var controllerFilePath = Path.Combine(
+                    _controllersFolderPath,
+                    $"{modelName}Controller.cs"
+                );
 
                 if (System.IO.File.Exists(controllerFilePath))
                 {
@@ -137,11 +166,13 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                 await AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(), false);
 
-                return Ok(new
-                {
-                    Message = $"Model '{modelName}' deleted successfully.",
-                    FilePath = modelFilePath
-                });
+                return Ok(
+                    new
+                    {
+                        Message = $"Model '{modelName}' deleted successfully.",
+                        FilePath = modelFilePath,
+                    }
+                );
             }
             catch (Exception ex)
             {
@@ -152,7 +183,11 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
         [HttpPut("{modelName}")]
         public async Task<IActionResult> AddField(string modelName, [FromBody] FieldRequest request)
         {
-            if (string.IsNullOrWhiteSpace(modelName) || string.IsNullOrWhiteSpace(request.FieldName) || string.IsNullOrWhiteSpace(request.FieldType))
+            if (
+                string.IsNullOrWhiteSpace(modelName)
+                || string.IsNullOrWhiteSpace(request.FieldName)
+                || string.IsNullOrWhiteSpace(request.FieldType)
+            )
             {
                 return BadRequest("Model name, field name, and field type must be provided.");
             }
@@ -171,79 +206,151 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                 if (request.FieldType == "OneToOne")
                 {
-                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $"{request.RelatedTo}.cs");
+                    var modelRelatedToFilePath = Path.Combine(
+                        _entitiesFolderPath,
+                        $"{request.RelatedTo}.cs"
+                    );
                     var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    var updatedCode = AddFieldToClass(existingCode, $"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    var updatedCode = AddFieldToClass(
+                        existingCode,
+                        $"{request.FieldName}Id",
+                        $"Guid{(!request.IsRequired ? "?" : "")}",
+                        "",
+                        request.IsRequired
+                    );
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
                     existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    updatedCode = AddFieldToClass(existingCode, request.FieldName, $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    updatedCode = AddFieldToClass(
+                        existingCode,
+                        request.FieldName,
+                        $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
+                        "",
+                        request.IsRequired
+                    );
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
-                    var relatedToCode = AddFieldToClass(existingRelatedToCode, request.FieldName, $"{modelName}{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    var relatedToCode = AddFieldToClass(
+                        existingRelatedToCode,
+                        request.FieldName,
+                        $"{modelName}{(!request.IsRequired ? "?" : "")}",
+                        "",
+                        request.IsRequired
+                    );
 
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
                     UpdateDbContextOneToOne(modelName, request.FieldName, request.RelatedTo);
 
-                    fieldDict.Add($"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}");
+                    fieldDict.Add(
+                        $"{request.FieldName}Id",
+                        $"Guid{(!request.IsRequired ? "?" : "")}"
+                    );
                 }
                 else if (request.FieldType == "OneToMany")
                 {
-                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $"{request.RelatedTo}.cs");
+                    var modelRelatedToFilePath = Path.Combine(
+                        _entitiesFolderPath,
+                        $"{request.RelatedTo}.cs"
+                    );
                     var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    var updatedCode = AddFieldToClass(existingCode, $"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    var updatedCode = AddFieldToClass(
+                        existingCode,
+                        $"{request.FieldName}Id",
+                        $"Guid{(!request.IsRequired ? "?" : "")}",
+                        "",
+                        request.IsRequired
+                    );
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
                     existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    updatedCode = AddFieldToClass(existingCode, request.FieldName, $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    updatedCode = AddFieldToClass(
+                        existingCode,
+                        request.FieldName,
+                        $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
+                        "",
+                        request.IsRequired
+                    );
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
-                    var relatedToCode = AddFieldToClass(existingRelatedToCode, request.FieldName, $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+                    var relatedToCode = AddFieldToClass(
+                        existingRelatedToCode,
+                        request.FieldName,
+                        $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
+                        $"{modelName}{(!request.IsRequired ? "?" : "")}",
+                        request.IsRequired
+                    );
 
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
                     UpdateDbContextOneToMany(modelName, request.FieldName, request.RelatedTo);
 
-                    fieldDict.Add($"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}");
+                    fieldDict.Add(
+                        $"{request.FieldName}Id",
+                        $"Guid{(!request.IsRequired ? "?" : "")}"
+                    );
                 }
                 else if (request.FieldType == "ManyToMany")
                 {
-                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $"{request.RelatedTo}.cs");
+                    var modelRelatedToFilePath = Path.Combine(
+                        _entitiesFolderPath,
+                        $"{request.RelatedTo}.cs"
+                    );
 
                     var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    var updatedCode = AddFieldToClass(existingCode, $"{request.RelatedTo}s", $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>", $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+                    var updatedCode = AddFieldToClass(
+                        existingCode,
+                        $"{request.RelatedTo}s",
+                        $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>",
+                        $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
+                        request.IsRequired
+                    );
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
-                    var relatedToCode = AddFieldToClass(existingRelatedToCode, $"{modelName}s", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+                    var relatedToCode = AddFieldToClass(
+                        existingRelatedToCode,
+                        $"{modelName}s",
+                        $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
+                        $"{modelName}{(!request.IsRequired ? "?" : "")}",
+                        request.IsRequired
+                    );
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
 
                     UpdateDbContextManyToMany(modelName, request.RelatedTo);
 
-                    fieldDict[request.FieldName] = $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>";
+                    fieldDict[request.FieldName] =
+                        $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>";
                 }
                 else
                 {
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    var updatedCode = AddFieldToClass(existingCode, request.FieldName, $"{request.FieldType}{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    var updatedCode = AddFieldToClass(
+                        existingCode,
+                        request.FieldName,
+                        $"{request.FieldType}{(!request.IsRequired ? "?" : "")}",
+                        "",
+                        request.IsRequired
+                    );
 
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
                 }
 
                 await UpdateContentTypeChangeFieldsAsync(modelName, fieldDict);
 
-                return Ok(new
-                {
-                    Message = $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
-                    FilePath = modelFilePath
-                });
+                return Ok(
+                    new
+                    {
+                        Message = $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
+                        FilePath = modelFilePath,
+                    }
+                );
             }
             catch (Exception ex)
             {
@@ -251,7 +358,11 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             }
         }
 
-        private async Task AddContentTypeChangeAsync(string modelName, Dictionary<string, string> fields, bool isPublished)
+        private async Task AddContentTypeChangeAsync(
+            string modelName,
+            Dictionary<string, string> fields,
+            bool isPublished
+        )
         {
             try
             {
@@ -264,7 +375,8 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 var userId = User.Identity?.Name ?? "system";
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = @"
+                    command.CommandText =
+                        @"
         INSERT INTO ""ContentTypeChanges"" (""ModelName"", ""Fields"", ""ModifiedBy"", ""ModifiedAt"", ""IsPublished"")
         VALUES (@modelName, @fields, @modifiedBy, @modifiedAt, @isPublished)";
 
@@ -303,7 +415,10 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             }
         }
 
-        private async Task UpdateContentTypeChangeFieldsAsync(string modelName, Dictionary<string, string> newFields)
+        private async Task UpdateContentTypeChangeFieldsAsync(
+            string modelName,
+            Dictionary<string, string> newFields
+        )
         {
             try
             {
@@ -319,7 +434,8 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = @"
+                    command.CommandText =
+                        @"
         SELECT ""Id"", ""Fields"" 
         FROM ""ContentTypeChanges"" 
         WHERE ""ModelName"" = @modelName AND ""IsPublished"" = false 
@@ -338,7 +454,9 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                             hasUnpublishedChanges = true;
                             existingRecordId = reader.GetInt32(0);
                             var fieldsJson = reader.GetString(1);
-                            existingFields = JsonSerializer.Deserialize<Dictionary<string, string>>(fieldsJson) ?? new Dictionary<string, string>();
+                            existingFields =
+                                JsonSerializer.Deserialize<Dictionary<string, string>>(fieldsJson)
+                                ?? new Dictionary<string, string>();
                         }
                     }
                 }
@@ -352,7 +470,8 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                     using (var command = connection.CreateCommand())
                     {
-                        command.CommandText = @"
+                        command.CommandText =
+                            @"
             UPDATE ""ContentTypeChanges"" 
             SET ""Fields"" = @fields, ""ModifiedAt"" = @modifiedAt, ""ModifiedBy"" = @modifiedBy
             WHERE ""Id"" = @id";
@@ -394,7 +513,11 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
         private void UpdateDbContextManyToMany(string modelName, string relatedTo)
         {
-            var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "AppDbContext.cs");
+            var dbContextFilePath = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Data",
+                "AppDbContext.cs"
+            );
             if (!System.IO.File.Exists(dbContextFilePath))
             {
                 throw new FileNotFoundException($"DbContext file not found at {dbContextFilePath}");
@@ -402,12 +525,15 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
             string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
 
-            int onModelCreatingIndex = dbContextContent.IndexOf("protected override void OnModelCreating(ModelBuilder modelBuilder)");
+            int onModelCreatingIndex = dbContextContent.IndexOf(
+                "protected override void OnModelCreating(ModelBuilder modelBuilder)"
+            );
             if (onModelCreatingIndex == -1)
             {
                 var lastClosingBrace = dbContextContent.LastIndexOf("}");
 
-                var onModelCreatingMethod = $@"
+                var onModelCreatingMethod =
+                    $@"
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {{
         modelBuilder.Entity<{modelName}>()
@@ -441,7 +567,8 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                 int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
 
-                var configCode = $@"
+                var configCode =
+                    $@"
         modelBuilder.Entity<{modelName}>()
             .HasMany(m => m.{relatedTo}s)
             .WithMany(r => r.{modelName}s)
@@ -453,9 +580,17 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
         }
 
-        private void UpdateDbContextOneToOne(string modelName, string propertyName, string relatedTo)
+        private void UpdateDbContextOneToOne(
+            string modelName,
+            string propertyName,
+            string relatedTo
+        )
         {
-            var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "AppDbContext.cs");
+            var dbContextFilePath = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Data",
+                "AppDbContext.cs"
+            );
             if (!System.IO.File.Exists(dbContextFilePath))
             {
                 throw new FileNotFoundException($"DbContext file not found at {dbContextFilePath}");
@@ -463,12 +598,15 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
             string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
 
-            int onModelCreatingIndex = dbContextContent.IndexOf("protected override void OnModelCreating(ModelBuilder modelBuilder)");
+            int onModelCreatingIndex = dbContextContent.IndexOf(
+                "protected override void OnModelCreating(ModelBuilder modelBuilder)"
+            );
             if (onModelCreatingIndex == -1)
             {
                 var lastClosingBrace = dbContextContent.LastIndexOf("}");
 
-                var onModelCreatingMethod = $@"
+                var onModelCreatingMethod =
+                    $@"
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {{
         modelBuilder.Entity<{modelName}>()
@@ -503,7 +641,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
 
                 var configCode =
-                $@"
+                    $@"
         modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
             .WithOne(e => e.{propertyName});";
@@ -514,9 +652,17 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
         }
 
-        private void UpdateDbContextOneToMany(string modelName, string propertyName, string relatedTo)
+        private void UpdateDbContextOneToMany(
+            string modelName,
+            string propertyName,
+            string relatedTo
+        )
         {
-            var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "AppDbContext.cs");
+            var dbContextFilePath = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Data",
+                "AppDbContext.cs"
+            );
             if (!System.IO.File.Exists(dbContextFilePath))
             {
                 throw new FileNotFoundException($"DbContext file not found at {dbContextFilePath}");
@@ -524,12 +670,15 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
             string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
 
-            int onModelCreatingIndex = dbContextContent.IndexOf("protected override void OnModelCreating(ModelBuilder modelBuilder)");
+            int onModelCreatingIndex = dbContextContent.IndexOf(
+                "protected override void OnModelCreating(ModelBuilder modelBuilder)"
+            );
             if (onModelCreatingIndex == -1)
             {
                 var lastClosingBrace = dbContextContent.LastIndexOf("}");
 
-                var onModelCreatingMethod = $@"
+                var onModelCreatingMethod =
+                    $@"
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {{
         modelBuilder.Entity<{modelName}>()
@@ -563,7 +712,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
 
                 var configCode =
-                $@"
+                    $@"
         modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
             .WithMany(e => e.{propertyName});";
@@ -574,22 +723,35 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
         }
 
-        private string AddFieldToClass(string classCode, string fieldName, string fieldType, string collectionType = "", bool isRequired = false)
+        private string AddFieldToClass(
+            string classCode,
+            string fieldName,
+            string fieldType,
+            string collectionType = "",
+            bool isRequired = false
+        )
         {
-            if (PropertyCheckExtensions.PropertyExists(classCode, fieldName, fieldType))
+            if (PropertyCheckExtensions.PropertyNameExists(classCode, fieldName))
             {
-                throw new InvalidOperationException($"The property '{fieldName}' of type '{fieldType}' already exists in the class.");
+                throw new InvalidOperationException(
+                    $"A property with the name '{fieldName}' already exists in the class."
+                );
             }
             // var requiredField = isRequired ? "required" : "";
             var requiredField = "";
-            var propertyCode = $"    public {requiredField} {fieldType} {fieldName} {{ get; set; }}";
+            var propertyCode =
+                $"    public {requiredField} {fieldType} {fieldName} {{ get; set; }}";
 
             if (fieldType.Contains("ICollection"))
             {
-                propertyCode = $"    public {requiredField} {fieldType} {fieldName} {{ get; set; }} = new List<{collectionType}>();";
+                propertyCode =
+                    $"    public {requiredField} {fieldType} {fieldName} {{ get; set; }} = new List<{collectionType}>();";
             }
             var insertPosition = classCode.LastIndexOf("}", StringComparison.Ordinal);
-            var updatedCode = classCode.Insert(insertPosition, Environment.NewLine + propertyCode + Environment.NewLine);
+            var updatedCode = classCode.Insert(
+                insertPosition,
+                Environment.NewLine + propertyCode + Environment.NewLine
+            );
 
             return updatedCode;
         }
@@ -614,16 +776,83 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
             var reservedKeywords = new HashSet<string>(StringComparer.Ordinal)
             {
-                "abstract", "as", "base", "bool", "break", "byte", "case", "catch",
-                "char", "checked", "class", "const", "continue", "decimal", "default",
-                "delegate", "do", "double", "else", "enum", "event", "explicit", "extern",
-                "false", "finally", "fixed", "float", "for", "foreach", "goto", "if",
-                "implicit", "in", "int", "interface", "internal", "is", "lock", "long",
-                "namespace", "new", "null", "object", "operator", "out", "override", "params",
-                "private", "protected", "public", "readonly", "ref", "return", "sbyte",
-                "sealed", "short", "sizeof", "stackalloc", "static", "string", "struct",
-                "switch", "this", "throw", "true", "try", "typeof", "uint", "ulong",
-                "unchecked", "unsafe", "ushort", "using", "virtual", "void", "volatile", "while"
+                "abstract",
+                "as",
+                "base",
+                "bool",
+                "break",
+                "byte",
+                "case",
+                "catch",
+                "char",
+                "checked",
+                "class",
+                "const",
+                "continue",
+                "decimal",
+                "default",
+                "delegate",
+                "do",
+                "double",
+                "else",
+                "enum",
+                "event",
+                "explicit",
+                "extern",
+                "false",
+                "finally",
+                "fixed",
+                "float",
+                "for",
+                "foreach",
+                "goto",
+                "if",
+                "implicit",
+                "in",
+                "int",
+                "interface",
+                "internal",
+                "is",
+                "lock",
+                "long",
+                "namespace",
+                "new",
+                "null",
+                "object",
+                "operator",
+                "out",
+                "override",
+                "params",
+                "private",
+                "protected",
+                "public",
+                "readonly",
+                "ref",
+                "return",
+                "sbyte",
+                "sealed",
+                "short",
+                "sizeof",
+                "stackalloc",
+                "static",
+                "string",
+                "struct",
+                "switch",
+                "this",
+                "throw",
+                "true",
+                "try",
+                "typeof",
+                "uint",
+                "ulong",
+                "unchecked",
+                "unsafe",
+                "ushort",
+                "using",
+                "virtual",
+                "void",
+                "volatile",
+                "while",
             };
 
             if (reservedKeywords.Contains(name))
@@ -638,15 +867,24 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             try
             {
                 var assemblyName = new AssemblyName("DynamicAssembly");
-                var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+                var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(
+                    assemblyName,
+                    AssemblyBuilderAccess.Run
+                );
                 var moduleBuilder = assemblyBuilder.DefineDynamicModule("TempModule");
 
                 var typeBuilder = moduleBuilder.DefineType(
                     modelName,
-                    System.Reflection.TypeAttributes.Public | System.Reflection.TypeAttributes.Class);
+                    System.Reflection.TypeAttributes.Public | System.Reflection.TypeAttributes.Class
+                );
 
-                var ccControllerAttrConstructor = typeof(CCControllerAttribute).GetConstructor(Type.EmptyTypes);
-                var customAttributeBuilder = new CustomAttributeBuilder(ccControllerAttrConstructor, new object[] { });
+                var ccControllerAttrConstructor = typeof(CCControllerAttribute).GetConstructor(
+                    Type.EmptyTypes
+                );
+                var customAttributeBuilder = new CustomAttributeBuilder(
+                    ccControllerAttrConstructor,
+                    new object[] { }
+                );
                 typeBuilder.SetCustomAttribute(customAttributeBuilder);
 
                 return typeBuilder.CreateType();
@@ -679,10 +917,14 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
             return sb.ToString();
         }
+
         [HttpGet("fields/{modelName}")]
         public IActionResult GetModelFields(string modelName)
         {
-            var modelFilePath = Path.Combine(Path.Combine(Directory.GetCurrentDirectory(), "Entities"), $"{modelName}.cs");
+            var modelFilePath = Path.Combine(
+                Path.Combine(Directory.GetCurrentDirectory(), "Entities"),
+                $"{modelName}.cs"
+            );
             if (!System.IO.File.Exists(modelFilePath))
             {
                 return NotFound($"Model '{{modelName}}' not found.");
@@ -697,7 +939,10 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
         private List<FieldsInfo> ExtractFieldsFromModel(string classCode)
         {
             var fieldList = new List<FieldsInfo>();
-            var propertyPattern = new Regex(@"public\s+(required\s+)?([\w<>\[\]?]+)\s+(\w+)\s*\{\s*get;\s*set;\s*\}", RegexOptions.Multiline);
+            var propertyPattern = new Regex(
+                @"public\s+(required\s+)?([\w<>\[\]?]+)\s+(\w+)\s*\{\s*get;\s*set;\s*\}",
+                RegexOptions.Multiline
+            );
 
             var matches = propertyPattern.Matches(classCode);
             foreach (Match match in matches)
@@ -715,12 +960,14 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                         fieldType = fieldType.TrimEnd('?');
                     }
 
-                    fieldList.Add(new FieldsInfo
-                    {
-                        FieldName = fieldName,
-                        FieldType = fieldType,
-                        IsRequired = isRequired
-                    });
+                    fieldList.Add(
+                        new FieldsInfo
+                        {
+                            FieldName = fieldName,
+                            FieldType = fieldType,
+                            IsRequired = isRequired,
+                        }
+                    );
                 }
             }
             return fieldList;
@@ -741,16 +988,21 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
     }
 
     [AttributeUsage(AttributeTargets.Class)]
-    public class CCControllerAttribute : Attribute
-    {
-    }
+    public class CCControllerAttribute : Attribute { }
 
     public static class PropertyCheckExtensions
     {
+        public static bool PropertyNameExists(string classCode, string fieldName)
+        {
+            string pattern = $@"\bpublic\s+(?:[\w\.<>\[\]?]+)\s+\b{Regex.Escape(fieldName)}\b\s*{{";
+            return Regex.IsMatch(classCode, pattern, RegexOptions.IgnoreCase);
+        }
+
         public static bool PropertyExists(string classCode, string fieldName, string fieldType)
         {
-            var propertyPattern = $@"\bpublic\s+{Regex.Escape(fieldType)}\s+{Regex.Escape(fieldName)}\s*\{{";
-            return Regex.IsMatch(classCode, propertyPattern, RegexOptions.IgnoreCase);
+            string pattern =
+                $@"\bpublic\s+{Regex.Escape(fieldType)}\s+\b{Regex.Escape(fieldName)}\b\s*{{";
+            return Regex.IsMatch(classCode, pattern, RegexOptions.IgnoreCase);
         }
     }
 }

@@ -13,7 +13,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public  class AuthController : ControllerBase
+public class AuthController : ControllerBase
 {
     private readonly UserManager<DappiUser> _userManager;
     private readonly SignInManager<DappiUser> _signInManager;

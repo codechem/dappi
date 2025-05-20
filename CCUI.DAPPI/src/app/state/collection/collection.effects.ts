@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import {
   map,
   mergeMap,
@@ -12,6 +12,7 @@ import {
 } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { select, Store } from '@ngrx/store';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import * as CollectionActions from './collection.actions';
 import { selectSelectedType } from '../content/content.selectors';
 import * as ContentActions from '../content/content.actions';
@@ -20,6 +21,11 @@ import { ModelField } from '../../models/content.model';
 
 @Injectable()
 export class CollectionEffects {
+  private actions$ = inject(Actions);
+  private http = inject(HttpClient);
+  private store = inject(Store);
+  private snackBar = inject(MatSnackBar);
+
   loadCollectionTypes$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.loadCollectionTypes),
@@ -30,13 +36,14 @@ export class CollectionEffects {
               collectionTypes: collectionTypes,
             });
           }),
-          catchError((error) =>
-            of(
+          catchError((error) => {
+            this.showErrorPopup(`Failed to load collection types: ${error.error}`);
+            return of(
               CollectionActions.loadCollectionTypesFailure({
                 error: error.message,
               }),
-            ),
-          ),
+            );
+          }),
         );
       }),
     ),
@@ -52,13 +59,14 @@ export class CollectionEffects {
               draftCollectionTypes,
             });
           }),
-          catchError((error) =>
-            of(
+          catchError((error) => {
+            this.showErrorPopup(`Failed to load draft collection types: ${error.error}`);
+            return of(
               CollectionActions.loadDraftCollectionTypesFailure({
                 error: error.message,
               }),
-            ),
-          ),
+            );
+          }),
         );
       }),
     ),
@@ -74,13 +82,14 @@ export class CollectionEffects {
               publishedCollectionTypes,
             });
           }),
-          catchError((error) =>
-            of(
+          catchError((error) => {
+            this.showErrorPopup(`Failed to load published collection types: ${error.error}`);
+            return of(
               CollectionActions.loadPublishedCollectionTypesFailure({
                 error: error.message,
               }),
-            ),
-          ),
+            );
+          }),
         );
       }),
     ),
@@ -103,6 +112,9 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.loadFields),
       mergeMap((action) => {
+        if (!action.modelType) {
+          return EMPTY;
+        }
         const endpoint = `${BASE_API_URL}models/fields/${action.modelType}`;
         return this.http.get<ModelField[]>(endpoint).pipe(
           map((fields) =>
@@ -110,7 +122,10 @@ export class CollectionEffects {
               fields: [...fields],
             }),
           ),
-          catchError((error) => of(CollectionActions.loadFieldsFailure({ error: error.message }))),
+          catchError((error) => {
+            this.showErrorPopup(`Failed to load fields: ${error.error}`);
+            return of(CollectionActions.loadFieldsFailure({ error: error.message }));
+          }),
         );
       }),
     ),
@@ -142,6 +157,7 @@ export class CollectionEffects {
               console.log('Backend is restarting. This is expected behavior.');
               return of(CollectionActions.saveContentSuccess({ restarting: true }));
             }
+            this.showErrorPopup(`Failed to save content: ${error.error}`);
             console.error('Error saving content:', error);
             return of(CollectionActions.saveContentFailure({ error }));
           }),
@@ -165,14 +181,16 @@ export class CollectionEffects {
               ),
               catchError((error) => {
                 console.error('Error updating DB context:', error);
-                alert('Model created but failed to update DB context. Please try again.');
+                this.showErrorPopup(
+                  `Model created but failed to update DB context: ${error.error}`,
+                );
                 return of(CollectionActions.addCollectionTypeFailure({ error }));
               }),
             ),
           ),
           catchError((error) => {
             console.error('Error creating model:', error);
-            alert('Failed to create model. Please try again.');
+            this.showErrorPopup(`Failed to create model: ${error.error}`);
             return of(CollectionActions.addCollectionTypeFailure({ error }));
           }),
         );
@@ -202,7 +220,10 @@ export class CollectionEffects {
               field: action.field,
             }),
           ),
-          catchError((error) => of(CollectionActions.addFieldFailure({ error: error.message }))),
+          catchError((error) => {
+            this.showErrorPopup(`Failed to add field: ${error.error}`);
+            return of(CollectionActions.addFieldFailure({ error: error.message }));
+          }),
         );
       }),
     ),
@@ -218,9 +239,12 @@ export class CollectionEffects {
     ),
   );
 
-  constructor(
-    private actions$: Actions,
-    private http: HttpClient,
-    private store: Store,
-  ) {}
+  private showErrorPopup(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom',
+      panelClass: ['error-snackbar'],
+    });
+  }
 }

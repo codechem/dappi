@@ -1,6 +1,22 @@
 #!/bin/sh
-cd "$(dirname -- "$0")/../"
+cd "$(dirname -- "$0")/../../"
 
+echo "Formatting JavaScript/TypeScript files in CCUI.DAPPI..."
+cd CCUI.DAPPI
 npm run format
+cd ..
+
+echo "Formatting .NET files in CCApi.Extensions.DependencyInjection..."
+
+if ! dotnet tool list --global | grep -q "dotnet-format"; then
+  echo "dotnet-format is not installed. Installing it globally..."
+  dotnet tool install -g dotnet-format
+fi
+
+dotnet format ./CCApi.Extensions.DependencyInjection
+
+echo "Formatting .NET files in CCApi.SourceGenerator..."
+
+dotnet format ./CCApi.SourceGenerator
 
 git add .
