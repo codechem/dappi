@@ -1,21 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\CCApi.Extensions.DependencyInjection\CCApi.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\CCApi.SourceGenerator\CCApi.SourceGenerator.csproj" OutputItemType="Analyzer" />
+  </ItemGroup>
  
   <ItemGroup>
     <Folder Include="Controllers\" />
     <Folder Include="Entities\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\CCApi.Extensions.DependencyInjection\CCApi.Extensions.DependencyInjection.csproj" />
-    <ProjectReference Include="..\..\CCApi.SourceGenerator\CCApi.SourceGenerator.csproj" OutputItemType="Analyzer" />
   </ItemGroup>
 
 </Project>
