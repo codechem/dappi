@@ -18,7 +18,7 @@ export const collectionReducer = createReducer(
       publishedCollectionTypes,
       loading: false,
       error: null,
-    }),
+    })
   ),
 
   on(CollectionActions.loadPublishedCollectionTypesFailure, (state, { error }) => ({
@@ -114,5 +114,5 @@ export const collectionReducer = createReducer(
     ...state,
     isSaving: false,
     saveError: error,
-  })),
+  }))
 );

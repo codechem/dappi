@@ -43,15 +43,15 @@ export class ContentEffects {
                   ...response,
                   data: response.Data,
                 },
-              }),
+              })
             ),
             catchError((error) => {
               this.showErrorPopup(`Failed to load content: ${error.error}`);
               return of(ContentActions.loadContentFailure({ error: error.message }));
-            }),
+            })
           );
-      }),
-    ),
+      })
+    )
   );
 
   loadRelatedItems$ = createEffect(() =>
@@ -66,15 +66,15 @@ export class ContentEffects {
                 ...response,
                 Data: response.Data,
               },
-            }),
+            })
           ),
           catchError((error) => {
             this.showErrorPopup(`Failed to load related items: ${error.error}`);
             return of(ContentActions.loadRelatedItemsFailure({ error: error.message }));
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   loadHeaders$ = createEffect(() =>
@@ -104,10 +104,10 @@ export class ContentEffects {
           catchError((error) => {
             this.showErrorPopup(`Failed to load headers: ${error.error}`);
             return of(ContentActions.loadHeadersFailure({ error: error.message }));
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   deleteContent$ = createEffect(() =>
@@ -123,10 +123,10 @@ export class ContentEffects {
           catchError((error) => {
             this.showErrorPopup(`Failed to delete content: ${error.error}`);
             return of(ContentActions.deleteContentFailure({ error: error.message }));
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   deleteMultipleContent$ = createEffect(() =>
@@ -149,8 +149,8 @@ export class ContentEffects {
               error: error.message,
             });
           });
-      }),
-    ),
+      })
+    )
   );
 
   reloadAfterDelete$ = createEffect(() =>
@@ -163,9 +163,9 @@ export class ContentEffects {
           page: 1,
           limit,
           searchText: '',
-        }),
-      ),
-    ),
+        })
+      )
+    )
   );
 
   createContent$ = createEffect(() =>
@@ -195,10 +195,10 @@ export class ContentEffects {
             catchError((error) => {
               this.showErrorPopup(`Failed to create content: ${error.error}`);
               return of(ContentActions.createContentFailure({ error: error.message }));
-            }),
+            })
           );
-      }),
-    ),
+      })
+    )
   );
 
   uploadFile$ = createEffect(() =>
@@ -221,7 +221,7 @@ export class ContentEffects {
                 page: 1,
                 limit: 10,
                 searchText: '',
-              }),
+              })
             );
 
             return ContentActions.uploadFileSuccess({
@@ -232,10 +232,10 @@ export class ContentEffects {
           catchError((error) => {
             this.showErrorPopup(`Failed to upload file: ${error.error}`);
             return of(ContentActions.uploadFileFailure({ error: error.message }));
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   loadContentTypeChanges$ = createEffect(() =>
@@ -248,15 +248,15 @@ export class ContentEffects {
           map((response) =>
             ContentActions.loadContentTypeChangesSuccess({
               changes: response,
-            }),
+            })
           ),
           catchError((error) => {
             this.showErrorPopup(`Failed to load content type changes: ${error.error}`);
             return of(ContentActions.loadContentTypeChangesFailure({ error: error.message }));
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   updateContent$ = createEffect(() =>
@@ -287,10 +287,10 @@ export class ContentEffects {
             catchError((error) => {
               this.showErrorPopup(`Failed to update content: ${error.error}`);
               return of(ContentActions.updateContentFailure({ error: error.message }));
-            }),
+            })
           );
-      }),
-    ),
+      })
+    )
   );
 
   private showErrorPopup(message: string): void {
@@ -362,7 +362,7 @@ export class ContentEffects {
     if (
       lowerFieldType === 'string' &&
       ['description', 'content', 'text', 'textarea'].some((keyword) =>
-        lowerFieldType.includes(keyword),
+        lowerFieldType.includes(keyword)
       )
     ) {
       return FieldType.textarea;

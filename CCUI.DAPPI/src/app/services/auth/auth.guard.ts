@@ -5,10 +5,11 @@ import { Observable, map, take } from 'rxjs';
 import { selectIsAuthenticated } from '../../state/auth/auth.selectors';
 import * as AuthActions from '../../state/auth/auth.actions';
 
-export const AuthGuard: CanActivateFn = (
-  route,
-  state,
-): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree => {
+export const AuthGuard: CanActivateFn = ():
+  | Observable<boolean | UrlTree>
+  | Promise<boolean | UrlTree>
+  | boolean
+  | UrlTree => {
   const store = inject(Store);
   const router = inject(Router);
 
@@ -22,6 +23,6 @@ export const AuthGuard: CanActivateFn = (
       } else {
         return router.createUrlTree(['/auth']);
       }
-    }),
+    })
   );
 };

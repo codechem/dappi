@@ -141,7 +141,7 @@ export class AddCollectionTypeDialogComponent {
     private dialogRef: MatDialogRef<AddCollectionTypeDialogComponent>,
     private fb: FormBuilder,
     private store: Store,
-    @Inject(MAT_DIALOG_DATA) public data: any,
+    @Inject(MAT_DIALOG_DATA) public data: any
   ) {
     this.collectionForm = this.fb.group({
       displayName: [
@@ -162,7 +162,7 @@ export class AddCollectionTypeDialogComponent {
     this.store.dispatch(
       CollectionActions.addCollectionType({
         collectionType: this.collectionForm.value.displayName,
-      }),
+      })
     );
 
     this.isSubmitting = false;

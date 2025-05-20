@@ -1,22 +1,35 @@
 #!/bin/sh
+set -e
+
 cd "$(dirname -- "$0")/../../"
+PROJECT_ROOT=$(pwd)
 
-echo "Formatting JavaScript/TypeScript files in CCUI.DAPPI..."
-cd CCUI.DAPPI
-npm run format
-cd ..
+echo "Running pre-commit checks..."
 
-echo "Formatting .NET files in CCApi.Extensions.DependencyInjection..."
+echo "Formatting frontend files in CCUI.DAPPI..."
+cd "$PROJECT_ROOT/CCUI.DAPPI"
+
+echo "Formatting with Prettier..."
+npx prettier --write "**/*.{js,ts,html,css,scss,json}"
+
+echo "Linting and fixing JS/TS with ESLint..."
+npx eslint --fix "**/*.{js,ts}"
+
+echo "🔧 Formatting .NET files..."
+cd "$PROJECT_ROOT"
 
 if ! dotnet tool list --global | grep -q "dotnet-format"; then
   echo "dotnet-format is not installed. Installing it globally..."
   dotnet tool install -g dotnet-format
 fi
 
+echo "Formatting CCApi.Extensions.DependencyInjection..."
 dotnet format ./CCApi.Extensions.DependencyInjection
 
-echo "Formatting .NET files in CCApi.SourceGenerator..."
-
+echo "Formatting CCApi.SourceGenerator..."
 dotnet format ./CCApi.SourceGenerator
 
+cd "$PROJECT_ROOT"
 git add .
+
+echo "✅ Pre-commit checks completed successfully!"

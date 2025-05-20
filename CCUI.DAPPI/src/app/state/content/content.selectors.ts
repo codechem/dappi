@@ -24,10 +24,10 @@ export const selectIsSearching = createSelector(selectContentState, (state) => s
 
 export const selectContentTypeChanges = createSelector(
   selectContentState,
-  (state) => state.contentTypeChanges,
+  (state) => state.contentTypeChanges
 );
 
 export const selectLoadingContentTypeChanges = createSelector(
   selectContentState,
-  (state) => state.loadingContentTypeChanges,
+  (state) => state.loadingContentTypeChanges
 );

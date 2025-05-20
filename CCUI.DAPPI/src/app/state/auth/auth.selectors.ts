@@ -9,12 +9,12 @@ export const selectToken = createSelector(selectAuthState, (state: AuthState) =>
 
 export const selectIsAuthenticated = createSelector(
   selectAuthState,
-  (state: AuthState) => state.isAuthenticated,
+  (state: AuthState) => state.isAuthenticated
 );
 
 export const selectAuthLoading = createSelector(
   selectAuthState,
-  (state: AuthState) => state.loading,
+  (state: AuthState) => state.loading
 );
 
 export const selectAuthError = createSelector(selectAuthState, (state: AuthState) => state.error);

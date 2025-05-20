@@ -144,5 +144,5 @@ export const contentReducer = createReducer(
     ...state,
     loadingContentTypeChanges: false,
     error,
-  })),
+  }))
 );

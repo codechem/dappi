@@ -41,12 +41,12 @@ export class CollectionEffects {
             return of(
               CollectionActions.loadCollectionTypesFailure({
                 error: error.message,
-              }),
+              })
             );
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   loadDraftCollectionTypes$ = createEffect(() =>
@@ -64,12 +64,12 @@ export class CollectionEffects {
             return of(
               CollectionActions.loadDraftCollectionTypesFailure({
                 error: error.message,
-              }),
+              })
             );
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   loadPublishedCollectionTypes$ = createEffect(() =>
@@ -87,12 +87,12 @@ export class CollectionEffects {
             return of(
               CollectionActions.loadPublishedCollectionTypesFailure({
                 error: error.message,
-              }),
+              })
             );
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   setDefaultSelectedType$ = createEffect(() =>
@@ -103,9 +103,9 @@ export class CollectionEffects {
       map(([action]) =>
         ContentActions.setContentType({
           selectedType: action.collectionTypes[0],
-        }),
-      ),
-    ),
+        })
+      )
+    )
   );
 
   loadFields$ = createEffect(() =>
@@ -120,15 +120,15 @@ export class CollectionEffects {
           map((fields) =>
             CollectionActions.loadFieldsSuccess({
               fields: [...fields],
-            }),
+            })
           ),
           catchError((error) => {
             this.showErrorPopup(`Failed to load fields: ${error.error}`);
             return of(CollectionActions.loadFieldsFailure({ error: error.message }));
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   saveContent$ = createEffect(() =>
@@ -160,10 +160,10 @@ export class CollectionEffects {
             this.showErrorPopup(`Failed to save content: ${error.error}`);
             console.error('Error saving content:', error);
             return of(CollectionActions.saveContentFailure({ error }));
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   addCollectionType$ = createEffect(() =>
@@ -172,30 +172,30 @@ export class CollectionEffects {
       switchMap((action) => {
         const payload = { modelName: action.collectionType };
         return this.http.post(`${BASE_API_URL}models`, payload).pipe(
-          switchMap((response) =>
+          switchMap(() =>
             this.http.get(`${BASE_API_URL}update-db-context`).pipe(
               map(() =>
                 CollectionActions.addCollectionTypeSuccess({
                   collectionType: action.collectionType,
-                }),
+                })
               ),
               catchError((error) => {
                 console.error('Error updating DB context:', error);
                 this.showErrorPopup(
-                  `Model created but failed to update DB context: ${error.error}`,
+                  `Model created but failed to update DB context: ${error.error}`
                 );
                 return of(CollectionActions.addCollectionTypeFailure({ error }));
-              }),
-            ),
+              })
+            )
           ),
           catchError((error) => {
             console.error('Error creating model:', error);
             this.showErrorPopup(`Failed to create model: ${error.error}`);
             return of(CollectionActions.addCollectionTypeFailure({ error }));
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   reloadCollectionTypesAfterAdd$ = createEffect(() =>
@@ -204,29 +204,29 @@ export class CollectionEffects {
       concatMap(() => [
         CollectionActions.loadPublishedCollectionTypes(),
         CollectionActions.loadDraftCollectionTypes(),
-      ]),
-    ),
+      ])
+    )
   );
 
   addField$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.addField),
       withLatestFrom(this.store.pipe(select(selectSelectedType))),
-      filter(([action, selectedType]) => !!selectedType),
+      filter(([selectedType]) => !!selectedType),
       switchMap(([action, selectedType]) => {
         return this.http.put(`${BASE_API_URL}models/${selectedType}`, action.field).pipe(
-          map((response) =>
+          map(() =>
             CollectionActions.addFieldSuccess({
               field: action.field,
-            }),
+            })
           ),
           catchError((error) => {
             this.showErrorPopup(`Failed to add field: ${error.error}`);
             return of(CollectionActions.addFieldFailure({ error: error.message }));
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   reloadCollectionTypesAfterField$ = createEffect(() =>
@@ -235,8 +235,8 @@ export class CollectionEffects {
       concatMap(() => [
         CollectionActions.loadPublishedCollectionTypes(),
         CollectionActions.loadDraftCollectionTypes(),
-      ]),
-    ),
+      ])
+    )
   );
 
   private showErrorPopup(message: string): void {

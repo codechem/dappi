@@ -19,8 +19,8 @@ export class AppComponent implements OnInit {
   isAuthenticated$: Observable<boolean>;
 
   constructor(
-    @Inject(PLATFORM_ID) private platformId: Object,
-    private store: Store,
+    @Inject(PLATFORM_ID) private platformId: object,
+    private store: Store
   ) {
     this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
   }
