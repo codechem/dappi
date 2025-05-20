@@ -2,8 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCApi.SourceGenerator", "CCApi.SourceGenerator\CCApi.SourceGenerator.csproj", "{4DEE0921-8078-40ED-A7E2-075760876D66}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCApi.WebApiExample", "CCApi.WebApiExample\CCApi.WebApiExample.csproj", "{7AF8A7DD-E8C6-4A56-ADEA-753A6C1CCC7A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCApi.Extensions.DependencyInjection", "CCApi.Extensions.DependencyInjection\CCApi.Extensions.DependencyInjection.csproj", "{ADC72F56-12A4-4417-9C21-BFBCBAE2DD27}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dappi.Cli", "Dappi.Cli\Dappi.Cli.csproj", "{096336C7-0B81-4879-8808-59EA94F4E4E2}"
