@@ -161,7 +161,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                         {
                             try
                             {
-                                string modelName = reader.GetString(reader.GetOrdinal("ModelName"));
+                                var modelName = reader.GetString(reader.GetOrdinal("ModelName"));
                                 draftModels.Add(modelName);
                             }
                             catch (Exception ex)
