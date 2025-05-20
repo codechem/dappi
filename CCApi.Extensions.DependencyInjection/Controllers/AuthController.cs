@@ -115,10 +115,10 @@ public class ModelFieldsController : ControllerBase
         {
             var fields = new List<object>
         {
-            new { fieldName = "id", fieldType = "Guid", isRequired = false },
-            new { fieldName = "email", fieldType = "string", isRequired = false },
-            new { fieldName = "name", fieldType = "string", isRequired = false },
-            new { fieldName = "roles", fieldType = "userRoles", isRequired = false }
+            new { fieldName = "Id", fieldType = "Guid", isRequired = false },
+            new { fieldName = "Email", fieldType = "string", isRequired = false },
+            new { fieldName = "Name", fieldType = "string", isRequired = false },
+            new { fieldName = "Roles", fieldType = "userRoles", isRequired = false }
         };
 
             _logger.LogInformation("Retrieved user field names");

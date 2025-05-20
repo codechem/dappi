@@ -3,8 +3,9 @@
 
 :host {
   max-height: 100vh;
-  overflow: auto;
+  overflow: hidden;
 }
+
 .add-field-dialog-container {
   background-color: vars.$background-paper-elevation-1;
   color: vars.$text-primary;
@@ -12,6 +13,7 @@
   padding: 10px;
   min-width: 500px;
   max-width: 90vw;
+  overflow: hidden;
 }
 
 ::ng-deep .mat-mdc-select-min-line {
@@ -32,6 +34,10 @@
 
   button[mat-icon-button] {
     color: vars.$text-primary;
+
+    &:not(:focus-visible) {
+      outline: none;
+    }
   }
 }
 
@@ -143,6 +149,14 @@
     box-shadow: 0 0 0 1px vars.$primary-main;
   }
 
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    background-color: vars.$primary-selected;
+    border: 1px solid vars.$primary-main;
+    box-shadow: 0 0 0 2px vars.$primary-main;
+  }
+
   .selected-indicator {
     position: absolute;
     top: 5px;
@@ -214,6 +228,14 @@
     box-shadow: 0 0 0 1px vars.$primary-main;
   }
 
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    background-color: vars.$primary-selected;
+    border: 1px solid vars.$primary-main;
+    box-shadow: 0 0 0 2px vars.$primary-main;
+  }
+
   .relation-icon {
     mat-icon {
       font-size: 24px;
@@ -230,4 +252,41 @@
   text-align: center;
   margin: 8px 0 16px;
   line-height: 1.4;
+}
+
+.add-field-dialog-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: vars.$background-paper-elevation-1;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.dialog-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.dialog-header {
+  button[mat-icon-button] {
+    color: vars.$text-primary;
+    background-color: transparent;
+
+    &:hover {
+      background-color: vars.$background-hover;
+    }
+
+    &:not(:focus-visible) {
+      outline: none;
+    }
+  }
 }

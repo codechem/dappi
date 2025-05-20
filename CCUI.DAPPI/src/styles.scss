@@ -32,6 +32,10 @@ body {
     color: vars.$text-primary;
   }
 
+  .mat-mdc-dialog-surface {
+    border-radius: 8px;
+  }
+
   mat-dialog-container {
     max-height: 80vh;
   }

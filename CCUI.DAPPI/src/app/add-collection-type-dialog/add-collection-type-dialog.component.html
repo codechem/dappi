@@ -17,13 +17,28 @@
             formControlName="displayName"
             placeholder="Enter display name"
           />
-          @if (collectionForm.get('displayName')?.hasError('required')) {
-            <mat-error> Display name is required </mat-error>
+          @if (
+            collectionForm.get('displayName')?.hasError('required') &&
+            collectionForm.get('displayName')?.touched
+          ) {
+            <mat-error>Display name is required</mat-error>
           }
           @if (collectionForm.get('displayName')?.hasError('maxlength')) {
-            <mat-error> Display name cannot exceed 50 characters </mat-error>
+            <mat-error>Display name cannot exceed 50 characters</mat-error>
+          }
+          @if (collectionForm.get('displayName')?.hasError('invalidStart')) {
+            <mat-error>Class name must start with a letter or underscore</mat-error>
+          }
+          @if (collectionForm.get('displayName')?.hasError('invalidCharacters')) {
+            <mat-error>Class name can only contain letters, numbers, and underscores</mat-error>
+          }
+          @if (collectionForm.get('displayName')?.hasError('reservedKeyword')) {
+            <mat-error>Cannot use C# reserved keyword as class name</mat-error>
           }
         </mat-form-field>
+        <div class="helper-text">
+          Start with a letter or underscore, and use only letters, numbers, or underscores.
+        </div>
       </div>
     </form>
     <hr />

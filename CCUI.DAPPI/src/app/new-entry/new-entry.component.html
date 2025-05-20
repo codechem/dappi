@@ -28,14 +28,21 @@
 
     <div class="footer">
       <hr />
-      <button
-        mat-button
-        class="save-button"
-        [disabled]="!newRecordForm.isFormValid()"
-        (click)="newRecordForm.onSubmit()"
-      >
-        Save your content
-      </button>
+      @if (isSaving$ | async) {
+        <div class="saving-content">
+          <mat-spinner diameter="24"></mat-spinner>
+          <span>Saving content...</span>
+        </div>
+      } @else {
+        <button
+          mat-button
+          class="save-button"
+          [disabled]="!newRecordForm.isFormValid()"
+          (click)="newRecordForm.onSubmit()"
+        >
+          Save your content
+        </button>
+      }
     </div>
   </div>
 </div>

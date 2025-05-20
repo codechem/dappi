@@ -435,6 +435,8 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           const newId = action.id;
           if (newId && this.selectedFile) {
             this.uploadFileIfExists(newId);
+          } else {
+            this.finishSubmission();
           }
         }),
     );
