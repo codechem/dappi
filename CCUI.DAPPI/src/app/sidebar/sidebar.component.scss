@@ -154,8 +154,11 @@
     background: transparent;
   }
 }
-
+.item-icon {
+  margin-right: 5px;
+}
 ::ng-deep .custom-list-item {
+  display: flex;
   height: 40px !important;
   padding: 0 8px !important;
   border-radius: 4px;
@@ -163,6 +166,7 @@
   transition: background-color 0.2s ease;
 
   .mdc-list-item__primary-text {
+    display: flex;
     color: rgba(255, 255, 255, 0.8);
     font-size: 14px;
     overflow: hidden;
