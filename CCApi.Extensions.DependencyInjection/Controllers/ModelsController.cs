@@ -211,6 +211,27 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                     fieldDict.Add($"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}");
                 }
+                else if (request.FieldType == "ManyToOne")
+                {
+                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $"{request.RelatedTo}.cs");
+                    var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
+                    var existingCode = System.IO.File.ReadAllText(modelFilePath);
+
+                    var updatedCode = AddFieldToClass(existingCode, $"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    System.IO.File.WriteAllText(modelFilePath, updatedCode);
+
+                    existingCode = System.IO.File.ReadAllText(modelFilePath);
+
+                    updatedCode = AddFieldToClass(existingCode, request.FieldName, $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    System.IO.File.WriteAllText(modelFilePath, updatedCode);
+
+                    var relatedToCode = AddFieldToClass(existingRelatedToCode, $"{modelName}s", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+                    System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
+
+                    UpdateDbContextManyToOne(modelName, request.FieldName, request.RelatedTo);
+
+                    fieldDict.Add($"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}");
+                }
                 else if (request.FieldType == "ManyToMany")
                 {
                     var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $"{request.RelatedTo}.cs");
@@ -390,6 +411,67 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 Console.WriteLine($"Error updating ContentTypeChanges: {ex.Message}");
                 throw;
             }
+        }
+
+        private void UpdateDbContextManyToOne(string modelName, string propertyName, string relatedTo)
+        {
+            var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "AppDbContext.cs");
+            if (!System.IO.File.Exists(dbContextFilePath))
+            {
+                throw new FileNotFoundException($"DbContext file not found at {dbContextFilePath}");
+            }
+
+            string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
+
+            int onModelCreatingIndex = dbContextContent.IndexOf("protected override void OnModelCreating(ModelBuilder modelBuilder)");
+            if (onModelCreatingIndex == -1)
+            {
+                var lastClosingBrace = dbContextContent.LastIndexOf("}");
+
+                var onModelCreatingMethod = $@"
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {{
+        modelBuilder.Entity<{modelName}>()
+            .HasOne<{relatedTo}>(s => s.{propertyName})
+            .WithMany(e => e.{modelName}s)
+            .HasForeignKey(s => s.{propertyName}Id);
+
+        base.OnModelCreating(modelBuilder);
+    }}";
+
+                dbContextContent = dbContextContent.Insert(lastClosingBrace, onModelCreatingMethod);
+            }
+            else
+            {
+                int methodStartBrace = dbContextContent.IndexOf('{', onModelCreatingIndex);
+                int currentPos = methodStartBrace + 1;
+                int openBraces = 1;
+
+                while (openBraces > 0 && currentPos < dbContextContent.Length)
+                {
+                    if (dbContextContent[currentPos] == '{')
+                        openBraces++;
+                    else if (dbContextContent[currentPos] == '}')
+                        openBraces--;
+
+                    currentPos++;
+                }
+
+                string baseCall = "base.OnModelCreating(modelBuilder);";
+                int baseCallIndex = dbContextContent.LastIndexOf(baseCall, currentPos);
+
+                int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
+
+                var configCode = $@"
+        modelBuilder.Entity<{modelName}>()
+            .HasOne<{relatedTo}>(s => s.{propertyName})
+            .WithMany(e => e.{modelName}s)
+            .HasForeignKey(s => s.{propertyName}Id);";
+
+                dbContextContent = dbContextContent.Insert(insertPosition, configCode);
+            }
+
+            System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
         }
 
         private void UpdateDbContextManyToMany(string modelName, string relatedTo)
