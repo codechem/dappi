@@ -56,6 +56,7 @@ export class ContentEffects {
                 ...response,
                 Data: response.Data,
               },
+              relatedType: action.selectedType,
             }),
           ),
           catchError((error) =>
