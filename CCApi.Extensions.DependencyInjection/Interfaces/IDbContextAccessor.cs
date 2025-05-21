@@ -1,15 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using CCApi.Extensions.DependencyInjection.Models;
-using Microsoft.AspNetCore.Http;
+using CCApi.Extensions.DependencyInjection.Database;
 
 namespace CCApi.Extensions.DependencyInjection.Interfaces
 {
     public interface IDbContextAccessor
     {
-        DbContext DbContext { get; }
+        DappiDbContext DbContext { get; }
     }
 }
