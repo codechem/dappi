@@ -4,6 +4,7 @@ using System.Reflection;
 using Microsoft.Extensions.Hosting;
 
 namespace CCApi.Extensions.DependencyInjection.Controllers;
+
 [ApiExplorerSettings(GroupName = "Toolkit")]
 [ApiController]
 [Route("api/create-migrations-update-db")]
@@ -124,7 +125,7 @@ public class MigrationController : ControllerBase
             var currentDir = Directory.GetCurrentDirectory();
             var csproj = Directory.GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
             
-            ProcessStartInfo startInfo = new ProcessStartInfo
+            var startInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
                 Arguments = $"ef database update --project {csproj}",
