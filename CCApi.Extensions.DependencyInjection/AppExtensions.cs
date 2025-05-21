@@ -1,13 +1,14 @@
 using CCApi.Extensions.DependencyInjection;
 using CCApi.Extensions.DependencyInjection.Constants;
+using CCApi.Extensions.DependencyInjection.Database;
+using CCApi.Extensions.DependencyInjection.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
-using Swashbuckle.AspNetCore.SwaggerUI;
-using System.Data;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Hosting;
+using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -15,7 +16,7 @@ public static class AppExtensions
 {
     public static async Task<IApplicationBuilder> UseDappi<TDbContext>(this WebApplication app,
         Action<SwaggerUIOptions>? configureSwagger = null)
-       where TDbContext : DbContext
+       where TDbContext : DappiDbContext
     {
         if (app.Environment.IsDevelopment())
         {
@@ -54,12 +55,11 @@ public static class AppExtensions
         await db.MigrateAsync();
         await app.Services.SeedRolesAndUsersAsync<DappiUser, DappiRole>();
 
-        await CheckAndCreateContentTypeChangesTableAsync<TDbContext>(scope.ServiceProvider);
         await PublishContentTypeChangesAsync<TDbContext>(scope.ServiceProvider);
 
         return app;
     }
-    
+
     public static async Task SeedRolesAndUsersAsync<TUser, TRole>(this IServiceProvider serviceProvider)
         where TUser : IdentityUser, new()
         where TRole : IdentityRole, new()
@@ -151,36 +151,14 @@ public static class AppExtensions
     }
 
     private static async Task PublishContentTypeChangesAsync<TDbContext>(IServiceProvider serviceProvider)
-        where TDbContext : DbContext
+        where TDbContext : DappiDbContext
     {
         try
         {
             var dbContext = serviceProvider.GetRequiredService<TDbContext>();
-            var connection = dbContext.Database.GetDbConnection();
-
-            if (connection.State != ConnectionState.Open)
-            {
-                await connection.OpenAsync();
-            }
-
-            int rowCount = 0;
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = @"SELECT COUNT(*) FROM ""ContentTypeChanges""";
-                var result = await command.ExecuteScalarAsync();
-                rowCount = Convert.ToInt32(result);
-            }
-
-            if (rowCount > 0)
-            {
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = @"UPDATE ""ContentTypeChanges"" SET ""IsPublished"" = true";
-                    await command.ExecuteNonQueryAsync();
-
-                    Console.WriteLine($"Published {rowCount} content type changes.");
-                }
-            }
+            await dbContext.ContentTypeChanges
+                .Where(ctc => !ctc.IsPublished)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(e => e.IsPublished, true));
         }
         catch (Exception ex)
         {
