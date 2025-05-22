@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
 
 namespace CCApi.Extensions.DependencyInjection.Models.Mapping
 {
