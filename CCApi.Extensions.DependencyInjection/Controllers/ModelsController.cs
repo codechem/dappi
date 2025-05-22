@@ -241,7 +241,13 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     );
 
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
-                    UpdateDbContextOneToOne(modelName, request.FieldName, request.RelatedTo);
+
+                    UpdateDbContextWithRelationship(
+                        modelName,
+                        request.RelatedTo,
+                        "OneToOne",
+                        request.FieldName
+                    );
 
                     fieldDict.Add(
                         $"{request.FieldName}Id",
@@ -286,7 +292,9 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     );
 
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
-                    UpdateDbContextOneToMany(modelName, request.FieldName, request.RelatedTo);
+
+                    UpdateDbContextWithRelationship(modelName, request.RelatedTo, "OneToMany", request.FieldName);
+
 
                     fieldDict.Add(
                         $"{request.FieldName}Id",
@@ -310,7 +318,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     var relatedToCode = AddFieldToClass(existingRelatedToCode, $"{modelName}s", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
 
-                    UpdateDbContextManyToOne(modelName, request.FieldName, request.RelatedTo);
+                    UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToOne", request.FieldName);
 
                     fieldDict.Add($"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}");
                 }
@@ -342,7 +350,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     );
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
 
-                    UpdateDbContextManyToMany(modelName, request.RelatedTo);
+                    UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToMany");
 
                     fieldDict[request.FieldName] =
                         $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>";
@@ -439,7 +447,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             }
         }
 
-        private void UpdateDbContextManyToOne(string modelName, string propertyName, string relatedTo)
+        private void UpdateDbContextWithRelationship(string modelName, string relatedTo, string relationshipType, string propertyName = null)
         {
             var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "AppDbContext.cs");
             if (!System.IO.File.Exists(dbContextFilePath))
@@ -449,267 +457,96 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
             string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
 
+            string configCode = GenerateRelationshipConfiguration(modelName, relatedTo, relationshipType, propertyName);
+
             int onModelCreatingIndex = dbContextContent.IndexOf("protected override void OnModelCreating(ModelBuilder modelBuilder)");
+
             if (onModelCreatingIndex == -1)
             {
                 var lastClosingBrace = dbContextContent.LastIndexOf("}");
-
                 var onModelCreatingMethod = $@"
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {{
-        modelBuilder.Entity<{modelName}>()
-            .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithMany(e => e.{modelName}s)
-            .HasForeignKey(s => s.{propertyName}Id);
+{configCode}
 
         base.OnModelCreating(modelBuilder);
-    }}";
-
+    }}
+";
                 dbContextContent = dbContextContent.Insert(lastClosingBrace, onModelCreatingMethod);
             }
             else
             {
-                int methodStartBrace = dbContextContent.IndexOf('{', onModelCreatingIndex);
-                int currentPos = methodStartBrace + 1;
-                int openBraces = 1;
-
-                while (openBraces > 0 && currentPos < dbContextContent.Length)
-                {
-                    if (dbContextContent[currentPos] == '{')
-                        openBraces++;
-                    else if (dbContextContent[currentPos] == '}')
-                        openBraces--;
-
-                    currentPos++;
-                }
-
                 string baseCall = "base.OnModelCreating(modelBuilder);";
-                int baseCallIndex = dbContextContent.LastIndexOf(baseCall, currentPos);
+                int baseCallIndex = dbContextContent.IndexOf(baseCall, onModelCreatingIndex);
 
-                int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
+                if (baseCallIndex == -1)
+                {
+                    int methodEndPosition = FindMethodEndPosition(dbContextContent, onModelCreatingIndex);
+                    var configCodeWithBase = $@"
+{configCode}
 
-                var configCode = $@"
-        modelBuilder.Entity<{modelName}>()
-            .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithMany(e => e.{modelName}s)
-            .HasForeignKey(s => s.{propertyName}Id);";
-
-                dbContextContent = dbContextContent.Insert(insertPosition, configCode);
+        base.OnModelCreating(modelBuilder);
+";
+                    dbContextContent = dbContextContent.Insert(methodEndPosition, configCodeWithBase);
+                }
+                else
+                {
+                    var configCodeWithSpacing = $@"
+{configCode}
+";
+                    dbContextContent = dbContextContent.Insert(baseCallIndex, configCodeWithSpacing);
+                }
             }
 
             System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
         }
 
-        private void UpdateDbContextManyToMany(string modelName, string relatedTo)
+        private string GenerateRelationshipConfiguration(string modelName, string relatedTo, string relationshipType, string propertyName)
         {
-            var dbContextFilePath = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Data",
-                "AppDbContext.cs"
-            );
-            if (!System.IO.File.Exists(dbContextFilePath))
+            return relationshipType.ToLower() switch
             {
-                throw new FileNotFoundException($"DbContext file not found at {dbContextFilePath}");
-            }
-
-            string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
-
-            int onModelCreatingIndex = dbContextContent.IndexOf(
-                "protected override void OnModelCreating(ModelBuilder modelBuilder)"
-            );
-            if (onModelCreatingIndex == -1)
-            {
-                var lastClosingBrace = dbContextContent.LastIndexOf("}");
-
-                var onModelCreatingMethod =
-                    $@"
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {{
-        modelBuilder.Entity<{modelName}>()
-            .HasMany(m => m.{relatedTo}s)
-            .WithMany(r => r.{modelName}s)
-            .UsingEntity(j => j.ToTable(""{modelName}{relatedTo}s""));
-
-        base.OnModelCreating(modelBuilder);
-    }}";
-
-                dbContextContent = dbContextContent.Insert(lastClosingBrace, onModelCreatingMethod);
-            }
-            else
-            {
-                int methodStartBrace = dbContextContent.IndexOf('{', onModelCreatingIndex);
-                int currentPos = methodStartBrace + 1;
-                int openBraces = 1;
-
-                while (openBraces > 0 && currentPos < dbContextContent.Length)
-                {
-                    if (dbContextContent[currentPos] == '{')
-                        openBraces++;
-                    else if (dbContextContent[currentPos] == '}')
-                        openBraces--;
-
-                    currentPos++;
-                }
-
-                string baseCall = "base.OnModelCreating(modelBuilder);";
-                int baseCallIndex = dbContextContent.LastIndexOf(baseCall, currentPos);
-
-                int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
-
-                var configCode =
-                    $@"
-        modelBuilder.Entity<{modelName}>()
-            .HasMany(m => m.{relatedTo}s)
-            .WithMany(r => r.{modelName}s)
-            .UsingEntity(j => j.ToTable(""{modelName}{relatedTo}s""));";
-
-                dbContextContent = dbContextContent.Insert(insertPosition, configCode);
-            }
-
-            System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
-        }
-
-        private void UpdateDbContextOneToOne(
-            string modelName,
-            string propertyName,
-            string relatedTo
-        )
-        {
-            var dbContextFilePath = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Data",
-                "AppDbContext.cs"
-            );
-            if (!System.IO.File.Exists(dbContextFilePath))
-            {
-                throw new FileNotFoundException($"DbContext file not found at {dbContextFilePath}");
-            }
-
-            string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
-
-            int onModelCreatingIndex = dbContextContent.IndexOf(
-                "protected override void OnModelCreating(ModelBuilder modelBuilder)"
-            );
-            if (onModelCreatingIndex == -1)
-            {
-                var lastClosingBrace = dbContextContent.LastIndexOf("}");
-
-                var onModelCreatingMethod =
-                    $@"
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {{
-        modelBuilder.Entity<{modelName}>()
+                "onetoone" => $@"        modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
             .WithOne(e => e.{propertyName})
-            .HasForeignKey<{modelName}>(ad => ad.{propertyName}Id);
+            .HasForeignKey<{modelName}>(ad => ad.{propertyName}Id);",
 
-        base.OnModelCreating(modelBuilder);
-    }}";
-
-                dbContextContent = dbContextContent.Insert(lastClosingBrace, onModelCreatingMethod);
-            }
-            else
-            {
-                int methodStartBrace = dbContextContent.IndexOf('{', onModelCreatingIndex);
-                int currentPos = methodStartBrace + 1;
-                int openBraces = 1;
-
-                while (openBraces > 0 && currentPos < dbContextContent.Length)
-                {
-                    if (dbContextContent[currentPos] == '{')
-                        openBraces++;
-                    else if (dbContextContent[currentPos] == '}')
-                        openBraces--;
-
-                    currentPos++;
-                }
-
-                string baseCall = "base.OnModelCreating(modelBuilder);";
-                int baseCallIndex = dbContextContent.LastIndexOf(baseCall, currentPos);
-
-                int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
-
-                var configCode =
-                    $@"
-        modelBuilder.Entity<{modelName}>()
+                "onetomany" => $@"        modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithOne(e => e.{propertyName});";
+            .WithMany(e => e.{propertyName})
+            .HasForeignKey(s => s.{propertyName}Id);",
 
-                dbContextContent = dbContextContent.Insert(insertPosition, configCode);
-            }
+                "manytoone" => $@"        modelBuilder.Entity<{modelName}>()
+            .HasOne<{relatedTo}>(s => s.{propertyName})
+            .WithMany(e => e.{modelName}s)
+            .HasForeignKey(s => s.{propertyName}Id);",
 
-            System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
+                "manytomany" => $@"        modelBuilder.Entity<{modelName}>()
+            .HasMany(m => m.{relatedTo}s)
+            .WithMany(r => r.{modelName}s)
+            .UsingEntity(j => j.ToTable(""{modelName}{relatedTo}s""));",
+
+                _ => throw new ArgumentException($"Unsupported relationship type: {relationshipType}")
+            };
         }
 
-        private void UpdateDbContextOneToMany(
-            string modelName,
-            string propertyName,
-            string relatedTo
-        )
+        private int FindMethodEndPosition(string content, int methodStartIndex)
         {
-            var dbContextFilePath = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Data",
-                "AppDbContext.cs"
-            );
-            if (!System.IO.File.Exists(dbContextFilePath))
+            int methodStartBrace = content.IndexOf('{', methodStartIndex);
+            int currentPos = methodStartBrace + 1;
+            int openBraces = 1;
+
+            while (openBraces > 0 && currentPos < content.Length)
             {
-                throw new FileNotFoundException($"DbContext file not found at {dbContextFilePath}");
-            }
+                if (content[currentPos] == '{')
+                    openBraces++;
+                else if (content[currentPos] == '}')
+                    openBraces--;
 
-            string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
-
-            int onModelCreatingIndex = dbContextContent.IndexOf(
-                "protected override void OnModelCreating(ModelBuilder modelBuilder)"
-            );
-            if (onModelCreatingIndex == -1)
-            {
-                var lastClosingBrace = dbContextContent.LastIndexOf("}");
-
-                var onModelCreatingMethod =
-                    $@"
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {{
-        modelBuilder.Entity<{modelName}>()
-            .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithMany(e => e.{propertyName});
-
-        base.OnModelCreating(modelBuilder);
-    }}";
-
-                dbContextContent = dbContextContent.Insert(lastClosingBrace, onModelCreatingMethod);
-            }
-            else
-            {
-                int methodStartBrace = dbContextContent.IndexOf('{', onModelCreatingIndex);
-                int currentPos = methodStartBrace + 1;
-                int openBraces = 1;
-
-                while (openBraces > 0 && currentPos < dbContextContent.Length)
-                {
-                    if (dbContextContent[currentPos] == '{')
-                        openBraces++;
-                    else if (dbContextContent[currentPos] == '}')
-                        openBraces--;
-
+                if (openBraces > 0)
                     currentPos++;
-                }
-
-                string baseCall = "base.OnModelCreating(modelBuilder);";
-                int baseCallIndex = dbContextContent.LastIndexOf(baseCall, currentPos);
-
-                int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
-
-                var configCode =
-                    $@"
-        modelBuilder.Entity<{modelName}>()
-            .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithMany(e => e.{propertyName});";
-
-                dbContextContent = dbContextContent.Insert(insertPosition, configCode);
             }
 
-            System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
+            return currentPos;
         }
 
         private string AddFieldToClass(
