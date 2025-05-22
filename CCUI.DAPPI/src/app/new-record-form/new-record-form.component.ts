@@ -108,7 +108,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
-  getRelationDisplayValue(item: any, field: ContentField): string {
+  getRelationDisplayValue(item: any): string {
     if (!item) return '';
 
     const displayKeys = [

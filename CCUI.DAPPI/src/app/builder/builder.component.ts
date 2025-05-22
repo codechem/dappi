@@ -5,7 +5,6 @@ import { ButtonComponent } from '../button/button.component';
 import { MatDialog } from '@angular/material/dialog';
 import { AddFieldDialogComponent } from '../add-field-dialog/add-field-dialog.component';
 import { FieldItem, FieldsListComponent } from '../fields-list/fields-list.component';
-
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { filter, Subscription, take } from 'rxjs';
 import { MatSpinner } from '@angular/material/progress-spinner';
@@ -120,7 +119,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
     });
 
     this.subscription.add(
-      dialogRef.afterClosed().subscribe(async (result) => {
+      dialogRef.afterClosed().subscribe(async () => {
         this.disabled = false;
       })
     );

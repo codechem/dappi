@@ -3,7 +3,11 @@
   <div class="container">
     <header class="header">
       <div class="title-block">
-        <h1>Type Name</h1>
+        @if (selectedType !== '') {
+          <h1>{{ selectedType }}</h1>
+        } @else {
+          <h1>Type Name</h1>
+        }
         <p>Build the data architecture of your design</p>
       </div>
       <button mat-icon-button class="settings-button" aria-label="Settings">

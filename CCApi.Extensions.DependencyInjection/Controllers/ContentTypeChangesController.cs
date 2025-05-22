@@ -48,12 +48,18 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
         {
             try
             {
-                var publishedModels = _dbContext.ContentTypeChanges
-                    .Where(ctc => ctc.IsPublished)
-                    .Distinct()
-                    .Select(x => x.ModelName);
+                var draftModelNames = _dbContext.ContentTypeChanges
+                    .Where(ctc => !ctc.IsPublished)
+                    .Select(x => x.ModelName)
+                    .Distinct();
 
-                return Ok(await publishedModels.ToListAsync());
+                var publishedOnlyModels = _dbContext.ContentTypeChanges
+                    .Where(ctc => ctc.IsPublished)
+                    .Select(x => x.ModelName)
+                    .Distinct()
+                    .Where(modelName => !draftModelNames.Contains(modelName));
+
+                return Ok(await publishedOnlyModels.ToListAsync());
             }
             catch (Exception ex)
             {
@@ -70,8 +76,8 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 var draftModels = _dbContext.ContentTypeChanges
                     .AsNoTracking()
                     .Where(ctc => !ctc.IsPublished)
-                    .Distinct()
-                    .Select(x => x.ModelName);
+                    .Select(x => x.ModelName)
+                    .Distinct();
 
                 return Ok(await draftModels.ToListAsync());
             }

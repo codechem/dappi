@@ -54,7 +54,7 @@
                 <mat-select [formControlName]="field.key">
                   @for (item of field.relatedItems; track item) {
                     <mat-option [value]="item">
-                      {{ getRelationDisplayValue(item, field) }}
+                      {{ getRelationDisplayValue(item) }}
                     </mat-option>
                   }
                 </mat-select>
@@ -63,7 +63,7 @@
                 <mat-select [formControlName]="field.key" [multiple]="field.multiple">
                   @for (item of field.relatedItems; track item) {
                     <mat-option [value]="item">
-                      {{ getRelationDisplayValue(item, field) }}
+                      {{ getRelationDisplayValue(item) }}
                     </mat-option>
                   }
                 </mat-select>
@@ -72,7 +72,7 @@
                 <mat-select [formControlName]="field.key">
                   @for (item of field.relatedItems; track item) {
                     <mat-option [value]="item">
-                      {{ getRelationDisplayValue(item, field) }}
+                      {{ getRelationDisplayValue(item) }}
                     </mat-option>
                   }
                 </mat-select>
@@ -220,7 +220,7 @@
                 <mat-select [formControlName]="field.key">
                   @for (item of field.relatedItems; track item) {
                     <mat-option [value]="item">
-                      {{ getRelationDisplayValue(item, field) }}
+                      {{ getRelationDisplayValue(item) }}
                     </mat-option>
                   }
                 </mat-select>
@@ -229,7 +229,7 @@
                 <mat-select [formControlName]="field.key" [multiple]="field.multiple">
                   @for (item of field.relatedItems; track item) {
                     <mat-option [value]="item">
-                      {{ getRelationDisplayValue(item, field) }}
+                      {{ getRelationDisplayValue(item) }}
                     </mat-option>
                   }
                 </mat-select>
@@ -238,7 +238,7 @@
                 <mat-select [formControlName]="field.key">
                   @for (item of field.relatedItems; track item) {
                     <mat-option [value]="item">
-                      {{ getRelationDisplayValue(item, field) }}
+                      {{ getRelationDisplayValue(item) }}
                     </mat-option>
                   }
                 </mat-select>

@@ -68,7 +68,7 @@ export class StatsCardComponent implements OnDestroy, OnInit {
 
   openPopup(): void {
     this.router.navigate(['/builder']).then(() => {
-      const dialogRef = this.dialog.open(AddCollectionTypeDialogComponent, {
+      this.dialog.open(AddCollectionTypeDialogComponent, {
         width: '450px',
         panelClass: 'dark-theme-dialog',
         disableClose: true,

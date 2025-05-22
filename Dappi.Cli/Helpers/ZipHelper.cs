@@ -60,7 +60,7 @@ public static class ZipHelper
                 // of the file, but does not waste memory.
                 // The "using" will close the stream even if an exception occurs.
                 using var streamWriter = File.Create(fullZipToPath);
-                
+
                 StreamUtils.Copy(zipStream, streamWriter, buffer);
             }
         }

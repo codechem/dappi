@@ -20,7 +20,7 @@ public class StartCommand : Command<StartCommand.Settings>
         var projectPath = string.IsNullOrEmpty(settings.ProjectPath)
             ? Directory.GetCurrentDirectory()
             : settings.ProjectPath;
-        
+
         var csProjFile = Directory.GetFiles(projectPath, "*.csproj", SearchOption.AllDirectories)
             .FirstOrDefault()!;
 

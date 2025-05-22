@@ -23,18 +23,18 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
 
         [CommandOption("-p|--path <OUTPUT-PATH>")]
         public string? OutputPath { get; set; }
-        
+
         [CommandOption("--use-prerelease", IsHidden = true)]
         public bool UsePreRelease { get; set; }
     }
-    
+
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
         if (settings.ProjectName is null)
         {
             return -1;
         }
-        
+
         try
         {
             logger.LogInformation("Creating project {ProjectName}", settings.ProjectName);
@@ -67,25 +67,25 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
 
                 // Ensure we're getting an absolute path
                 projectPath = Path.GetFullPath(outputPath);
-            }     
- 
+            }
+
             var template = await TemplateFetcher.GetDappiTemplate(usePreRelease: settings.UsePreRelease, logger);
-        
+
             var outputFolder = Path.Combine(projectPath, settings.ProjectName);
-            
+
             logger.LogDebug("Output folder will be {OutputFolder}", outputFolder);
 
             ZipHelper.ExtractZipFile(template.physicalPath, outputFolder, "templates");
-            
+
             var oldSolutionFile = Path.Combine(outputFolder, $"{Constants.ProjectNamePlaceholder}.sln");
-            
+
             if (File.Exists(oldSolutionFile))
                 File.Delete(Path.Combine(outputFolder, $"{Constants.ProjectNamePlaceholder}.sln"));
-            
+
             RenameHelper.RenameFolders(outputFolder, Constants.ProjectNamePlaceholder, settings.ProjectName, excludedSubFolders: []);
-            
+
             var csProjFile = Directory.GetFiles(outputFolder, "*.csproj", SearchOption.AllDirectories).FirstOrDefault()!;
-          
+
             ModifyCsprojWithNugetReferences(template, csProjFile);
 
             AnsiConsole.Status()
@@ -101,10 +101,10 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                     };
-                    
+
                     var process = Process.Start(procStartInfo);
                     process?.WaitForExit();
-                    
+
                     if (process?.ExitCode != Environment.ExitCode)
                     {
                         throw new DappiInitializationFailedException(
@@ -119,19 +119,19 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                     };
-                    
+
                     var processAdd = Process.Start(addProjectToSlnStartInfo);
                     processAdd?.WaitForExit();
-                  
+
                     if (processAdd?.ExitCode != Environment.ExitCode)
                     {
                         throw new DappiInitializationFailedException(
                             $"{addProjectToSlnStartInfo.FileName}: {addProjectToSlnStartInfo.Arguments} output: {processAdd?.StandardError.ReadToEnd()}");
                     }
                 });
-            
+
             AnsiConsole.Status()
-                .Start("Generating initial migrations...", ctx => 
+                .Start("Generating initial migrations...", ctx =>
                 {
                     ctx.Spinner(Spinner.Known.Circle);
 
@@ -144,7 +144,7 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                     };
-                    
+
                     var process = Process.Start(procStartInfo);
                     process?.WaitForExit();
                     if (process?.ExitCode != Environment.ExitCode)
@@ -156,7 +156,7 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
 
             logger.LogInformation("Your Dappi project has been initialized in {ProjectPath}", outputFolder);
             logger.LogInformation(
-                "You can start your project by using {DappiStartCommand} or navigate to {ProjectPath} and run your project through dotnet or your IDE of choice ", 
+                "You can start your project by using {DappiStartCommand} or navigate to {ProjectPath} and run your project through dotnet or your IDE of choice ",
                 $"dappi {StartCommand.CommandName} --path {outputFolder}", outputFolder);
 
             return 0;
@@ -168,7 +168,7 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
             return -1;
         }
     }
-    
+
     private static void ModifyCsprojWithNugetReferences((string physicalPath, string tagName) template, string csProjFile)
     {
         var referenceReplacements = GetReplacementsForProjectReferences(template.tagName);

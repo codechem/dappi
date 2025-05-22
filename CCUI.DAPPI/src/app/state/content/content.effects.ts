@@ -1,9 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import { map, mergeMap, catchError, withLatestFrom } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngrx/store';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import * as ContentActions from './content.actions';
 import { selectItemsPerPage, selectSelectedType } from './content.selectors';
 import { FieldType, ModelField, PaginatedResponse } from '../../models/content.model';
@@ -11,8 +12,15 @@ import { BASE_API_URL } from '../../../Constants';
 import { MediaInfo } from '../../models/media-info.model';
 import { RecentContent } from '../../models/recent-content';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root',
+})
 export class ContentEffects {
+  private actions$ = inject(Actions);
+  private http = inject(HttpClient);
+  private store = inject(Store);
+  private snackBar = inject(MatSnackBar);
+
   loadContent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ContentActions.loadContent),
@@ -28,7 +36,6 @@ export class ContentEffects {
               SearchTerm: action.searchText || '',
             },
           })
-
           .pipe(
             map((response) =>
               ContentActions.loadContentSuccess({
@@ -38,7 +45,10 @@ export class ContentEffects {
                 },
               })
             ),
-            catchError((error) => of(ContentActions.loadContentFailure({ error: error.message })))
+            catchError((error) => {
+              this.showErrorPopup(`Failed to load content: ${error.error}`);
+              return of(ContentActions.loadContentFailure({ error: error.message }));
+            })
           );
       })
     )
@@ -59,9 +69,10 @@ export class ContentEffects {
               relatedType: action.selectedType,
             })
           ),
-          catchError((error) =>
-            of(ContentActions.loadRelatedItemsFailure({ error: error.message }))
-          )
+          catchError((error) => {
+            this.showErrorPopup(`Failed to load related items: ${error.error}`);
+            return of(ContentActions.loadRelatedItemsFailure({ error: error.message }));
+          })
         );
       })
     )
@@ -71,6 +82,9 @@ export class ContentEffects {
     this.actions$.pipe(
       ofType(ContentActions.loadHeaders),
       mergeMap((action) => {
+        if (!action.selectedType) {
+          return EMPTY;
+        }
         const endpoint = `${BASE_API_URL}models/fields/${action.selectedType}`;
         return this.http.get<ModelField[]>(endpoint).pipe(
           map((response) => {
@@ -88,7 +102,10 @@ export class ContentEffects {
             });
             return ContentActions.loadHeadersSuccess({ headers });
           }),
-          catchError((error) => of(ContentActions.loadHeadersFailure({ error: error.message })))
+          catchError((error) => {
+            this.showErrorPopup(`Failed to load headers: ${error.error}`);
+            return of(ContentActions.loadHeadersFailure({ error: error.message }));
+          })
         );
       })
     )
@@ -104,7 +121,10 @@ export class ContentEffects {
 
         return this.http.delete(endpoint).pipe(
           map(() => ContentActions.deleteContentSuccess({ id: action.id })),
-          catchError((error) => of(ContentActions.deleteContentFailure({ error: error.message })))
+          catchError((error) => {
+            this.showErrorPopup(`Failed to delete content: ${error.error}`);
+            return of(ContentActions.deleteContentFailure({ error: error.message }));
+          })
         );
       })
     )
@@ -124,11 +144,12 @@ export class ContentEffects {
 
         return Promise.all(deletePromises)
           .then(() => ContentActions.deleteMultipleContentSuccess({ ids: action.ids }))
-          .catch((error) =>
-            ContentActions.deleteMultipleContentFailure({
+          .catch((error) => {
+            this.showErrorPopup(`Failed to delete multiple content: ${error.error}`);
+            return ContentActions.deleteMultipleContentFailure({
               error: error.message,
-            })
-          );
+            });
+          });
       })
     )
   );
@@ -172,7 +193,10 @@ export class ContentEffects {
                 searchText: '',
               });
             }),
-            catchError((error) => of(ContentActions.createContentFailure({ error: error.message })))
+            catchError((error) => {
+              this.showErrorPopup(`Failed to create content: ${error.error}`);
+              return of(ContentActions.createContentFailure({ error: error.message }));
+            })
           );
       })
     )
@@ -206,7 +230,10 @@ export class ContentEffects {
               size: response.FileSize,
             });
           }),
-          catchError((error) => of(ContentActions.uploadFileFailure({ error: error.message })))
+          catchError((error) => {
+            this.showErrorPopup(`Failed to upload file: ${error.error}`);
+            return of(ContentActions.uploadFileFailure({ error: error.message }));
+          })
         );
       })
     )
@@ -224,9 +251,10 @@ export class ContentEffects {
               changes: response,
             })
           ),
-          catchError((error) =>
-            of(ContentActions.loadContentTypeChangesFailure({ error: error.message }))
-          )
+          catchError((error) => {
+            this.showErrorPopup(`Failed to load content type changes: ${error.error}`);
+            return of(ContentActions.loadContentTypeChangesFailure({ error: error.message }));
+          })
         );
       })
     )
@@ -257,11 +285,23 @@ export class ContentEffects {
                 searchText: '',
               });
             }),
-            catchError((error) => of(ContentActions.updateContentFailure({ error: error.message })))
+            catchError((error) => {
+              this.showErrorPopup(`Failed to update content: ${error.error}`);
+              return of(ContentActions.updateContentFailure({ error: error.message }));
+            })
           );
       })
     )
   );
+
+  private showErrorPopup(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom',
+      panelClass: ['error-snackbar'],
+    });
+  }
 
   private getRelatedType(fieldType: string): string | undefined {
     return fieldType.includes('ICollection') ? fieldType.match(/<([^>]+)>/)?.[1] : undefined;
@@ -366,10 +406,4 @@ export class ContentEffects {
     // Default
     return FieldType.text;
   }
-
-  constructor(
-    private actions$: Actions,
-    private http: HttpClient,
-    private store: Store
-  ) {}
 }
