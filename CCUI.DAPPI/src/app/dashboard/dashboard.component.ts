@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 import { StatsCardComponent } from '../stats-card/stats-card.component';
 import { RecentContentTableComponent } from '../recent-content-table/recent-content-table.component';
@@ -12,8 +12,6 @@ import { MatIconModule } from '@angular/material/icon';
   imports: [StatsCardComponent, RecentContentTableComponent, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent {
   constructor() {}
-
-  ngOnInit(): void {}
 }

@@ -14,7 +14,7 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
         var syntaxProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
             "CCApi.SourceGenerator.Attributes.CCControllerAttribute",
             predicate: (node, _) => node is ClassDeclarationSyntax,
-            transform: (ctx, _) => 
+            transform: (ctx, _) =>
             {
                 var classDeclaration = (ClassDeclarationSyntax)ctx.TargetNode;
                 var classSymbol = ctx.TargetSymbol;
@@ -53,7 +53,7 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
                         };
                     })
                     .ToList();
-                
+
                 return new SourceModel
                 {
                     ClassName = classDeclaration.Identifier.Text,
@@ -63,7 +63,7 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
                     AuthorizeAttributes = authorizeAttributes
                 };
             });
-        
+
         var compilation = context.CompilationProvider.Combine(syntaxProvider.Collect());
         context.RegisterSourceOutput(compilation, Execute);
     }

@@ -14,10 +14,10 @@ public static class NamespaceSymbolExtensions
 
         var result = string.Empty;
         var current = namespaceSymbol;
-        
+
         while (current.ContainingNamespace != null)
         {
-            if(NamespacesAnnotatingAfterRoot.Any(p => p.Equals(current.Name, StringComparison.OrdinalIgnoreCase)))
+            if (NamespacesAnnotatingAfterRoot.Any(p => p.Equals(current.Name, StringComparison.OrdinalIgnoreCase)))
             {
                 current = current.ContainingNamespace;
                 continue;

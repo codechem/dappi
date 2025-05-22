@@ -91,7 +91,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   constructor(
     private router: Router,
     private sanitizer: DomSanitizer,
-    private store: Store,
+    private store: Store
   ) {}
 
   ngOnDestroy(): void {
@@ -144,7 +144,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     this.subscription.add(this.selectedType$.subscribe((type) => (this.selectedType = type)));
 
     this.subscription.add(
-      this.isSearching$.subscribe((searching) => (this.isSearching = searching)),
+      this.isSearching$.subscribe((searching) => (this.isSearching = searching))
     );
 
     this.subscription.add(this.itemsPerPage$.subscribe((limit) => (this.limit = limit)));
@@ -153,7 +153,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
         this.items = items?.Data ?? [];
         this.totalItems = items?.Total ?? 0;
         this.calculatePagination();
-      }),
+      })
     );
     this.subscription.add(this.loading$.subscribe((loading) => (this.isLoading = loading)));
   }
@@ -220,7 +220,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
           page,
           limit: this.limit ?? 10,
           searchText: this.searchText ?? '',
-        }),
+        })
       );
     }
   }
@@ -263,7 +263,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     if (this.selectedItems.size === 0) return;
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${this.selectedItems.size} selected item(s)?`,
+      `Are you sure you want to delete ${this.selectedItems.size} selected item(s)?`
     );
 
     if (confirmDelete) {
@@ -272,7 +272,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
         ContentActions.deleteMultipleContent({
           ids,
           contentType: this.selectedType ?? '',
-        }),
+        })
       );
 
       this.store.dispatch(
@@ -281,7 +281,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
           page: this.currentPage,
           limit: this.limit ?? 10,
           searchText: this.searchText ?? '',
-        }),
+        })
       );
       this.selectedItems.clear();
       this.selectAll = false;
@@ -426,7 +426,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
         ContentActions.deleteContent({
           id: item.Id,
           contentType: this.selectedType ?? '',
-        }),
+        })
       );
     }
     this.closeMenu();
@@ -447,7 +447,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
         page: 1,
         limit: this.itemsPerPage,
         searchText: '',
-      }),
+      })
     );
   }
 
@@ -459,7 +459,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
         page: 1,
         limit: this.itemsPerPage,
         searchText: newText,
-      }),
+      })
     );
   }
 }

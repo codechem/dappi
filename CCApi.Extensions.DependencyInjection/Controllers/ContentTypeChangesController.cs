@@ -52,7 +52,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     .Where(ctc => ctc.IsPublished)
                     .Distinct()
                     .Select(x => x.ModelName);
-      
+
                 return Ok(await publishedModels.ToListAsync());
             }
             catch (Exception ex)
@@ -67,7 +67,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
         {
             try
             {
-                var draftModels =  _dbContext.ContentTypeChanges
+                var draftModels = _dbContext.ContentTypeChanges
                     .AsNoTracking()
                     .Where(ctc => !ctc.IsPublished)
                     .Distinct()

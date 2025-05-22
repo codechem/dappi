@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:CCUI.DAPPI": "node dist/ccui.dappi/server/server.mjs",
-    "format": "prettier --write \"src/**/*.{ts,html,scss,json}\"",
+    "format": "prettier --write \"**/*.{js,ts,html,css,scss,json}\" && eslint --fix \"**/*.{js,ts}\" && stylelint \"**/*.{css,scss}\" --fix",
     "check-format": "prettier --check \"src/**/*.{ts,html,scss,json}\"",
     "prepare": "husky"
   },
@@ -31,6 +31,7 @@
     "@ngrx/store": "^19.0.1",
     "@ngrx/store-devtools": "^19.0.1",
     "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
     "express": "^4.18.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
@@ -39,13 +40,19 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^19.1.8",
+    "@angular-eslint/eslint-plugin": "^19.4.0",
+    "@angular-eslint/eslint-plugin-template": "^19.4.0",
+    "@angular-eslint/template-parser": "^19.4.0",
     "@angular/cli": "^19.1.8",
     "@angular/compiler-cli": "^19.1.0",
+    "@eslint/js": "^9.24.0",
     "@types/express": "^4.17.17",
     "@types/jasmine": "~5.1.0",
     "@types/node": "^18.18.0",
-    "eslint-config-prettier": "^10.1.1",
-    "eslint-plugin-prettier": "^5.2.6",
+    "eslint": "^9.24.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "husky": "^9.1.7",
     "jasmine-core": "~5.5.0",
     "karma": "~6.4.0",
@@ -54,6 +61,9 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "prettier": "^3.5.3",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "stylelint": "^16.19.1",
+    "stylelint-config-standard-scss": "^15.0.1",
     "typescript": "~5.7.2"
   }
 }

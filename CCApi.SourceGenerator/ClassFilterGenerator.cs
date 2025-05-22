@@ -20,7 +20,7 @@ namespace {item.RootNamespace}.Filtering;
 
 public class {item.ClassName}Filter : PagingFilter
 {{ 
-    {string.Join("\n\t", item.PropertiesInfos.Where(p => 
+    {string.Join("\n\t", item.PropertiesInfos.Where(p =>
         IsPrimitiveType(p.PropertyType.ToString())).Select(p => $"public {p.PropertyType}? {p.PropertyName} {{ get; set; }}"))}
 }}");
         }

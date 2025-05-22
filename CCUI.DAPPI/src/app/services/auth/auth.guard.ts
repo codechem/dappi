@@ -7,7 +7,7 @@ import * as AuthActions from '../../state/auth/auth.actions';
 
 export const AuthGuard: CanActivateFn = (
   route,
-  state,
+  state
 ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree => {
   const store = inject(Store);
   const router = inject(Router);
@@ -22,6 +22,6 @@ export const AuthGuard: CanActivateFn = (
       } else {
         return router.createUrlTree(['/auth']);
       }
-    }),
+    })
   );
 };

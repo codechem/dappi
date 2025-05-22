@@ -36,12 +36,12 @@ export class ContentEffects {
                   ...response,
                   data: response.Data,
                 },
-              }),
+              })
             ),
-            catchError((error) => of(ContentActions.loadContentFailure({ error: error.message }))),
+            catchError((error) => of(ContentActions.loadContentFailure({ error: error.message })))
           );
-      }),
-    ),
+      })
+    )
   );
 
   loadRelatedItems$ = createEffect(() =>
@@ -57,14 +57,14 @@ export class ContentEffects {
                 Data: response.Data,
               },
               relatedType: action.selectedType,
-            }),
+            })
           ),
           catchError((error) =>
-            of(ContentActions.loadRelatedItemsFailure({ error: error.message })),
-          ),
+            of(ContentActions.loadRelatedItemsFailure({ error: error.message }))
+          )
         );
-      }),
-    ),
+      })
+    )
   );
 
   loadHeaders$ = createEffect(() =>
@@ -88,10 +88,10 @@ export class ContentEffects {
             });
             return ContentActions.loadHeadersSuccess({ headers });
           }),
-          catchError((error) => of(ContentActions.loadHeadersFailure({ error: error.message }))),
+          catchError((error) => of(ContentActions.loadHeadersFailure({ error: error.message })))
         );
-      }),
-    ),
+      })
+    )
   );
 
   deleteContent$ = createEffect(() =>
@@ -104,10 +104,10 @@ export class ContentEffects {
 
         return this.http.delete(endpoint).pipe(
           map(() => ContentActions.deleteContentSuccess({ id: action.id })),
-          catchError((error) => of(ContentActions.deleteContentFailure({ error: error.message }))),
+          catchError((error) => of(ContentActions.deleteContentFailure({ error: error.message })))
         );
-      }),
-    ),
+      })
+    )
   );
 
   deleteMultipleContent$ = createEffect(() =>
@@ -127,10 +127,10 @@ export class ContentEffects {
           .catch((error) =>
             ContentActions.deleteMultipleContentFailure({
               error: error.message,
-            }),
+            })
           );
-      }),
-    ),
+      })
+    )
   );
 
   reloadAfterDelete$ = createEffect(() =>
@@ -143,9 +143,9 @@ export class ContentEffects {
           page: 1,
           limit,
           searchText: '',
-        }),
-      ),
-    ),
+        })
+      )
+    )
   );
 
   createContent$ = createEffect(() =>
@@ -172,12 +172,10 @@ export class ContentEffects {
                 searchText: '',
               });
             }),
-            catchError((error) =>
-              of(ContentActions.createContentFailure({ error: error.message })),
-            ),
+            catchError((error) => of(ContentActions.createContentFailure({ error: error.message })))
           );
-      }),
-    ),
+      })
+    )
   );
 
   uploadFile$ = createEffect(() =>
@@ -200,7 +198,7 @@ export class ContentEffects {
                 page: 1,
                 limit: 10,
                 searchText: '',
-              }),
+              })
             );
 
             return ContentActions.uploadFileSuccess({
@@ -208,10 +206,10 @@ export class ContentEffects {
               size: response.FileSize,
             });
           }),
-          catchError((error) => of(ContentActions.uploadFileFailure({ error: error.message }))),
+          catchError((error) => of(ContentActions.uploadFileFailure({ error: error.message })))
         );
-      }),
-    ),
+      })
+    )
   );
 
   loadContentTypeChanges$ = createEffect(() =>
@@ -224,14 +222,14 @@ export class ContentEffects {
           map((response) =>
             ContentActions.loadContentTypeChangesSuccess({
               changes: response,
-            }),
+            })
           ),
           catchError((error) =>
-            of(ContentActions.loadContentTypeChangesFailure({ error: error.message })),
-          ),
+            of(ContentActions.loadContentTypeChangesFailure({ error: error.message }))
+          )
         );
-      }),
-    ),
+      })
+    )
   );
 
   updateContent$ = createEffect(() =>
@@ -259,12 +257,10 @@ export class ContentEffects {
                 searchText: '',
               });
             }),
-            catchError((error) =>
-              of(ContentActions.updateContentFailure({ error: error.message })),
-            ),
+            catchError((error) => of(ContentActions.updateContentFailure({ error: error.message })))
           );
-      }),
-    ),
+      })
+    )
   );
 
   private getRelatedType(fieldType: string): string | undefined {
@@ -327,7 +323,7 @@ export class ContentEffects {
     if (
       lowerFieldType === 'string' &&
       ['description', 'content', 'text', 'textarea'].some((keyword) =>
-        lowerFieldType.includes(keyword),
+        lowerFieldType.includes(keyword)
       )
     ) {
       return FieldType.textarea;
@@ -374,6 +370,6 @@ export class ContentEffects {
   constructor(
     private actions$: Actions,
     private http: HttpClient,
-    private store: Store,
+    private store: Store
   ) {}
 }

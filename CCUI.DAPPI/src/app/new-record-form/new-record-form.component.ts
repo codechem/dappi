@@ -21,7 +21,7 @@ import {
   selectSelectedType,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
-import { map, Subscription, take } from 'rxjs';
+import { Subscription, take } from 'rxjs';
 import { MatOption } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -99,7 +99,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private location: Location,
     private store: Store,
-    private actions$: Actions,
+    private actions$: Actions
   ) {
     this.contentForm = this.fb.group({});
   }
@@ -179,7 +179,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
                 this.store.dispatch(
                   ContentActions.loadRelatedItems({
                     selectedType: field.relatedTo,
-                  }),
+                  })
                 );
               }
             }
@@ -192,16 +192,16 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           });
 
         this.relationFields = this.contentFields.filter(
-          (field) => field.type === FieldType.collection || field.type === FieldType.relation,
+          (field) => field.type === FieldType.collection || field.type === FieldType.relation
         );
 
         this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
 
         const checkboxFields = this.contentFields.filter(
-          (field) => field.type === FieldType.checkbox,
+          (field) => field.type === FieldType.checkbox
         );
         const nonCheckboxNonFileFields = this.contentFields.filter(
-          (field) => field.type !== FieldType.file && field.type !== FieldType.checkbox,
+          (field) => field.type !== FieldType.file && field.type !== FieldType.checkbox
         );
 
         const halfNonCheckboxLength = Math.ceil(nonCheckboxNonFileFields.length / 2);
@@ -213,7 +213,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
         this.rightColumnCheckboxFields = checkboxFields.slice(halfCheckboxLength);
 
         this.buildForm();
-      }),
+      })
     );
 
     this.subscription.add(
@@ -235,16 +235,16 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           });
 
           this.relationFields = this.contentFields.filter(
-            (field) => field.type === FieldType.collection || field.type === FieldType.relation,
+            (field) => field.type === FieldType.collection || field.type === FieldType.relation
           );
 
           this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
 
           const checkboxFields = this.contentFields.filter(
-            (field) => field.type === FieldType.checkbox,
+            (field) => field.type === FieldType.checkbox
           );
           const nonCheckboxNonFileFields = this.contentFields.filter(
-            (field) => field.type !== FieldType.file && field.type !== FieldType.checkbox,
+            (field) => field.type !== FieldType.file && field.type !== FieldType.checkbox
           );
 
           const halfNonCheckboxLength = Math.ceil(nonCheckboxNonFileFields.length / 2);
@@ -257,7 +257,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
           this.buildForm();
         }
-      }),
+      })
     );
     this.subscriptions.add(this.selectedType$.subscribe((type) => (this.selectedType = type)));
 
@@ -267,7 +267,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           this.currentItem = item;
           this.populateFormWithData(item);
         }
-      }),
+      })
     );
   }
 
@@ -438,7 +438,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
       ContentActions.createContent({
         formData: formData,
         contentType: this.selectedType,
-      }),
+      })
     );
 
     this.subscriptions.add(
@@ -451,7 +451,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           } else {
             this.finishSubmission();
           }
-        }),
+        })
     );
   }
 
@@ -465,7 +465,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           file: this.selectedFile,
           fieldName: fieldKey,
           contentType: this.selectedType,
-        }),
+        })
       );
 
       this.subscription.add(
@@ -473,7 +473,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           .pipe(ofType(ContentActions.uploadFileSuccess), take(1))
           .subscribe((action) => {
             this.finishSubmission();
-          }),
+          })
       );
     } else {
       this.subscription.add(
@@ -481,7 +481,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           .pipe(ofType(ContentActions.createContentSuccess), take(1))
           .subscribe((action) => {
             this.finishSubmission();
-          }),
+          })
       );
     }
   }

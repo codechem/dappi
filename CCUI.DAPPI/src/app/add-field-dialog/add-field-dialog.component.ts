@@ -138,7 +138,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     private dialogRef: MatDialogRef<AddFieldDialogComponent>,
     private fb: FormBuilder,
     @Inject(MAT_DIALOG_DATA) public data: { selectedType: string },
-    private store: Store,
+    private store: Store
   ) {
     this.fieldForm = this.fb.group({
       fieldName: ['', [Validators.required, Validators.maxLength(50)]],
@@ -165,14 +165,14 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
             .map((type) => ({
               label: type,
               value: type,
-            }))),
-      ),
+            })))
+      )
     );
 
     this.subscription.add(
       this.fieldForm.get('relatedModel')?.valueChanges.subscribe((relatedModelValue) => {
         this.updateRelationTypes(relatedModelValue);
-      }),
+      })
     );
 
     this.subscription.add(
@@ -185,7 +185,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
           }));
         this.selectedType = type;
         this.updateRelationTypes();
-      }),
+      })
     );
     this.fieldForm.get('relatedModel')?.setValidators([Validators.required]);
     this.updateRelationTypes();

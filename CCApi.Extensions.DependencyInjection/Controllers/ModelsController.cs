@@ -107,7 +107,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                 await AddContentTypeChangeAsync(
                     request.ModelName,
-                    new Dictionary<string, string>() {{"Id", "Guid"}}
+                    new Dictionary<string, string>() { { "Id", "Guid" } }
                 );
 
                 return Ok(
@@ -390,9 +390,9 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 Fields = JsonSerializer.Serialize(fields),
                 ModifiedBy = _currentSessionProvider.GetCurrentUserId() ?? Guid.Empty,
             };
-            
+
             _dbContext.ContentTypeChanges.Add(contentTypeChange);
-          
+
             await _dbContext.SaveChangesAsync();
         }
 
@@ -415,7 +415,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     {
                         oldFields?.Add(kvp.Key, kvp.Value);
                     }
-                    
+
                     contentTypeChangeForModel.ModifiedAt = DateTimeOffset.UtcNow;
                     contentTypeChangeForModel.Fields = JsonSerializer.Serialize(oldFields);
                 }
@@ -423,9 +423,10 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 {
                     contentTypeChangeForModel = new ContentTypeChange()
                     {
-                        ModelName = modelName, Fields = JsonSerializer.Serialize(newFields),
+                        ModelName = modelName,
+                        Fields = JsonSerializer.Serialize(newFields),
                     };
-                    
+
                     _dbContext.ContentTypeChanges.Add(contentTypeChangeForModel);
                 }
 

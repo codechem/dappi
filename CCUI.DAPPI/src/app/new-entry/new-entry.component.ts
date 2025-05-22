@@ -39,7 +39,7 @@ export class NewEntryComponent implements OnInit, OnDestroy {
 
   constructor(
     private location: Location,
-    private store: Store,
+    private store: Store
   ) {}
 
   ngOnInit(): void {

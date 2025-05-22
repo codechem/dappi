@@ -10,7 +10,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 import { AddCollectionTypeDialogComponent } from '../add-collection-type-dialog/add-collection-type-dialog.component';
-import { Subject, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import * as CollectionActions from '../state/collection/collection.actions';
 import { Store } from '@ngrx/store';
 import {
@@ -34,7 +34,7 @@ export class StatsCardComponent implements OnDestroy, OnInit {
     private router: Router,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
-    private store: Store,
+    private store: Store
   ) {}
 
   numberOfCollectionTypes: number = 0;
@@ -51,14 +51,14 @@ export class StatsCardComponent implements OnDestroy, OnInit {
       this.models$.subscribe((items) => {
         this.numberOfCollectionTypes = items.length;
         this.cdr.markForCheck();
-      }),
+      })
     );
 
     this.subscription.add(
       this.publishedModels$.subscribe((items) => {
         this.numberOfPublishedCollectionTypes = items.length;
         this.cdr.markForCheck();
-      }),
+      })
     );
   }
 

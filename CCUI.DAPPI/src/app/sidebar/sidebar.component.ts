@@ -72,20 +72,20 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     takeUntil(this.destroy$),
     debounceTime(300),
     distinctUntilChanged(),
-    filter((type) => !!type),
+    filter((type) => !!type)
   );
 
   constructor(
     private dialog: MatDialog,
     private router: Router,
-    private store: Store,
+    private store: Store
   ) {}
 
   ngOnInit(): void {
     this.subscriptions.add(
       this.store
         .select(selectUser)
-        .subscribe((user) => (this.isAdmin = user?.roles.includes('Admin') ?? false)),
+        .subscribe((user) => (this.isAdmin = user?.roles.includes('Admin') ?? false))
     );
 
     if (this.headerText === 'Builder') {
@@ -102,7 +102,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
             this.collectionTypes = updatedTypes;
             this.isLoadingTypes = false;
           }
-        }),
+        })
       );
     } else {
       if (!this.isLoadingTypes) {
@@ -123,7 +123,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
             this.collectionTypes = updatedTypes;
             this.isLoadingTypes = false;
           }
-        }),
+        })
       );
     }
 
@@ -132,7 +132,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
         if (error) {
           this.isLoadingTypes = false;
         }
-      }),
+      })
     );
 
     this.subscriptions.add(
@@ -140,7 +140,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
         .pipe(takeUntil(this.destroy$), debounceTime(300), distinctUntilChanged())
         .subscribe((text) => {
           this.filterCollectionTypes(text);
-        }),
+        })
     );
   }
 
@@ -209,7 +209,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     this.subscriptions.add(
       dialogRef.afterClosed().subscribe(() => {
         this.store.dispatch(loadCollectionTypes());
-      }),
+      })
     );
   }
 
@@ -226,7 +226,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     let filtered = this.collectionTypes.filter((type) =>
-      type.toLowerCase().includes(text.toLowerCase()),
+      type.toLowerCase().includes(text.toLowerCase())
     );
 
     if (
