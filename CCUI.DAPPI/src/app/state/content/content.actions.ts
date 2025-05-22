@@ -65,9 +65,7 @@ export const loadContentSuccess = createAction(
 
 export const loadRelatedItemsSuccess = createAction(
   '[Content] Load Related Items Success',
-  props<{
-    relatedItems: PaginatedResponse;
-  }>()
+  props<{ relatedItems: PaginatedResponse; relatedType: string }>()
 );
 
 export const loadContentFailure = createAction(

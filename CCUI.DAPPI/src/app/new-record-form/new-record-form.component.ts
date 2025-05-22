@@ -108,7 +108,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
-  getRelationDisplayValue(item: any): string {
+  getRelationDisplayValue(item: any, field: ContentField): string {
     if (!item) return '';
 
     const displayKeys = [
@@ -170,6 +170,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
               required: field.isRequired,
               validators: field.isRequired ? [Validators.required] : undefined,
               relatedTo: field.relatedTo,
+              relatedItems: [],
             };
 
             if (field.type === FieldType.collection || field.type === FieldType.relation) {
@@ -216,42 +217,46 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     );
 
     this.subscription.add(
-      this.relatedItems$.subscribe((items) => {
-        this.contentFields = this.contentFields.map((item) => {
-          if (
-            item.type === FieldType.collection ||
-            item.type === FieldType.relation ||
-            item.type === FieldType.select
-          ) {
-            return {
-              ...item,
-              relatedItems: items?.Data,
-            };
-          } else return item;
-        });
+      this.relatedItems$.subscribe((relatedItemsMap) => {
+        if (relatedItemsMap) {
+          this.contentFields = this.contentFields.map((field) => {
+            if (
+              (field.type === FieldType.collection ||
+                field.type === FieldType.relation ||
+                field.type === FieldType.select) &&
+              field.relatedTo &&
+              relatedItemsMap[field.relatedTo]
+            ) {
+              return {
+                ...field,
+                relatedItems: relatedItemsMap[field.relatedTo]?.Data || [],
+              };
+            } else return field;
+          });
 
-        this.relationFields = this.contentFields.filter(
-          (field) => field.type === FieldType.collection || field.type === FieldType.relation
-        );
+          this.relationFields = this.contentFields.filter(
+            (field) => field.type === FieldType.collection || field.type === FieldType.relation
+          );
 
-        this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
+          this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
 
-        const checkboxFields = this.contentFields.filter(
-          (field) => field.type === FieldType.checkbox
-        );
-        const nonCheckboxNonFileFields = this.contentFields.filter(
-          (field) => field.type !== FieldType.file && field.type !== FieldType.checkbox
-        );
+          const checkboxFields = this.contentFields.filter(
+            (field) => field.type === FieldType.checkbox
+          );
+          const nonCheckboxNonFileFields = this.contentFields.filter(
+            (field) => field.type !== FieldType.file && field.type !== FieldType.checkbox
+          );
 
-        const halfNonCheckboxLength = Math.ceil(nonCheckboxNonFileFields.length / 2);
-        const halfCheckboxLength = Math.ceil(checkboxFields.length / 2);
+          const halfNonCheckboxLength = Math.ceil(nonCheckboxNonFileFields.length / 2);
+          const halfCheckboxLength = Math.ceil(checkboxFields.length / 2);
 
-        this.leftColumnFields = nonCheckboxNonFileFields.slice(0, halfNonCheckboxLength);
-        this.rightColumnFields = nonCheckboxNonFileFields.slice(halfNonCheckboxLength);
-        this.leftColumnCheckboxFields = checkboxFields.slice(0, halfCheckboxLength);
-        this.rightColumnCheckboxFields = checkboxFields.slice(halfCheckboxLength);
+          this.leftColumnFields = nonCheckboxNonFileFields.slice(0, halfNonCheckboxLength);
+          this.rightColumnFields = nonCheckboxNonFileFields.slice(halfNonCheckboxLength);
+          this.leftColumnCheckboxFields = checkboxFields.slice(0, halfCheckboxLength);
+          this.rightColumnCheckboxFields = checkboxFields.slice(halfCheckboxLength);
 
-        this.buildForm();
+          this.buildForm();
+        }
       })
     );
     this.subscriptions.add(this.selectedType$.subscribe((type) => (this.selectedType = type)));
@@ -370,7 +375,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
     const requiredFileFieldsValid = this.fileFields
       .filter((field) => field.required)
-      .every(() => this.selectedFile !== null);
+      .every((field) => this.selectedFile !== null);
 
     return isBasicFormValid && requiredFileFieldsValid;
   }
@@ -388,34 +393,42 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.fileFieldTouched = true;
 
     if (this.isFormValid()) {
-      const formData = Object.keys(this.contentForm.value).reduce((acc: any, key) => {
+      const formData = {} as any;
+
+      Object.keys(this.contentForm.value).forEach((key) => {
         const value = this.contentForm.value[key];
         const field = this.contentFields.find((f) => f.key === key);
 
         if (field?.type === FieldType.file) {
-          return acc;
-        } else if (field?.type === FieldType.relation && value && value.id) {
-          const relationKey = this.fields.find(
-            (f) => f.key.includes(field.key) && f.type === FieldType.id
-          )?.key;
-          if (relationKey) acc[relationKey] = value.id;
+          return;
+        } else if (field?.type === FieldType.relation) {
+          if (value) {
+            if (!field.multiple && value.Id) {
+              const relationKey = `${key}Id`;
+              formData[relationKey] = value.Id;
+            } else if (field.multiple && Array.isArray(value)) {
+              formData[key] = value.map((item: any) => (item.Id ? { Id: item.Id } : item));
+            } else if (value.Id) {
+              const relationKey = `${key}Id`;
+              formData[relationKey] = value.Id;
+            } else {
+              formData[key] = value;
+            }
+          }
+        } else if (field?.type === FieldType.collection && Array.isArray(value)) {
+          formData[key] = value;
         } else if (field?.type === FieldType.role) {
-          acc[key] = Array.isArray(value) ? value : value ? [value] : [];
+          formData[key] = Array.isArray(value) ? value : value ? [value] : [];
         } else if (field?.type === FieldType.date && value) {
           if (value instanceof Date) {
-            acc[key] = value.toISOString();
+            formData[key] = value.toISOString();
           } else {
-            acc[key] = value;
+            formData[key] = value;
           }
-        } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-          acc[key] = [{ ...value }];
         } else {
-          acc[key] = value;
+          formData[key] = value;
         }
-
-        return acc;
-      }, {});
-
+      });
       this.submitToBackend(formData);
     }
   }
@@ -456,15 +469,19 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
       );
 
       this.subscription.add(
-        this.actions$.pipe(ofType(ContentActions.uploadFileSuccess), take(1)).subscribe(() => {
-          this.finishSubmission();
-        })
+        this.actions$
+          .pipe(ofType(ContentActions.uploadFileSuccess), take(1))
+          .subscribe((action) => {
+            this.finishSubmission();
+          })
       );
     } else {
       this.subscription.add(
-        this.actions$.pipe(ofType(ContentActions.createContentSuccess), take(1)).subscribe(() => {
-          this.finishSubmission();
-        })
+        this.actions$
+          .pipe(ofType(ContentActions.createContentSuccess), take(1))
+          .subscribe((action) => {
+            this.finishSubmission();
+          })
       );
     }
   }

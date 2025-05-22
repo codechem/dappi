@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using CCApi.Extensions.DependencyInjection.Database;
 using CCApi.Extensions.DependencyInjection.Interfaces;
 using CCApi.Extensions.DependencyInjection.Services;
 using CCApi.Extensions.DependencyInjection.Services.Identity;
@@ -21,7 +22,7 @@ public static class ServiceExtensions
         IConfiguration configuration,
         Action<JsonOptions>? jsonOptions = null,
         Action<DbContextOptionsBuilder>? dbContextOptions = null)
-        where TDbContext : DbContext
+        where TDbContext : DappiDbContext
     {
         services.AddDbContext<TDbContext>(dbContextOptions ?? (builder =>
             builder.UseNpgsql(configuration.GetValue<string>(Constants.Configuration.PostgresConnection))));
@@ -29,6 +30,9 @@ public static class ServiceExtensions
         services.AddScoped<IDbContextAccessor, DbContextAccessor<TDbContext>>();
 
         services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
+
+        services.AddScoped<ICurrentSessionProvider, CurrentSessionProvider>();
+
         services.AddDappiSwaggerGen();
 
         services.AddControllers()

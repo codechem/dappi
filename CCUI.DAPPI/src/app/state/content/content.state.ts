@@ -11,7 +11,7 @@ export interface ContentState {
   itemsPerPage: number;
   currentItem: ContentItem | undefined;
   isSearching: boolean;
-  relatedItems: PaginatedResponse | undefined;
+  relatedItems: Record<string, PaginatedResponse> | undefined;
   contentTypeChanges: Array<RecentContent> | null;
   loadingContentTypeChanges: boolean;
 }

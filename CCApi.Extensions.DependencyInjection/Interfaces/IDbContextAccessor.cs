@@ -1,9 +1,9 @@
-using Microsoft.EntityFrameworkCore;
+using CCApi.Extensions.DependencyInjection.Database;
 
 namespace CCApi.Extensions.DependencyInjection.Interfaces
 {
     public interface IDbContextAccessor
     {
-        DbContext DbContext { get; }
+        DappiDbContext DbContext { get; }
     }
 }

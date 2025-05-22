@@ -1,7 +1,6 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-
 import { NewRecordFormComponent } from '../new-record-form/new-record-form.component';
 import { CommonModule, Location } from '@angular/common';
 import { MenuComponent } from '../menu/menu.component';

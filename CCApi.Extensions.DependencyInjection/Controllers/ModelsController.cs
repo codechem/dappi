@@ -4,6 +4,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using CCApi.Extensions.DependencyInjection.Database;
 using CCApi.Extensions.DependencyInjection.Interfaces;
 using CCApi.Extensions.DependencyInjection.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -16,19 +17,25 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
     [ApiController]
     public class ModelsController : ControllerBase
     {
-        private readonly DbContext _dbContext;
+        private readonly ICurrentSessionProvider _currentSessionProvider;
+        private readonly DappiDbContext _dbContext;
+
         private readonly string _entitiesFolderPath = Path.Combine(
             Directory.GetCurrentDirectory(),
             "Entities"
         );
+
         private readonly string _controllersFolderPath = Path.Combine(
             Directory.GetCurrentDirectory(),
             "Controllers"
         );
 
-        public ModelsController(IDbContextAccessor dbContextAccessor)
+        public ModelsController(IDbContextAccessor dappiDbContextAccessor,
+            ICurrentSessionProvider currentSessionProvider)
         {
-            _dbContext = dbContextAccessor.DbContext;
+            _currentSessionProvider = currentSessionProvider;
+            _dbContext = dappiDbContextAccessor.DbContext;
+
 
             if (!Directory.Exists(_entitiesFolderPath))
             {
@@ -73,6 +80,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     $"The model name '{request.ModelName}' is not a valid C# class name."
                 );
             }
+
             var modelNames = Directory
                 .GetFiles(_entitiesFolderPath, "*.cs")
                 .Select(Path.GetFileNameWithoutExtension)
@@ -99,16 +107,11 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                 await AddContentTypeChangeAsync(
                     request.ModelName,
-                    new Dictionary<string, string>(),
-                    false
+                    new Dictionary<string, string>() { { "Id", "Guid" } }
                 );
 
                 return Ok(
-                    new
-                    {
-                        Message = $"Model class '{modelType.Name}' created successfully.",
-                        FilePath = filePath,
-                    }
+                    new { Message = $"Model class '{modelType.Name}' created successfully.", FilePath = filePath, }
                 );
             }
             catch (Exception ex)
@@ -164,14 +167,10 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     System.IO.File.Delete(controllerFilePath);
                 }
 
-                await AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(), false);
+                await AddContentTypeChangeAsync(modelName, new Dictionary<string, string>());
 
                 return Ok(
-                    new
-                    {
-                        Message = $"Model '{modelName}' deleted successfully.",
-                        FilePath = modelFilePath,
-                    }
+                    new { Message = $"Model '{modelName}' deleted successfully.", FilePath = modelFilePath, }
                 );
             }
             catch (Exception ex)
@@ -294,6 +293,27 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                         $"Guid{(!request.IsRequired ? "?" : "")}"
                     );
                 }
+                else if (request.FieldType == "ManyToOne")
+                {
+                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $"{request.RelatedTo}.cs");
+                    var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
+                    var existingCode = System.IO.File.ReadAllText(modelFilePath);
+
+                    var updatedCode = AddFieldToClass(existingCode, $"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    System.IO.File.WriteAllText(modelFilePath, updatedCode);
+
+                    existingCode = System.IO.File.ReadAllText(modelFilePath);
+
+                    updatedCode = AddFieldToClass(existingCode, request.FieldName, $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    System.IO.File.WriteAllText(modelFilePath, updatedCode);
+
+                    var relatedToCode = AddFieldToClass(existingRelatedToCode, $"{modelName}s", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+                    System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
+
+                    UpdateDbContextManyToOne(modelName, request.FieldName, request.RelatedTo);
+
+                    fieldDict.Add($"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}");
+                }
                 else if (request.FieldType == "ManyToMany")
                 {
                     var modelRelatedToFilePath = Path.Combine(
@@ -347,7 +367,8 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 return Ok(
                     new
                     {
-                        Message = $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
+                        Message =
+                            $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
                         FilePath = modelFilePath,
                     }
                 );
@@ -360,59 +381,19 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
         private async Task AddContentTypeChangeAsync(
             string modelName,
-            Dictionary<string, string> fields,
-            bool isPublished
+            Dictionary<string, string> fields
         )
         {
-            try
+            var contentTypeChange = new ContentTypeChange()
             {
-                var connection = _dbContext.Database.GetDbConnection();
-                if (connection.State != ConnectionState.Open)
-                {
-                    await connection.OpenAsync();
-                }
+                ModelName = modelName,
+                Fields = JsonSerializer.Serialize(fields),
+                ModifiedBy = _currentSessionProvider.GetCurrentUserId() ?? Guid.Empty,
+            };
 
-                var userId = User.Identity?.Name ?? "system";
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText =
-                        @"
-        INSERT INTO ""ContentTypeChanges"" (""ModelName"", ""Fields"", ""ModifiedBy"", ""ModifiedAt"", ""IsPublished"")
-        VALUES (@modelName, @fields, @modifiedBy, @modifiedAt, @isPublished)";
+            _dbContext.ContentTypeChanges.Add(contentTypeChange);
 
-                    var modelNameParam = command.CreateParameter();
-                    modelNameParam.ParameterName = "@modelName";
-                    modelNameParam.Value = modelName;
-                    command.Parameters.Add(modelNameParam);
-
-                    var fieldsParam = command.CreateParameter();
-                    fieldsParam.ParameterName = "@fields";
-                    fieldsParam.Value = JsonSerializer.Serialize(fields);
-                    command.Parameters.Add(fieldsParam);
-
-                    var modifiedByParam = command.CreateParameter();
-                    modifiedByParam.ParameterName = "@modifiedBy";
-                    modifiedByParam.Value = userId;
-                    command.Parameters.Add(modifiedByParam);
-
-                    var modifiedAtParam = command.CreateParameter();
-                    modifiedAtParam.ParameterName = "@modifiedAt";
-                    modifiedAtParam.Value = DateTimeOffset.Now.ToUniversalTime();
-                    command.Parameters.Add(modifiedAtParam);
-
-                    var isPublishedParam = command.CreateParameter();
-                    isPublishedParam.ParameterName = "@isPublished";
-                    isPublishedParam.Value = isPublished;
-                    command.Parameters.Add(isPublishedParam);
-
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error adding to ContentTypeChanges: {ex.Message}");
-                throw;
-            }
+            await _dbContext.SaveChangesAsync();
         }
 
         private async Task UpdateContentTypeChangeFieldsAsync(
@@ -422,93 +403,101 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
         {
             try
             {
-                var connection = _dbContext.Database.GetDbConnection();
-                if (connection.State != ConnectionState.Open)
+                var contentTypeChangeForModel = await _dbContext.ContentTypeChanges
+                    .Where(ctc => ctc.ModelName == modelName && !ctc.IsPublished)
+                    .OrderByDescending(ctc => ctc.ModifiedAt)
+                    .FirstOrDefaultAsync();
+
+                if (contentTypeChangeForModel is not null)
                 {
-                    await connection.OpenAsync();
-                }
-
-                Dictionary<string, string> existingFields = new Dictionary<string, string>();
-                bool hasUnpublishedChanges = false;
-                int existingRecordId = 0;
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText =
-                        @"
-        SELECT ""Id"", ""Fields"" 
-        FROM ""ContentTypeChanges"" 
-        WHERE ""ModelName"" = @modelName AND ""IsPublished"" = false 
-        ORDER BY ""ModifiedAt"" DESC 
-        LIMIT 1";
-
-                    var modelNameParam = command.CreateParameter();
-                    modelNameParam.ParameterName = "@modelName";
-                    modelNameParam.Value = modelName;
-                    command.Parameters.Add(modelNameParam);
-
-                    using (var reader = await command.ExecuteReaderAsync())
+                    var oldFields = JsonSerializer.Deserialize<Dictionary<string, string>>(contentTypeChangeForModel.Fields);
+                    foreach (var kvp in newFields)
                     {
-                        if (await reader.ReadAsync())
-                        {
-                            hasUnpublishedChanges = true;
-                            existingRecordId = reader.GetInt32(0);
-                            var fieldsJson = reader.GetString(1);
-                            existingFields =
-                                JsonSerializer.Deserialize<Dictionary<string, string>>(fieldsJson)
-                                ?? new Dictionary<string, string>();
-                        }
-                    }
-                }
-
-                if (hasUnpublishedChanges)
-                {
-                    foreach (var field in newFields)
-                    {
-                        existingFields[field.Key] = field.Value;
+                        oldFields?.Add(kvp.Key, kvp.Value);
                     }
 
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText =
-                            @"
-            UPDATE ""ContentTypeChanges"" 
-            SET ""Fields"" = @fields, ""ModifiedAt"" = @modifiedAt, ""ModifiedBy"" = @modifiedBy
-            WHERE ""Id"" = @id";
-
-                        var fieldsParam = command.CreateParameter();
-                        fieldsParam.ParameterName = "@fields";
-                        fieldsParam.Value = JsonSerializer.Serialize(existingFields);
-                        command.Parameters.Add(fieldsParam);
-
-                        var modifiedAtParam = command.CreateParameter();
-                        modifiedAtParam.ParameterName = "@modifiedAt";
-                        modifiedAtParam.Value = DateTimeOffset.Now.ToUniversalTime();
-                        command.Parameters.Add(modifiedAtParam);
-
-                        var modifiedByParam = command.CreateParameter();
-                        modifiedByParam.ParameterName = "@modifiedBy";
-                        modifiedByParam.Value = User.Identity?.Name ?? "system";
-                        command.Parameters.Add(modifiedByParam);
-
-                        var idParam = command.CreateParameter();
-                        idParam.ParameterName = "@id";
-                        idParam.Value = existingRecordId;
-                        command.Parameters.Add(idParam);
-
-                        await command.ExecuteNonQueryAsync();
-                    }
+                    contentTypeChangeForModel.ModifiedAt = DateTimeOffset.UtcNow;
+                    contentTypeChangeForModel.Fields = JsonSerializer.Serialize(oldFields);
                 }
                 else
                 {
-                    await AddContentTypeChangeAsync(modelName, newFields, false);
+                    contentTypeChangeForModel = new ContentTypeChange()
+                    {
+                        ModelName = modelName,
+                        Fields = JsonSerializer.Serialize(newFields),
+                    };
+
+                    _dbContext.ContentTypeChanges.Add(contentTypeChangeForModel);
                 }
+
+                await _dbContext.SaveChangesAsync();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error updating ContentTypeChanges: {ex.Message}");
                 throw;
             }
+        }
+
+        private void UpdateDbContextManyToOne(string modelName, string propertyName, string relatedTo)
+        {
+            var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "AppDbContext.cs");
+            if (!System.IO.File.Exists(dbContextFilePath))
+            {
+                throw new FileNotFoundException($"DbContext file not found at {dbContextFilePath}");
+            }
+
+            string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
+
+            int onModelCreatingIndex = dbContextContent.IndexOf("protected override void OnModelCreating(ModelBuilder modelBuilder)");
+            if (onModelCreatingIndex == -1)
+            {
+                var lastClosingBrace = dbContextContent.LastIndexOf("}");
+
+                var onModelCreatingMethod = $@"
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {{
+        modelBuilder.Entity<{modelName}>()
+            .HasOne<{relatedTo}>(s => s.{propertyName})
+            .WithMany(e => e.{modelName}s)
+            .HasForeignKey(s => s.{propertyName}Id);
+
+        base.OnModelCreating(modelBuilder);
+    }}";
+
+                dbContextContent = dbContextContent.Insert(lastClosingBrace, onModelCreatingMethod);
+            }
+            else
+            {
+                int methodStartBrace = dbContextContent.IndexOf('{', onModelCreatingIndex);
+                int currentPos = methodStartBrace + 1;
+                int openBraces = 1;
+
+                while (openBraces > 0 && currentPos < dbContextContent.Length)
+                {
+                    if (dbContextContent[currentPos] == '{')
+                        openBraces++;
+                    else if (dbContextContent[currentPos] == '}')
+                        openBraces--;
+
+                    currentPos++;
+                }
+
+                string baseCall = "base.OnModelCreating(modelBuilder);";
+                int baseCallIndex = dbContextContent.LastIndexOf(baseCall, currentPos);
+
+                int insertPosition = baseCallIndex > 0 ? baseCallIndex : currentPos - 1;
+
+                var configCode = $@"
+        modelBuilder.Entity<{modelName}>()
+            .HasOne<{relatedTo}>(s => s.{propertyName})
+            .WithMany(e => e.{modelName}s)
+            .HasForeignKey(s => s.{propertyName}Id);";
+
+                dbContextContent = dbContextContent.Insert(insertPosition, configCode);
+            }
+
+            System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
         }
 
         private void UpdateDbContextManyToMany(string modelName, string relatedTo)
@@ -737,6 +726,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     $"A property with the name '{fieldName}' already exists in the class."
                 );
             }
+
             // var requiredField = isRequired ? "required" : "";
             var requiredField = "";
             var propertyCode =
@@ -747,6 +737,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 propertyCode =
                     $"    public {requiredField} {fieldType} {fieldName} {{ get; set; }} = new List<{collectionType}>();";
             }
+
             var insertPosition = classCode.LastIndexOf("}", StringComparison.Ordinal);
             var updatedCode = classCode.Insert(
                 insertPosition,
@@ -762,10 +753,12 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             {
                 return false;
             }
+
             if (!(char.IsLetter(name[0]) || name[0] == '_'))
             {
                 return false;
             }
+
             for (int i = 1; i < name.Length; i++)
             {
                 if (!(char.IsLetterOrDigit(name[i]) || name[i] == '_'))
@@ -859,6 +852,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             {
                 return false;
             }
+
             return true;
         }
 
@@ -961,15 +955,11 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     }
 
                     fieldList.Add(
-                        new FieldsInfo
-                        {
-                            FieldName = fieldName,
-                            FieldType = fieldType,
-                            IsRequired = isRequired,
-                        }
+                        new FieldsInfo { FieldName = fieldName, FieldType = fieldType, IsRequired = isRequired, }
                     );
                 }
             }
+
             return fieldList;
         }
     }
@@ -988,7 +978,9 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
     }
 
     [AttributeUsage(AttributeTargets.Class)]
-    public class CCControllerAttribute : Attribute { }
+    public class CCControllerAttribute : Attribute
+    {
+    }
 
     public static class PropertyCheckExtensions
     {

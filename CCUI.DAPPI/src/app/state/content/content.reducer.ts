@@ -28,10 +28,13 @@ export const contentReducer = createReducer(
     error: null,
   })),
 
-  on(ContentActions.loadRelatedItemsSuccess, (state, { relatedItems }) => ({
+  on(ContentActions.loadRelatedItemsSuccess, (state, { relatedItems, relatedType }) => ({
     ...state,
-    relatedItems,
     loading: false,
+    relatedItems: {
+      ...state.relatedItems,
+      [relatedType]: relatedItems,
+    },
   })),
 
   on(ContentActions.loadRelatedItemsFailure, (state, { error }) => ({
