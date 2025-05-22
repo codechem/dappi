@@ -45,7 +45,7 @@ export class AuthComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private store: Store,
-    private actions$: Actions,
+    private actions$: Actions
   ) {
     this.isLoading$ = this.store.select(selectAuthLoading);
     this.errorMessage$ = this.store.select(selectAuthError);
@@ -88,7 +88,7 @@ export class AuthComponent implements OnInit, OnDestroy {
           confirmPassword: ['', Validators.required],
           termsAccepted: [false, Validators.requiredTrue],
         },
-        { validators: passwordMatchValidator() },
+        { validators: passwordMatchValidator() }
       );
       this.showPasswordRequirements = false;
     }

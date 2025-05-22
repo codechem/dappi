@@ -3,7 +3,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 internal static class Constants
 {
     public static class CorsPolicies
-    {    
+    {
         public const string AllowDappiAngularApp = nameof(AllowDappiAngularApp);
     }
 

@@ -15,7 +15,7 @@ export class AuthEffects {
     private authService: AuthService,
     private router: Router,
     private snackBar: MatSnackBar,
-    @Inject(PLATFORM_ID) private platformId: Object,
+    @Inject(PLATFORM_ID) private platformId: object
   ) {}
 
   login$ = createEffect(() =>
@@ -27,12 +27,12 @@ export class AuthEffects {
             AuthActions.loginSuccess({
               user: { username: response.username, roles: response.roles },
               token: response.token,
-            }),
+            })
           ),
-          catchError((error) => of(AuthActions.loginFailure({ error: error.message }))),
-        ),
-      ),
-    ),
+          catchError((error) => of(AuthActions.loginFailure({ error: error.message })))
+        )
+      )
+    )
   );
 
   loginSuccess$ = createEffect(
@@ -47,9 +47,9 @@ export class AuthEffects {
             this.snackBar.open('Login successful!', 'Close', { duration: 3000 });
             this.router.navigate(['/home']);
           }
-        }),
+        })
       ),
-    { dispatch: false },
+    { dispatch: false }
   );
 
   register$ = createEffect(() =>
@@ -60,12 +60,12 @@ export class AuthEffects {
           map(() =>
             AuthActions.registerSuccess({
               message: 'Registration successful! Please login.',
-            }),
+            })
           ),
-          catchError((error) => of(AuthActions.registerFailure({ error: error.message }))),
-        ),
-      ),
-    ),
+          catchError((error) => of(AuthActions.registerFailure({ error: error.message })))
+        )
+      )
+    )
   );
 
   registerSuccess$ = createEffect(
@@ -75,9 +75,9 @@ export class AuthEffects {
         tap(({ message }) => {
           this.snackBar.open(message, 'Close', { duration: 3000 });
           this.router.navigate(['/auth']);
-        }),
+        })
       ),
-    { dispatch: false },
+    { dispatch: false }
   );
 
   checkAuth$ = createEffect(() =>
@@ -98,8 +98,8 @@ export class AuthEffects {
           }
         }
         return AuthActions.authStatusFailure();
-      }),
-    ),
+      })
+    )
   );
 
   logout$ = createEffect(() =>
@@ -111,8 +111,8 @@ export class AuthEffects {
           localStorage.removeItem('user_data');
         }
         return AuthActions.logoutSuccess();
-      }),
-    ),
+      })
+    )
   );
 
   logoutSuccess$ = createEffect(
@@ -121,8 +121,8 @@ export class AuthEffects {
         ofType(AuthActions.logoutSuccess),
         tap(() => {
           this.router.navigate(['/auth']);
-        }),
+        })
       ),
-    { dispatch: false },
+    { dispatch: false }
   );
 }

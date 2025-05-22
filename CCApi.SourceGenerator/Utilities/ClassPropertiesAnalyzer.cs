@@ -56,7 +56,7 @@ public static class ClassPropertiesAnalyzer
     public static string PrintDappiAuthorizeInfos(List<DappiAuthorizeInfo> dappiAuthorizeInfos)
     {
         var builder = new StringBuilder();
-        
+
         foreach (var info in dappiAuthorizeInfos)
         {
             builder.Append("Methods:");
@@ -64,7 +64,7 @@ public static class ClassPropertiesAnalyzer
             builder.Append("Roles:");
             builder.Append(string.Join(", ", info.Roles));
         }
-        
+
         return builder.ToString();
     }
 
@@ -86,7 +86,7 @@ public static class ClassPropertiesAnalyzer
                 }
             }
         }
-        
+
         return string.Empty;
     }
 
@@ -147,7 +147,7 @@ public static class ClassPropertiesAnalyzer
                     })
                     .Where(attrName => attrName != null)
                     .ToList();
-                
+
                 return new PropertyInfo
                 {
                     PropertyName = propertyName,
@@ -159,7 +159,7 @@ public static class ClassPropertiesAnalyzer
             }).ToList();
         return propertiesInfo;
     }
-    
+
     private static bool ContainsCollectionTypeName(PropertyInfo propertyInfo)
     {
         return propertyInfo.PropertyType.Name.Contains("IEnumerable")

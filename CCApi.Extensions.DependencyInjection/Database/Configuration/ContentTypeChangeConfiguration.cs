@@ -17,4 +17,4 @@ namespace CCApi.Extensions.DependencyInjection.Database.Configuration
                 .Property(c => c.Fields).HasColumnName("jsonb");
         }
     }
-} 
+}

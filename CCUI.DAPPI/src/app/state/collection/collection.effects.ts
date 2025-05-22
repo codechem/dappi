@@ -34,12 +34,12 @@ export class CollectionEffects {
             of(
               CollectionActions.loadCollectionTypesFailure({
                 error: error.message,
-              }),
-            ),
-          ),
+              })
+            )
+          )
         );
-      }),
-    ),
+      })
+    )
   );
 
   loadDraftCollectionTypes$ = createEffect(() =>
@@ -56,12 +56,12 @@ export class CollectionEffects {
             of(
               CollectionActions.loadDraftCollectionTypesFailure({
                 error: error.message,
-              }),
-            ),
-          ),
+              })
+            )
+          )
         );
-      }),
-    ),
+      })
+    )
   );
 
   loadPublishedCollectionTypes$ = createEffect(() =>
@@ -78,12 +78,12 @@ export class CollectionEffects {
             of(
               CollectionActions.loadPublishedCollectionTypesFailure({
                 error: error.message,
-              }),
-            ),
-          ),
+              })
+            )
+          )
         );
-      }),
-    ),
+      })
+    )
   );
 
   setDefaultSelectedType$ = createEffect(() =>
@@ -94,9 +94,9 @@ export class CollectionEffects {
       map(([action]) =>
         ContentActions.setContentType({
           selectedType: action.collectionTypes[0],
-        }),
-      ),
-    ),
+        })
+      )
+    )
   );
 
   loadFields$ = createEffect(() =>
@@ -108,12 +108,12 @@ export class CollectionEffects {
           map((fields) =>
             CollectionActions.loadFieldsSuccess({
               fields: [...fields],
-            }),
+            })
           ),
-          catchError((error) => of(CollectionActions.loadFieldsFailure({ error: error.message }))),
+          catchError((error) => of(CollectionActions.loadFieldsFailure({ error: error.message })))
         );
-      }),
-    ),
+      })
+    )
   );
 
   saveContent$ = createEffect(() =>
@@ -144,10 +144,10 @@ export class CollectionEffects {
             }
             console.error('Error saving content:', error);
             return of(CollectionActions.saveContentFailure({ error }));
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   addCollectionType$ = createEffect(() =>
@@ -161,23 +161,23 @@ export class CollectionEffects {
               map(() =>
                 CollectionActions.addCollectionTypeSuccess({
                   collectionType: action.collectionType,
-                }),
+                })
               ),
               catchError((error) => {
                 console.error('Error updating DB context:', error);
                 alert('Model created but failed to update DB context. Please try again.');
                 return of(CollectionActions.addCollectionTypeFailure({ error }));
-              }),
-            ),
+              })
+            )
           ),
           catchError((error) => {
             console.error('Error creating model:', error);
             alert('Failed to create model. Please try again.');
             return of(CollectionActions.addCollectionTypeFailure({ error }));
-          }),
+          })
         );
-      }),
-    ),
+      })
+    )
   );
 
   reloadCollectionTypesAfterAdd$ = createEffect(() =>
@@ -186,8 +186,8 @@ export class CollectionEffects {
       concatMap(() => [
         CollectionActions.loadPublishedCollectionTypes(),
         CollectionActions.loadDraftCollectionTypes(),
-      ]),
-    ),
+      ])
+    )
   );
 
   addField$ = createEffect(() =>
@@ -200,12 +200,12 @@ export class CollectionEffects {
           map((response) =>
             CollectionActions.addFieldSuccess({
               field: action.field,
-            }),
+            })
           ),
-          catchError((error) => of(CollectionActions.addFieldFailure({ error: error.message }))),
+          catchError((error) => of(CollectionActions.addFieldFailure({ error: error.message })))
         );
-      }),
-    ),
+      })
+    )
   );
 
   reloadCollectionTypesAfterField$ = createEffect(() =>
@@ -214,13 +214,13 @@ export class CollectionEffects {
       concatMap(() => [
         CollectionActions.loadPublishedCollectionTypes(),
         CollectionActions.loadDraftCollectionTypes(),
-      ]),
-    ),
+      ])
+    )
   );
 
   constructor(
     private actions$: Actions,
     private http: HttpClient,
-    private store: Store,
+    private store: Store
   ) {}
 }

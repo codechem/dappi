@@ -26,13 +26,13 @@ public static class ServiceExtensions
     {
         services.AddDbContext<TDbContext>(dbContextOptions ?? (builder =>
             builder.UseNpgsql(configuration.GetValue<string>(Constants.Configuration.PostgresConnection))));
-    
+
         services.AddScoped<IDbContextAccessor, DbContextAccessor<TDbContext>>();
-        
+
         services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
 
         services.AddScoped<ICurrentSessionProvider, CurrentSessionProvider>();
-        
+
         services.AddDappiSwaggerGen();
 
         services.AddControllers()

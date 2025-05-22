@@ -19,7 +19,7 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(
     private store: Store,
     private router: Router,
-    private snackBar: MatSnackBar,
+    private snackBar: MatSnackBar
   ) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
@@ -49,13 +49,13 @@ export class AuthInterceptor implements HttpInterceptor {
                 'Close',
                 {
                   duration: 5000,
-                },
+                }
               );
             }
             return throwError(() => error);
-          }),
+          })
         );
-      }),
+      })
     );
   }
 }

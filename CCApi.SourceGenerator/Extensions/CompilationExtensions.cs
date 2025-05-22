@@ -10,7 +10,7 @@ internal static class CompilationExtensions
     {
         var dbContextSymbol = compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
         if (dbContextSymbol is null)
-            return null; 
+            return null;
 
         foreach (var syntaxTree in compilation.SyntaxTrees)
         {
@@ -29,7 +29,7 @@ internal static class CompilationExtensions
                     return new DbContextInformation
                     {
                         ClassName = classSymbol.Name,
-                        ResidingNamespace =  GetFullNamespace(classSymbol)
+                        ResidingNamespace = GetFullNamespace(classSymbol)
                     };
                 }
             }

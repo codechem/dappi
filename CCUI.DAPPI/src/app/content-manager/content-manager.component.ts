@@ -6,7 +6,7 @@ import { ButtonComponent } from '../button/button.component';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { SidebarComponent } from '../sidebar/sidebar.component';
-import { Subject, takeUntil, Observable, take, Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { MatSpinner } from '@angular/material/progress-spinner';
 import { Store } from '@ngrx/store';
 import {
@@ -55,12 +55,12 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private store: Store,
+    private store: Store
   ) {}
 
   ngOnInit(): void {
     this.subscription.add(
-      this.isSearching$.subscribe((searching) => (this.isSearching = searching)),
+      this.isSearching$.subscribe((searching) => (this.isSearching = searching))
     );
 
     this.subscription.add(
@@ -74,15 +74,15 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
               page: 1,
               limit: 10,
               searchText: '',
-            }),
+            })
           );
         }
-      }),
+      })
     );
     this.subscription.add(
       this.items$.subscribe((items) => {
         this.items = items?.Data ?? [];
-      }),
+      })
     );
   }
 

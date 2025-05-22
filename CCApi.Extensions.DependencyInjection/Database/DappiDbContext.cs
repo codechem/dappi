@@ -13,7 +13,7 @@ namespace CCApi.Extensions.DependencyInjection.Database
         protected override void OnModelCreating(ModelBuilder builder)
         {
             new ContentTypeChangeConfiguration().Configure(builder.Entity<ContentTypeChange>());
-            
+
             base.OnModelCreating(builder);
         }
     }

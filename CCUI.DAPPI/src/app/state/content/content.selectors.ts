@@ -7,7 +7,7 @@ export const selectItems = createSelector(selectContentState, (state) => state.i
 
 export const selectRelatedItems = createSelector(
   selectContentState,
-  (state) => state.relatedItems || {},
+  (state) => state.relatedItems || {}
 );
 
 export const selectHeaders = createSelector(selectContentState, (state) => state.headers);
@@ -28,10 +28,10 @@ export const selectIsSearching = createSelector(selectContentState, (state) => s
 
 export const selectContentTypeChanges = createSelector(
   selectContentState,
-  (state) => state.contentTypeChanges,
+  (state) => state.contentTypeChanges
 );
 
 export const selectLoadingContentTypeChanges = createSelector(
   selectContentState,
-  (state) => state.loadingContentTypeChanges,
+  (state) => state.loadingContentTypeChanges
 );

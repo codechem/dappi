@@ -47,7 +47,7 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private store: Store,
+    private store: Store
   ) {}
 
   ngOnInit(): void {
@@ -55,12 +55,12 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
       this.router.events
         .pipe(
           filter((event) => event instanceof NavigationEnd),
-          takeUntil(this.destroy$),
+          takeUntil(this.destroy$)
         )
         .subscribe((event: any) => {
           const currentPath = event.url.split('/')[1] || 'home';
           this.updateActiveIcon(currentPath);
-        }),
+        })
     );
 
     const initialPath = this.router.url.split('/')[1] || 'home';

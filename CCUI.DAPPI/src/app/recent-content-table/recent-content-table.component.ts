@@ -83,7 +83,7 @@ export class RecentContentTableComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private store: Store,
-    private cdr: ChangeDetectorRef,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
