@@ -15,9 +15,9 @@ You should have [.NET 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
   dotnet tool install --global Dappi.Cli --version 0.1.5-preview
 ```
 2. Initialize your project
-   ```sh
+ ```sh
     dappi init --name <PROJECT-NAME> --path <OUTPUT-DIRECTORY> --use-prerelease
-   ```
+ ```
 3. Modify the connection string to point to your database in `appsettings.json`
 ```json
  ...
@@ -25,11 +25,11 @@ You should have [.NET 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
      "PostgresConnection":"YOUR-CONNECTION-STRING"
   },
   ...
-   ```
+```
 4. Then you're ready to start your project. Navigate to your project's directory and run
-   ```sh
+```sh
     dappi start
-   ```
+```
 
 ## Features
 
