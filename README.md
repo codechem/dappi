@@ -16,7 +16,7 @@ You should have [.NET 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 ```
 2. Initialize your project
    ```sh
-dappi init --name <PROJECT-NAME> --path <OUTPUT-DIRECTORY>
+    dappi init --name <PROJECT-NAME> --path <OUTPUT-DIRECTORY>
    ```
 3. Modify the connection string to point to your database in `appsettings.json`
 ```json
@@ -28,7 +28,7 @@ dappi init --name <PROJECT-NAME> --path <OUTPUT-DIRECTORY>
    ```
 4. Then you're ready to start your project. Navigate to your project's directory and run
    ```sh
-dappi start
+    dappi start
    ```
 
 ## Features
