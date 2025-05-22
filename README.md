@@ -2,6 +2,35 @@
 
 dappi is a powerful tool designed to streamline backend API development by automatically generating controllers with CRUD endpoints for a given entity.
 
+## Getting Started
+
+### Prerequisites
+
+You should have [.NET 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)  installed. 
+
+### Installation
+
+1. Install the Dappi CLI.
+```sh
+  dotnet tool install --global Dappi.Cli --version 0.1.5-preview
+```
+2. Initialize your project
+ ```sh
+    dappi init --name <PROJECT-NAME> --path <OUTPUT-DIRECTORY> --use-prerelease
+ ```
+3. Modify the connection string to point to your database in `appsettings.json`
+```json
+ ...
+  "Dappi":  {  
+     "PostgresConnection":"YOUR-CONNECTION-STRING"
+  },
+  ...
+```
+4. Then you're ready to start your project. Navigate to your project's directory and run
+```sh
+    dappi start
+```
+
 ## Features
 
 - **Automatic Controller Generation:** Controllers are automatically generated for CRUD operations and they offer:
