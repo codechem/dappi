@@ -201,9 +201,12 @@ export class CollectionEffects {
   reloadCollectionTypesAfterAdd$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.addCollectionTypeSuccess),
-      concatMap(() => [
+      concatMap((action) => [
         CollectionActions.loadPublishedCollectionTypes(),
         CollectionActions.loadDraftCollectionTypes(),
+        ContentActions.setContentType({
+          selectedType: action.collectionType,
+        }),
       ])
     )
   );
