@@ -1,4 +1,4 @@
-import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
+import {Component, Inject, model, OnDestroy, OnInit} from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,7 +10,7 @@ import {
   Validators,
   FormBuilder,
   FormGroup,
-  ReactiveFormsModule,
+  ReactiveFormsModule
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
@@ -20,6 +20,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { selectCollectionTypes } from '../state/collection/collection.selectors';
 import { selectSelectedType } from '../state/content/content.selectors';
 import { Subscription } from 'rxjs';
+import {ModelValidators} from '../validators/model-validators';
 
 interface FieldType {
   icon: string;
@@ -141,7 +142,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     private store: Store
   ) {
     this.fieldForm = this.fb.group({
-      fieldName: ['', [Validators.required, Validators.maxLength(50)]],
+      fieldName: ['', [Validators.required, Validators.maxLength(50), ModelValidators.pascalCase, ModelValidators.reservedKeyword]],
       requiredField: [false],
       relatedModel: [''],
     });
