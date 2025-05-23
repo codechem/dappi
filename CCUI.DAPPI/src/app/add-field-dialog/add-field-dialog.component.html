@@ -39,12 +39,21 @@
         <mat-form-field appearance="outline" class="input-field">
           <mat-label>Field name</mat-label>
           <input matInput formControlName="fieldName" placeholder="Enter field name" />
-          @if (fieldForm.get('fieldName')?.hasError('required')) {
-            <mat-error> Field name is required </mat-error>
+          @if (
+            fieldForm.get('fieldName')?.hasError('required') &&
+            fieldForm.get('fieldName')?.touched
+            ){
+              <mat-error> Field name is required </mat-error>
           }
-          @if (fieldForm.get('fieldName')?.hasError('maxlength')) {
-            <mat-error> Field name cannot exceed 50 characters </mat-error>
-          }
+            @if (fieldForm.get('fieldName')?.hasError('maxlength')) {
+              <mat-error> Field name cannot exceed 50 characters </mat-error>
+            }
+            @if (fieldForm.get('fieldName')?.hasError('invalidPascalCase')) {
+              <mat-error> Field name is not valid Pascal Case </mat-error>
+            }
+            @if (fieldForm.get('fieldName')?.hasError('reservedKeyword')) {
+              <mat-error> Field name is a reserved C# keyword </mat-error>
+            }
         </mat-form-field>
         <div class="required-field">
           <mat-checkbox formControlName="requiredField">Required field</mat-checkbox>
