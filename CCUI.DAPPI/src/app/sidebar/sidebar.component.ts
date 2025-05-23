@@ -13,7 +13,17 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../button/button.component';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged, Subscription, filter } from 'rxjs';
+import {
+  Subject,
+  takeUntil,
+  debounceTime,
+  distinctUntilChanged,
+  Subscription,
+  combineLatest,
+  map,
+  take,
+  Observable,
+} from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { AddCollectionTypeDialogComponent } from '../add-collection-type-dialog/add-collection-type-dialog.component';
@@ -59,21 +69,15 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedType$ = this.store.select(selectSelectedType);
   collectionTypes$ = this.store.select(selectCollectionTypes);
   collectionTypesError$ = this.store.select(selectCollectionTypesError);
-  filteredCollectionTypes: string[] = [];
-  collectionTypes: string[] = [];
-  searchText = '';
   publishedCollectionTypes$ = this.store.select(selectPublishedCollectionTypes);
-  publishedCollectionTypes: string[] = [];
+
+  filteredCollectionTypes: string[] = [];
+  searchText = '';
 
   private destroy$ = new Subject<void>();
   private searchTextChanged = new Subject<string>();
 
-  filteredTypes$ = this.collectionTypes$.pipe(
-    takeUntil(this.destroy$),
-    debounceTime(300),
-    distinctUntilChanged(),
-    filter((type) => !!type)
-  );
+  private baseCollectionTypes$: Observable<string[]> | null = null;
 
   constructor(
     private dialog: MatDialog,
@@ -82,50 +86,54 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
-    this.subscriptions.add(
-      this.store
-        .select(selectUser)
-        .subscribe((user) => (this.isAdmin = user?.roles.includes('Admin') ?? false))
+    const typesObservable$ =
+      this.headerText === 'Builder' ? this.collectionTypes$ : this.publishedCollectionTypes$;
+
+    this.baseCollectionTypes$ = combineLatest([
+      typesObservable$,
+      this.store.select(selectUser),
+    ]).pipe(
+      map(([types, user]) => {
+        const isAdmin = user?.roles.includes('Admin') ?? false;
+        this.isAdmin = isAdmin;
+
+        const uniqueTypes = new Set([...types]);
+        let resultTypes = Array.from(uniqueTypes);
+
+        if (this.headerText !== 'Builder') {
+          if (isAdmin && !uniqueTypes.has('Users')) {
+            resultTypes.push('Users');
+          }
+        }
+
+        return resultTypes;
+      }),
+      takeUntil(this.destroy$)
     );
 
     if (this.headerText === 'Builder') {
-      if (!this.isLoadingTypes) {
-        this.isLoadingTypes = true;
-        this.store.dispatch(loadCollectionTypes());
-      }
-
-      this.subscriptions.add(
-        this.collectionTypes$.subscribe((types) => {
-          if (types.length > 0 || this.isLoadingTypes) {
-            let updatedTypes = [...types];
-            this.filteredCollectionTypes = updatedTypes;
-            this.collectionTypes = updatedTypes;
-            this.isLoadingTypes = false;
-          }
-        })
-      );
+      this.store.dispatch(loadCollectionTypes());
     } else {
-      if (!this.isLoadingTypes) {
-        this.isLoadingTypes = true;
-        this.store.dispatch(loadPublishedCollectionTypes());
-      }
+      this.store.dispatch(loadPublishedCollectionTypes());
+    }
 
-      this.subscriptions.add(
-        this.publishedCollectionTypes$.subscribe((types) => {
-          if (types.length > 0 || this.isLoadingTypes) {
-            let updatedTypes = [...types];
+    this.subscriptions.add(
+      this.baseCollectionTypes$.subscribe((types) => {
+        this.filteredCollectionTypes = this.applySearchFilter(types, this.searchText);
+      })
+    );
 
-            if (this.isAdmin && !updatedTypes.includes('Users')) {
-              updatedTypes.push('Users');
-            }
-
-            this.filteredCollectionTypes = updatedTypes;
-            this.collectionTypes = updatedTypes;
-            this.isLoadingTypes = false;
+    this.subscriptions.add(
+      this.searchTextChanged
+        .pipe(takeUntil(this.destroy$), debounceTime(300), distinctUntilChanged())
+        .subscribe((searchText) => {
+          if (this.baseCollectionTypes$) {
+            this.baseCollectionTypes$.pipe(take(1)).subscribe((types) => {
+              this.filteredCollectionTypes = this.applySearchFilter(types, searchText);
+            });
           }
         })
-      );
-    }
+    );
 
     this.subscriptions.add(
       this.collectionTypesError$.subscribe((error) => {
@@ -133,14 +141,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
           this.isLoadingTypes = false;
         }
       })
-    );
-
-    this.subscriptions.add(
-      this.searchTextChanged
-        .pipe(takeUntil(this.destroy$), debounceTime(300), distinctUntilChanged())
-        .subscribe((text) => {
-          this.filterCollectionTypes(text);
-        })
     );
   }
 
@@ -151,6 +151,8 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.subscriptions.unsubscribe();
   }
 
@@ -176,17 +178,18 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   closeSearch(): void {
     this.isSearching = false;
-    this.searchTextChanged.next('');
+    this.onSearchTextChange('');
     this.searchText = '';
   }
 
   clearSearch(): void {
-    this.searchTextChanged.next('');
+    this.onSearchTextChange('');
     this.searchText = '';
     this.isSearching = false;
   }
 
   onSearchTextChange(newText: string): void {
+    this.searchText = newText;
     this.searchTextChanged.next(newText);
   }
 
@@ -206,37 +209,24 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
       panelClass: 'dark-theme-dialog',
       disableClose: true,
     });
+
     this.subscriptions.add(
       dialogRef.afterClosed().subscribe(() => {
-        this.store.dispatch(loadCollectionTypes());
+        if (this.headerText === 'Builder') {
+          this.store.dispatch(loadCollectionTypes());
+        } else {
+          this.store.dispatch(loadPublishedCollectionTypes());
+        }
       })
     );
   }
 
-  private filterCollectionTypes(text: string): void {
-    if (!text) {
-      let types = [...this.collectionTypes];
-
-      if (this.isAdmin && !types.includes('Users') && this.headerText !== 'Builder') {
-        types.push('Users');
-      }
-
-      this.filteredCollectionTypes = types;
-      return;
+  private applySearchFilter(types: string[], searchText: string): string[] {
+    if (!searchText.trim()) {
+      return [...types];
     }
 
-    let filtered = this.collectionTypes.filter((type) =>
-      type.toLowerCase().includes(text.toLowerCase())
-    );
-
-    if (
-      this.isAdmin &&
-      'users'.includes(text.toLowerCase()) &&
-      !this.collectionTypes.includes('Users')
-    ) {
-      filtered.push('Users');
-    }
-
-    this.filteredCollectionTypes = filtered;
+    const lowerSearchText = searchText.toLowerCase();
+    return types.filter((type) => type.toLowerCase().includes(lowerSearchText));
   }
 }
