@@ -112,7 +112,8 @@ export class BuilderComponent implements OnInit, OnDestroy {
 
   openAddFieldDialog(): void {
     const dialogRef = this.dialog.open(AddFieldDialogComponent, {
-      width: '800px',
+      width: '67vw',
+      maxWidth: '100vw',
       panelClass: 'add-field-dialog-container',
       disableClose: true,
       data: { selectedType: this.selectedType },

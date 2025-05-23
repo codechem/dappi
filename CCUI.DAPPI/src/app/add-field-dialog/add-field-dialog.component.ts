@@ -129,6 +129,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     fieldName: ['', [Validators.required, Validators.maxLength(50)]],
     requiredField: [false],
     relatedModel: [''],
+    relatedRelationName: [''],
   });
   selectedFieldTypeIndex: number | null = null;
 
@@ -139,13 +140,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     @Inject(MAT_DIALOG_DATA) public data: { selectedType: string },
     private store: Store
-  ) {
-    this.fieldForm = this.fb.group({
-      fieldName: ['', [Validators.required, Validators.maxLength(50)]],
-      requiredField: [false],
-      relatedModel: [''],
-    });
-  }
+  ) {}
 
   relationTypes: {
     label: string;
@@ -308,13 +303,16 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
 
     if (index === 8) {
       this.fieldForm.get('relatedModel')?.setValidators([Validators.required]);
-      this.fieldForm.get('relatedModel')?.updateValueAndValidity();
-
-      this.selectedRelationTypeIndex = null;
+      this.fieldForm.get('relatedRelationName')?.setValidators([Validators.required]);
     } else {
       this.fieldForm.get('relatedModel')?.clearValidators();
-      this.fieldForm.get('relatedModel')?.updateValueAndValidity();
+      this.fieldForm.get('relatedRelationName')?.clearValidators();
     }
+
+    ['relatedModel', 'relatedRelationName'].forEach((control) => {
+      this.fieldForm.get(control)?.updateValueAndValidity();
+    });
+    this.selectedRelationTypeIndex = null;
   }
 
   onAddField(): void {
@@ -329,6 +327,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       fieldType: selectedFieldType.netType,
       relatedTo: this.relatedTo,
       isRequired: this.fieldForm.value.requiredField,
+      relatedRelationName: this.fieldForm.value.relatedRelationName,
     };
 
     this.store.dispatch(CollectionActions.addField({ field: payload }));
@@ -339,11 +338,11 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     this.dialogRef.close();
   }
 
-  get canSubmit(): boolean {
-    return (
-      this.fieldForm.valid &&
-      this.selectedFieldTypeIndex !== null &&
-      (this.selectedFieldTypeIndex !== 8 || this.selectedRelationTypeIndex !== null)
-    );
+  get canSubmit(): boolean | undefined {
+    if (this.selectedFieldTypeIndex === 8) {
+      return this.selectedRelationTypeIndex !== null;
+    } else {
+      return this.fieldForm.get('fieldName')?.valid;
+    }
   }
 }
