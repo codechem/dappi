@@ -22,6 +22,7 @@ import { selectSelectedType } from '../state/content/content.selectors';
 import { Subscription } from 'rxjs';
 import { EnumsResponse } from '../models/enums-response.model';
 import { EnumsService } from '../services/common/enums.service';
+import {ModelValidators} from '../validators/model-validators';
 
 interface FieldType {
   icon: string;
@@ -145,7 +146,21 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     private enumsService: EnumsService,
     @Inject(MAT_DIALOG_DATA) public data: { selectedType: string },
     private store: Store
-  ) {}
+  ) {
+    this.fieldForm = this.fb.group({
+      fieldName: [
+        '',
+        [
+          Validators.required,
+          Validators.maxLength(50),
+          ModelValidators.pascalCase,
+          ModelValidators.reservedKeyword,
+        ],
+      ],
+      requiredField: [false],
+      relatedModel: [''],
+    });
+  }
 
   relationTypes: {
     label: string;
