@@ -14,6 +14,9 @@
   min-width: 500px;
   max-width: 90vw;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
 }
 
 ::ng-deep .mat-mdc-select-min-line {
@@ -24,7 +27,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0px 24px;
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: vars.$background-paper-elevation-1;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 
   h2 {
     margin: 0;
@@ -34,6 +43,11 @@
 
   button[mat-icon-button] {
     color: vars.$text-primary;
+    background-color: transparent;
+
+    &:hover {
+      background-color: vars.$background-hover;
+    }
 
     &:not(:focus-visible) {
       outline: none;
@@ -43,6 +57,8 @@
 
 .dialog-content {
   padding: 16px 24px;
+  flex: 1;
+  overflow-y: auto;
 
   .section-title {
     font-size: 14px;
@@ -55,7 +71,7 @@
 
   .field-type-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     margin-bottom: 24px;
 
@@ -181,112 +197,117 @@
   line-height: 1.4;
 }
 
-.relation-mode {
+.relationship-config {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
   margin-top: 24px;
-  margin-bottom: 10px;
-  text-align: center;
-  color: vars.$text-secondary;
+  position: relative;
 
-  .relation-mode-label {
-    font-size: 12px;
-    display: block;
-  }
-}
+  .model-box {
+    flex: 1;
+    background-color: vars.$background-paper-elevation-2;
+    border: vars.$divider;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
 
-.relation-type-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 70%;
-  margin-top: 16px;
-  margin-bottom: 8px;
-  margin-left: auto;
-  margin-right: auto;
-}
+    .model-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: vars.$text-primary;
+      margin-bottom: 16px;
+      text-align: center;
+      padding: 8px 0;
+    }
 
-.relation-type-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 10px;
-  border-radius: 6px;
-  background-color: vars.$background-paper-elevation-2;
-  border: vars.$divider;
-  margin: 0 4px;
-  transition: all 0.2s ease;
+    .relation-name-input {
+      width: 100%;
+      margin-top: auto;
+    }
 
-  &:hover {
-    background-color: vars.$background-hover;
+    .model-select {
+      width: 100%;
+      margin-bottom: 16px;
+    }
   }
 
-  &.selected {
-    background-color: vars.$primary-selected;
-    border: 1px solid vars.$primary-main;
-    box-shadow: 0 0 0 1px vars.$primary-main;
-  }
+  .center-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 200px;
+    position: relative;
+    margin: 0 24px;
 
-  &:focus,
-  &:focus-visible {
-    outline: none;
-    background-color: vars.$primary-selected;
-    border: 1px solid vars.$primary-main;
-    box-shadow: 0 0 0 2px vars.$primary-main;
-  }
+    .relation-icons-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      position: relative;
 
-  .relation-icon {
-    mat-icon {
-      font-size: 24px;
-      width: 24px;
-      height: 24px;
-      line-height: 24px;
+      &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: -24px;
+        right: -24px;
+        height: 1px;
+        background-color: vars.$text-secondary;
+        z-index: 1;
+      }
+
+      .relation-icon-item {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 6px;
+        background-color: vars.$background-paper-elevation-2;
+        border: vars.$divider;
+        transition: all 0.2s ease;
+        position: relative;
+        z-index: 2;
+
+        &:hover {
+          background-color: vars.$background-hover;
+        }
+
+        &.selected {
+          background-color: vars.$primary-selected;
+          border: 1px solid vars.$primary-main;
+          box-shadow: 0 0 0 1px vars.$primary-main;
+        }
+
+        svg {
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+
+    .relation-description {
+      font-size: 12px;
+      color: vars.$text-secondary;
+      text-align: center;
+      line-height: 1.4;
+      max-width: 180px;
+      padding: 0 8px;
     }
   }
 }
 
-.relation-description-text {
-  font-size: 12px;
-  color: vars.$text-secondary;
-  text-align: center;
-  margin: 8px 0 16px;
-  line-height: 1.4;
-}
+.relation-icon-item svg path {
+  stroke: #{vars.$text-secondary};
 
-.add-field-dialog-container {
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
-}
-
-.dialog-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: vars.$background-paper-elevation-1;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  padding-top: 16px;
-  padding-bottom: 16px;
-}
-
-.dialog-content {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.dialog-header {
-  button[mat-icon-button] {
-    color: vars.$text-primary;
-    background-color: transparent;
-
-    &:hover {
-      background-color: vars.$background-hover;
-    }
-
-    &:not(:focus-visible) {
-      outline: none;
-    }
+  &.selected path {
+    stroke: #{vars.$primary-main};
   }
 }

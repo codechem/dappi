@@ -205,16 +205,14 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                 if (request.FieldType == "OneToOne")
                 {
-                    var modelRelatedToFilePath = Path.Combine(
-                        _entitiesFolderPath,
-                        $"{request.RelatedTo}.cs"
-                    );
+                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $"{request.RelatedTo}.cs");
                     var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
+                    var foreignKeyName = $"{request.FieldName}Id";
                     var updatedCode = AddFieldToClass(
                         existingCode,
-                        $"{request.FieldName}Id",
+                        foreignKeyName,
                         $"Guid{(!request.IsRequired ? "?" : "")}",
                         "",
                         request.IsRequired
@@ -222,7 +220,6 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
                     existingCode = System.IO.File.ReadAllText(modelFilePath);
-
                     updatedCode = AddFieldToClass(
                         existingCode,
                         request.FieldName,
@@ -234,38 +231,29 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                     var relatedToCode = AddFieldToClass(
                         existingRelatedToCode,
-                        request.FieldName,
+                        request.RelatedRelationName ?? request.FieldName,
                         $"{modelName}{(!request.IsRequired ? "?" : "")}",
                         "",
                         request.IsRequired
                     );
-
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
 
-                    UpdateDbContextWithRelationship(
-                        modelName,
-                        request.RelatedTo,
-                        "OneToOne",
-                        request.FieldName
-                    );
+                    UpdateDbContextWithRelationship(modelName, request.RelatedTo, "OneToOne",
+                        request.FieldName,
+                        request.RelatedRelationName ?? request.FieldName);
 
-                    fieldDict.Add(
-                        $"{request.FieldName}Id",
-                        $"Guid{(!request.IsRequired ? "?" : "")}"
-                    );
+                    fieldDict.Add(foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}");
                 }
                 else if (request.FieldType == "OneToMany")
                 {
-                    var modelRelatedToFilePath = Path.Combine(
-                        _entitiesFolderPath,
-                        $"{request.RelatedTo}.cs"
-                    );
+                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $"{request.RelatedTo}.cs");
                     var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
+                    var foreignKeyName = $"{request.FieldName}Id";
                     var updatedCode = AddFieldToClass(
                         existingCode,
-                        $"{request.FieldName}Id",
+                        foreignKeyName,
                         $"Guid{(!request.IsRequired ? "?" : "")}",
                         "",
                         request.IsRequired
@@ -273,7 +261,6 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
                     existingCode = System.IO.File.ReadAllText(modelFilePath);
-
                     updatedCode = AddFieldToClass(
                         existingCode,
                         request.FieldName,
@@ -285,21 +272,18 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                     var relatedToCode = AddFieldToClass(
                         existingRelatedToCode,
-                        request.FieldName,
+                        request.RelatedRelationName ?? $"{modelName}s",
                         $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
                         $"{modelName}{(!request.IsRequired ? "?" : "")}",
                         request.IsRequired
                     );
-
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
 
-                    UpdateDbContextWithRelationship(modelName, request.RelatedTo, "OneToMany", request.FieldName);
+                    UpdateDbContextWithRelationship(modelName, request.RelatedTo, "OneToMany",
+                        request.FieldName,
+                        request.RelatedRelationName ?? $"{modelName}s");
 
-
-                    fieldDict.Add(
-                        $"{request.FieldName}Id",
-                        $"Guid{(!request.IsRequired ? "?" : "")}"
-                    );
+                    fieldDict.Add(foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}");
                 }
                 else if (request.FieldType == "ManyToOne")
                 {
@@ -307,34 +291,50 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
-                    var updatedCode = AddFieldToClass(existingCode, $"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    var foreignKeyName = $"{request.FieldName}Id";
+                    var updatedCode = AddFieldToClass(
+                        existingCode,
+                        foreignKeyName,
+                        $"Guid{(!request.IsRequired ? "?" : "")}",
+                        "",
+                        request.IsRequired
+                    );
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
                     existingCode = System.IO.File.ReadAllText(modelFilePath);
-
-                    updatedCode = AddFieldToClass(existingCode, request.FieldName, $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+                    updatedCode = AddFieldToClass(
+                        existingCode,
+                        request.FieldName,
+                        $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
+                        "",
+                        request.IsRequired
+                    );
                     System.IO.File.WriteAllText(modelFilePath, updatedCode);
 
-                    var relatedToCode = AddFieldToClass(existingRelatedToCode, $"{modelName}s", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+                    var relatedToCode = AddFieldToClass(
+                        existingRelatedToCode,
+                        request.RelatedRelationName ?? $"{modelName}s",
+                        $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
+                        $"{modelName}{(!request.IsRequired ? "?" : "")}",
+                        request.IsRequired
+                    );
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
 
-                    UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToOne", request.FieldName);
+                    UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToOne",
+                        request.FieldName,
+                        request.RelatedRelationName ?? $"{modelName}s");
 
-                    fieldDict.Add($"{request.FieldName}Id", $"Guid{(!request.IsRequired ? "?" : "")}");
+                    fieldDict.Add(foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}");
                 }
                 else if (request.FieldType == "ManyToMany")
                 {
-                    var modelRelatedToFilePath = Path.Combine(
-                        _entitiesFolderPath,
-                        $"{request.RelatedTo}.cs"
-                    );
-
+                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $"{request.RelatedTo}.cs");
                     var existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
                     var existingCode = System.IO.File.ReadAllText(modelFilePath);
 
                     var updatedCode = AddFieldToClass(
                         existingCode,
-                        $"{request.RelatedTo}s",
+                        request.FieldName,
                         $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>",
                         $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
                         request.IsRequired
@@ -343,17 +343,18 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                     var relatedToCode = AddFieldToClass(
                         existingRelatedToCode,
-                        $"{modelName}s",
+                        request.RelatedRelationName ?? $"{modelName}s",
                         $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
                         $"{modelName}{(!request.IsRequired ? "?" : "")}",
                         request.IsRequired
                     );
                     System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
 
-                    UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToMany");
+                    UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToMany",
+                        request.FieldName,
+                        request.RelatedRelationName ?? $"{modelName}s");
 
-                    fieldDict[request.FieldName] =
-                        $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>";
+                    fieldDict[request.FieldName] = $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>";
                 }
                 else
                 {
@@ -447,7 +448,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             }
         }
 
-        private void UpdateDbContextWithRelationship(string modelName, string relatedTo, string relationshipType, string propertyName = null)
+        private void UpdateDbContextWithRelationship(string modelName, string relatedTo, string relationshipType, string propertyName = null, string relatedPropertyName = null)
         {
             var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "AppDbContext.cs");
             if (!System.IO.File.Exists(dbContextFilePath))
@@ -457,7 +458,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
             string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
 
-            string configCode = GenerateRelationshipConfiguration(modelName, relatedTo, relationshipType, propertyName);
+            string configCode = GenerateRelationshipConfiguration(modelName, relatedTo, relationshipType, propertyName, relatedPropertyName);
 
             int onModelCreatingIndex = dbContextContent.IndexOf("protected override void OnModelCreating(ModelBuilder modelBuilder)");
 
@@ -501,28 +502,28 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
         }
 
-        private string GenerateRelationshipConfiguration(string modelName, string relatedTo, string relationshipType, string propertyName)
+        private string GenerateRelationshipConfiguration(string modelName, string relatedTo, string relationshipType, string propertyName, string relatedPropertyName = null)
         {
             return relationshipType.ToLower() switch
             {
                 "onetoone" => $@"        modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithOne(e => e.{propertyName})
+            .WithOne(e => e.{relatedPropertyName ?? propertyName})
             .HasForeignKey<{modelName}>(ad => ad.{propertyName}Id);",
 
                 "onetomany" => $@"        modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithMany(e => e.{propertyName})
+            .WithMany(e => e.{relatedPropertyName ?? propertyName})
             .HasForeignKey(s => s.{propertyName}Id);",
 
                 "manytoone" => $@"        modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithMany(e => e.{modelName}s)
+            .WithMany(e => e.{relatedPropertyName ?? $"{modelName}s"})
             .HasForeignKey(s => s.{propertyName}Id);",
 
                 "manytomany" => $@"        modelBuilder.Entity<{modelName}>()
-            .HasMany(m => m.{relatedTo}s)
-            .WithMany(r => r.{modelName}s)
+            .HasMany(m => m.{propertyName})
+            .WithMany(r => r.{relatedPropertyName})
             .UsingEntity(j => j.ToTable(""{modelName}{relatedTo}s""));",
 
                 _ => throw new ArgumentException($"Unsupported relationship type: {relationshipType}")
@@ -784,34 +785,22 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     var fieldType = match.Groups[2].Value;
                     var fieldName = match.Groups[3].Value;
 
-                    bool isRequired = hasRequiredKeyword || !fieldType.EndsWith("?");
-
-                    if (!isRequired && fieldType.EndsWith("?"))
-                    {
-                        fieldType = fieldType.TrimEnd('?');
-                    }
+                    bool isNullable = fieldType.Contains("?");
+                    bool isRequired = hasRequiredKeyword || !isNullable;
 
                     fieldList.Add(
-                        new FieldsInfo { FieldName = fieldName, FieldType = fieldType, IsRequired = isRequired, }
+                        new FieldsInfo
+                        {
+                            FieldName = fieldName,
+                            FieldType = fieldType.Replace("?", ""),
+                            IsRequired = isRequired,
+                        }
                     );
                 }
             }
 
             return fieldList;
         }
-    }
-
-    public class ModelRequest
-    {
-        public string ModelName { get; set; }
-    }
-
-    public class FieldRequest
-    {
-        public string FieldName { get; set; }
-        public string FieldType { get; set; }
-        public string RelatedTo { get; set; }
-        public bool IsRequired { get; set; } = false;
     }
 
     [AttributeUsage(AttributeTargets.Class)]
