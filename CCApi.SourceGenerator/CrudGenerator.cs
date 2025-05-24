@@ -31,11 +31,9 @@ using System.Text.Json.Nodes;
 using CCApi.Extensions.DependencyInjection.Models;
 using CCApi.Extensions.DependencyInjection.Interfaces;
 using {item.ModelNamespace};
-
 using {item.RootNamespace}.Filtering;
 using {item.RootNamespace}.HelperDtos;
 using {item.RootNamespace}.Extensions;
-
 using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
@@ -51,7 +49,9 @@ namespace {item.RootNamespace}.Controllers;
 
 [ApiController]
 [Route(""api/[controller]"")]
-public partial class {item.ClassName}Controller({dbContextData.ClassName} dbContext, IMediaUploadService uploadService) : ControllerBase
+public partial class {item.ClassName}Controller(
+    {dbContextData.ClassName} dbContext, 
+    IMediaUploadService uploadService) : ControllerBase
 {{
     [HttpGet]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET")}
@@ -212,14 +212,13 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
 
     private static string GenerateMediaInfoOrRelationIncludeCode(SourceModel model)
     {
-        return $@"
-        var mediaInfoProperties = typeof({model.ClassName}).GetProperties()
+        return $@"        var mediaInfoProperties = typeof({model.ClassName}).GetProperties()
             .Where(p => p.PropertyType == typeof(MediaInfo))
             .ToList();
             
         var query = dbContext.{model.ClassName}s.AsQueryable();
        
-       query = query{GetIncludesIfAny(model.PropertiesInfos)};
+        query = query{GetIncludesIfAny(model.PropertiesInfos)};
         
         foreach (var prop in mediaInfoProperties)
         {{
@@ -236,6 +235,7 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
             return string.Empty;
 
         var sb = new StringBuilder();
+
         foreach (var prop in collectionProperties)
         {
             string entityType = prop.GenericTypeName;
@@ -248,7 +248,7 @@ public partial class {item.ClassName}Controller({dbContextData.ClassName} dbCont
 
             string propNameLower = prop.PropertyName.ToLower();
 
-            sb.AppendLine($@"var {propNameLower}Ids = model.{prop.PropertyName}?.Select(m => m.Id).ToList();
+            sb.AppendLine($@"        var {propNameLower}Ids = model.{prop.PropertyName}?.Select(m => m.Id).ToList();
         
         if ({propNameLower}Ids != null && {propNameLower}Ids.Count > 0)
         {{

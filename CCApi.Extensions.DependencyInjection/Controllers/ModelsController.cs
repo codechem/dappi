@@ -30,12 +30,12 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             "Controllers"
         );
 
-        public ModelsController(IDbContextAccessor dappiDbContextAccessor,
-            ICurrentSessionProvider currentSessionProvider)
+        public ModelsController(
+    IDbContextAccessor dappiDbContextAccessor,
+    ICurrentSessionProvider currentSessionProvider)
         {
             _currentSessionProvider = currentSessionProvider;
             _dbContext = dappiDbContextAccessor.DbContext;
-
 
             if (!Directory.Exists(_entitiesFolderPath))
             {
@@ -451,13 +451,13 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
         private void UpdateDbContextWithRelationship(string modelName, string relatedTo, string relationshipType, string propertyName = null, string relatedPropertyName = null)
         {
             var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "AppDbContext.cs");
+
             if (!System.IO.File.Exists(dbContextFilePath))
             {
                 throw new FileNotFoundException($"DbContext file not found at {dbContextFilePath}");
             }
 
             string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
-
             string configCode = GenerateRelationshipConfiguration(modelName, relatedTo, relationshipType, propertyName, relatedPropertyName);
 
             int onModelCreatingIndex = dbContextContent.IndexOf("protected override void OnModelCreating(ModelBuilder modelBuilder)");
@@ -551,12 +551,12 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
         }
 
         private string AddFieldToClass(
-            string classCode,
-            string fieldName,
-            string fieldType,
-            string collectionType = "",
-            bool isRequired = false
-        )
+    string classCode,
+    string fieldName,
+    string fieldType,
+    string collectionType = "",
+    bool isRequired = false
+)
         {
             if (PropertyCheckExtensions.PropertyNameExists(classCode, fieldName))
             {
@@ -565,16 +565,10 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 );
             }
 
-            // var requiredField = isRequired ? "required" : "";
-            var requiredField = "";
-            var propertyCode =
-                $"    public {requiredField} {fieldType} {fieldName} {{ get; set; }}";
-
-            if (fieldType.Contains("ICollection"))
-            {
-                propertyCode =
-                    $"    public {requiredField} {fieldType} {fieldName} {{ get; set; }} = new List<{collectionType}>();";
-            }
+            var requiredField = isRequired ? "required " : "";
+            var propertyCode = fieldType.Contains("ICollection")
+                ? $"    public {requiredField}{fieldType} {fieldName} {{ get; set; }} = new List<{collectionType}>();"
+                : $"    public {requiredField}{fieldType} {fieldName} {{ get; set; }}";
 
             var insertPosition = classCode.LastIndexOf("}", StringComparison.Ordinal);
             var updatedCode = classCode.Insert(
@@ -733,18 +727,20 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
             var assemblyName = assembly.GetName().Name;
             var sb = new StringBuilder();
+
             sb.AppendLine("using System.ComponentModel.DataAnnotations;");
             sb.AppendLine("using System.ComponentModel.DataAnnotations.Schema;");
             sb.AppendLine("using CCApi.SourceGenerator.Attributes;");
             sb.AppendLine("using CCApi.Extensions.DependencyInjection.Models;");
+            sb.AppendLine();
             sb.AppendLine($"namespace {assemblyName}.Entities;");
+            sb.AppendLine();
             sb.AppendLine("[CCController]");
             sb.AppendLine($"public class {modelType.Name}");
             sb.AppendLine("{");
             sb.AppendLine("    [Key]");
             sb.AppendLine("    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]");
             sb.AppendLine("    public Guid Id { get; set; }");
-
             sb.AppendLine("}");
 
             return sb.ToString();
