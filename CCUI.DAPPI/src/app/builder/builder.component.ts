@@ -169,9 +169,13 @@ export class BuilderComponent implements OnInit, OnDestroy {
             type = 'Media';
             iconName = 'perm_media';
             break;
+          case 'Guid':
+            type = 'Media';
+            iconName = 'fingerprint';
+            break;
           default:
             type = fieldType;
-            iconText = 'Aa';
+            iconName = 'leak_remove';
         }
 
         return {
