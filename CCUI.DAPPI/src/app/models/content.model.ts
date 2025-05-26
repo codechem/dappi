@@ -22,6 +22,7 @@ export enum FieldType {
   'date',
   'select',
   'role',
+  'enum',
 }
 export interface TableHeader {
   key: string;

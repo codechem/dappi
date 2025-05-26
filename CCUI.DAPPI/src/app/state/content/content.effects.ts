@@ -20,6 +20,8 @@ export class ContentEffects {
   private http = inject(HttpClient);
   private store = inject(Store);
   private snackBar = inject(MatSnackBar);
+  private enumsData: any = null;
+  private headers: any = {};
 
   loadContent$ = createEffect(() =>
     this.actions$.pipe(
@@ -37,14 +39,16 @@ export class ContentEffects {
             },
           })
           .pipe(
-            map((response) =>
-              ContentActions.loadContentSuccess({
+            map((response) => {
+              const transformedData = this.transformEnumValues(response.Data);
+
+              return ContentActions.loadContentSuccess({
                 items: {
                   ...response,
-                  data: response.Data,
+                  Data: transformedData,
                 },
-              })
-            ),
+              });
+            }),
             catchError((error) => {
               this.showErrorPopup(`Failed to load content: ${error.error}`);
               return of(ContentActions.loadContentFailure({ error: error.message }));
@@ -86,21 +90,40 @@ export class ContentEffects {
           return EMPTY;
         }
         const endpoint = `${BASE_API_URL}models/fields/${action.selectedType}`;
-        return this.http.get<ModelField[]>(endpoint).pipe(
-          map((response) => {
-            const headers = response.map((field) => {
-              const fieldType = this.mapFieldTypeToInputType(field.fieldType);
-              const isRelation = fieldType === FieldType.relation;
+        const enumsEndpoint = `${BASE_API_URL}enums/getAll`;
 
-              return {
-                key: field.fieldName,
-                label: this.formatHeaderLabel(field.fieldName),
-                type: fieldType,
-                relatedTo: isRelation ? field.fieldType : this.getRelatedType(field.fieldType),
-                isRequired: field.isRequired ?? false,
-              };
-            });
-            return ContentActions.loadHeadersSuccess({ headers });
+        const enumsRequest = this.enumsData
+          ? of(this.enumsData)
+          : this.http.get<any>(enumsEndpoint).pipe(
+              map((data) => {
+                this.enumsData = data;
+                return data;
+              })
+            );
+
+        return enumsRequest.pipe(
+          mergeMap((enumsData) => {
+            return this.http.get<ModelField[]>(endpoint).pipe(
+              map((response) => {
+                const headers = response.map((field) => {
+                  const fieldType = this.mapFieldTypeToInputType(field.fieldType, enumsData);
+                  const isRelation =
+                    fieldType === FieldType.relation || fieldType === FieldType.enum;
+
+                  return {
+                    key: field.fieldName,
+                    label: this.formatHeaderLabel(field.fieldName),
+                    type: fieldType,
+                    relatedTo: isRelation ? field.fieldType : this.getRelatedType(field.fieldType),
+                    isRequired: field.isRequired ?? false,
+                  };
+                });
+
+                this.headers = headers;
+
+                return ContentActions.loadHeadersSuccess({ headers });
+              })
+            );
           }),
           catchError((error) => {
             this.showErrorPopup(`Failed to load headers: ${error.error}`);
@@ -294,6 +317,53 @@ export class ContentEffects {
     )
   );
 
+  private transformEnumValues(data: any[]): any[] {
+    if (!data || !this.enumsData) {
+      return data;
+    }
+
+    const enumFields = this.headers
+      .filter((header: any) => header.type === FieldType.enum)
+      .map((header: any) => ({ key: header.key, enumType: header.relatedTo }));
+
+    if (enumFields.length === 0) {
+      return data;
+    }
+
+    return data.map((item) => {
+      const transformedItem = { ...item };
+
+      enumFields.forEach((field: any) => {
+        if (transformedItem[field.key] !== null && transformedItem[field.key] !== undefined) {
+          const enumValue = transformedItem[field.key];
+          const enumDisplayValue = this.getEnumDisplayValue(field.enumType, enumValue);
+
+          if (enumDisplayValue !== null) {
+            transformedItem[field.key] = enumDisplayValue;
+          }
+        }
+      });
+
+      return transformedItem;
+    });
+  }
+
+  private getEnumDisplayValue(enumType: string, enumValue: number): string | null {
+    if (!this.enumsData || !this.enumsData[enumType]) {
+      return null;
+    }
+
+    const enumObject = this.enumsData[enumType];
+
+    for (const [key, value] of Object.entries(enumObject)) {
+      if (value === enumValue) {
+        return key;
+      }
+    }
+
+    return null;
+  }
+
   private showErrorPopup(message: string): void {
     this.snackBar.open(message, 'Close', {
       duration: 5000,
@@ -315,8 +385,12 @@ export class ContentEffects {
       .trim();
   }
 
-  private mapFieldTypeToInputType(fieldType: string): FieldType {
+  private mapFieldTypeToInputType(fieldType: string, enumsData?: any): FieldType {
     const lowerFieldType = fieldType.toLowerCase();
+
+    if (enumsData && enumsData[fieldType]) {
+      return FieldType.enum;
+    }
 
     if (lowerFieldType.includes('userroles')) {
       return FieldType.role;

@@ -173,7 +173,11 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
               relatedItems: [],
             };
 
-            if (field.type === FieldType.collection || field.type === FieldType.relation) {
+            if (
+              field.type === FieldType.collection ||
+              field.type === FieldType.relation ||
+              field.type === FieldType.enum
+            ) {
               contentField.multiple = field.type === FieldType.collection;
               if (field.relatedTo) {
                 this.store.dispatch(
@@ -192,7 +196,10 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           });
 
         this.relationFields = this.contentFields.filter(
-          (field) => field.type === FieldType.collection || field.type === FieldType.relation
+          (field) =>
+            field.type === FieldType.collection ||
+            field.type === FieldType.relation ||
+            field.type === FieldType.enum
         );
 
         this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
@@ -223,7 +230,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
             if (
               (field.type === FieldType.collection ||
                 field.type === FieldType.relation ||
-                field.type === FieldType.select) &&
+                field.type === FieldType.enum) &&
               field.relatedTo &&
               relatedItemsMap[field.relatedTo]
             ) {
@@ -235,7 +242,10 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           });
 
           this.relationFields = this.contentFields.filter(
-            (field) => field.type === FieldType.collection || field.type === FieldType.relation
+            (field) =>
+              field.type === FieldType.collection ||
+              field.type === FieldType.relation ||
+              field.type === FieldType.enum
           );
 
           this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
@@ -284,6 +294,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
       } else if (
         field.type === FieldType.collection ||
         field.type === FieldType.relation ||
+        field.type === FieldType.enum ||
         field.type === FieldType.role
       ) {
         group[field.key] = [field.multiple ? [] : null, validators];
@@ -401,11 +412,18 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
         if (field?.type === FieldType.file) {
           return;
-        } else if (field?.type === FieldType.relation) {
+        } else if (field?.type === FieldType.relation || field?.type === FieldType.enum) {
           if (value) {
             if (!field.multiple && value.Id) {
               const relationKey = `${key}Id`;
               formData[relationKey] = value.Id;
+            } else if (!field.multiple && this.isEnumLikeObject(value)) {
+              const enumValue = this.extractEnumValue(value);
+              if (enumValue !== null) {
+                formData[key] = enumValue;
+              } else {
+                formData[key] = value;
+              }
             } else if (field.multiple && Array.isArray(value)) {
               formData[key] = value.map((item: any) => (item.Id ? { Id: item.Id } : item));
             } else if (value.Id) {
@@ -431,6 +449,29 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
       });
       this.submitToBackend(formData);
     }
+  }
+
+  private isEnumLikeObject(obj: any): boolean {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj) || obj.Id !== undefined) {
+      return false;
+    }
+
+    const keys = Object.keys(obj);
+    if (keys.length !== 1) {
+      return false;
+    }
+
+    const value = obj[keys[0]];
+    return typeof value === 'number';
+  }
+
+  private extractEnumValue(obj: any): number | null {
+    if (!this.isEnumLikeObject(obj)) {
+      return null;
+    }
+
+    const keys = Object.keys(obj);
+    return obj[keys[0]];
   }
 
   private submitToBackend(formData: any): void {
