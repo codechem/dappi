@@ -30,7 +30,7 @@
           }
         </div>
       </div>
-      @if (selectedFieldTypeIndex !== null && selectedFieldTypeIndex !== 8) {
+      @if (selectedFieldTypeIndex !== null && selectedFieldTypeIndex !== 8 && selectedFieldTypeIndex !== 5) {
         <h3 class="section-title">2. Field settings</h3>
         <mat-form-field appearance="outline" class="input-field">
           <mat-label>Field name</mat-label>
@@ -45,6 +45,37 @@
         <div class="required-field">
           <mat-checkbox formControlName="requiredField">Required field</mat-checkbox>
           <small>You will not be able to create an entry if this field is empty</small>
+        </div>
+      }
+
+      @if (selectedFieldTypeIndex === 5 )
+      {
+        <h3 class="section-title">2. Dropdown settings</h3>
+        <div class="model-box">
+            <mat-form-field appearance="outline" class="model-select">
+              <mat-label>Select Enum Type</mat-label>
+              <mat-select formControlName="relatedModel">
+                @for (enumName of availableEnums; track enumName) {
+                  <mat-option [value]="enumName">{{ enumName }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <!-- <mat-form-field appearance="outline" class="relation-name-input">
+              <mat-label>Field name</mat-label>
+              <input matInput formControlName="relatedRelationName" placeholder="Related model" />
+            </mat-form-field> -->
+          
+          <mat-form-field appearance="outline" class="input-field">
+          <mat-label>Field name</mat-label>
+          <input matInput formControlName="fieldName" placeholder="Enter field name" />
+          @if (fieldForm.get('fieldName')?.hasError('required')) {
+            <mat-error> Field name is required </mat-error>
+          }
+          @if (fieldForm.get('fieldName')?.hasError('maxlength')) {
+            <mat-error> Field name cannot exceed 50 characters </mat-error>
+          }
+        </mat-form-field>
         </div>
       }
 

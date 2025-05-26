@@ -173,6 +173,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
             type = 'Media';
             iconName = 'fingerprint';
             break;
+          // add case here for enumeration icon :)))
           default:
             type = fieldType;
             iconName = 'leak_remove';
