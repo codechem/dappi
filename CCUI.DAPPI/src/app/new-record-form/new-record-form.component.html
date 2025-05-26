@@ -2,7 +2,7 @@
   <form [formGroup]="contentForm" (ngSubmit)="onSubmit()">
     <div class="form-grid">
       <div class="form-column left-column">
-        @for (field of leftColumnFields; track field) {
+        @for (field of leftColumnFields; track field; let i = $index) {
           <mat-form-field appearance="outline">
             <mat-label>{{ field.label }}</mat-label>
             @switch (field.type) {
@@ -38,21 +38,20 @@
                 <ng-container>
                   <input
                     matInput
-                    [matDatepicker]="picker"
+                    [matDatepicker]="leftDatePicker"
                     [placeholder]="field.placeholder || ''"
                     [formControlName]="field.key"
                     [required]="field.required"
                   />
                   <ng-container matSuffix>
-                    <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker-toggle [for]="leftDatePicker"></mat-datepicker-toggle>
                   </ng-container>
-                  <mat-datepicker #picker></mat-datepicker>
+                  <mat-datepicker #leftDatePicker></mat-datepicker>
                 </ng-container>
               }
-
               @case (fieldType.select) {
                 <mat-select [formControlName]="field.key">
-                  @for (item of field.relatedItems; track item) {
+                  @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
                     </mat-option>
@@ -61,7 +60,7 @@
               }
               @case (fieldType.collection) {
                 <mat-select [formControlName]="field.key" [multiple]="field.multiple">
-                  @for (item of field.relatedItems; track item) {
+                  @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
                     </mat-option>
@@ -70,7 +69,7 @@
               }
               @case (fieldType.relation) {
                 <mat-select [formControlName]="field.key">
-                  @for (item of field.relatedItems; track item) {
+                  @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
                     </mat-option>
@@ -79,7 +78,7 @@
               }
               @case (fieldType.enum) {
                 <mat-select [formControlName]="field.key">
-                  @for (item of field.relatedItems; track item) {
+                  @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
                     </mat-option>
@@ -94,7 +93,7 @@
                 </mat-select>
               }
               @default {
-                <span>Unsupported field type {{ fieldType }}</span>
+                <span>Unsupported field type {{ field.type }}</span>
               }
             }
             @if (contentForm.get(field.key)?.invalid && contentForm.get(field.key)?.touched) {
@@ -177,7 +176,7 @@
           </div>
         }
 
-        @for (field of rightColumnFields; track field) {
+        @for (field of rightColumnFields; track field; let i = $index) {
           <mat-form-field appearance="outline">
             <mat-label>{{ field.label }}</mat-label>
             @switch (field.type) {
@@ -213,21 +212,20 @@
                 <ng-container>
                   <input
                     matInput
-                    [matDatepicker]="picker"
+                    [matDatepicker]="rightDatePicker"
                     [placeholder]="field.placeholder || ''"
                     [formControlName]="field.key"
                     [required]="field.required"
                   />
                   <ng-container matSuffix>
-                    <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker-toggle [for]="rightDatePicker"></mat-datepicker-toggle>
                   </ng-container>
-                  <mat-datepicker #picker></mat-datepicker>
+                  <mat-datepicker #rightDatePicker></mat-datepicker>
                 </ng-container>
               }
-
               @case (fieldType.select) {
                 <mat-select [formControlName]="field.key">
-                  @for (item of field.relatedItems; track item) {
+                  @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
                     </mat-option>
@@ -236,7 +234,7 @@
               }
               @case (fieldType.collection) {
                 <mat-select [formControlName]="field.key" [multiple]="field.multiple">
-                  @for (item of field.relatedItems; track item) {
+                  @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
                     </mat-option>
@@ -245,7 +243,16 @@
               }
               @case (fieldType.relation) {
                 <mat-select [formControlName]="field.key">
-                  @for (item of field.relatedItems; track item) {
+                  @for (item of field.relatedItems || []; track item) {
+                    <mat-option [value]="item">
+                      {{ getRelationDisplayValue(item) }}
+                    </mat-option>
+                  }
+                </mat-select>
+              }
+              @case (fieldType.enum) {
+                <mat-select [formControlName]="field.key">
+                  @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
                     </mat-option>
