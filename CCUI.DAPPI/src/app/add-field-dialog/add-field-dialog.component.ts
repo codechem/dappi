@@ -20,6 +20,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { selectCollectionTypes } from '../state/collection/collection.selectors';
 import { selectSelectedType } from '../state/content/content.selectors';
 import { Subscription } from 'rxjs';
+import { EnumsResponse } from '../models/enums-response.model';
+import { EnumsService } from '../services/common/enums.service';
 
 interface FieldType {
   icon: string;
@@ -53,6 +55,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   selectedType = '';
 
   availableModels: { label: string; value: string }[] = [];
+  availableEnums: string[] = [];
+  selectedEnum: string = '';
 
   selectedRelationTypeIndex: number | null = null;
 
@@ -95,9 +99,9 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     {
       icon: 'list',
       label: 'Dropdown',
-      description: 'For selecting from predefined options',
+      description: 'For selecting from predefined options(Enumerations)',
       value: 'dropdown',
-      netType: 'string',
+      netType: this.selectedEnum ?? 'Enum',
     },
     {
       icon: 'check_box',
@@ -138,6 +142,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   constructor(
     private dialogRef: MatDialogRef<AddFieldDialogComponent>,
     private fb: FormBuilder,
+    private enumsService: EnumsService,
     @Inject(MAT_DIALOG_DATA) public data: { selectedType: string },
     private store: Store
   ) {}
@@ -152,6 +157,14 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
   ngOnInit(): void {
+    this.enumsService.getEnums().subscribe((result: EnumsResponse) => {
+      this.availableEnums = Object.keys(result);
+    });
+
+    this.fieldForm.get('relatedModel')?.valueChanges.subscribe((value) => {
+      this.selectedEnum = value;
+    });
+
     this.subscription.add(
       this.collectionTypes$.subscribe(
         (types) =>
@@ -272,7 +285,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
         label: 'Dropdown',
         description: 'For selecting from predefined options',
         value: 'dropdown',
-        netType: 'string',
+        netType: netType,
       },
       {
         icon: 'check_box',
@@ -329,6 +342,10 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       isRequired: this.fieldForm.value.requiredField,
       relatedRelationName: this.fieldForm.value.relatedRelationName,
     };
+
+    if (this.selectedFieldTypeIndex === 5) {
+      payload.fieldType = this.selectedEnum;
+    }
 
     this.store.dispatch(CollectionActions.addField({ field: payload }));
     this.dialogRef.close();

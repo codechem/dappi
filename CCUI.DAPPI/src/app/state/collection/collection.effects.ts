@@ -17,7 +17,7 @@ import * as CollectionActions from './collection.actions';
 import { selectSelectedType } from '../content/content.selectors';
 import * as ContentActions from '../content/content.actions';
 import { BASE_API_URL } from '../../../Constants';
-import { ModelField } from '../../models/content.model';
+import { ModelField, FieldType } from '../../models/content.model';
 
 @Injectable()
 export class CollectionEffects {
@@ -25,6 +25,7 @@ export class CollectionEffects {
   private http = inject(HttpClient);
   private store = inject(Store);
   private snackBar = inject(MatSnackBar);
+  private enumsData: any = null;
 
   loadCollectionTypes$ = createEffect(() =>
     this.actions$.pipe(
@@ -115,15 +116,43 @@ export class CollectionEffects {
         if (!action.modelType) {
           return EMPTY;
         }
+
         const endpoint = `${BASE_API_URL}models/fields/${action.modelType}`;
-        return this.http.get<ModelField[]>(endpoint).pipe(
-          map((fields) =>
-            CollectionActions.loadFieldsSuccess({
-              fields: [...fields],
-            })
-          ),
+        const enumsEndpoint = `${BASE_API_URL}enums/getAll`;
+
+        const enumsRequest = this.enumsData
+          ? of(this.enumsData)
+          : this.http.get<any>(enumsEndpoint).pipe(
+              map((data) => {
+                this.enumsData = data;
+                return data;
+              })
+            );
+
+        return enumsRequest.pipe(
+          mergeMap((enumsData) => {
+            return this.http.get<ModelField[]>(endpoint).pipe(
+              map((fields) => {
+                const processedFields = fields.map((field) => {
+                  const fieldType = this.mapFieldTypeToInputType(field.fieldType, enumsData);
+                  return {
+                    ...field,
+                    isEnum: fieldType === FieldType.enum,
+                  };
+                });
+
+                return CollectionActions.loadFieldsSuccess({
+                  fields: [...processedFields],
+                });
+              }),
+              catchError((error) => {
+                this.showErrorPopup(`Failed to load fields: ${error.error}`);
+                return of(CollectionActions.loadFieldsFailure({ error: error.message }));
+              })
+            );
+          }),
           catchError((error) => {
-            this.showErrorPopup(`Failed to load fields: ${error.error}`);
+            this.showErrorPopup(`Failed to load enums: ${error.error}`);
             return of(CollectionActions.loadFieldsFailure({ error: error.message }));
           })
         );
@@ -241,6 +270,97 @@ export class CollectionEffects {
       ])
     )
   );
+
+  private mapFieldTypeToInputType(fieldType: string, enumsData?: any): FieldType {
+    const lowerFieldType = fieldType.toLowerCase();
+
+    if (enumsData && enumsData[fieldType]) {
+      return FieldType.enum;
+    }
+
+    if (lowerFieldType.includes('userroles')) {
+      return FieldType.role;
+    }
+
+    if (
+      !lowerFieldType.includes('string') &&
+      !lowerFieldType.includes('mediainfo') &&
+      !lowerFieldType.includes('blob') &&
+      !lowerFieldType.includes('icollection') &&
+      !lowerFieldType.includes('guid') &&
+      ![
+        'int',
+        'integer',
+        'number',
+        'float',
+        'double',
+        'decimal',
+        'long',
+        'short',
+        'mediainfo',
+        'boolean',
+        'bool',
+        'date',
+        'datetime',
+        'time',
+        'char',
+        'enum',
+      ].includes(lowerFieldType)
+    ) {
+      return FieldType.relation;
+    }
+
+    // File types
+    if (
+      lowerFieldType.includes('mediainfo') ||
+      lowerFieldType.includes('blob') ||
+      lowerFieldType === 'binary'
+    ) {
+      return FieldType.file;
+    }
+
+    // Long text
+    if (
+      lowerFieldType === 'string' &&
+      ['description', 'content', 'text', 'textarea'].some((keyword) =>
+        lowerFieldType.includes(keyword)
+      )
+    ) {
+      return FieldType.textarea;
+    }
+
+    // Collection
+    if (lowerFieldType.includes('icollection')) {
+      return FieldType.collection;
+    }
+
+    // IDs
+    if (lowerFieldType.includes('guid') || lowerFieldType === 'uuid') {
+      return FieldType.id;
+    }
+
+    // Boolean
+    if (lowerFieldType === 'boolean' || lowerFieldType === 'bool') {
+      return FieldType.checkbox;
+    }
+
+    // Date/Time
+    if (['date', 'datetime', 'time'].includes(lowerFieldType)) {
+      return FieldType.date;
+    }
+
+    // Single character
+    if (lowerFieldType === 'char') {
+      return FieldType.text;
+    }
+
+    if (lowerFieldType === 'int') {
+      return FieldType.number;
+    }
+
+    // Default
+    return FieldType.text;
+  }
 
   private showErrorPopup(message: string): void {
     this.snackBar.open(message, 'Close', {
