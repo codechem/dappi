@@ -133,7 +133,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
   private formatFields(fields: ModelField[]): void {
     if (fields && fields.length > 0) {
       this.fieldsData = fields.map((field) => {
-        let fieldType = field.fieldType;
+        let fieldType = field.isEnum ? 'enum' : field.fieldType;
         let type: string;
         let iconText: string | undefined;
         let iconName: string | undefined;
@@ -173,7 +173,10 @@ export class BuilderComponent implements OnInit, OnDestroy {
             type = 'Media';
             iconName = 'fingerprint';
             break;
-          // add case here for enumeration icon :)))
+          case 'enum':
+            type = field.fieldType;
+            iconName = 'list';
+            break;
           default:
             type = fieldType;
             iconName = 'leak_remove';

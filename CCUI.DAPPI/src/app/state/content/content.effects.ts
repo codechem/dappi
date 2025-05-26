@@ -116,6 +116,7 @@ export class ContentEffects {
                     type: fieldType,
                     relatedTo: isRelation ? field.fieldType : this.getRelatedType(field.fieldType),
                     isRequired: field.isRequired ?? false,
+                    isEnum: fieldType === FieldType.enum,
                   };
                 });
 

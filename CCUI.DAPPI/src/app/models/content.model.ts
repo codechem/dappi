@@ -30,6 +30,7 @@ export interface TableHeader {
   type: FieldType;
   isRequired: boolean;
   relatedTo?: string;
+  isEnum?: boolean;
 }
 
 export interface ApiResponse<T> {
@@ -44,4 +45,5 @@ export interface ModelField {
   fieldType: string;
   relatedTo?: string;
   isRequired?: boolean;
+  isEnum?: boolean;
 }
