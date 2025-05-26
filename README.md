@@ -2,6 +2,20 @@
 
 dappi is a powerful tool designed to streamline backend API development by automatically generating controllers with CRUD endpoints for a given entity.
 
+## Features
+
+- **Out of the box headless CMS:** The `Dappi.HeadlessCms` library combined with our template project will:
+    - Turn your API into a headless CMS similar to Strapi.
+    - Allow content type and content management via an Admin panel.
+    - Generate backend code that you can use for version control and easy deployments.
+
+- Dappi by default uses a source generator for CRUD controllers which is exposed through the `Dappi.SourceGenerator` library which offers:
+    - **Automatic Controller Generation**:
+        - Filtering by any field
+        - Pagination
+        - Sorting
+
+     
 ## Getting Started
 
 ### Prerequisites
@@ -30,34 +44,3 @@ You should have [.NET 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 ```sh
     dappi start
 ```
-
-## Features
-
-- **Automatic Controller Generation:** Controllers are automatically generated for CRUD operations and they offer:
-    - Filtering by any field
-    - Pagination
-    - Sorting
-
-## Installation
-
-1. Create a .NET API Project, add nuget package
-nope, not working yet
-    ```dotnet add package Codechem.Dappi.Generator --version 1.0.0```
-
-## Usage
-
-### 1. Create a Model
-
-To create a model, define a class and apply the `[CCController]` attribute to it. This will automatically generate a controller for the model.
-
-Example:
-
-```csharp
-[CCController]
-public class Book
-{
-    public string Name { get; set; }
-    public string Surname { get; set; }
-}
-
-After saving the file with any IDE, you run the app, and you should be able to access your CRUD endpoints section under /api/book/ url.
