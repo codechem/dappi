@@ -1,4 +1,4 @@
-import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
+import {Component, Inject, model, OnDestroy, OnInit} from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -52,7 +52,7 @@ interface FieldType {
 })
 export class AddFieldDialogComponent implements OnInit, OnDestroy {
   selectedType$ = this.store.select(selectSelectedType);
-
+  selectedTypeFields$ = this.store.select(selectFields);
   selectedType = '';
 
   availableModels: { label: string; value: string }[] = [];
@@ -150,12 +150,15 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     this.fieldForm = this.fb.group({
       fieldName: [
         '',
-        [
-          Validators.required,
-          Validators.maxLength(50),
-          ModelValidators.pascalCase,
-          ModelValidators.reservedKeyword,
-        ],
+        {
+          validators: [
+            Validators.required,
+            Validators.maxLength(50),
+            ModelValidators.pascalCase,
+            ModelValidators.reservedKeyword,
+          ],
+          asyncValidators: [ModelValidators.fieldNameIsTaken(this.selectedTypeFields$)],
+        },
       ],
       requiredField: [false],
       relatedModel: [''],

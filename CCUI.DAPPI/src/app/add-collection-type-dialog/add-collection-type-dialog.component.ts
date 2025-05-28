@@ -10,14 +10,13 @@ import {
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
-  AbstractControl,
-  ValidationErrors,
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 
 import { Store } from '@ngrx/store';
 import * as CollectionActions from '../state/collection/collection.actions';
-import {ModelValidators} from '../validators/model-validators';
+import { ModelValidators } from '../validators/model-validators';
+import { selectCollectionTypes } from '../state/collection/collection.selectors';
 
 @Component({
   selector: 'app-add-collection-type-dialog',
@@ -37,6 +36,7 @@ import {ModelValidators} from '../validators/model-validators';
 export class AddCollectionTypeDialogComponent {
   collectionForm: FormGroup;
   isSubmitting: boolean = false;
+  collectionTypes$ = this.store.select(selectCollectionTypes);
 
   constructor(
     private dialogRef: MatDialogRef<AddCollectionTypeDialogComponent>,
@@ -47,7 +47,15 @@ export class AddCollectionTypeDialogComponent {
     this.collectionForm = this.fb.group({
       displayName: [
         '',
-        [Validators.required, Validators.maxLength(50), ModelValidators.pascalCase, ModelValidators.reservedKeyword],
+        {
+          validators: [
+            Validators.required,
+            Validators.maxLength(50),
+            ModelValidators.pascalCase,
+            ModelValidators.reservedKeyword,
+          ],
+          asyncValidators: [ModelValidators.collectionNameIsTaken(this.collectionTypes$)],
+        },
       ],
     });
   }

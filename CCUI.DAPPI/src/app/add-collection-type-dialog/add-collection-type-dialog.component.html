@@ -27,14 +27,17 @@
             <mat-error>Display name cannot exceed 50 characters</mat-error>
           }
           @if (collectionForm.get('displayName')?.hasError('invalidPascalCase')) {
-            <mat-error> Collection name is not in Pascal Case </mat-error>
+            <mat-error> Collection name format is invalid </mat-error>
           }
           @if (collectionForm.get('displayName')?.hasError('reservedKeyword')) {
             <mat-error> Collection name is a reserved C# keyword </mat-error>
           }
+          @if (collectionForm.get('displayName')?.hasError('collectionNameIsTaken')) {
+            <mat-error> Collection name is already used </mat-error>
+          }
         </mat-form-field>
         <div class="helper-text">
-          Use a 'PascalCase' name for your collection.
+          Use ‘PascalCase’: start with a capital letter, use only letters and numbers, no spaces or symbols.
         </div>
       </div>
     </form>
