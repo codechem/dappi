@@ -17,7 +17,7 @@ import { CommonModule } from '@angular/common';
 import * as CollectionActions from '../state/collection/collection.actions';
 import { Store } from '@ngrx/store';
 import { MatSelectModule } from '@angular/material/select';
-import { selectCollectionTypes } from '../state/collection/collection.selectors';
+import { selectCollectionTypes, selectFields } from '../state/collection/collection.selectors';
 import { selectSelectedType } from '../state/content/content.selectors';
 import { Subscription } from 'rxjs';
 import { EnumsResponse } from '../models/enums-response.model';
