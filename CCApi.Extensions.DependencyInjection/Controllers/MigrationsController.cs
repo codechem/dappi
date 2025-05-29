@@ -13,11 +13,10 @@ public class MigrationController : ControllerBase
     private readonly IHostApplicationLifetime _appLifetime;
     private readonly string _projectDirectory;
 
-    public MigrationController(
-        IHostApplicationLifetime appLifetime)
+    public MigrationController(IHostApplicationLifetime appLifetime)
     {
         _appLifetime = appLifetime;
-        _projectDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly() is not null ? Assembly.GetEntryAssembly().Location : Directory.GetCurrentDirectory());
+        _projectDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location ?? Directory.GetCurrentDirectory()) ?? Directory.GetCurrentDirectory();
     }
 
     [HttpPost]
@@ -73,7 +72,6 @@ public class MigrationController : ControllerBase
 
     private void GenerateMigrationsIfNeeded()
     {
-
         var migrationDirectory = Path.Combine(_projectDirectory, "Migrations");
         if (!Directory.Exists(migrationDirectory))
         {
@@ -104,10 +102,11 @@ public class MigrationController : ControllerBase
             var startInfo = new ProcessStartInfo
             {
                 FileName = "/bin/bash",
-                Arguments = $"-c \"{scriptPath}\" {processId} {exePath}",
+                Arguments = $"-c \"{scriptPath}\" {processId} {exePath} --restart",
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
+            startInfo.EnvironmentVariables["DAPPI_MIGRATION_RESTART"] = "true";
 
             Process.Start(startInfo);
             _appLifetime.StopApplication();
