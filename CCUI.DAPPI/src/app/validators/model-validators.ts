@@ -146,7 +146,7 @@ export class ModelValidators {
       return collectionTypeFields.pipe(
         take(1),
         map((collectionTypeFields) => {
-          return collectionTypeFields.map(
+          return collectionTypeFields.some(
             (x) => x.fieldName.toLowerCase() === control.value.toLowerCase()
           )
             ? { fieldNameIsTaken: true }
