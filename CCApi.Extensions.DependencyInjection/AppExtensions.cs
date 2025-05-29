@@ -57,8 +57,14 @@ public static class AppExtensions
             await PublishContentTypeChangesAsync<TDbContext>(scope.ServiceProvider);
         }
         // we can't migrate the schema changes, but we need to continue and just not publish un-published content-type changes.
-        catch (InvalidOperationException e) when(e.Message.Contains("PendingModelChangesWarning"))
+        catch (InvalidOperationException e) when (e.Message.Contains("PendingModelChangesWarning"))
         {
+            var warningMessage = $"Unable to migrate schema changes due to pending model changes. Most probably you have models in draft state. {e.Message}";
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write("WARNING: ");
+            Console.ResetColor();
+            Console.WriteLine(warningMessage);
         }
 
         return app;
@@ -103,7 +109,7 @@ public static class AppExtensions
             }
         }
     }
-   
+
     private static async Task PublishContentTypeChangesAsync<TDbContext>(IServiceProvider serviceProvider)
         where TDbContext : DappiDbContext
     {
