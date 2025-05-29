@@ -6,7 +6,7 @@ namespace CCApi.Extensions.DependencyInjection.Extensions
     {
         public static bool PropertyNameExists(string classCode, string fieldName)
         {
-            var pattern = $@"\bpublic\s+(?:[\w\.<>\[\]?]+)\s+\b{Regex.Escape(fieldName)}\b\s*{{";
+            var pattern = $@"\b(?:public|private|protected|internal|static|readonly|required|virtual|abstract|sealed|unsafe|new|partial|\s)*\s*[\w<>\[\]\?]+\s+{Regex.Escape(fieldName)}\b\s*{{";            
             return Regex.IsMatch(classCode, pattern, RegexOptions.IgnoreCase);
         }
     }

@@ -178,6 +178,11 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 return BadRequest("Model name must be provided.");
             }
 
+            if (!request.FieldName.IsValidClassNameOrPropertyName())
+            {
+                return BadRequest($"Property name {request.FieldName} is invalid");
+            }
+
             try
             {
                 var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
@@ -188,6 +193,11 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
 
                 var fieldDict = new Dictionary<string, string> { { request.FieldName, request.FieldType } };
                 var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
+
+                if (PropertyCheckUtils.PropertyNameExists(existingCode, request.FieldName))
+                {
+                    return BadRequest($"Property {request.FieldName} name already exists in {modelFilePath}.");
+                };
 
                 if (!string.IsNullOrEmpty(request.RelatedTo))
                 {
@@ -410,42 +420,42 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             Dictionary<string, string> newFields
         )
         {
-            try
-            {
-                var contentTypeChangeForModel = await _dbContext.ContentTypeChanges
-                    .Where(ctc => ctc.ModelName == modelName && !ctc.IsPublished)
-                    .OrderByDescending(ctc => ctc.ModifiedAt)
-                    .FirstOrDefaultAsync();
+            // try
+            // {
+            //     var contentTypeChangeForModel = await _dbContext.ContentTypeChanges
+            //         .Where(ctc => ctc.ModelName == modelName && !ctc.IsPublished)
+            //         .OrderByDescending(ctc => ctc.ModifiedAt)
+            //         .FirstOrDefaultAsync();
 
-                if (contentTypeChangeForModel is not null)
-                {
-                    var oldFields =
-                        JsonSerializer.Deserialize<Dictionary<string, string>>(contentTypeChangeForModel.Fields);
-                    foreach (var kvp in newFields)
-                    {
-                        oldFields?.Add(kvp.Key, kvp.Value);
-                    }
-
-                    contentTypeChangeForModel.ModifiedAt = DateTimeOffset.UtcNow;
-                    contentTypeChangeForModel.Fields = JsonSerializer.Serialize(oldFields);
-                }
-                else
-                {
-                    contentTypeChangeForModel = new ContentTypeChange()
-                    {
-                        ModelName = modelName, Fields = JsonSerializer.Serialize(newFields),
-                    };
-
-                    _dbContext.ContentTypeChanges.Add(contentTypeChangeForModel);
-                }
-
-                await _dbContext.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error updating ContentTypeChanges: {ex.Message}");
-                throw;
-            }
+            //     if (contentTypeChangeForModel is not null)
+            //     {
+            //         var oldFields =
+            //             JsonSerializer.Deserialize<Dictionary<string, string>>(contentTypeChangeForModel.Fields);
+            //         foreach (var kvp in newFields)
+            //         {
+            //             oldFields?.Add(kvp.Key, kvp.Value);
+            //         }
+            //
+            //         contentTypeChangeForModel.ModifiedAt = DateTimeOffset.UtcNow;
+            //         contentTypeChangeForModel.Fields = JsonSerializer.Serialize(oldFields);
+            //     }
+            //     else
+            //     {
+            //         contentTypeChangeForModel = new ContentTypeChange()
+            //         {
+            //             ModelName = modelName, Fields = JsonSerializer.Serialize(newFields),
+            //         };
+            //
+            //         _dbContext.ContentTypeChanges.Add(contentTypeChangeForModel);
+            //     }
+            //
+            //     await _dbContext.SaveChangesAsync();
+            // }
+            // catch (Exception ex)
+            // {
+            //     Console.WriteLine($"Error updating ContentTypeChanges: {ex.Message}");
+            //     throw;
+            // }
         }
 
         private void UpdateDbContextWithRelationship(string modelName, string relatedTo, string relationshipType,
