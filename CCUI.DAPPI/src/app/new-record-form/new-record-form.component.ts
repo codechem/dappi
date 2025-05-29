@@ -114,24 +114,26 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
   get selectedFile(): File | null {
     const firstFileField = this.fileFields[0];
-    return firstFileField ? this.fileStates[firstFileField.key]?.selectedFile || null : null;
+    if (!firstFileField) return null;
+    return this.fileStates[firstFileField.key]?.selectedFile ?? null;
   }
 
   get filePreviewUrl(): string | null {
     const firstFileField = this.fileFields[0];
-    return firstFileField ? this.fileStates[firstFileField.key]?.previewUrl || null : null;
+    if (!firstFileField) return null;
+    return this.fileStates[firstFileField.key]?.previewUrl ?? null;
   }
 
   get uploadStatus(): string {
     const firstFileField = this.fileFields[0];
-    return firstFileField
-      ? this.fileStates[firstFileField.key]?.uploadStatus || 'Ready to upload'
-      : 'Ready to upload';
+    if (!firstFileField) return 'No file field';
+    return this.fileStates[firstFileField.key]?.uploadStatus || 'Ready to upload';
   }
 
   get fileFieldTouched(): boolean {
     const firstFileField = this.fileFields[0];
-    return firstFileField ? this.fileStates[firstFileField.key]?.touched || false : false;
+    if (!firstFileField) return false;
+    return this.fileStates[firstFileField?.key]?.touched || false;
   }
 
   getRelationDisplayValue(item: any): string {
@@ -164,67 +166,70 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   populateFormWithData(itemData: any): void {
     Object.keys(this.contentForm.controls).forEach((key) => {
       const field = this.contentFields.find((f) => f.key === key);
+      if (!field) return;
 
-      if (field) {
-        let value = itemData[key];
+      let value = itemData[key];
 
-        if (field.type === FieldType.relation || field.type === FieldType.enum) {
-          if (itemData[key] !== undefined && itemData[key] !== null) {
-            value = itemData[key];
-          } else if (itemData[`${key}Id`] !== undefined && itemData[`${key}Id`] !== null) {
+      switch (field.type) {
+        case FieldType.relation:
+        case FieldType.enum:
+          if (value == null) {
             const relationId = itemData[`${key}Id`];
-            if (field.relatedItems && field.relatedItems.length > 0) {
-              value = field.relatedItems.find((item: any) => item.Id === relationId) || null;
-            } else {
-              value = null;
-            }
-          } else {
-            value = null;
+            value =
+              relationId != null && field.relatedItems?.length
+                ? field.relatedItems.find((item: any) => item.Id === relationId) || null
+                : null;
           }
-        } else if (field.type === FieldType.collection && Array.isArray(itemData[key])) {
-          if (field.relatedItems && field.relatedItems.length > 0) {
-            const selectedItems = itemData[key]
-              .map((dataItem: any) => {
-                return field.relatedItems!.find(
-                  (relatedItem: any) => relatedItem.Id === dataItem.Id
-                );
-              })
+          break;
+
+        case FieldType.collection:
+          if (Array.isArray(value) && field.relatedItems?.length) {
+            value = value
+              .map((dataItem: any) =>
+                field.relatedItems!.find((relatedItem: any) => relatedItem.Id === dataItem.Id)
+              )
               .filter((item: any) => item !== undefined);
-
-            value = selectedItems;
-          } else {
-            value = itemData[key];
           }
-        } else if (field.type === FieldType.file && itemData[key]) {
-          if (!this.fileStates[key]) {
-            this.fileStates[key] = {
-              selectedFile: null,
-              previewUrl: null,
-              uploadStatus: 'Ready to upload',
-              touched: false,
-            };
-          }
+          break;
 
-          if (typeof itemData[key] === 'object' && itemData[key].Url) {
-            this.fileStates[key].previewUrl = itemData[key].Url;
-            this.fileStates[key].uploadStatus = 'Complete';
-            value = itemData[key].Url;
-          } else if (typeof itemData[key] === 'string') {
-            this.fileStates[key].previewUrl = itemData[key];
-            this.fileStates[key].uploadStatus = 'Complete';
-            value = itemData[key];
-          }
-        } else if (field.type === FieldType.date && itemData[key]) {
-          value = new Date(itemData[key]);
-        } else if (itemData[key] !== undefined) {
-          value = itemData[key];
-        }
+        case FieldType.file:
+          if (value) {
+            this.initializeFileState(key);
 
-        if (value !== undefined) {
-          this.contentForm.get(key)?.setValue(value);
-        }
+            const fileUrl = typeof value === 'object' ? value.Url : value;
+            if (fileUrl) {
+              this.fileStates[key].previewUrl = fileUrl;
+              this.fileStates[key].uploadStatus = 'Complete';
+              value = fileUrl;
+            }
+          }
+          break;
+
+        case FieldType.date:
+          if (value) {
+            value = new Date(value);
+          }
+          break;
+
+        default:
+          break;
+      }
+
+      if (value !== undefined) {
+        this.contentForm.get(key)?.setValue(value);
       }
     });
+  }
+
+  private initializeFileState(key: string): void {
+    if (!this.fileStates[key]) {
+      this.fileStates[key] = {
+        selectedFile: null,
+        previewUrl: null,
+        uploadStatus: 'Ready to upload',
+        touched: false,
+      };
+    }
   }
 
   compareObjects(o1: any, o2: any): boolean {
@@ -661,13 +666,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           })
       );
     } else {
-      this.subscription.add(
-        this.actions$
-          .pipe(ofType(ContentActions.createContentSuccess), take(1))
-          .subscribe((action) => {
-            this.finishSubmission();
-          })
-      );
+      this.finishSubmission();
     }
   }
 
