@@ -130,11 +130,17 @@ public partial class {item.ClassName}Controller(
         if (model == null || id == Guid.Empty)
             return BadRequest(""Invalid data provided."");
 
-        var existingModel = await dbContext.{item.ClassName}s.FirstOrDefaultAsync(p => p.Id == id);
+        var existingModel = await dbContext.{item.ClassName}s
+            {GetIncludesIfAny(item.PropertiesInfos)}
+            .FirstOrDefaultAsync(p => p.Id == id);
+            
         if (existingModel == null)
-            return NotFound($""{item.ClassName}s with ID {{id}} not found."");
+            return NotFound($""{item.ClassName} s with ID {{ id}} not found."");
 
         model.Id = id;
+
+        {GenerateCollectionUpdateCode(item)} 
+
         dbContext.Entry(existingModel).CurrentValues.SetValues(model);
 
         await dbContext.SaveChangesAsync();
@@ -225,6 +231,46 @@ public partial class {item.ClassName}Controller(
             query = query.Include(prop.Name);
         }}";
     }
+    private static string GenerateCollectionUpdateCode(SourceModel model)
+    {
+        var collectionProperties = model.PropertiesInfos
+            .Where(ContainsCollectionTypeName)
+            .ToList();
+
+        if (!collectionProperties.Any())
+            return string.Empty;
+
+        var sb = new StringBuilder();
+
+        foreach (var prop in collectionProperties)
+        {
+            string entityType = prop.GenericTypeName;
+
+            if (entityType.EndsWith("?"))
+                entityType = entityType.Substring(0, entityType.Length - 1);
+
+            if (entityType.Contains('.'))
+                entityType = entityType.Substring(entityType.LastIndexOf('.') + 1);
+
+            string propNameLower = prop.PropertyName.ToLower();
+
+            sb.AppendLine($@"        // Update {prop.PropertyName} collection
+        if (model.{prop.PropertyName} != null)
+        {{
+            var {propNameLower}Ids = model.{prop.PropertyName}.Select(m => m.Id).ToList();
+            
+            var existing{entityType}s = await dbContext.{entityType}s
+                .Where(e => {propNameLower}Ids.Contains(e.Id))
+                .ToListAsync();
+            
+            existingModel.{prop.PropertyName}.Clear();
+            existingModel.{prop.PropertyName} = existing{entityType}s;
+        }}");
+        }
+
+        return sb.ToString();
+    }
+
     private static string GenerateCollectionAddCode(SourceModel model)
     {
         var collectionProperties = model.PropertiesInfos
