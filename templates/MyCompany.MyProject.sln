@@ -5,9 +5,9 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCompany.MyProject.WebApi", "MyCompany.MyProject.WebApi\MyCompany.MyProject.WebApi.csproj", "{302F2463-044B-4C5E-8E52-205E8828E386}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCApi.Extensions.DependencyInjection", "..\CCApi.Extensions.DependencyInjection\CCApi.Extensions.DependencyInjection.csproj", "{B17AF3E9-A901-4FDC-9C01-DD8A28A3AF8B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dappi.HeadlessCms", "..\Dappi.HeadlessCms\Dappi.HeadlessCms.csproj", "{B17AF3E9-A901-4FDC-9C01-DD8A28A3AF8B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCApi.SourceGenerator", "..\CCApi.SourceGenerator\CCApi.SourceGenerator.csproj", "{39F59607-D583-4EE4-A23A-F30DB21FB63C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dappi.SourceGenerator", "..\Dappi.SourceGenerator\Dappi.SourceGenerator.csproj", "{39F59607-D583-4EE4-A23A-F30DB21FB63C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
