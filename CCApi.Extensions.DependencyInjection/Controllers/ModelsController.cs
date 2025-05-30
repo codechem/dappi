@@ -197,7 +197,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 if (PropertyCheckUtils.PropertyNameExists(existingCode, request.FieldName))
                 {
                     return BadRequest($"Property {request.FieldName} name already exists in {modelFilePath}.");
-                };
+                }
 
                 if (!string.IsNullOrEmpty(request.RelatedTo))
                 {
@@ -572,22 +572,24 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             bool isRequired = false
         )
         {
-            if (PropertyCheckUtils.PropertyNameExists(classCode, fieldName))
-            {
-                throw new InvalidOperationException(
-                    $"A property with the name '{fieldName}' already exists in the class."
-                );
-            }
-
-            var requiredField = isRequired ? "required " : "";
+            const string requiredAttribute = "    [Required]";
             var propertyCode = fieldType.Contains("ICollection")
-                ? $"    public {requiredField}{fieldType} {fieldName} {{ get; set; }} = new List<{collectionType}>();"
-                : $"    public {requiredField}{fieldType} {fieldName} {{ get; set; }}";
+                ? $"    public {fieldType} {fieldName} {{ get; set; }} = new List<{collectionType}>();"
+                : $"    public {fieldType} {fieldName} {{ get; set; }}";
 
+            var classCodeBuilder = new StringBuilder();
+            
+            if (isRequired)
+            {
+                classCodeBuilder.AppendLine(requiredAttribute);
+            }
+            classCodeBuilder.AppendLine(propertyCode);
+       
+            var newPropertyCode = classCodeBuilder.ToString();
             var insertPosition = classCode.LastIndexOf("}", StringComparison.Ordinal);
             var updatedCode = classCode.Insert(
                 insertPosition,
-                Environment.NewLine + propertyCode + Environment.NewLine
+                newPropertyCode + Environment.NewLine
             );
 
             return updatedCode;
@@ -646,6 +648,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
             sb.AppendLine("    [Key]");
             sb.AppendLine("    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]");
             sb.AppendLine("    public Guid Id { get; set; }");
+            sb.AppendLine();
             sb.AppendLine("}");
 
             return sb.ToString();
