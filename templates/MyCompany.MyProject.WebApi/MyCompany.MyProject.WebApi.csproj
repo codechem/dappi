@@ -9,14 +9,19 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\..\CCApi.Extensions.DependencyInjection\CCApi.Extensions.DependencyInjection.csproj" />
-    <ProjectReference Include="..\..\CCApi.SourceGenerator\CCApi.SourceGenerator.csproj" OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\Dappi.HeadlessCms\Dappi.HeadlessCms.csproj" />
+    <ProjectReference Include="..\..\Dappi.SourceGenerator\Dappi.SourceGenerator.csproj" OutputItemType="Analyzer" />
   </ItemGroup>
  
   <ItemGroup>
     <Folder Include="Controllers\" />
     <Folder Include="Entities\" />
     <Folder Include="Migrations\" />
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+ 
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\assets\illustration.svg" />
   </ItemGroup>
 
 </Project>
