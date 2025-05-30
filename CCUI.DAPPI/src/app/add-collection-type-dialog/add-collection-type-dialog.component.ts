@@ -10,113 +10,13 @@ import {
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
-  AbstractControl,
-  ValidationErrors,
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 
 import { Store } from '@ngrx/store';
 import * as CollectionActions from '../state/collection/collection.actions';
-
-function validCSharpClassNameValidator(control: AbstractControl): ValidationErrors | null {
-  const value = control.value;
-
-  if (!value) return null;
-
-  if (!/^[A-Za-z_]/.test(value)) {
-    return { invalidStart: true };
-  }
-
-  if (!/^[A-Za-z0-9_]+$/.test(value)) {
-    return { invalidCharacters: true };
-  }
-
-  const csharpKeywords = [
-    'abstract',
-    'as',
-    'base',
-    'bool',
-    'break',
-    'byte',
-    'case',
-    'catch',
-    'char',
-    'checked',
-    'class',
-    'const',
-    'continue',
-    'decimal',
-    'default',
-    'delegate',
-    'do',
-    'double',
-    'else',
-    'enum',
-    'event',
-    'explicit',
-    'extern',
-    'false',
-    'finally',
-    'fixed',
-    'float',
-    'for',
-    'foreach',
-    'goto',
-    'if',
-    'implicit',
-    'in',
-    'int',
-    'interface',
-    'internal',
-    'is',
-    'lock',
-    'long',
-    'namespace',
-    'new',
-    'null',
-    'object',
-    'operator',
-    'out',
-    'override',
-    'params',
-    'private',
-    'protected',
-    'public',
-    'readonly',
-    'ref',
-    'return',
-    'sbyte',
-    'sealed',
-    'short',
-    'sizeof',
-    'stackalloc',
-    'static',
-    'string',
-    'struct',
-    'switch',
-    'this',
-    'throw',
-    'true',
-    'try',
-    'typeof',
-    'uint',
-    'ulong',
-    'unchecked',
-    'unsafe',
-    'ushort',
-    'using',
-    'virtual',
-    'void',
-    'volatile',
-    'while',
-  ];
-
-  if (csharpKeywords.includes(value.toLowerCase())) {
-    return { reservedKeyword: true };
-  }
-
-  return null;
-}
+import { ModelValidators } from '../validators/model-validators';
+import { selectCollectionTypes } from '../state/collection/collection.selectors';
 
 @Component({
   selector: 'app-add-collection-type-dialog',
@@ -136,6 +36,7 @@ function validCSharpClassNameValidator(control: AbstractControl): ValidationErro
 export class AddCollectionTypeDialogComponent {
   collectionForm: FormGroup;
   isSubmitting: boolean = false;
+  collectionTypes$ = this.store.select(selectCollectionTypes);
 
   constructor(
     private dialogRef: MatDialogRef<AddCollectionTypeDialogComponent>,
@@ -146,7 +47,15 @@ export class AddCollectionTypeDialogComponent {
     this.collectionForm = this.fb.group({
       displayName: [
         '',
-        [Validators.required, Validators.maxLength(50), validCSharpClassNameValidator],
+        {
+          validators: [
+            Validators.required,
+            Validators.maxLength(50),
+            ModelValidators.pascalCase,
+            ModelValidators.reservedKeyword,
+          ],
+          asyncValidators: [ModelValidators.collectionNameIsTaken(this.collectionTypes$)],
+        },
       ],
     });
   }

@@ -17,11 +17,12 @@ import { CommonModule } from '@angular/common';
 import * as CollectionActions from '../state/collection/collection.actions';
 import { Store } from '@ngrx/store';
 import { MatSelectModule } from '@angular/material/select';
-import { selectCollectionTypes } from '../state/collection/collection.selectors';
+import { selectCollectionTypes, selectFields } from '../state/collection/collection.selectors';
 import { selectSelectedType } from '../state/content/content.selectors';
 import { Subscription } from 'rxjs';
 import { EnumsResponse } from '../models/enums-response.model';
 import { EnumsService } from '../services/common/enums.service';
+import { ModelValidators } from '../validators/model-validators';
 
 interface FieldType {
   icon: string;
@@ -51,7 +52,7 @@ interface FieldType {
 })
 export class AddFieldDialogComponent implements OnInit, OnDestroy {
   selectedType$ = this.store.select(selectSelectedType);
-
+  selectedTypeFields$ = this.store.select(selectFields);
   selectedType = '';
 
   availableModels: { label: string; value: string }[] = [];
@@ -145,7 +146,24 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     private enumsService: EnumsService,
     @Inject(MAT_DIALOG_DATA) public data: { selectedType: string },
     private store: Store
-  ) {}
+  ) {
+    this.fieldForm = this.fb.group({
+      fieldName: [
+        '',
+        {
+          validators: [
+            Validators.required,
+            Validators.maxLength(50),
+            ModelValidators.pascalCase,
+            ModelValidators.reservedKeyword,
+          ],
+          asyncValidators: [ModelValidators.fieldNameIsTaken(this.selectedTypeFields$)],
+        },
+      ],
+      requiredField: [false],
+      relatedModel: [''],
+    });
+  }
 
   relationTypes: {
     label: string;

@@ -1,10 +1,18 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace CCApi.Extensions.DependencyInjection.Models;
 
 public class FieldRequest
 {
-    public string FieldName { get; set; }
-    public string FieldType { get; set; }
-    public string RelatedTo { get; set; }
+    [Required] 
+    public string FieldName { get; set; } = null!;
+    
+    [Required] 
+    public string FieldType { get; set; } = null!;
+    
+    public string? RelatedTo { get; set; }
+    
     public bool IsRequired { get; set; } = false;
-    public string RelatedRelationName { get; set; }
+    
+    public string? RelatedRelationName { get; set; }
 }
