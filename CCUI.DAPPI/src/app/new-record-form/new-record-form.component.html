@@ -50,7 +50,7 @@
                 </ng-container>
               }
               @case (fieldType.select) {
-                <mat-select [formControlName]="field.key">
+                <mat-select [formControlName]="field.key" [compareWith]="compareObjects">
                   @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
@@ -59,7 +59,11 @@
                 </mat-select>
               }
               @case (fieldType.collection) {
-                <mat-select [formControlName]="field.key" [multiple]="field.multiple">
+                <mat-select
+                  [formControlName]="field.key"
+                  [multiple]="field.multiple"
+                  [compareWith]="compareObjects"
+                >
                   @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
@@ -68,7 +72,7 @@
                 </mat-select>
               }
               @case (fieldType.relation) {
-                <mat-select [formControlName]="field.key">
+                <mat-select [formControlName]="field.key" [compareWith]="compareObjects">
                   @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
@@ -77,7 +81,7 @@
                 </mat-select>
               }
               @case (fieldType.enum) {
-                <mat-select [formControlName]="field.key">
+                <mat-select [formControlName]="field.key" [compareWith]="compareObjects">
                   @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
@@ -224,7 +228,7 @@
                 </ng-container>
               }
               @case (fieldType.select) {
-                <mat-select [formControlName]="field.key">
+                <mat-select [formControlName]="field.key" [compareWith]="compareObjects">
                   @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
@@ -233,7 +237,11 @@
                 </mat-select>
               }
               @case (fieldType.collection) {
-                <mat-select [formControlName]="field.key" [multiple]="field.multiple">
+                <mat-select
+                  [formControlName]="field.key"
+                  [multiple]="field.multiple"
+                  [compareWith]="compareObjects"
+                >
                   @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
@@ -242,7 +250,7 @@
                 </mat-select>
               }
               @case (fieldType.relation) {
-                <mat-select [formControlName]="field.key">
+                <mat-select [formControlName]="field.key" [compareWith]="compareObjects">
                   @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}
@@ -251,7 +259,7 @@
                 </mat-select>
               }
               @case (fieldType.enum) {
-                <mat-select [formControlName]="field.key">
+                <mat-select [formControlName]="field.key" [compareWith]="compareObjects">
                   @for (item of field.relatedItems || []; track item) {
                     <mat-option [value]="item">
                       {{ getRelationDisplayValue(item) }}

@@ -22,8 +22,11 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
         {
             var collectionAddCode = GenerateCollectionAddCode(item);
             var mediaInfoIncludeCode = GenerateMediaInfoOrRelationIncludeCode(item);
-            var generatedCode = $@"
-using Microsoft.AspNetCore.Mvc;
+            var collectionUpdateCode = GenerateCollectionUpdateCode(item);
+            var includesCode = GetIncludesIfAny(item.PropertiesInfos);
+            var authorizationTags = PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET");
+
+            var generatedCode = $@"using Microsoft.AspNetCore.Mvc;
 using {dbContextData.ResidingNamespace};
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -57,7 +60,7 @@ public partial class {item.ClassName}Controller(
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET")}
     public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
     {{
-        {mediaInfoIncludeCode}
+{mediaInfoIncludeCode}
 
         if (filter != null)
         {{
@@ -93,11 +96,10 @@ public partial class {item.ClassName}Controller(
         if (id == Guid.Empty)
             return BadRequest();
 
-        {mediaInfoIncludeCode}
+{mediaInfoIncludeCode}
 
-        var result = await dbContext.{item.ClassName}s
-                        {GetIncludesIfAny(item.PropertiesInfos)}
-                        .FirstOrDefaultAsync(p => p.Id == id);
+        var result = await dbContext.{item.ClassName}s{includesCode}
+            .FirstOrDefaultAsync(p => p.Id == id);
 
         if (result is null)
             return NotFound();
@@ -115,7 +117,7 @@ public partial class {item.ClassName}Controller(
         var modelToSave = new {item.ClassName}();
         modelToSave = model;
 
-        {collectionAddCode}
+{collectionAddCode}
 
         await dbContext.{item.ClassName}s.AddAsync(modelToSave);
         await dbContext.SaveChangesAsync();
@@ -130,11 +132,16 @@ public partial class {item.ClassName}Controller(
         if (model == null || id == Guid.Empty)
             return BadRequest(""Invalid data provided."");
 
-        var existingModel = await dbContext.{item.ClassName}s.FirstOrDefaultAsync(p => p.Id == id);
+        var existingModel = await dbContext.{item.ClassName}s{includesCode}
+            .FirstOrDefaultAsync(p => p.Id == id);
+            
         if (existingModel == null)
-            return NotFound($""{item.ClassName}s with ID {{id}} not found."");
+            return NotFound($""{item.ClassName} with ID {{id}} not found."");
 
         model.Id = id;
+
+{collectionUpdateCode}
+
         dbContext.Entry(existingModel).CurrentValues.SetValues(model);
 
         await dbContext.SaveChangesAsync();
@@ -203,28 +210,70 @@ public partial class {item.ClassName}Controller(
 
         return dbSetProperty?.GetValue(dbContext);
     }}
-}}
-";
-            ;
+}}";
+
             context.AddSource($"{item.ClassName}Controller.cs", generatedCode);
         }
     }
 
     private static string GenerateMediaInfoOrRelationIncludeCode(SourceModel model)
     {
+        var includesCode = GetIncludesIfAny(model.PropertiesInfos);
+
         return $@"        var mediaInfoProperties = typeof({model.ClassName}).GetProperties()
             .Where(p => p.PropertyType == typeof(MediaInfo))
             .ToList();
             
         var query = dbContext.{model.ClassName}s.AsQueryable();
        
-        query = query{GetIncludesIfAny(model.PropertiesInfos)};
+        query = query{includesCode};
         
         foreach (var prop in mediaInfoProperties)
         {{
             query = query.Include(prop.Name);
         }}";
     }
+
+    private static string GenerateCollectionUpdateCode(SourceModel model)
+    {
+        var collectionProperties = model.PropertiesInfos
+            .Where(ContainsCollectionTypeName)
+            .ToList();
+
+        if (!collectionProperties.Any())
+            return string.Empty;
+
+        var sb = new StringBuilder();
+
+        foreach (var prop in collectionProperties)
+        {
+            var entityType = prop.GenericTypeName;
+
+            if (entityType.EndsWith("?"))
+                entityType = entityType.Substring(0, entityType.Length - 1);
+
+            if (entityType.Contains('.'))
+                entityType = entityType.Substring(entityType.LastIndexOf('.') + 1);
+
+            var propNameLower = prop.PropertyName.ToLower();
+
+            sb.AppendLine($@"        // Update {prop.PropertyName} collection
+        if (model.{prop.PropertyName} != null)
+        {{
+            var {propNameLower}Ids = model.{prop.PropertyName}.Select(m => m.Id).ToList();
+            
+            var existing{entityType}s = await dbContext.{entityType}s
+                .Where(e => {propNameLower}Ids.Contains(e.Id))
+                .ToListAsync();
+            
+            existingModel.{prop.PropertyName}.Clear();
+            existingModel.{prop.PropertyName} = existing{entityType}s;
+        }}");
+        }
+
+        return sb.ToString().TrimEnd();
+    }
+
     private static string GenerateCollectionAddCode(SourceModel model)
     {
         var collectionProperties = model.PropertiesInfos
@@ -252,7 +301,6 @@ public partial class {item.ClassName}Controller(
         
         if ({propNameLower}Ids != null && {propNameLower}Ids.Count > 0)
         {{
-            // Fetch existing entities from database instead of creating new ones
             var existing{entityType}s = await dbContext.{entityType}s
                 .Where(e => {propNameLower}Ids.Contains(e.Id))
                 .ToListAsync();
@@ -264,7 +312,7 @@ public partial class {item.ClassName}Controller(
         }}");
         }
 
-        return sb.ToString();
+        return sb.ToString().TrimEnd();
     }
 
     private static bool ContainsCollectionTypeName(PropertyInfo x)
