@@ -25,9 +25,7 @@ public static class ServiceExtensions
         where TDbContext : DappiDbContext
     {
         services.AddDbContext<TDbContext>(dbContextOptions ?? (builder =>
-        {
-            builder.UseNpgsql(configuration.GetValue<string>(Constants.Configuration.PostgresConnection));
-        }));
+            builder.UseNpgsql(configuration.GetValue<string>(Constants.Configuration.PostgresConnection))));
 
         services.AddScoped<IDbContextAccessor, DbContextAccessor<TDbContext>>();
 
