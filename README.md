@@ -1,46 +1,281 @@
-# dappi - Dotnet API Pre-Programming Interface
+# `Dappi`
 
-dappi is a powerful tool designed to streamline backend API development by automatically generating controllers with CRUD endpoints for a given entity.
+_[![Dappi.SourceGenerator NuGet Version](https://img.shields.io/nuget/v/Dappi.SourceGenerator.svg?style=flat&label=NuGet%3A%20Dappi.SourceGenerator)](https://www.nuget.org/packages/Dappi.SourceGenerator)_ _[![Dappi.HeadlessCms NuGet Version](https://img.shields.io/nuget/v/Dappi.HeadlessCms.svg?style=flat&label=NuGet%3A%20Dappi.HeadlessCms)](https://www.nuget.org/packages/Dappi.HeadlessCms)_ _[![Dappi.Cli NuGet Version](https://img.shields.io/nuget/v/Dappi.Cli.svg?style=flat&label=NuGet%3A%20Dappi.Cli)](https://www.nuget.org/packages/Dappi.Cli)_
+
+A powerful .NET tool designed to streamline backend API development by automatically generating controllers with CRUD endpoints for your entities. Build production-ready APIs in minutes, not hours.
+
+## Table of Contents
+
+1. [Features](#features)
+2. [Prerequisites](#prerequisites)
+3. [Quick Start](#quick-start)
+4. [Installation](#installation)
+5. [Usage](#usage)
+   - [CLI Commands](#cli-commands)
+   - [Source Generator](#source-generator)
+6. [Examples](#examples)
+7. [Configuration](#configuration)
+8. [Contributing](#contributing)
 
 ## Features
 
-- **Out of the box headless CMS:** The `Dappi.HeadlessCms` library combined with our template project will:
-    - Turn your API into a headless CMS similar to Strapi.
-    - Allow content type and content management via an Admin panel.
-    - Generate backend code that you can use for version control and easy deployments.
+* **Automatic CRUD Generation**: Generate complete controllers with Create, Read, Update, Delete operations
+* **Advanced Filtering**: Filter by any field with support for complex queries
+* **Built-in Pagination**: Efficient pagination with customizable page sizes
+* **Flexible Sorting**: Sort by any field in ascending or descending order
+* **Source Generator**: Compile-time code generation for zero runtime overhead
+* **CLI Tool**: Scaffold complete projects with a single command
+* **Headless CMS**: Ready-to-use content management system
+* **PostgreSQL Support**: Optimized for PostgreSQL databases
+* **RESTful APIs**: Generate standards-compliant REST endpoints
 
-- Dappi by default uses a source generator for CRUD controllers which is exposed through the `Dappi.SourceGenerator` library which offers:
-    - **Automatic Controller Generation**:
-        - Filtering by any field
-        - Pagination
-        - Sorting
+## Architecture
 
-     
-## Getting Started
+![Dappi Architecture Overview](docs/images/architecture-overview.png)
 
-### Prerequisites
+Dappi consists of three main components working together to provide a complete API development solution:
 
-You should have [.NET 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)  installed. 
+- **CLI Tool**: Console application for project scaffolding and management
+- **Source Generator**: Compile-time code generation for CRUD endpoints
+- **Headless CMS**: Content management capabilities with UI components
+- **Generated API**: Complete .NET API with controllers, entities, and migrations
+- **Swagger Integration**: Automatic API documentation
+- **PostgreSQL Database**: Optimized data persistence layer
 
-### Installation
+## Prerequisites
 
-1. Install the Dappi CLI.
-```sh
-  dotnet tool install --global Dappi.Cli --version 0.1.5-preview
+* [.NET 9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) or later
+* PostgreSQL database (for data persistence)
+
+## Quick Start
+
+Get up and running with Dappi in under 5 minutes:
+
+```bash
+# Install the CLI tool
+dotnet tool install --global Dappi.Cli --prerelease
+
+# Create a new project
+dappi init --name MyApi --path ./MyApi --use-prerelease
+
+# Navigate to your project
+cd MyApi
+
+# Configure your database connection in appsettings.json
+# Then start your API
+dappi start
 ```
-2. Initialize your project
- ```sh
-    dappi init --name <PROJECT-NAME> --path <OUTPUT-DIRECTORY> --use-prerelease
- ```
-3. Modify the connection string to point to your database in `appsettings.json`
+
+> **Note**: Currently all Dappi packages are in preview. Once stable versions are released, you can omit the `--prerelease` flag.
+
+## Installation
+
+### CLI Tool
+
+```bash
+dotnet tool install --global Dappi.Cli --prerelease
+```
+
+### Source Generator
+
+Add the source generator to your existing project:
+
+```xml
+<PackageReference Include="Dappi.SourceGenerator" Version="*-*">
+  <PrivateAssets>all</PrivateAssets>
+  <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+</PackageReference>
+```
+
+Or use the CLI:
+
+```bash
+dotnet add package Dappi.SourceGenerator --prerelease
+```
+
+### Headless CMS
+
+```bash
+dotnet add package Dappi.HeadlessCms --prerelease
+```
+
+The Headless CMS package provides additional content management capabilities for your Dappi-generated APIs.
+
+> **Note**: All packages are currently in preview. The `--prerelease` flag will be unnecessary once stable versions are available.
+
+## Usage
+
+### CLI Commands
+
+#### Initialize a New Project
+
+```bash
+dappi init --name <PROJECT-NAME> --path <OUTPUT-DIRECTORY> --use-prerelease
+```
+
+Creates a new Dappi project with all necessary boilerplate code.
+
+#### Start Development Server
+
+```bash
+dappi start
+```
+
+Starts your API server with hot reload enabled.
+
+### Source Generator
+
+Define your entities using the `[CCController]` attribute to automatically generate CRUD controllers:
+
+```csharp
+using Dappi.SourceGenerator;
+
+[CCController]
+public class Book
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Author { get; set; }
+    public DateTime PublishedDate { get; set; }
+    public decimal Price { get; set; }
+}
+```
+
+This automatically generates a controller accessible at `/api/book/` with the following endpoints:
+
+- `GET /api/book` - List all books (with filtering, pagination, sorting)
+- `GET /api/book/{id}` - Get a specific book
+- `POST /api/book` - Create a new book
+- `PUT /api/book/{id}` - Update an existing book
+- `DELETE /api/book/{id}` - Delete a book
+
+## Examples
+
+### Basic Book API
+
+```csharp
+[CCController]
+public class Book
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Author { get; set; }
+    public string ISBN { get; set; }
+    public DateTime PublishedDate { get; set; }
+    public decimal Price { get; set; }
+    public bool IsAvailable { get; set; }
+}
+```
+
+### Advanced Product Catalog
+
+```csharp
+[CCController]
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Description { get; set; }
+    public string SKU { get; set; }
+    public decimal Price { get; set; }
+    public int StockQuantity { get; set; }
+    public string Category { get; set; }
+    public string[] Tags { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+```
+
+### API Usage Examples
+
+```bash
+# Get all books with pagination
+GET /api/book?page=1&pageSize=10
+
+# Filter books by author
+GET /api/book?author=Tolkien
+
+# Sort books by price (descending)
+GET /api/book?sortBy=price&sortOrder=desc
+
+# Create a new book
+POST /api/book
+{
+  "title": "The Hobbit",
+  "author": "J.R.R. Tolkien",
+  "isbn": "978-0547928227",
+  "publishedDate": "1937-09-21T00:00:00Z",
+  "price": 12.99,
+  "isAvailable": true
+}
+```
+
+## Configuration
+
+### Database Configuration
+
+Configure your PostgreSQL connection in `appsettings.json`:
+
 ```json
- ...
-  "Dappi":  {  
-     "PostgresConnection":"YOUR-CONNECTION-STRING"
-  },
-  ...
+{
+  "Dappi": {
+    "PostgresConnection": "Host=localhost;Database=myapi;Username=postgres;Password=password"
+  }
+}
 ```
-4. Then you're ready to start your project. Navigate to your project's directory and run
-```sh
-    dappi start
+
+## API Features
+
+### Filtering
+
+Filter by any property of your entity:
+
+```bash
+# Single filter
+GET /api/book?author=Tolkien
+
+# Multiple filters
+GET /api/book?author=Tolkien&isAvailable=true
+
+# Date range filtering
+GET /api/book?publishedDate>=2020-01-01&publishedDate<=2023-12-31
 ```
+
+### Pagination
+
+Efficient pagination with customizable page sizes:
+
+```bash
+# Basic pagination
+GET /api/book?page=1&pageSize=10
+
+# Large result sets
+GET /api/book?page=5&pageSize=50
+```
+
+### Sorting
+
+Sort by any field in ascending or descending order:
+
+```bash
+# Sort by title (ascending)
+GET /api/book?sortBy=title
+
+# Sort by price (descending)
+GET /api/book?sortBy=price&sortOrder=desc
+
+# Multiple sort criteria
+GET /api/book?sortBy=author,publishedDate&sortOrder=asc,desc
+```
+
+## Contributing
+
+We welcome contributions! 
+
+### Development Setup
+
+1. Clone the repository
+2. Install .NET 9.0 or later
+3. Install PostgreSQL
+4. Run `dotnet restore` to restore dependencies
+5. Run `dotnet build` to build the solution
