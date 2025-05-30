@@ -43,6 +43,13 @@ jobs:
           echo "changes=false" >> $GITHUB_OUTPUT
         fi
 
+    - name: Get last commit hash
+      if: steps.check_changes.outputs.changes == 'true'
+      id: commit_info
+      run: |
+        SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+        echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+
     - name: Create and Push Branch with Changes
       if: steps.check_changes.outputs.changes == 'true'
       id: create_branch
@@ -72,7 +79,7 @@ jobs:
         destination_branch: "main"
         pr_title: "Update Angular build output"
         pr_body: |
-          This PR updates the Angular build output.
+          This PR updates the Angular build output based on commit ${{env.SHORT_SHA}}.
           
           *Automated PR created by GitHub Actions*
         github_token: ${{ secrets.GITHUB_TOKEN }}

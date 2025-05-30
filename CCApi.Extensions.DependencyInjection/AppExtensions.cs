@@ -2,13 +2,11 @@ using System.Diagnostics;
 using CCApi.Extensions.DependencyInjection;
 using CCApi.Extensions.DependencyInjection.Constants;
 using CCApi.Extensions.DependencyInjection.Database;
-using CCApi.Extensions.DependencyInjection.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -53,12 +51,23 @@ public static class AppExtensions
         app.UseStaticFiles();
 
         var scope = app.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<TDbContext>().Database;
+        var db = scope.ServiceProvider.GetRequiredService<TDbContext>();
+        try
+        {
+            await db.Database.MigrateAsync();
 
-        await db.MigrateAsync();
-        await app.Services.SeedRolesAndUsersAsync<DappiUser, DappiRole>();
+            await app.Services.SeedRolesAndUsersAsync<DappiUser, DappiRole>();
 
-        await PublishContentTypeChangesAsync<TDbContext>(scope.ServiceProvider);
+            await PublishContentTypeChangesAsync<TDbContext>(scope.ServiceProvider);
+        }
+        // we can't migrate the schema changes, but we need to continue and just not publish un-published content-type changes.
+        catch (InvalidOperationException e) when (e.Message.Contains("PendingModelChangesWarning"))
+        {
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<TDbContext>>();
+            logger.LogWarning(
+                "Unable to migrate schema changes due to pending model changes. Most probably you have models in draft state. {Message}",
+                e.Message);
+        }
 
         return app;
     }
@@ -207,7 +216,7 @@ public static class AppExtensions
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<TRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<TUser>>();
 
-        string[] roles = UserRoles.All;
+        var roles = UserRoles.All;
         foreach (var roleName in roles)
         {
             if (!await roleManager.RoleExistsAsync(roleName))
@@ -238,56 +247,6 @@ public static class AppExtensions
             }
         }
     }
-    private static async Task CheckAndCreateContentTypeChangesTableAsync<TDbContext>(IServiceProvider serviceProvider)
-    where TDbContext : DbContext
-    {
-        try
-        {
-            var dbContext = serviceProvider.GetRequiredService<TDbContext>();
-
-            var modelExists = dbContext.Model.FindEntityType(typeof(ContentTypeChange)) != null;
-
-            if (!modelExists)
-            {
-                var databaseCreator = dbContext.Database.GetService<IRelationalDatabaseCreator>();
-
-                bool tableExists = false;
-                try
-                {
-                    await dbContext.Database.ExecuteSqlRawAsync(@"SELECT 1 FROM ""ContentTypeChanges"" WHERE 1=0");
-                    tableExists = true;
-                }
-                catch
-                {
-                    tableExists = false;
-                }
-
-                if (!tableExists)
-                {
-                    await dbContext.Database.ExecuteSqlRawAsync(@"
-                CREATE TABLE ""ContentTypeChanges"" (
-                    ""Id"" SERIAL PRIMARY KEY,
-                    ""ModelName"" VARCHAR(255) NOT NULL,
-                    ""Fields"" TEXT NOT NULL,
-                    ""ModifiedBy"" VARCHAR(450) NULL,
-                    ""ModifiedAt"" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    ""IsPublished"" BOOLEAN NOT NULL DEFAULT FALSE
-                )");
-
-                    Console.WriteLine("ContentTypeChanges table created successfully.");
-                }
-            }
-            else
-            {
-                Console.WriteLine("ContentTypeChanges entity is part of the data model.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error checking/creating ContentTypeChanges table: {ex.Message}");
-            throw;
-        }
-    }
 
     private static async Task PublishContentTypeChangesAsync<TDbContext>(IServiceProvider serviceProvider)
         where TDbContext : DappiDbContext
@@ -301,7 +260,8 @@ public static class AppExtensions
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error publishing content type changes: {ex.Message}");
+            var logger = serviceProvider.GetRequiredService<ILogger<TDbContext>>();
+            logger.LogError("Error publishing content type changes: {PublishContentChangesError}", ex);
             throw;
         }
     }

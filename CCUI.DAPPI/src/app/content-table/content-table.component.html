@@ -61,7 +61,7 @@
           </mat-checkbox>
         </th>
         @if (headers$ | async; as headers) {
-          @for (header of getFilteredHeaders(headers) | slice: 1; track header) {
+          @for (header of getFilteredHeaders(headers) | slice: 1; track header.key) {
             <th class="cell" [style.max-width.px]="getColumnWidth(header)" role="columnheader">
               {{ header.label }}
             </th>
@@ -88,7 +88,7 @@
             </mat-checkbox>
           </td>
           @if (headers$ | async; as headers) {
-            @for (header of getFilteredHeaders(headers) | slice: 1; track header) {
+            @for (header of getFilteredHeaders(headers) | slice: 1; track header.key) {
               <td class="cell" [style.max-width.px]="getColumnWidth(header)" role="cell">
                 @if (header.type === fieldType.file) {
                   @if (getCellDisplay(item, header)) {
@@ -169,7 +169,7 @@
         <mat-icon>chevron_left</mat-icon>
       </button>
 
-      @for (page of paginationArray; track page) {
+      @for (page of paginationArray; track $index) {
         @if (page === -1) {
           <span class="pagination-ellipsis">...</span>
         } @else {
@@ -235,7 +235,7 @@
 
   @if (drawerType === fieldType.collection && drawerData) {
     <div class="collection-list">
-      @for (item of drawerData; track item; let isLast = $last) {
+      @for (item of drawerData; track $index; let isLast = $last) {
         <div class="collection-item">
           @for (key of objectKeys(item); track key) {
             <div class="relation-item">

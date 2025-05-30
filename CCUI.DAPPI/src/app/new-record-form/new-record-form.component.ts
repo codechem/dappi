@@ -88,10 +88,14 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   leftColumnCheckboxFields: ContentField[] = [];
   rightColumnCheckboxFields: ContentField[] = [];
 
-  selectedFile: File | null = null;
-  filePreviewUrl: string | null = null;
-  uploadStatus: string = 'Ready to upload';
-  fileFieldTouched: boolean = false;
+  fileStates: {
+    [fieldKey: string]: {
+      selectedFile: File | null;
+      previewUrl: string | null;
+      uploadStatus: string;
+      touched: boolean;
+    };
+  } = {};
 
   maxFileSize: number = 3 * 1024 * 1024;
 
@@ -106,6 +110,30 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+  }
+
+  get selectedFile(): File | null {
+    const firstFileField = this.fileFields[0];
+    if (!firstFileField) return null;
+    return this.fileStates[firstFileField.key]?.selectedFile ?? null;
+  }
+
+  get filePreviewUrl(): string | null {
+    const firstFileField = this.fileFields[0];
+    if (!firstFileField) return null;
+    return this.fileStates[firstFileField.key]?.previewUrl ?? null;
+  }
+
+  get uploadStatus(): string {
+    const firstFileField = this.fileFields[0];
+    if (!firstFileField) return 'No file field';
+    return this.fileStates[firstFileField.key]?.uploadStatus || 'Ready to upload';
+  }
+
+  get fileFieldTouched(): boolean {
+    const firstFileField = this.fileFields[0];
+    if (!firstFileField) return false;
+    return this.fileStates[firstFileField?.key]?.touched || false;
   }
 
   getRelationDisplayValue(item: any): string {
@@ -137,22 +165,83 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
   populateFormWithData(itemData: any): void {
     Object.keys(this.contentForm.controls).forEach((key) => {
-      if (itemData[key] !== undefined) {
-        const field = this.contentFields.find((f) => f.key === key);
-        if (field && field.type === FieldType.date && itemData[key]) {
-          const dateValue = new Date(itemData[key]);
-          this.contentForm.get(key)?.setValue(dateValue);
-        } else {
-          this.contentForm.get(key)?.setValue(itemData[key]);
-        }
+      const field = this.contentFields.find((f) => f.key === key);
+      if (!field) return;
+
+      let value = itemData[key];
+
+      switch (field.type) {
+        case FieldType.relation:
+        case FieldType.enum:
+          if (value == null) {
+            const relationId = itemData[`${key}Id`];
+            value =
+              relationId != null && field.relatedItems?.length
+                ? field.relatedItems.find((item: any) => item.Id === relationId) || null
+                : null;
+          }
+          break;
+
+        case FieldType.collection:
+          if (Array.isArray(value) && field.relatedItems?.length) {
+            value = value
+              .map((dataItem: any) =>
+                field.relatedItems!.find((relatedItem: any) => relatedItem.Id === dataItem.Id)
+              )
+              .filter((item: any) => item !== undefined);
+          }
+          break;
+
+        case FieldType.file:
+          if (value) {
+            this.initializeFileState(key);
+
+            const fileUrl = typeof value === 'object' ? value.Url : value;
+            if (fileUrl) {
+              this.fileStates[key].previewUrl = fileUrl;
+              this.fileStates[key].uploadStatus = 'Complete';
+              value = fileUrl;
+            }
+          }
+          break;
+
+        case FieldType.date:
+          if (value) {
+            value = new Date(value);
+          }
+          break;
+
+        default:
+          break;
+      }
+
+      if (value !== undefined) {
+        this.contentForm.get(key)?.setValue(value);
       }
     });
+  }
 
-    const fileField = this.fileFields[0]?.key;
-    if (fileField && itemData[fileField] && typeof itemData[fileField] === 'string') {
-      this.filePreviewUrl = itemData[fileField];
-      this.uploadStatus = 'Complete';
+  private initializeFileState(key: string): void {
+    if (!this.fileStates[key]) {
+      this.fileStates[key] = {
+        selectedFile: null,
+        previewUrl: null,
+        uploadStatus: 'Ready to upload',
+        touched: false,
+      };
     }
+  }
+
+  compareObjects(o1: any, o2: any): boolean {
+    if (!o1 || !o2) {
+      return o1 === o2;
+    }
+
+    if (o1.Id && o2.Id) {
+      return o1.Id === o2.Id;
+    }
+
+    return o1 === o2;
   }
 
   ngOnInit(): void {
@@ -204,6 +293,17 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
         this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
 
+        this.fileFields.forEach((field) => {
+          if (!this.fileStates[field.key]) {
+            this.fileStates[field.key] = {
+              selectedFile: null,
+              previewUrl: null,
+              uploadStatus: 'Ready to upload',
+              touched: false,
+            };
+          }
+        });
+
         const checkboxFields = this.contentFields.filter(
           (field) => field.type === FieldType.checkbox
         );
@@ -226,6 +326,10 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.relatedItems$.subscribe((relatedItemsMap) => {
         if (relatedItemsMap) {
+          const hadRelatedItems = this.contentFields.some(
+            (field) => field.relatedItems && field.relatedItems.length > 0
+          );
+
           this.contentFields = this.contentFields.map((field) => {
             if (
               (field.type === FieldType.collection ||
@@ -250,6 +354,17 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
           this.fileFields = this.contentFields.filter((field) => field.type === FieldType.file);
 
+          this.fileFields.forEach((field) => {
+            if (!this.fileStates[field.key]) {
+              this.fileStates[field.key] = {
+                selectedFile: null,
+                previewUrl: null,
+                uploadStatus: 'Ready to upload',
+                touched: false,
+              };
+            }
+          });
+
           const checkboxFields = this.contentFields.filter(
             (field) => field.type === FieldType.checkbox
           );
@@ -266,6 +381,11 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           this.rightColumnCheckboxFields = checkboxFields.slice(halfCheckboxLength);
 
           this.buildForm();
+          if (this.currentItem !== undefined) {
+            setTimeout(() => {
+              this.populateFormWithData(this.currentItem);
+            }, 0);
+          }
         }
       })
     );
@@ -313,23 +433,32 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   }
 
   onFileChange(event: any, fieldKey: string): void {
-    this.fileFieldTouched = true;
+    if (!this.fileStates[fieldKey]) {
+      this.fileStates[fieldKey] = {
+        selectedFile: null,
+        previewUrl: null,
+        uploadStatus: 'Ready to upload',
+        touched: false,
+      };
+    }
+
+    this.fileStates[fieldKey].touched = true;
 
     if (event.target.files && event.target.files.length) {
       const file = event.target.files[0];
 
       if (file.size > this.maxFileSize) {
-        this.uploadStatus = 'File too large (max 3MB)';
+        this.fileStates[fieldKey].uploadStatus = 'File too large (max 3MB)';
         return;
       }
 
-      this.selectedFile = file;
-      this.uploadStatus = 'Ready to upload';
+      this.fileStates[fieldKey].selectedFile = file;
+      this.fileStates[fieldKey].uploadStatus = 'Ready to upload';
 
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = () => {
-          this.filePreviewUrl = reader.result as string;
+          this.fileStates[fieldKey].previewUrl = reader.result as string;
         };
         reader.readAsDataURL(file);
       }
@@ -339,11 +468,15 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   }
 
   resetFile(): void {
-    this.selectedFile = null;
-    this.filePreviewUrl = null;
-    this.uploadStatus = 'Ready to upload';
-
     this.fileFields.forEach((field) => {
+      if (this.fileStates[field.key]) {
+        this.fileStates[field.key] = {
+          selectedFile: null,
+          previewUrl: null,
+          uploadStatus: 'Ready to upload',
+          touched: false,
+        };
+      }
       this.contentForm.get(field.key)?.setValue(null);
     });
   }
@@ -386,7 +519,10 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
 
     const requiredFileFieldsValid = this.fileFields
       .filter((field) => field.required)
-      .every((field) => this.selectedFile !== null);
+      .every((field) => {
+        const fileState = this.fileStates[field.key];
+        return fileState && (fileState.selectedFile !== null || fileState.previewUrl !== null);
+      });
 
     return isBasicFormValid && requiredFileFieldsValid;
   }
@@ -394,14 +530,17 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   resetForm(): void {
     this.contentForm.reset();
     this.resetFile();
-    this.fileFieldTouched = false;
   }
 
   onSubmit(): void {
     Object.keys(this.contentForm.controls).forEach((key) => {
       this.contentForm.get(key)?.markAsTouched();
     });
-    this.fileFieldTouched = true;
+    this.fileFields.forEach((field) => {
+      if (this.fileStates[field.key]) {
+        this.fileStates[field.key].touched = true;
+      }
+    });
 
     if (this.isFormValid()) {
       const formData = {} as any;
@@ -475,12 +614,22 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
   }
 
   private submitToBackend(formData: any): void {
-    this.store.dispatch(
-      ContentActions.createContent({
-        formData: formData,
-        contentType: this.selectedType,
-      })
-    );
+    if (this.currentItem !== undefined) {
+      this.store.dispatch(
+        ContentActions.updateContent({
+          id: this.currentItem.Id,
+          formData: formData,
+          contentType: this.selectedType,
+        })
+      );
+    } else {
+      this.store.dispatch(
+        ContentActions.createContent({
+          formData: formData,
+          contentType: this.selectedType,
+        })
+      );
+    }
 
     this.subscriptions.add(
       this.actions$
@@ -517,13 +666,7 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           })
       );
     } else {
-      this.subscription.add(
-        this.actions$
-          .pipe(ofType(ContentActions.createContentSuccess), take(1))
-          .subscribe((action) => {
-            this.finishSubmission();
-          })
-      );
+      this.finishSubmission();
     }
   }
 
