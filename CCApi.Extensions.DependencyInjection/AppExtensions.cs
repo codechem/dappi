@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -59,18 +60,16 @@ public static class AppExtensions
         // we can't migrate the schema changes, but we need to continue and just not publish un-published content-type changes.
         catch (InvalidOperationException e) when (e.Message.Contains("PendingModelChangesWarning"))
         {
-            var warningMessage = $"Unable to migrate schema changes due to pending model changes. Most probably you have models in draft state. {e.Message}";
-
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write("WARNING: ");
-            Console.ResetColor();
-            Console.WriteLine(warningMessage);
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<TDbContext>>();
+            logger.LogWarning(
+                "Unable to migrate schema changes due to pending model changes. Most probably you have models in draft state. {Message}",
+                e.Message);
         }
 
         return app;
     }
 
-    public static async Task SeedRolesAndUsersAsync<TUser, TRole>(this IServiceProvider serviceProvider)
+    private static async Task SeedRolesAndUsersAsync<TUser, TRole>(this IServiceProvider serviceProvider)
         where TUser : IdentityUser, new()
         where TRole : IdentityRole, new()
     {
@@ -78,7 +77,7 @@ public static class AppExtensions
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<TRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<TUser>>();
 
-        string[] roles = UserRoles.All;
+        var roles = UserRoles.All;
         foreach (var roleName in roles)
         {
             if (!await roleManager.RoleExistsAsync(roleName))
@@ -122,7 +121,8 @@ public static class AppExtensions
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error publishing content type changes: {ex.Message}");
+            var logger = serviceProvider.GetRequiredService<ILogger<TDbContext>>();
+            logger.LogError("Error publishing content type changes: {PublishContentChangesError}", ex);
             throw;
         }
     }
