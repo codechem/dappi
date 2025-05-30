@@ -25,6 +25,7 @@ A powerful .NET tool designed to streamline backend API development by automatic
 * **Flexible Sorting**: Sort by any field in ascending or descending order
 * **Source Generator**: Compile-time code generation for zero runtime overhead
 * **CLI Tool**: Scaffold complete projects with a single command
+* **Angular UI**: Modern web interface for content management (CCUI.Dappi)
 * **Headless CMS**: Ready-to-use content management system
 * **PostgreSQL Support**: Optimized for PostgreSQL databases
 * **RESTful APIs**: Generate standards-compliant REST endpoints
@@ -39,6 +40,7 @@ Dappi consists of three main components working together to provide a complete A
 - **Source Generator**: Compile-time code generation for CRUD endpoints
 - **Headless CMS**: Content management capabilities with UI components
 - **Generated API**: Complete .NET API with controllers, entities, and migrations
+- **Angular UI (CCUI.Dappi)**: Modern web interface for content management and API interaction
 - **Swagger Integration**: Automatic API documentation
 - **PostgreSQL Database**: Optimized data persistence layer
 
@@ -268,14 +270,87 @@ GET /api/book?sortBy=price&sortOrder=desc
 GET /api/book?sortBy=author,publishedDate&sortOrder=asc,desc
 ```
 
+### Angular UI
+
+The CCUI.Dappi Angular project provides a modern web interface for managing your Dappi-generated APIs:
+
+- **Content Management**: Intuitive interface for CRUD operations
+- **API Explorer**: Interactive tool to test your generated endpoints  
+- **Entity Management**: Visual tools for managing your data models
+- **Real-time Updates**: Live data synchronization with your API
+
+To work with the Angular UI:
+
+```bash
+# Navigate to the Angular project
+cd CCUI.Dappi
+
+# Install dependencies
+npm install
+
+# Start development server
+npm start
+
+# Build for production
+npm run build
+```
+
 ## Contributing
 
-We welcome contributions! 
+We welcome contributions from the community! Whether you're fixing bugs, improving documentation, or adding new features, we appreciate your help.
 
-### Development Setup
 
-1. Clone the repository
-2. Install .NET 9.0 or later
-3. Install PostgreSQL
-4. Run `dotnet restore` to restore dependencies
-5. Run `dotnet build` to build the solution
+## 🛠 Development Setup
+
+Follow these steps to set up the project locally for development.
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/codechem/dappi.git
+cd dappi
+```
+
+### 2. Install Prerequisites
+
+Make sure you have the following installed on your machine:
+
+- [.NET SDK 9.0 or later](https://dotnet.microsoft.com/)
+- [PostgreSQL](https://www.postgresql.org/)
+- [Node.js](https://nodejs.org/) (only required for UI work)  
+  > 💡 Recommended Node.js version: 16+
+
+### 3. Backend Setup
+
+Restore and build the .NET solution:
+
+```bash
+dotnet restore
+dotnet build
+```
+
+### 4. Frontend (UI) Setup *(Optional)*
+
+If you're contributing to the UI part of the project:
+
+```bash
+cd CCUI.DAPPI
+npm install
+npm run start:dev
+```
+
+This will install dependencies and start the development server for the UI.
+
+---
+
+## 🙌 Need Help?
+
+If you have questions or need guidance:
+
+- Check the [issues](https://github.com/codechem/dappi/issues)
+- Create a new discussion or issue
+- Or contact a maintainer
+
+---
+
+Thank you for helping improve DAPPI! 🚀
