@@ -327,6 +327,7 @@ Restore and build the .NET solution:
 ```bash
 dotnet restore
 dotnet build
+dotnet run
 ```
 
 ### 4. Frontend (UI) Setup *(Optional)*
