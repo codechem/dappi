@@ -44,8 +44,7 @@ public class MigrationController : ControllerBase
     private void RunDbMigrationScenario()
     {
         GenerateMigrationsIfNeeded();
-        var directory = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
-        ApplyMigrationsAfterRestart(directory);
+        ApplyMigrationsAfterRestart();
         RestartApplication();
         _appLifetime.StopApplication();
     }
@@ -95,6 +94,11 @@ public class MigrationController : ControllerBase
         {
             var exePath = Assembly.GetEntryAssembly()!.Location;
             var directory = Path.GetDirectoryName(exePath);
+            if (directory == null)
+            {
+                throw new ApplicationException("Unable to find executable path");
+            }
+            
             var processId = Environment.ProcessId;
             var scriptPath = Path.Combine(directory, "Scripts", "restart-app.sh");
             Process.Start("chmod", new[] { "+x", scriptPath })?.WaitForExit();
@@ -106,8 +110,7 @@ public class MigrationController : ControllerBase
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            startInfo.EnvironmentVariables["DAPPI_MIGRATION_RESTART"] = "true";
-
+            
             Process.Start(startInfo);
             _appLifetime.StopApplication();
         }
@@ -117,7 +120,7 @@ public class MigrationController : ControllerBase
         }
     }
 
-    private void ApplyMigrationsAfterRestart(string directory)
+    private static void ApplyMigrationsAfterRestart()
     {
         try
         {
@@ -139,7 +142,7 @@ public class MigrationController : ControllerBase
         }
     }
 
-    private string GetMigrationName()
+    private static string GetMigrationName()
     {
         var formattedDate = DateTime.Now.ToString("yyyyMMddHHmmss");
         return $"DappiGeneratedMigration_{formattedDate}";
