@@ -39,8 +39,9 @@
         <mat-form-field appearance="outline" class="input-field">
           <mat-label>Field name</mat-label>
           <input matInput formControlName="fieldName" placeholder="Enter field name" />
-          @if (fieldForm.get('fieldName')?.hasError('required') &&
-          fieldForm.get('fieldName')?.touched) {
+          @if (
+            fieldForm.get('fieldName')?.hasError('required') && fieldForm.get('fieldName')?.touched
+          ) {
             <mat-error> Field name is required</mat-error>
           }
           @if (fieldForm.get('fieldName')?.hasError('maxlength')) {
@@ -53,7 +54,10 @@
             <mat-error> Field name is a reserved C# keyword</mat-error>
           }
           @if (fieldForm.get('fieldName')?.hasError('fieldNameIsTaken')) {
-            <mat-error> The current collection already has a field with the name {{ fieldForm.get('fieldName')?.value }}</mat-error>
+            <mat-error>
+              The current collection already has a field with the name
+              {{ fieldForm.get('fieldName')?.value }}</mat-error
+            >
           }
         </mat-form-field>
         <div class="required-field">

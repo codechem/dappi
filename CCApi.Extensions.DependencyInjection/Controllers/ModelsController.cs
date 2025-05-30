@@ -379,7 +379,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        
+
         [HttpGet("fields/{modelName}")]
         public IActionResult GetModelFields(string modelName)
         {
@@ -435,7 +435,7 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     {
                         oldFields?.Add(kvp.Key, kvp.Value);
                     }
-            
+
                     contentTypeChangeForModel.ModifiedAt = DateTimeOffset.UtcNow;
                     contentTypeChangeForModel.Fields = JsonSerializer.Serialize(oldFields);
                 }
@@ -443,12 +443,13 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 {
                     contentTypeChangeForModel = new ContentTypeChange()
                     {
-                        ModelName = modelName, Fields = JsonSerializer.Serialize(newFields),
+                        ModelName = modelName,
+                        Fields = JsonSerializer.Serialize(newFields),
                     };
-            
+
                     _dbContext.ContentTypeChanges.Add(contentTypeChangeForModel);
                 }
-            
+
                 await _dbContext.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -578,13 +579,13 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                 : $"    public {fieldType} {fieldName} {{ get; set; }}";
 
             var classCodeBuilder = new StringBuilder();
-            
+
             if (isRequired)
             {
                 classCodeBuilder.AppendLine(requiredAttribute);
             }
             classCodeBuilder.AppendLine(propertyCode);
-       
+
             var newPropertyCode = classCodeBuilder.ToString();
             var insertPosition = classCode.LastIndexOf("}", StringComparison.Ordinal);
             var updatedCode = classCode.Insert(
@@ -677,7 +678,9 @@ namespace CCApi.Extensions.DependencyInjection.Controllers
                     fieldList.Add(
                         new FieldsInfo
                         {
-                            FieldName = fieldName, FieldType = fieldType.Replace("?", ""), IsRequired = isRequired,
+                            FieldName = fieldName,
+                            FieldType = fieldType.Replace("?", ""),
+                            IsRequired = isRequired,
                         }
                     );
                 }
