@@ -317,20 +317,57 @@ Make sure you have the following installed on your machine:
 
 - [.NET SDK 9.0 or later](https://dotnet.microsoft.com/)
 - [PostgreSQL](https://www.postgresql.org/)
+  > 💡 Recommended: run PostgreSQL in a Docker container (see step 3)
 - [Node.js](https://nodejs.org/) (only required for UI work)  
   > 💡 Recommended Node.js version: 16+
 
-### 3. Backend Setup
+### 3. Set Up PostgreSQL with Docker
+
+To quickly set up a PostgreSQL instance using Docker, run:
+
+```bash
+docker run --name DappiPostgres -d \
+  -p 5432:5432 \
+  -e POSTGRES_PASSWORD=admin \
+  -e POSTGRES_USER=postgres \
+  postgres:alpine
+```
+
+This will:
+
+- Start a PostgreSQL container named `DappiPostgres`
+- Expose port 5432
+- Set the password for the `postgres` user to `admin`
+
+You can connect to this database using your app or a tool like DBeaver with:
+
+- Host: `localhost`
+- Port: `5432`
+- User: `postgres`
+- Password: `admin`
+
+### 4. Backend Setup
 
 Restore and build the .NET solution:
 
 ```bash
+cd templates/MyCompany.MyProject.WebApi/
 dotnet restore
 dotnet build
-dotnet run
 ```
 
-### 4. Frontend (UI) Setup *(Optional)*
+Create migrations and update the database:
+
+```bash
+dotnet ef migrations add initial
+dotnet ef database update
+```
+
+Start the application
+```bash
+dotnet run
+```
+### 5. Frontend (UI) Setup *(Optional)*
 
 If you're contributing to the UI part of the project:
 
@@ -339,9 +376,6 @@ cd CCUI.DAPPI
 npm install
 npm run start:dev
 ```
-
-This will install dependencies and start the development server for the UI.
-
 ---
 
 ## 🙌 Need Help?
