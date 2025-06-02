@@ -22,7 +22,7 @@ namespace CCApi.Extensions.DependencyInjection.Extensions
 
             // if it is a reserved keyword it will be parsed successfully to a Keyword kind.
             var keywordKind = SyntaxFacts.GetKeywordKind(name);
-            
+
             return !SyntaxFacts.IsKeywordKind(keywordKind);
         }
     }

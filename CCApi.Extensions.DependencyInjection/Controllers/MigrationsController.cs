@@ -13,11 +13,10 @@ public class MigrationController : ControllerBase
     private readonly IHostApplicationLifetime _appLifetime;
     private readonly string _projectDirectory;
 
-    public MigrationController(
-        IHostApplicationLifetime appLifetime)
+    public MigrationController(IHostApplicationLifetime appLifetime)
     {
         _appLifetime = appLifetime;
-        _projectDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly() is not null ? Assembly.GetEntryAssembly().Location : Directory.GetCurrentDirectory());
+        _projectDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location ?? Directory.GetCurrentDirectory()) ?? Directory.GetCurrentDirectory();
     }
 
     [HttpPost]
@@ -45,8 +44,7 @@ public class MigrationController : ControllerBase
     private void RunDbMigrationScenario()
     {
         GenerateMigrationsIfNeeded();
-        var directory = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
-        ApplyMigrationsAfterRestart(directory);
+        ApplyMigrationsAfterRestart();
         RestartApplication();
         _appLifetime.StopApplication();
     }
@@ -73,7 +71,6 @@ public class MigrationController : ControllerBase
 
     private void GenerateMigrationsIfNeeded()
     {
-
         var migrationDirectory = Path.Combine(_projectDirectory, "Migrations");
         if (!Directory.Exists(migrationDirectory))
         {
@@ -97,6 +94,11 @@ public class MigrationController : ControllerBase
         {
             var exePath = Assembly.GetEntryAssembly()!.Location;
             var directory = Path.GetDirectoryName(exePath);
+            if (directory == null)
+            {
+                throw new ApplicationException("Unable to find executable path");
+            }
+            
             var processId = Environment.ProcessId;
             var scriptPath = Path.Combine(directory, "Scripts", "restart-app.sh");
             Process.Start("chmod", new[] { "+x", scriptPath })?.WaitForExit();
@@ -104,11 +106,11 @@ public class MigrationController : ControllerBase
             var startInfo = new ProcessStartInfo
             {
                 FileName = "/bin/bash",
-                Arguments = $"-c \"{scriptPath}\" {processId} {exePath}",
+                Arguments = $"-c \"{scriptPath}\" {processId} {exePath} --restart",
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-
+            
             Process.Start(startInfo);
             _appLifetime.StopApplication();
         }
@@ -118,7 +120,7 @@ public class MigrationController : ControllerBase
         }
     }
 
-    private void ApplyMigrationsAfterRestart(string directory)
+    private static void ApplyMigrationsAfterRestart()
     {
         try
         {
@@ -140,7 +142,7 @@ public class MigrationController : ControllerBase
         }
     }
 
-    private string GetMigrationName()
+    private static string GetMigrationName()
     {
         var formattedDate = DateTime.Now.ToString("yyyyMMddHHmmss");
         return $"DappiGeneratedMigration_{formattedDate}";

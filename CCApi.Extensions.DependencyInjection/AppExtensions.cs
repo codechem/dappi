@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using CCApi.Extensions.DependencyInjection;
 using CCApi.Extensions.DependencyInjection.Constants;
 using CCApi.Extensions.DependencyInjection.Database;
+using CCApi.Extensions.DependencyInjection.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +18,11 @@ public static class AppExtensions
         Action<SwaggerUIOptions>? configureSwagger = null)
        where TDbContext : DappiDbContext
     {
+        var scope = app.Services.CreateScope();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<TDbContext>>();
+
+        await HandlePortCleanupAsync(app);
+
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -47,7 +54,6 @@ public static class AppExtensions
         app.MapControllers();
         app.UseStaticFiles();
 
-        var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<TDbContext>();
         try
         {
@@ -60,7 +66,6 @@ public static class AppExtensions
         // we can't migrate the schema changes, but we need to continue and just not publish un-published content-type changes.
         catch (InvalidOperationException e) when (e.Message.Contains("PendingModelChangesWarning"))
         {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<TDbContext>>();
             logger.LogWarning(
                 "Unable to migrate schema changes due to pending model changes. Most probably you have models in draft state. {Message}",
                 e.Message);
@@ -69,7 +74,27 @@ public static class AppExtensions
         return app;
     }
 
-    private static async Task SeedRolesAndUsersAsync<TUser, TRole>(this IServiceProvider serviceProvider)
+    private static async Task HandlePortCleanupAsync(WebApplication app)
+    {
+        var args = Environment.GetCommandLineArgs();
+        var isRestart = args.Contains("--restart");
+
+        if (isRestart)
+        {
+            Console.WriteLine("Restart detected - skipping port cleanup");
+            return;
+        }
+
+        var urls = app.Configuration["urls"] ?? app.Configuration.GetSection("ApplicationUrl").Value;
+
+        if (!string.IsNullOrEmpty(urls))
+        {
+            await ProcessUtils.KillProcessesUsingUrls(urls);
+        }
+    }
+
+ 
+    public static async Task SeedRolesAndUsersAsync<TUser, TRole>(this IServiceProvider serviceProvider)
         where TUser : IdentityUser, new()
         where TRole : IdentityRole, new()
     {
