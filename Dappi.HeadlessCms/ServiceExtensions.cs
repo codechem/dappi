@@ -1,5 +1,7 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
+using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Services;
@@ -33,7 +35,19 @@ public static class ServiceExtensions
         services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
 
         services.AddScoped<ICurrentSessionProvider, CurrentSessionProvider>();
+        
+        var dbContextType = typeof(TDbContext);
+        var location = Assembly.GetAssembly(dbContextType)?.Location;
 
+        services.AddScoped<DbContextEditor>((_) => new DbContextEditor(
+            Path.Combine(Directory.GetCurrentDirectory(), "Data"),
+            dbContextName: dbContextType.Name));
+        
+        services.AddScoped<DomainModelEditor>(_ => new DomainModelEditor(Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "Entities"
+        )));
+        
         services.AddDappiSwaggerGen();
 
         services.AddControllers()

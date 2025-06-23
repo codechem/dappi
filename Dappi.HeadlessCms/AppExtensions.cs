@@ -65,7 +65,6 @@ public static class AppExtensions
                 "Unable to migrate schema changes due to pending model changes. Most probably you have models in draft state. {Message}",
                 e.Message);
         }
-
         return app;
     }
 
