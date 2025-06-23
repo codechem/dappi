@@ -1,4 +1,5 @@
 using Dappi.HeadlessCms.Core;
+using Dappi.HeadlessCms.Core.Schema;
 
 namespace Dappi.Tests.HeadlessCmsTests.Core
 {
@@ -17,27 +18,27 @@ namespace Dappi.Tests.HeadlessCmsTests.Core
         public async Task AddDbSetAsync_AddsDbSetProperty()
         {
             // Arrange
-            var dbContextPath = Path.Combine(_tempDir, "AppDbContext.cs");
+            const string dbContextName = "TestDbContext";
+            var dbContextPath = Path.Combine(_tempDir, $"{dbContextName}.cs");
      
-            // Simulate a simple DbContext class
             await File.WriteAllTextAsync(dbContextPath, """
                                                         "
                                                                 using Microsoft.EntityFrameworkCore;
                                                         
                                                                 namespace MyApp.Data
                                                                 {{
-                                                                    public class AppDbContext : DbContext
+                                                                    public class TestDbContext : DbContext
                                                                     {{
                                                                     }}
                                                                 }}
                                                                 "
                                                         """);
 
-            var editor = new DbContextEditor(dbContextPath);
+            var editor = new DbContextEditor(_tempDir, "TestDbContext");
             var modelInfo = new DomainModelEntityInfo { Name = DomainModelName, Namespace = DomainModelNamespace };
 
             // Act
-            await editor.AddDbSetAsync(modelInfo);
+            editor.AddDbSetToDbContext(modelInfo);
             await editor.SaveAsync();
 
             var updatedCode = await File.ReadAllTextAsync(dbContextPath);
@@ -52,11 +53,43 @@ namespace Dappi.Tests.HeadlessCmsTests.Core
         public async Task AddDbSetAsync_DoesntAddDbSetPropertyIfItIsRegisteredAsADomainModelEntity()
         {
             // Arrange
-
-            var dbContextPath = Path.Combine(_tempDir, "AppDbContext1.cs");
+            const string dbContextName = "TestDbContext";
+            var dbContextPath = Path.Combine(_tempDir, $"{dbContextName}.cs");
 
             const string expected = $$"""
 
+                                      using Microsoft.EntityFrameworkCore;
+                                      using MyApp.Models;
+
+                                      namespace MyApp.Data
+                                      {
+                                          public class TestDbContext : DbContext
+                                          {
+                                              public DbSet<{{DomainModelName}}> {{DomainModelName}}s { get; set; }
+                                          }
+                                      }
+                                      """;
+                
+            await File.WriteAllTextAsync(dbContextPath, expected);
+
+            var editor = new DbContextEditor(_tempDir, "TestDbContext");
+            var modelInfo = new DomainModelEntityInfo { Name = DomainModelName, Namespace = DomainModelNamespace };
+
+            // Act
+            editor.AddDbSetToDbContext(modelInfo);
+            await editor.SaveAsync();
+
+            // Assert
+            var updatedCode = await File.ReadAllTextAsync(dbContextPath);
+
+            Assert.Equal(expected, updatedCode);
+        }
+
+        [Fact]
+        public async Task RemoveDbSetAsync_RemovesDbSetProperty()
+        {
+            // Arrange
+            const string dbContextCode = $$"""
                                       using Microsoft.EntityFrameworkCore;
                                       using MyApp.Models;
 
@@ -68,22 +101,35 @@ namespace Dappi.Tests.HeadlessCmsTests.Core
                                           }
                                       }
                                       """;
-                
-            await File.WriteAllTextAsync(dbContextPath, expected);
+            
+            const string expected = """
+                                           using Microsoft.EntityFrameworkCore;
+                                           using MyApp.Models;
 
-            var editor = new DbContextEditor(dbContextPath);
+                                           namespace MyApp.Data
+                                           {
+                                               public class AppDbContext : DbContext
+                                               {
+                                               }
+                                           }
+                                           """;
+                
+            const string dbContextName = "TestDbContext";
+            var dbContextPath = Path.Combine(_tempDir, $"{dbContextName}.cs");
+            await File.WriteAllTextAsync(dbContextPath, dbContextCode);
+            
+            var editor = new DbContextEditor(dbContextPath, dbContextName);
             var modelInfo = new DomainModelEntityInfo { Name = DomainModelName, Namespace = DomainModelNamespace };
 
             // Act
-            await editor.AddDbSetAsync(modelInfo);
+            editor.RemoveSetFromDbContext(modelInfo);
             await editor.SaveAsync();
 
             // Assert
             var updatedCode = await File.ReadAllTextAsync(dbContextPath);
-
             Assert.Equal(expected, updatedCode);
+            
         }
-
 #pragma warning disable CA1816
         public void Dispose()
 #pragma warning restore CA1816

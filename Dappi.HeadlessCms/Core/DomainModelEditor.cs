@@ -1,83 +1,41 @@
+using Dappi.HeadlessCms.Core.Schema;
+using Dappi.HeadlessCms.Core.SyntaxVisitors;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Dappi.HeadlessCms.Core;
 
-public class DomainModelEditor : IDisposable
+public class DomainModelEditor(string domainModelFolderPath)
 {
-    private readonly AdhocWorkspace _workspace;
-    private readonly IEnumerable<Document> _documents; 
-    private bool _disposed;
-
-    public DomainModelEditor(string domainModelFilePath)
+    public async Task<DomainModelEntityInfo[]> GetDomainModelEntityInfos()
     {
-        var modelFiles = Directory.GetFiles(domainModelFilePath, "*.cs");
-
-        _workspace = new AdhocWorkspace();
-
-        var project = _workspace.AddProject(nameof(DomainModelEditor), LanguageNames.CSharp)
-            .AddMetadataReference(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
+        var modelFiles = Directory.GetFiles(domainModelFolderPath, "*.cs", SearchOption.AllDirectories);
+        
+        var syntaxTreeMap = new Dictionary<string, SyntaxTree>();
 
         foreach (var file in modelFiles)
         {
-            var code = File.ReadAllText(file);
-            var document = project.AddDocument(Path.GetFileName(file), code);
-            project = document.Project;
+            var code = await File.ReadAllTextAsync(file);
+            var tree = CSharpSyntaxTree.ParseText(code, path: file);
+            syntaxTreeMap[file] = tree;
         }
-
-        _documents = project.Documents;
-    }
-
-    public async Task<List<DomainModelEntityInfo>> GetDomainModelEntitiesAsync()
-    {
-        var modelInfos = new List<DomainModelEntityInfo>();
-
-        foreach (var document in _documents)
+        
+        var tasks = modelFiles.Select(async file =>
         {
-            var semanticModel = await document.GetSemanticModelAsync();
-            var root = await document.GetSyntaxRootAsync();
-            if (semanticModel == null || root == null) continue;
+            var syntaxTree = syntaxTreeMap[file];
+            var root = await syntaxTree.GetRootAsync().ConfigureAwait(false);
+            var visitor = new DomainModelToSchemaVisitor();
+            visitor.Visit(root);
+            return visitor.Result;
+        });
 
-            var classDecl = root.DescendantNodes().OfType<ClassDeclarationSyntax>().FirstOrDefault();
-            if (classDecl == null) continue;
-
-            var symbol = semanticModel.GetDeclaredSymbol(classDecl) as INamedTypeSymbol;
-            if (symbol == null) continue;
-
-            var attributeShortName = nameof(CCControllerAttribute).Replace("Attribute", "");
-            var hasCCControllerAttribute = symbol
-                .GetAttributes()
-                .Any(attr => attr.AttributeClass?.Name == attributeShortName);
-
-            if (!hasCCControllerAttribute) continue;
-
-            var namespaceName = symbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
-            var propDecl = root.DescendantNodes()
-                .OfType<PropertyDeclarationSyntax>();
-
-            var properties = propDecl.Select(prop => new PropertyInfo
-            {
-                Name = prop.Identifier.ToString(),
-                Type = prop.Type.ToString()
-            });
-
-            modelInfos.Add(new DomainModelEntityInfo
-            {
-                Name = symbol.Name,
-                Namespace = namespaceName,
-                Properties = properties.ToList(),
-            });
-        }
-
-        return modelInfos;
+        var results = await Task.WhenAll(tasks);
+        return results.Where(r => r != null).ToArray()!;
     }
 
-    public void Dispose()
+    public void AddDomainModelEntityInfo(DomainModelEntityInfo entityInfo)
     {
-        if (_disposed) return;
-        _workspace.Dispose();
-        _disposed = true;
-        GC.SuppressFinalize(this);
+        
     }
+    
 }

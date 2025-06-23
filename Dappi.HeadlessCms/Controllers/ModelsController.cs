@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Dappi.HeadlessCms.Core;
+using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Extensions;
 using Dappi.HeadlessCms.Interfaces;
@@ -19,13 +20,15 @@ namespace Dappi.HeadlessCms.Controllers;
 public class ModelsController : ControllerBase
 {
     private readonly ICurrentSessionProvider _currentSessionProvider;
+    private readonly DbContextEditor _dbContextEditor;
+    private readonly DomainModelEditor _domainModelEditor;
     private readonly DappiDbContext _dbContext;
 
     private readonly string _entitiesFolderPath = Path.Combine(
         Directory.GetCurrentDirectory(),
         "Entities"
     );
-
+    
     private readonly string _controllersFolderPath = Path.Combine(
         Directory.GetCurrentDirectory(),
         "Controllers"
@@ -33,9 +36,14 @@ public class ModelsController : ControllerBase
 
     public ModelsController(
         IDbContextAccessor dappiDbContextAccessor,
-        ICurrentSessionProvider currentSessionProvider)
+        ICurrentSessionProvider currentSessionProvider,
+        DbContextEditor dbContextEditor,
+        DomainModelEditor domainModelEditor)
     {
         _currentSessionProvider = currentSessionProvider;
+        _dbContextEditor = dbContextEditor;
+        _domainModelEditor = domainModelEditor;
+
         _dbContext = dappiDbContextAccessor.DbContext;
         if (!Directory.Exists(_entitiesFolderPath))
         {
@@ -48,10 +56,25 @@ public class ModelsController : ControllerBase
     {
         try
         {
-            using var domainModelEditor = new DomainModelEditor(_entitiesFolderPath);
-            var domainModelEntities = await domainModelEditor.GetDomainModelEntitiesAsync();
-            return Ok(domainModelEntities.Select(x => x.Name));
+            var domainModelEntities = await _domainModelEditor.GetDomainModelEntityInfos();
+            var ret = domainModelEntities.Select(x => x.Name).ToList();
+            return Ok(ret);
+        }   
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
         }
+    }
+    
+    [HttpGet("test")]
+    public async Task<IActionResult> GetAllModelsTest()
+    {
+        try
+        {
+            var domainModelEntities = await _domainModelEditor.GetDomainModelEntityInfos();
+            var ret = domainModelEntities.ToList();
+            return Ok(ret);
+        }   
         catch (Exception ex)
         {
             return StatusCode(500, $"Internal server error: {ex.Message}");

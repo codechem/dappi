@@ -41,4 +41,8 @@
         </Content>
     </ItemGroup>
     
+    <ItemGroup>
+      <ProjectReference Include="..\Dappi.SourceGenerator\Dappi.SourceGenerator.csproj" />
+    </ItemGroup>
+    
 </Project>
