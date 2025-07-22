@@ -1,5 +1,8 @@
-using CCApi.Extensions.DependencyInjection;
+using Dappi.HeadlessCms;
+using Dappi.HeadlessCms.Models;
 using MyCompany.MyProject.WebApi.Data;
+
+namespace MyCompany.MyProject.WebApi;
 
 internal class Program
 {
