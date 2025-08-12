@@ -21,19 +21,19 @@ jobs:
       run: dotnet restore
       
     - name: Build DependencyInjection project
-      run: dotnet build CCApi.Extensions.DependencyInjection --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
+      run: dotnet build Dappi.HeadlessCms --configuration Release --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
       
     - name: Build Cli project
       run: dotnet build Dappi.Cli --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
 
     - name: Build SourceGenerator project
-      run: dotnet build CCApi.SourceGenerator --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
+      run: dotnet build Dappi.SourceGenerator --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
       
     - name: Pack DependencyInjection
-      run: dotnet pack CCApi.Extensions.DependencyInjection --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
+      run: dotnet pack Dappi.HeadlessCms --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
       
     - name: Pack SourceGenerator
-      run: dotnet pack CCApi.SourceGenerator --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
+      run: dotnet pack Dappi.SourceGenerator --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
 
     - name: Pack Cli
       run: dotnet pack Dappi.Cli --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
