@@ -194,11 +194,11 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
         new()
         {
             {
-                "Dappi.HeadlessCms",
+                @"..\..\Dappi.HeadlessCms\Dappi.HeadlessCms.csproj",
                 ("Dappi.HeadlessCms", [("Version", tagName)])
             },
             {
-                "Dappi.SourceGenerator",
+                @"..\..\Dappi.SourceGenerator\Dappi.SourceGenerator.csproj",
                 ("Dappi.SourceGenerator", [("Version", tagName), ("OutputItemType", "Analyzer")])
             }
         };
