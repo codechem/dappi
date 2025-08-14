@@ -23,11 +23,11 @@ if ! dotnet tool list --global | grep -q "dotnet-format"; then
   dotnet tool install -g dotnet-format
 fi
 
-echo "Formatting CCApi.Extensions.DependencyInjection..."
-dotnet format ./CCApi.Extensions.DependencyInjection
+echo "Formatting Dappi.HeadlessCms..."
+dotnet format ./Dappi.HeadlessCms
 
-echo "Formatting CCApi.SourceGenerator..."
-dotnet format ./CCApi.SourceGenerator
+echo "Formatting Dappi.SourceGenerator..."
+dotnet format ./Dappi.SourceGenerator
 
 cd "$PROJECT_ROOT"
 git add .

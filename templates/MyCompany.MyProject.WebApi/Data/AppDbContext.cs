@@ -1,4 +1,4 @@
-using CCApi.Extensions.DependencyInjection.Database;
+using Dappi.HeadlessCms.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace MyCompany.MyProject.WebApi.Data;
