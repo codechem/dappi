@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace CCApi.Extensions.DependencyInjection.Utils
+namespace Dappi.HeadlessCms.Utils
 {
     public static class ProcessUtils
     {
