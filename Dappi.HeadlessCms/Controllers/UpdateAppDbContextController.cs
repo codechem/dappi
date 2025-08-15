@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using Dappi.HeadlessCms.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dappi.HeadlessCms.Controllers;
@@ -63,7 +64,7 @@ public class UpdateAppDbContextController : ControllerBase
 
         foreach (var missingModelName in missingModels)
             dbContextScopedCodeBuilder.AppendLine(
-                $"{Environment.NewLine}{padding}public DbSet<{missingModelName}> {missingModelName}s {{ get; set; }}");
+                $"{Environment.NewLine}{padding}public DbSet<{missingModelName}> {missingModelName.Pluralize()} {{ get; set; }}");
 
         var dbContextBuilder = new StringBuilder(appDbContextCode);
         // Replace the last character to add appropriate padding.

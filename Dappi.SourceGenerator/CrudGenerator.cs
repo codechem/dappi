@@ -58,7 +58,7 @@ public partial class {item.ClassName}Controller(
 {{
     [HttpGet]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET")}
-    public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
+    public async Task<IActionResult> Get{item.ClassName}([FromQuery] {item.ClassName}Filter? filter)
     {{
 {mediaInfoIncludeCode}
 
@@ -98,7 +98,7 @@ public partial class {item.ClassName}Controller(
 
 {mediaInfoIncludeCode}
 
-        var result = await dbContext.{item.ClassName}s{includesCode}
+        var result = await dbContext.{item.ClassName.Pluralize()}{includesCode}
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (result is null)
@@ -119,7 +119,7 @@ public partial class {item.ClassName}Controller(
 
 {collectionAddCode}
 
-        await dbContext.{item.ClassName}s.AddAsync(modelToSave);
+        await dbContext.{item.ClassName.Pluralize()}.AddAsync(modelToSave);
         await dbContext.SaveChangesAsync();
 
         return CreatedAtAction(nameof(Create), new {{ id = modelToSave.Id }}, modelToSave);
@@ -132,7 +132,7 @@ public partial class {item.ClassName}Controller(
         if (model == null || id == Guid.Empty)
             return BadRequest(""Invalid data provided."");
 
-        var existingModel = await dbContext.{item.ClassName}s{includesCode}
+        var existingModel = await dbContext.{item.ClassName.Pluralize()}{includesCode}
             .FirstOrDefaultAsync(p => p.Id == id);
             
         if (existingModel == null)
@@ -152,11 +152,11 @@ public partial class {item.ClassName}Controller(
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "DELETE")}
     public async Task<IActionResult> Delete(Guid id)
     {{
-        var model = dbContext.{item.ClassName}s.FirstOrDefault(p => p.Id == id);
+        var model = dbContext.{item.ClassName.Pluralize()}.FirstOrDefault(p => p.Id == id);
         if (model is null)
             return NotFound();
 
-        dbContext.{item.ClassName}s.Remove(model);
+        dbContext.{item.ClassName.Pluralize()}.Remove(model);
         await dbContext.SaveChangesAsync();
 
         return Ok();
@@ -171,7 +171,7 @@ public partial class {item.ClassName}Controller(
 
         try
         {{
-            var entity = await dbContext.{item.ClassName}s.FindAsync(id);
+            var entity = await dbContext.{item.ClassName.Pluralize()}.FindAsync(id);
 
             if (entity == null)
                 return NotFound($""{item.ClassName} with ID {{id}} not found."");
@@ -224,7 +224,7 @@ public partial class {item.ClassName}Controller(
             .Where(p => p.PropertyType == typeof(MediaInfo))
             .ToList();
             
-        var query = dbContext.{model.ClassName}s.AsQueryable();
+        var query = dbContext.{model.ClassName.Pluralize()}.AsQueryable();
        
         query = query{includesCode};
         
@@ -262,12 +262,12 @@ public partial class {item.ClassName}Controller(
         {{
             var {propNameLower}Ids = model.{prop.PropertyName}.Select(m => m.Id).ToList();
             
-            var existing{entityType}s = await dbContext.{entityType}s
+            var existing{entityType.Pluralize()} = await dbContext.{entityType.Pluralize()}
                 .Where(e => {propNameLower}Ids.Contains(e.Id))
                 .ToListAsync();
             
             existingModel.{prop.PropertyName}.Clear();
-            existingModel.{prop.PropertyName} = existing{entityType}s;
+            existingModel.{prop.PropertyName} = existing{entityType.Pluralize()};
         }}");
         }
 
@@ -301,13 +301,13 @@ public partial class {item.ClassName}Controller(
         
         if ({propNameLower}Ids != null && {propNameLower}Ids.Count > 0)
         {{
-            var existing{entityType}s = await dbContext.{entityType}s
+            var existing{entityType.Pluralize()} = await dbContext.{entityType.Pluralize()}
                 .Where(e => {propNameLower}Ids.Contains(e.Id))
                 .ToListAsync();
 
-            if (existing{entityType}s.Any())
+            if (existing{entityType.Pluralize()}.Any())
             {{
-                modelToSave.{prop.PropertyName} = existing{entityType}s;
+                modelToSave.{prop.PropertyName} = existing{entityType.Pluralize()};
             }}
         }}");
         }
