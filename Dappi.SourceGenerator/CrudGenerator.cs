@@ -58,7 +58,7 @@ public partial class {item.ClassName}Controller(
 {{
     [HttpGet]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET")}
-    public async Task<IActionResult> Get{item.ClassName}([FromQuery] {item.ClassName}Filter? filter)
+    public async Task<IActionResult> Get{item.ClassName.Pluralize()}([FromQuery] {item.ClassName}Filter? filter)
     {{
 {mediaInfoIncludeCode}
 
