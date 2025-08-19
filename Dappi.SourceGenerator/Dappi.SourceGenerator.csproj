@@ -4,7 +4,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-
+        <IncludeBuildOutput>false</IncludeBuildOutput>
         <!-- Required package metadata -->
         <PackageId>Dappi.SourceGenerator</PackageId>
         <Authors>CodeChem</Authors>
@@ -13,8 +13,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" GeneratePathProperty="true" Version="4.8.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" GeneratePathProperty="true" Version="3.3.4" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
         <PackageReference Include="Pluralize.NET" Version="1.0.2" GeneratePathProperty="true" PrivateAssets="all" />
     </ItemGroup>
 
@@ -24,8 +24,9 @@
 
     <Target Name="GetDependencyTargetPaths">
         <ItemGroup>
+            <TargetPathWithTargetPlatformMoniker Include="$(PKGPluralize_NET)\lib\netstandard2.0\Pluralize.NET.dll" IncludeRuntimeDependency="false" />
             <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-            <TargetPathWithTargetPlatformMoniker Include="$(PKGPluralize_Net)\lib\netstandard2.0\Pluralize.NET.dll" IncludeRuntimeDependency="false" />
+            <None Include="$(PKGPluralize_NET)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
         </ItemGroup>
     </Target>
 </Project>
