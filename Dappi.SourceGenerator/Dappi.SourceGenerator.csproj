@@ -24,7 +24,7 @@
 
     <Target Name="GetDependencyTargetPaths">
         <ItemGroup>
-<!--            <TargetPathWithTargetPlatformMoniker Include="$(PKGPluralize_NET)\lib\netstandard2.0\Pluralize.NET.dll" IncludeRuntimeDependency="false" />-->
+            <TargetPathWithTargetPlatformMoniker Include="$(PKGPluralize_Net)\lib\netstandard2.0\Pluralize.NET.dll" IncludeRuntimeDependency="false" />
             <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
             <None Include="$(PKGPluralize_Net)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
         </ItemGroup>
