@@ -138,7 +138,7 @@ namespace Dappi.HeadlessCms.Controllers
 
                 string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
                 string pattern =
-                    $@"\s*public\s+DbSet<{modelName}>\s+{modelName.Pluralize()}\s+\{{\s+get;\s+set;\s+\}}";
+                    $@"\s*public\s+DbSet<{modelName}>\s+{modelName}s\s+\{{\s+get;\s+set;\s+\}}";
                 dbContextContent = Regex.Replace(
                     dbContextContent,
                     pattern,
@@ -268,7 +268,7 @@ namespace Dappi.HeadlessCms.Controllers
 
                                 var relatedToCode = AddFieldToClass(
                                     existingRelatedToCode,
-                                    request.RelatedRelationName ?? $"{modelName.Pluralize()}",
+                                    request.RelatedRelationName ?? $"{modelName}s",
                                     $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
                                     $"{modelName}{(!request.IsRequired ? "?" : "")}",
                                     request.IsRequired
@@ -277,7 +277,7 @@ namespace Dappi.HeadlessCms.Controllers
 
                                 UpdateDbContextWithRelationship(modelName, request.RelatedTo, "OneToMany",
                                     request.FieldName,
-                                    request.RelatedRelationName ?? $"{modelName.Pluralize()}");
+                                    request.RelatedRelationName ?? $"{modelName}s");
 
                                 fieldDict.Add(foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}");
                                 break;
@@ -306,7 +306,7 @@ namespace Dappi.HeadlessCms.Controllers
 
                                 var relatedToCode = AddFieldToClass(
                                     existingRelatedToCode,
-                                    request.RelatedRelationName ?? $"{modelName.Pluralize()}",
+                                    request.RelatedRelationName ?? $"{modelName}s",
                                     $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
                                     $"{modelName}{(!request.IsRequired ? "?" : "")}",
                                     request.IsRequired
@@ -315,7 +315,7 @@ namespace Dappi.HeadlessCms.Controllers
 
                                 UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToOne",
                                     request.FieldName,
-                                    request.RelatedRelationName ?? $"{modelName.Pluralize()}");
+                                    request.RelatedRelationName ?? $"{modelName}s");
 
                                 fieldDict.Add(foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}");
                                 break;
@@ -333,7 +333,7 @@ namespace Dappi.HeadlessCms.Controllers
 
                                 var relatedToCode = AddFieldToClass(
                                     existingRelatedToCode,
-                                    request.RelatedRelationName ?? $"{modelName.Pluralize()}",
+                                    request.RelatedRelationName ?? $"{modelName}s",
                                     $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
                                     $"{modelName}{(!request.IsRequired ? "?" : "")}",
                                     request.IsRequired
@@ -342,7 +342,7 @@ namespace Dappi.HeadlessCms.Controllers
 
                                 UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToMany",
                                     request.FieldName,
-                                    request.RelatedRelationName ?? $"{modelName.Pluralize()}");
+                                    request.RelatedRelationName ?? $"{modelName}s");
 
                                 fieldDict[request.FieldName] =
                                     $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>";
@@ -532,13 +532,13 @@ namespace Dappi.HeadlessCms.Controllers
 
                 "manytoone" => $@"        modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithMany(e => e.{relatedPropertyName ?? $"{modelName.Pluralize()}"})
+            .WithMany(e => e.{relatedPropertyName ?? $"{modelName}s"})
             .HasForeignKey(s => s.{propertyName}Id);",
 
                 "manytomany" => $@"        modelBuilder.Entity<{modelName}>()
             .HasMany(m => m.{propertyName})
             .WithMany(r => r.{relatedPropertyName})
-            .UsingEntity(j => j.ToTable(""{modelName.Pluralize()}{relatedTo.Pluralize()}""));",
+            .UsingEntity(j => j.ToTable(""{modelName}{relatedTo}s""));",
 
                 _ => throw new ArgumentException($"Unsupported relationship type: {relationshipType}")
             };

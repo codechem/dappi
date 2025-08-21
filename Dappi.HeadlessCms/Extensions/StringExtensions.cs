@@ -1,12 +1,9 @@
 using Microsoft.CodeAnalysis.CSharp;
-using Pluralize.NET;
 
 namespace Dappi.HeadlessCms.Extensions
 {
     public static class StringExtensions
     {
-        static readonly IPluralize Pluralizer = new Pluralizer();
-        
         // Still missing to check if name is an interface, if it's possible.
         public static bool IsValidClassNameOrPropertyName(this string name)
         {
@@ -28,7 +25,5 @@ namespace Dappi.HeadlessCms.Extensions
             
             return !SyntaxFacts.IsKeywordKind(keywordKind);
         }
-
-        public static string Pluralize(this string word) => Pluralizer.Pluralize(word);
     }
 }
