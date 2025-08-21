@@ -4,7 +4,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-
+        <IncludeBuildOutput>false</IncludeBuildOutput>
         <!-- Required package metadata -->
         <PackageId>Dappi.SourceGenerator</PackageId>
         <Authors>CodeChem</Authors>
