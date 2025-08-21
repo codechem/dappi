@@ -20,7 +20,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { selectCollectionTypes, selectFields } from '../state/collection/collection.selectors';
 import { selectSelectedType } from '../state/content/content.selectors';
 import { Subscription } from 'rxjs';
-import pluralize from 'pluralize';
 import { EnumsResponse } from '../models/enums-response.model';
 import { EnumsService } from '../services/common/enums.service';
 import { ModelValidators } from '../validators/model-validators';
@@ -224,17 +223,17 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     this.relationTypes = [
       {
         label: 'Many-to-many',
-        description: `Many ${pluralize(this.selectedType)} can relate to many ${pluralize(modelName)}`,
+        description: `Many ${this.selectedType}s can relate to many ${modelName}s`,
         value: 'many-to-many',
       },
       {
         label: 'One-to-many',
-        description: `One ${this.selectedType} can relate to many ${pluralize(modelName)}`,
+        description: `One ${this.selectedType} can relate to many ${modelName}s`,
         value: 'one-to-many',
       },
       {
         label: 'Many-to-one',
-        description: `Many ${pluralize(this.selectedType)} can relate to one ${modelName}`,
+        description: `Many ${this.selectedType}s can relate to one ${modelName}`,
         value: 'many-to-one',
       },
       {
