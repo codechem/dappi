@@ -526,8 +526,8 @@ namespace Dappi.HeadlessCms.Controllers
             .HasForeignKey<{modelName}>(ad => ad.{propertyName}Id);",
 
                 "onetomany" => $@"        modelBuilder.Entity<{modelName}>()
-            .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithMany(e => e.{relatedPropertyName ?? propertyName})
+            .HasMany<{relatedTo}>(s => s.{propertyName})
+            .WithOne(e => e.{relatedPropertyName ?? propertyName})
             .HasForeignKey(s => s.{propertyName}Id);",
 
                 "manytoone" => $@"        modelBuilder.Entity<{modelName}>()
