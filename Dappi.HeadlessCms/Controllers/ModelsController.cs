@@ -246,40 +246,43 @@ namespace Dappi.HeadlessCms.Controllers
                             }
                         case "OneToMany":
                             {
-                                var foreignKeyName = $"{request.FieldName}Id";
+                                var foreignKeyName = $"{request.RelatedRelationName ?? modelName}Id";
                                 var updatedCode = AddFieldToClass(
                                     existingCode,
+                                    request.FieldName,
+                                    $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>",
+                                    $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
+                                    request.IsRequired
+                                );
+
+                                System.IO.File.WriteAllText(modelFilePath, updatedCode);
+                                
+                                var relatedToCode = AddFieldToClass(
+                                    existingRelatedToCode,
                                     foreignKeyName,
                                     $"Guid{(!request.IsRequired ? "?" : "")}",
                                     "",
                                     request.IsRequired
                                 );
-                                System.IO.File.WriteAllText(modelFilePath, updatedCode);
+                                System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
 
-                                existingCode = System.IO.File.ReadAllText(modelFilePath);
-                                updatedCode = AddFieldToClass(
-                                    existingCode,
-                                    request.FieldName,
-                                    $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
+                                existingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
+                                relatedToCode = AddFieldToClass(
+                                    existingRelatedToCode,
+                                    request.RelatedRelationName ?? modelName,
+                                    $"{modelName}{(!request.IsRequired ? "?" : "")}",
                                     "",
                                     request.IsRequired
                                 );
-                                System.IO.File.WriteAllText(modelFilePath, updatedCode);
-
-                                var relatedToCode = AddFieldToClass(
-                                    existingRelatedToCode,
-                                    request.RelatedRelationName ?? $"{modelName}s",
-                                    $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
-                                    $"{modelName}{(!request.IsRequired ? "?" : "")}",
-                                    request.IsRequired
-                                );
                                 System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
-
+                                
                                 UpdateDbContextWithRelationship(modelName, request.RelatedTo, "OneToMany",
                                     request.FieldName,
-                                    request.RelatedRelationName ?? $"{modelName}s");
+                                    request.RelatedRelationName ?? modelName);
+                                
+                                fieldDict[request.FieldName] =
+                                    $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>";
 
-                                fieldDict.Add(foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}");
                                 break;
                             }
                         case "ManyToOne":
@@ -527,8 +530,8 @@ namespace Dappi.HeadlessCms.Controllers
 
                 "onetomany" => $@"        modelBuilder.Entity<{modelName}>()
             .HasMany<{relatedTo}>(s => s.{propertyName})
-            .WithOne(e => e.{relatedPropertyName ?? propertyName})
-            .HasForeignKey(s => s.{propertyName}Id);",
+            .WithOne(e => e.{relatedPropertyName ?? modelName})
+            .HasForeignKey(s => s.{relatedPropertyName ?? modelName}Id);",
 
                 "manytoone" => $@"        modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
