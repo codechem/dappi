@@ -192,6 +192,7 @@ namespace Dappi.HeadlessCms.Controllers
                 }
 
                 var fieldDict = new Dictionary<string, string> { { request.FieldName, request.FieldType } };
+                var relatedFieldDict = new Dictionary<string, string>();
                 var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
 
                 if (PropertyCheckUtils.PropertyNameExists(existingCode, request.FieldName))
@@ -208,162 +209,40 @@ namespace Dappi.HeadlessCms.Controllers
                     {
                         case "OneToOne":
                             {
-                                var foreignKeyName = $"{request.FieldName}Id";
-                                var updatedCode = AddFieldToClass(
-                                    existingCode,
-                                    foreignKeyName,
-                                    $"Guid{(!request.IsRequired ? "?" : "")}",
-                                    "",
-                                    request.IsRequired
-                                );
-                                System.IO.File.WriteAllText(modelFilePath, updatedCode);
-
-                                existingCode = System.IO.File.ReadAllText(modelFilePath);
-                                updatedCode = AddFieldToClass(
-                                    existingCode,
-                                    request.FieldName,
-                                    $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
-                                    "",
-                                    request.IsRequired
-                                );
-                                System.IO.File.WriteAllText(modelFilePath, updatedCode);
-
-                                var relatedToCode = AddFieldToClass(
-                                    existingRelatedToCode,
-                                    request.RelatedRelationName ?? request.FieldName,
-                                    $"{modelName}{(!request.IsRequired ? "?" : "")}",
-                                    "",
-                                    request.IsRequired
-                                );
-                                System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
-
-                                UpdateDbContextWithRelationship(modelName, request.RelatedTo, "OneToOne",
-                                    request.FieldName,
-                                    request.RelatedRelationName ?? request.FieldName);
-
-                                fieldDict.Add(foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}");
+                                HandleOneToOneRelationship(request, modelName, modelFilePath, existingCode,
+                                    modelRelatedToFilePath, existingRelatedToCode);
+                                relatedFieldDict.Add(request.RelatedRelationName ?? modelName, request.FieldType);
                                 break;
                             }
                         case "OneToMany":
                             {
-                                var foreignKeyName = $"{request.FieldName}Id";
-                                var updatedCode = AddFieldToClass(
-                                    existingCode,
-                                    foreignKeyName,
-                                    $"Guid{(!request.IsRequired ? "?" : "")}",
-                                    "",
-                                    request.IsRequired
-                                );
-                                System.IO.File.WriteAllText(modelFilePath, updatedCode);
-
-                                existingCode = System.IO.File.ReadAllText(modelFilePath);
-                                updatedCode = AddFieldToClass(
-                                    existingCode,
-                                    request.FieldName,
-                                    $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
-                                    "",
-                                    request.IsRequired
-                                );
-                                System.IO.File.WriteAllText(modelFilePath, updatedCode);
-
-                                var relatedToCode = AddFieldToClass(
-                                    existingRelatedToCode,
-                                    request.RelatedRelationName ?? $"{modelName}s",
-                                    $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
-                                    $"{modelName}{(!request.IsRequired ? "?" : "")}",
-                                    request.IsRequired
-                                );
-                                System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
-
-                                UpdateDbContextWithRelationship(modelName, request.RelatedTo, "OneToMany",
-                                    request.FieldName,
-                                    request.RelatedRelationName ?? $"{modelName}s");
-
-                                fieldDict.Add(foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}");
+                                HandleOneToManyRelationship(request, modelName, modelFilePath, existingCode, modelRelatedToFilePath, existingRelatedToCode);
+                                relatedFieldDict.Add(request.RelatedRelationName ?? modelName, "ManyToOne");
                                 break;
                             }
                         case "ManyToOne":
                             {
-                                var foreignKeyName = $"{request.FieldName}Id";
-                                var updatedCode = AddFieldToClass(
-                                    existingCode,
-                                    foreignKeyName,
-                                    $"Guid{(!request.IsRequired ? "?" : "")}",
-                                    "",
-                                    request.IsRequired
-                                );
-                                System.IO.File.WriteAllText(modelFilePath, updatedCode);
-
-                                existingCode = System.IO.File.ReadAllText(modelFilePath);
-                                updatedCode = AddFieldToClass(
-                                    existingCode,
-                                    request.FieldName,
-                                    $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
-                                    "",
-                                    request.IsRequired
-                                );
-                                System.IO.File.WriteAllText(modelFilePath, updatedCode);
-
-                                var relatedToCode = AddFieldToClass(
-                                    existingRelatedToCode,
-                                    request.RelatedRelationName ?? $"{modelName}s",
-                                    $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
-                                    $"{modelName}{(!request.IsRequired ? "?" : "")}",
-                                    request.IsRequired
-                                );
-                                System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
-
-                                UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToOne",
-                                    request.FieldName,
-                                    request.RelatedRelationName ?? $"{modelName}s");
-
-                                fieldDict.Add(foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}");
+                                HandleManyToOneRelationship(request, modelName, modelFilePath, existingCode, modelRelatedToFilePath, existingRelatedToCode);
+                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName}s", "OneToMany");
                                 break;
                             }
                         case "ManyToMany":
                             {
-                                var updatedCode = AddFieldToClass(
-                                    existingCode,
-                                    request.FieldName,
-                                    $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>",
-                                    $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
-                                    request.IsRequired
-                                );
-                                System.IO.File.WriteAllText(modelFilePath, updatedCode);
-
-                                var relatedToCode = AddFieldToClass(
-                                    existingRelatedToCode,
-                                    request.RelatedRelationName ?? $"{modelName}s",
-                                    $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>",
-                                    $"{modelName}{(!request.IsRequired ? "?" : "")}",
-                                    request.IsRequired
-                                );
-                                System.IO.File.WriteAllText(modelRelatedToFilePath, relatedToCode);
-
-                                UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToMany",
-                                    request.FieldName,
-                                    request.RelatedRelationName ?? $"{modelName}s");
-
-                                fieldDict[request.FieldName] =
-                                    $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>";
+                                HandleManyToManyRelationship(request, modelName, modelFilePath, existingCode, modelRelatedToFilePath, existingRelatedToCode);
+                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName}s", "ManyToMany");
                                 break;
                             }
                     }
                 }
                 else
                 {
-                    var updatedCode = AddFieldToClass(
-                        existingCode,
-                        request.FieldName,
-                        $"{request.FieldType}{(!request.IsRequired ? "?" : "")}",
-                        "",
-                        request.IsRequired
-                    );
-
-                    System.IO.File.WriteAllText(modelFilePath, updatedCode);
+                    UpdateClassCode(modelFilePath, existingCode, request.FieldName, $"{request.FieldType}{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
                 }
 
                 await UpdateContentTypeChangeFieldsAsync(modelName, fieldDict);
+
+                if (request.RelatedTo != null && relatedFieldDict.Count != 0)
+                    await UpdateContentTypeChangeFieldsAsync(request.RelatedTo, relatedFieldDict);
 
                 return Ok(
                     new
@@ -379,7 +258,7 @@ namespace Dappi.HeadlessCms.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        
+
         [HttpGet("fields/{modelName}")]
         public IActionResult GetModelFields(string modelName)
         {
@@ -435,7 +314,7 @@ namespace Dappi.HeadlessCms.Controllers
                     {
                         oldFields?.Add(kvp.Key, kvp.Value);
                     }
-            
+
                     contentTypeChangeForModel.ModifiedAt = DateTimeOffset.UtcNow;
                     contentTypeChangeForModel.Fields = JsonSerializer.Serialize(oldFields);
                 }
@@ -445,10 +324,10 @@ namespace Dappi.HeadlessCms.Controllers
                     {
                         ModelName = modelName, Fields = JsonSerializer.Serialize(newFields),
                     };
-            
+
                     _dbContext.ContentTypeChanges.Add(contentTypeChangeForModel);
                 }
-            
+
                 await _dbContext.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -456,6 +335,91 @@ namespace Dappi.HeadlessCms.Controllers
                 Console.WriteLine($"Error updating ContentTypeChanges: {ex.Message}");
                 throw;
             }
+        }
+
+        private void HandleOneToOneRelationship(FieldRequest request, string modelName, string modelFilePath,
+            string existingCode, string modelRelatedToFilePath, string existingRelatedToCode)
+        {
+            var foreignKeyRelatedName = $"{modelName}Id";
+            UpdateClassCode(
+                modelFilePath,
+                existingCode,
+                request.FieldName,
+                $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
+                "",
+                request.IsRequired
+            );
+
+            UpdateClassCode(modelRelatedToFilePath,
+                existingRelatedToCode,
+                request.RelatedRelationName ?? modelName,
+                $"{modelName}{(!request.IsRequired ? "?" : "")}",
+                "",
+                request.IsRequired);
+            
+            var updatedExistingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
+            
+            UpdateClassCode(modelRelatedToFilePath,
+                updatedExistingRelatedToCode,
+                foreignKeyRelatedName,
+                $"Guid{(!request.IsRequired ? "?" : "")}",
+                "",
+                request.IsRequired);
+
+            UpdateDbContextWithRelationship(modelName, request.RelatedTo, "OneToOne",
+                request.FieldName,
+                request.RelatedRelationName ?? modelName);
+        }
+
+        private void HandleOneToManyRelationship(FieldRequest request, string modelName, string modelFilePath,
+            string existingCode, string modelRelatedToFilePath, string existingRelatedToCode)
+        {
+            var foreignKeyName = $"{request.RelatedRelationName ?? modelName}Id";
+            UpdateClassCode(modelFilePath, existingCode, request.FieldName,
+                $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>",
+                $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+            
+            UpdateClassCode(modelRelatedToFilePath, existingRelatedToCode, foreignKeyName,
+                $"Guid{(!request.IsRequired ? "?" : "")}",
+                "", request.IsRequired);
+
+            var updatedExistingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
+            
+            UpdateClassCode(modelRelatedToFilePath, updatedExistingRelatedToCode, request.RelatedRelationName ?? modelName,
+                $"{modelName}{(!request.IsRequired ? "?" : "")}",
+                "", request.IsRequired);
+
+            UpdateDbContextWithRelationship(modelName, request.RelatedTo, "OneToMany",
+                request.FieldName,
+                request.RelatedRelationName ?? modelName);
+        }
+        
+        private void HandleManyToOneRelationship(FieldRequest request, string modelName, string modelFilePath,
+            string existingCode, string modelRelatedToFilePath, string existingRelatedToCode)
+        {
+            var foreignKeyName = $"{request.FieldName}Id";
+            UpdateClassCode(modelFilePath, existingCode, foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+
+            var updatedExistingCode = System.IO.File.ReadAllText(modelFilePath);
+            UpdateClassCode(modelFilePath, updatedExistingCode, request.FieldName, $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
+            
+            UpdateClassCode(modelRelatedToFilePath, existingRelatedToCode, request.RelatedRelationName ?? $"{modelName}s", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+
+            UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToOne",
+                request.FieldName,
+                request.RelatedRelationName ?? $"{modelName}s");
+        }
+        
+        private void HandleManyToManyRelationship(FieldRequest request, string modelName, string modelFilePath,
+            string existingCode, string modelRelatedToFilePath, string existingRelatedToCode)
+        {
+            UpdateClassCode(modelFilePath, existingCode, request.FieldName, $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>", $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+            
+            UpdateClassCode(modelRelatedToFilePath, existingRelatedToCode, request.RelatedRelationName ?? $"{modelName}s", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+
+            UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToMany",
+                request.FieldName,
+                request.RelatedRelationName ?? $"{modelName}s");
         }
 
         private void UpdateDbContextWithRelationship(string modelName, string relatedTo, string relationshipType,
@@ -473,7 +437,8 @@ namespace Dappi.HeadlessCms.Controllers
                 relatedPropertyName);
 
             var onModelCreatingIndex =
-                dbContextContent.IndexOf("protected override void OnModelCreating(ModelBuilder modelBuilder)", StringComparison.InvariantCulture);
+                dbContextContent.IndexOf("protected override void OnModelCreating(ModelBuilder modelBuilder)",
+                    StringComparison.InvariantCulture);
 
             if (onModelCreatingIndex == -1)
             {
@@ -491,7 +456,8 @@ namespace Dappi.HeadlessCms.Controllers
             else
             {
                 const string baseCall = "base.OnModelCreating(modelBuilder);";
-                var baseCallIndex = dbContextContent.IndexOf(baseCall, onModelCreatingIndex, StringComparison.InvariantCulture);
+                var baseCallIndex =
+                    dbContextContent.IndexOf(baseCall, onModelCreatingIndex, StringComparison.InvariantCulture);
 
                 if (baseCallIndex == -1)
                 {
@@ -515,20 +481,21 @@ namespace Dappi.HeadlessCms.Controllers
             System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
         }
 
-        private static string GenerateRelationshipConfiguration(string modelName, string relatedTo, string relationshipType,
+        private static string GenerateRelationshipConfiguration(string modelName, string relatedTo,
+            string relationshipType,
             string propertyName, string? relatedPropertyName = null)
         {
             return relationshipType.ToLower() switch
             {
                 "onetoone" => $@"        modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithOne(e => e.{relatedPropertyName ?? propertyName})
-            .HasForeignKey<{modelName}>(ad => ad.{propertyName}Id);",
+            .WithOne(e => e.{relatedPropertyName ?? modelName})
+            .HasForeignKey<{relatedTo}>(ad => ad.{relatedPropertyName ?? modelName}Id);",
 
                 "onetomany" => $@"        modelBuilder.Entity<{modelName}>()
-            .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithMany(e => e.{relatedPropertyName ?? propertyName})
-            .HasForeignKey(s => s.{propertyName}Id);",
+            .HasMany<{relatedTo}>(s => s.{propertyName})
+            .WithOne(e => e.{relatedPropertyName ?? modelName})
+            .HasForeignKey(s => s.{relatedPropertyName ?? modelName}Id);",
 
                 "manytoone" => $@"        modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
@@ -578,13 +545,14 @@ namespace Dappi.HeadlessCms.Controllers
                 : $"    public {fieldType} {fieldName} {{ get; set; }}";
 
             var classCodeBuilder = new StringBuilder();
-            
+
             if (isRequired)
             {
                 classCodeBuilder.AppendLine(requiredAttribute);
             }
+
             classCodeBuilder.AppendLine(propertyCode);
-       
+
             var newPropertyCode = classCodeBuilder.ToString();
             var insertPosition = classCode.LastIndexOf("}", StringComparison.Ordinal);
             var updatedCode = classCode.Insert(
@@ -684,6 +652,19 @@ namespace Dappi.HeadlessCms.Controllers
             }
 
             return fieldList;
+        }
+
+        private static void UpdateClassCode(string modelFilePath, string existingClassCode, string newFieldName,
+            string newFieldType, string collectionType = "", bool isRequired = false)
+        {
+            var updatedCode = AddFieldToClass(
+                existingClassCode,
+                newFieldName,
+                newFieldType,
+                collectionType,
+                isRequired
+            );
+            System.IO.File.WriteAllText(modelFilePath, updatedCode);
         }
     }
 }
