@@ -280,9 +280,7 @@ namespace Dappi.HeadlessCms.Controllers
                                     request.FieldName,
                                     request.RelatedRelationName ?? modelName);
                                 
-                                fieldDict[request.FieldName] =
-                                    $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>";
-
+                                fieldDict.Add(foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}");
                                 break;
                             }
                         case "ManyToOne":
