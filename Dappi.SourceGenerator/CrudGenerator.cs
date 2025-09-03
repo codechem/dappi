@@ -98,7 +98,7 @@ public partial class {item.ClassName}Controller(
 
 {mediaInfoIncludeCode}
 
-        var result = await dbContext.{item.ClassName}s{includesCode}
+        var result = await query
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (result is null)
@@ -224,7 +224,7 @@ public partial class {item.ClassName}Controller(
             .Where(p => p.PropertyType == typeof(MediaInfo))
             .ToList();
             
-        var query = dbContext.{model.ClassName}s.AsQueryable();
+        var query = dbContext.{model.ClassName}s.AsNoTracking().AsQueryable();
        
         query = query{includesCode};
         
