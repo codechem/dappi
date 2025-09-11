@@ -18,12 +18,13 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
         if (dbContextData is null)
             throw new NullReferenceException("DbContext data is null");
 
+        var mediaInfoPropertyNames = GetMediaInfoPropertyNames(collectedData);
+
         foreach (var item in collectedData)
         {
             var collectionAddCode = GenerateCollectionAddCode(item);
-            var mediaInfoIncludeCode = GenerateMediaInfoOrRelationIncludeCode(item);
             var collectionUpdateCode = GenerateCollectionUpdateCode(item);
-            var includesCode = GetIncludesIfAny(item.PropertiesInfos);
+            var includesCode = GetIncludesIfAny(item.PropertiesInfos, mediaInfoPropertyNames, item.ClassName);
             var authorizationTags = PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET");
             // TODO: Change to new project names
             var generatedCode = $@"using Microsoft.AspNetCore.Mvc;
@@ -60,7 +61,9 @@ public partial class {item.ClassName}Controller(
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET")}
     public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
     {{
-{mediaInfoIncludeCode}
+        var query = dbContext.{item.ClassName}s.AsNoTracking().AsQueryable();
+       
+        query = query{includesCode};
 
         if (filter != null)
         {{
@@ -96,7 +99,9 @@ public partial class {item.ClassName}Controller(
         if (id == Guid.Empty)
             return BadRequest();
 
-{mediaInfoIncludeCode}
+        var query = dbContext.{item.ClassName}s.AsNoTracking().AsQueryable();
+       
+        query = query{includesCode};
 
         var result = await query
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -216,24 +221,6 @@ public partial class {item.ClassName}Controller(
         }
     }
 
-    private static string GenerateMediaInfoOrRelationIncludeCode(SourceModel model)
-    {
-        var includesCode = GetIncludesIfAny(model.PropertiesInfos);
-
-        return $@"        var mediaInfoProperties = typeof({model.ClassName}).GetProperties()
-            .Where(p => p.PropertyType == typeof(MediaInfo))
-            .ToList();
-            
-        var query = dbContext.{model.ClassName}s.AsNoTracking().AsQueryable();
-       
-        query = query{includesCode};
-        
-        foreach (var prop in mediaInfoProperties)
-        {{
-            query = query.Include(prop.Name);
-        }}";
-    }
-
     private static string GenerateCollectionUpdateCode(SourceModel model)
     {
         var collectionProperties = model.PropertiesInfos
@@ -321,4 +308,15 @@ public partial class {item.ClassName}Controller(
         || x.PropertyType.Name.Contains("List")
         || x.PropertyType.Name.Contains("ICollection");
     }
+
+    private static Dictionary<string, IEnumerable<string>> GetMediaInfoPropertyNames(ImmutableArray<SourceModel> collectedData)
+    {
+        return collectedData
+            .SelectMany(s => s.PropertiesInfos
+                .Where(p => p.PropertyType.Name.Contains("MediaInfo"))
+                .Select(p => new { s.ClassName, p.PropertyName }))
+            .GroupBy(item => item.ClassName)
+            .ToDictionary(g => g.Key, g => g.Select(item => item.PropertyName));
+    }
+
 }
