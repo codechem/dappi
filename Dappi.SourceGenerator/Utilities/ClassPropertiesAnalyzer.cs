@@ -6,27 +6,45 @@ namespace Dappi.SourceGenerator.Utilities;
 
 public static class ClassPropertiesAnalyzer
 {
-    public static string GetIncludesIfAny(List<PropertyInfo> propertiesInfos)
+    public static string GetIncludesIfAny(List<PropertyInfo> propertiesInfos, Dictionary<string, IEnumerable<string>> mediaInfoPropertyNames, string sourceModelClassName)
     {
         var propertiesWithForeignKey = propertiesInfos
-            .Where(p => !string.IsNullOrEmpty(p.PropertyForeignKey));
+            .Where(p => !string.IsNullOrEmpty(p.PropertyForeignKey))
+            .ToList();
 
         var collectionProperties = propertiesInfos
-            .Where(ContainsCollectionTypeName);
-
-        if (!propertiesWithForeignKey.Any() && !collectionProperties.Any())
+            .Where(ContainsCollectionTypeName)
+            .ToList();
+        
+        if (!mediaInfoPropertyNames.ContainsKey(sourceModelClassName) && !propertiesWithForeignKey.Any() && !collectionProperties.Any())
             return string.Empty;
 
         var responseBuilder = new StringBuilder();
 
+        if (mediaInfoPropertyNames.TryGetValue(sourceModelClassName, out var propertyNames))
+        {
+            foreach (var propertyName in propertyNames)
+            {
+                responseBuilder.AppendLine();
+                responseBuilder.Append(@$"            .Include(p => p.{propertyName})");
+            }
+        }
+        
         foreach (var propertyInfo in propertiesWithForeignKey)
         {
-            responseBuilder.Append(@$".Include(p => p.{propertyInfo.PropertyForeignKey})");
+            if (propertyInfo.GenericTypeName == "Guid")
+            {
+                responseBuilder.Append(GenerateIncludesCode(mediaInfoPropertyNames, propertyInfo.PropertyForeignKey, propertyInfo.PropertyForeignKey));
+                
+                continue;
+            }
+
+            responseBuilder.Append(GenerateIncludesCode(mediaInfoPropertyNames, propertyInfo.GenericTypeName, propertyInfo.PropertyName));
         }
 
         foreach (var propertyInfo in collectionProperties)
         {
-            responseBuilder.Append(@$".Include(p => p.{propertyInfo.PropertyName})");
+            responseBuilder.Append(GenerateIncludesCode(mediaInfoPropertyNames, propertyInfo.GenericTypeName, propertyInfo.PropertyName));
         }
 
         return responseBuilder.ToString();
@@ -164,5 +182,28 @@ public static class ClassPropertiesAnalyzer
         return propertyInfo.PropertyType.Name.Contains("IEnumerable")
             || propertyInfo.PropertyType.Name.Contains("List")
             || propertyInfo.PropertyType.Name.Contains("ICollection");
+    }
+
+    private static string GenerateIncludesCode(Dictionary<string, IEnumerable<string>> mediaInfoPropertyNames, string propertyTypeName, string propertyName)
+    {
+        StringBuilder stringBuilder = new StringBuilder();
+        
+        if (mediaInfoPropertyNames.TryGetValue(propertyTypeName, out var mediaInfoNames))
+        {
+            foreach (var mediaInfoName in mediaInfoNames)
+            {
+                stringBuilder.AppendLine();
+                stringBuilder.Append(@$"            .Include(p => p.{propertyName})");
+                stringBuilder.AppendLine();
+                stringBuilder.Append(@$"                .ThenInclude(p => p.{mediaInfoName})");
+            }
+
+            return stringBuilder.ToString();
+        }
+
+        stringBuilder.AppendLine();
+        stringBuilder.Append(@$"            .Include(p => p.{propertyName})");
+
+        return stringBuilder.ToString();
     }
 }
