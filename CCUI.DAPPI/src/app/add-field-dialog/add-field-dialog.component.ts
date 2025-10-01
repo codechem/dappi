@@ -81,7 +81,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       label: 'Date',
       description: 'For selecting dates and times',
       value: 'date',
-      netType: 'DateTime',
+      netType: 'DateOnly',
     },
     {
       icon: 'perm_media',
@@ -282,7 +282,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
         label: 'Date',
         description: 'For selecting dates and times',
         value: 'date',
-        netType: 'DateTime',
+        netType: 'DateOnly',
       },
       {
         icon: 'perm_media',

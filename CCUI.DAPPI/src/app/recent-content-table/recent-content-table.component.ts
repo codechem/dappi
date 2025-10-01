@@ -37,7 +37,8 @@ export class RecentContentTableComponent implements OnInit, OnDestroy {
   fieldIcons: { [key: string]: string } = {
     text: 'text_fields',
     number: '123',
-    DateTime: 'calendar_today',
+    DateOnly: 'calendar_today',
+    DateTime: 'today',
     media: 'perm_media',
     link: 'link',
     file: 'insert_drive_file',
@@ -58,7 +59,8 @@ export class RecentContentTableComponent implements OnInit, OnDestroy {
   fieldTooltips: { [key: string]: string } = {
     text: 'Text Field',
     number: 'Number Field',
-    DateTime: 'Date Field',
+    DateOnly: 'Date Field',
+    DateTime: 'DateTime Field',
     media: 'Media Field',
     link: 'Link Field',
     file: 'File Field',
