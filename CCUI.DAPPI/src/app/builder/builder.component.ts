@@ -157,9 +157,13 @@ export class BuilderComponent implements OnInit, OnDestroy {
             type = 'Number';
             iconText = '123';
             break;
+          case 'DateOnly':
+            type = 'Date';
+            iconName = 'calendar_today';
+            break;
           case 'DateTime':
             type = 'DateTime';
-            iconName = 'event';
+            iconName = 'today';
             break;
           case 'bool':
             type = 'Checkbox';
