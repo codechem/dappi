@@ -7,6 +7,7 @@ namespace Dappi.HeadlessCms.Services
 {
     public class LocalStorageUploadService : IMediaUploadService
     {
+
         public async Task<MediaInfo> UploadMediaAsync(Guid id, IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -32,8 +33,8 @@ namespace Dappi.HeadlessCms.Services
             {
                 await file.CopyToAsync(fileStream);
             }
-
-            var relativePath = $"/uploads/{fileName}";
+            var ds = Path.DirectorySeparatorChar;
+            var relativePath = $"uploads{Path.DirectorySeparatorChar}{fileName}";
 
             var mediaInfo = new MediaInfo
             {
@@ -46,6 +47,22 @@ namespace Dappi.HeadlessCms.Services
 
 
             return mediaInfo;
+        }
+
+        public void DeleteMedia(MediaInfo media)
+        {
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", media.Url);
+            if (File.Exists(filePath))
+            {
+                try
+                {
+                    File.Delete(filePath);
+                }
+                catch (Exception ex)
+                {
+                    // Handle exception
+                }
+            }
         }
 
         private string GetContentType(string fileExtension)

@@ -8,6 +8,7 @@ using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Extensions;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
+using Dappi.HeadlessCms.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -138,7 +139,7 @@ namespace Dappi.HeadlessCms.Controllers
 
                 string dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
                 string pattern =
-                    $@"\s*public\s+DbSet<{modelName}>\s+{modelName}s\s+\{{\s+get;\s+set;\s+\}}";
+                    $@"\s*public\s+DbSet<{modelName}>\s+{modelName.PluralizeEN()}\s+\{{\s+get;\s+set;\s+\}}";
                 dbContextContent = Regex.Replace(
                     dbContextContent,
                     pattern,
@@ -223,13 +224,13 @@ namespace Dappi.HeadlessCms.Controllers
                         case "ManyToOne":
                             {
                                 HandleManyToOneRelationship(request, modelName, modelFilePath, existingCode, modelRelatedToFilePath, existingRelatedToCode);
-                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName}s", "OneToMany");
+                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.PluralizeEN()}", "OneToMany");
                                 break;
                             }
                         case "ManyToMany":
                             {
                                 HandleManyToManyRelationship(request, modelName, modelFilePath, existingCode, modelRelatedToFilePath, existingRelatedToCode);
-                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName}s", "ManyToMany");
+                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.PluralizeEN()}", "ManyToMany");
                                 break;
                             }
                     }
@@ -403,11 +404,11 @@ namespace Dappi.HeadlessCms.Controllers
             var updatedExistingCode = System.IO.File.ReadAllText(modelFilePath);
             UpdateClassCode(modelFilePath, updatedExistingCode, request.FieldName, $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
             
-            UpdateClassCode(modelRelatedToFilePath, existingRelatedToCode, request.RelatedRelationName ?? $"{modelName}s", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+            UpdateClassCode(modelRelatedToFilePath, existingRelatedToCode, request.RelatedRelationName ?? $"{modelName.PluralizeEN()}", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
 
             UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToOne",
                 request.FieldName,
-                request.RelatedRelationName ?? $"{modelName}s");
+                request.RelatedRelationName ?? $"{modelName.PluralizeEN()}");
         }
         
         private void HandleManyToManyRelationship(FieldRequest request, string modelName, string modelFilePath,
@@ -415,11 +416,11 @@ namespace Dappi.HeadlessCms.Controllers
         {
             UpdateClassCode(modelFilePath, existingCode, request.FieldName, $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>", $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
             
-            UpdateClassCode(modelRelatedToFilePath, existingRelatedToCode, request.RelatedRelationName ?? $"{modelName}s", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
+            UpdateClassCode(modelRelatedToFilePath, existingRelatedToCode, request.RelatedRelationName ?? $"{modelName.PluralizeEN()}", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
 
             UpdateDbContextWithRelationship(modelName, request.RelatedTo, "ManyToMany",
                 request.FieldName,
-                request.RelatedRelationName ?? $"{modelName}s");
+                request.RelatedRelationName ?? $"{modelName.PluralizeEN()}");
         }
 
         private void UpdateDbContextWithRelationship(string modelName, string relatedTo, string relationshipType,
@@ -499,13 +500,13 @@ namespace Dappi.HeadlessCms.Controllers
 
                 "manytoone" => $@"        modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
-            .WithMany(e => e.{relatedPropertyName ?? $"{modelName}s"})
+            .WithMany(e => e.{relatedPropertyName ?? $"{modelName.PluralizeEN()}"})
             .HasForeignKey(s => s.{propertyName}Id);",
 
                 "manytomany" => $@"        modelBuilder.Entity<{modelName}>()
             .HasMany(m => m.{propertyName})
             .WithMany(r => r.{relatedPropertyName})
-            .UsingEntity(j => j.ToTable(""{modelName}{relatedTo}s""));",
+            .UsingEntity(j => j.ToTable(""{modelName}{relatedTo.PluralizeEN()}""));",
 
                 _ => throw new ArgumentException($"Unsupported relationship type: {relationshipType}")
             };

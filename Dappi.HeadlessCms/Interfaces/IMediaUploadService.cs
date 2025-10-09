@@ -6,5 +6,6 @@ namespace Dappi.HeadlessCms.Interfaces
     public interface IMediaUploadService
     {
         public Task<MediaInfo> UploadMediaAsync(Guid id, IFormFile file);
+        public void DeleteMedia(MediaInfo media);
     }
 }

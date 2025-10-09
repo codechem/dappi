@@ -3,6 +3,7 @@ using System.Text;
 using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Generators;
 using Dappi.SourceGenerator.Models;
+using Dappi.SourceGenerator.Utilities;
 using Microsoft.CodeAnalysis;
 using static Dappi.SourceGenerator.Utilities.ClassPropertiesAnalyzer;
 
@@ -29,6 +30,7 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
             var authorizationTags = PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET");
             var mediaInfoUpdateCode =
                 GenerateMediaInfoCreationCode("model", "existingModel", mediaInfoPropertyNames[item.ClassName]);
+            (string includeCode , string removeCode) = GenerateDeleteCodeForMediaInfo(item);
             // TODO: Change to new project names
             var generatedCode = $@"using Microsoft.AspNetCore.Mvc;
 using {dbContextData.ResidingNamespace};
@@ -62,9 +64,9 @@ public partial class {item.ClassName}Controller(
 {{
     [HttpGet]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET")}
-    public async Task<IActionResult> Get{item.ClassName}s([FromQuery] {item.ClassName}Filter? filter)
+    public async Task<IActionResult> Get{item.ClassName.PluralizeEN()}([FromQuery] {item.ClassName}Filter? filter)
     {{
-        var query = dbContext.{item.ClassName}s.AsNoTracking().AsQueryable();
+        var query = dbContext.{item.ClassName.PluralizeEN()}.AsNoTracking().AsQueryable();
        
         query = query{includesCode};
 
@@ -102,7 +104,7 @@ public partial class {item.ClassName}Controller(
         if (id == Guid.Empty)
             return BadRequest();
 
-        var query = dbContext.{item.ClassName}s.AsNoTracking().AsQueryable();
+        var query = dbContext.{item.ClassName.PluralizeEN()}.AsNoTracking().AsQueryable();
        
         query = query{includesCode};
 
@@ -127,7 +129,7 @@ public partial class {item.ClassName}Controller(
 
 {collectionAddCode}
 
-        await dbContext.{item.ClassName}s.AddAsync(modelToSave);
+        await dbContext.{item.ClassName.PluralizeEN()}.AddAsync(modelToSave);
         await dbContext.SaveChangesAsync();
 
         return CreatedAtAction(nameof(Create), new {{ id = modelToSave.Id }}, modelToSave);
@@ -140,7 +142,7 @@ public partial class {item.ClassName}Controller(
         if (model == null || id == Guid.Empty)
             return BadRequest(""Invalid data provided."");
 
-        var existingModel = await dbContext.{item.ClassName}s{includesCode}
+        var existingModel = await dbContext.{item.ClassName.PluralizeEN()}{includesCode}
             .FirstOrDefaultAsync(p => p.Id == id);
             
         if (existingModel == null)
@@ -161,11 +163,12 @@ public partial class {item.ClassName}Controller(
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "DELETE")}
     public async Task<IActionResult> Delete(Guid id)
     {{
-        var model = dbContext.{item.ClassName}s.FirstOrDefault(p => p.Id == id);
+        {includeCode}
         if (model is null)
             return NotFound();
 
-        dbContext.{item.ClassName}s.Remove(model);
+        dbContext.{item.ClassName.PluralizeEN()}.Remove(model);
+        {removeCode}
         await dbContext.SaveChangesAsync();
 
         return Ok();
@@ -180,7 +183,7 @@ public partial class {item.ClassName}Controller(
 
         try
         {{
-            var entity = await dbContext.{item.ClassName}s.FindAsync(id);
+            var entity = await dbContext.{item.ClassName.PluralizeEN()}.FindAsync(id);
 
             if (entity == null)
                 return NotFound($""{item.ClassName} with ID {{id}} not found."");
@@ -253,12 +256,12 @@ public partial class {item.ClassName}Controller(
         {{
             var {propNameLower}Ids = model.{prop.PropertyName}.Select(m => m.Id).ToList();
             
-            var existing{entityType}s = await dbContext.{entityType}s
+            var existing{entityType.PluralizeEN()} = await dbContext.{entityType.PluralizeEN()}
                 .Where(e => {propNameLower}Ids.Contains(e.Id))
                 .ToListAsync();
             
             existingModel.{prop.PropertyName}.Clear();
-            existingModel.{prop.PropertyName} = existing{entityType}s;
+            existingModel.{prop.PropertyName} = existing{entityType.PluralizeEN()};
         }}");
         }
 
@@ -292,13 +295,13 @@ public partial class {item.ClassName}Controller(
         
         if ({propNameLower}Ids != null && {propNameLower}Ids.Count > 0)
         {{
-            var existing{entityType}s = await dbContext.{entityType}s
+            var existing{entityType.PluralizeEN()} = await dbContext.{entityType.PluralizeEN()}
                 .Where(e => {propNameLower}Ids.Contains(e.Id))
                 .ToListAsync();
 
-            if (existing{entityType}s.Any())
+            if (existing{entityType.PluralizeEN()}.Any())
             {{
-                modelToSave.{prop.PropertyName} = existing{entityType}s;
+                modelToSave.{prop.PropertyName} = existing{entityType.PluralizeEN()};
             }}
         }}");
         }
@@ -351,5 +354,24 @@ public partial class {item.ClassName}Controller(
         }
 
         return sb.ToString().TrimEnd();
+    }
+    
+    private static (string include, string remove) GenerateDeleteCodeForMediaInfo(SourceModel model)
+    {
+        var include = string.Empty;
+        var remove = string.Empty;
+        var mediaInfo = model.PropertiesInfos.FirstOrDefault(p => p.PropertyType.Name.Contains("MediaInfo"));
+        if (mediaInfo is not null)
+        {
+            include = $"var model = dbContext.{model.ClassName.PluralizeEN()}.Include(p => p.{mediaInfo.PropertyName}).FirstOrDefault(p => p.Id == id);";
+            remove = $@"dbContext.Set<MediaInfo>().Attach(model.{mediaInfo.PropertyName}); 
+        dbContext.Set<MediaInfo>().Remove(model.{mediaInfo.PropertyName});
+        uploadService.DeleteMedia(model.{mediaInfo.PropertyName});";
+            return (include, remove);
+        }
+
+        include = $"var model = dbContext.{model.ClassName.PluralizeEN()}.FirstOrDefault(p => p.Id == id);";
+
+        return (include, remove);
     }
 }
