@@ -38,5 +38,6 @@
             <PackageCopyToOutput>true</PackageCopyToOutput>
         </Content>
     </ItemGroup>
-    
+	<Import Project="..\Dappi.Shared\Dappi.Shared.projitems" Label="Shared" />
+
 </Project>

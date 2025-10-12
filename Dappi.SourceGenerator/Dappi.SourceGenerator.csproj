@@ -20,4 +20,7 @@
     <ItemGroup>
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
+
+	<Import Project="..\Dappi.Shared\Dappi.Shared.projitems" Label="Shared" />
+
 </Project>

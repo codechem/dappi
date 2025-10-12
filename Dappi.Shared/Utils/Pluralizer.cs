@@ -1,12 +1,13 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
 
-
-namespace Dappi.SourceGenerator.Utilities
+namespace Dappi.Shared.Utils
 {
-
     public static class Pluralizer
     {
-        private static readonly Dictionary<string, string> Irregular = new(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, string> Irregular = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             {"person", "people"},
             {"man", "men"},
@@ -35,23 +36,23 @@ namespace Dappi.SourceGenerator.Utilities
             {"datum", "data"}
         };
 
-        private static readonly HashSet<string> Uncountables = new(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> Uncountables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "sheep", "fish", "deer", "series", "species", "money", "rice", "information",
             "equipment", "knowledge", "traffic", "baggage", "furniture", "advice"
         };
 
-        private static readonly HashSet<string> F_Exceptions = new(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> F_Exceptions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "roof", "belief", "chef", "chief", "proof", "safe"
         };
 
-        private static readonly HashSet<string> O_Es_Exceptions = new(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> O_Es_Exceptions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "hero", "echo", "potato", "tomato", "torpedo", "veto"
         };
 
-        public static string PluralizeEN(this string word)
+        public static string Pluralize(this string word)
         {
             if (string.IsNullOrWhiteSpace(word))
             {
