@@ -33,7 +33,7 @@ namespace Dappi.HeadlessCms.Services
             {
                 await file.CopyToAsync(fileStream);
             }
-            var ds = Path.DirectorySeparatorChar;
+
             var relativePath = $"uploads{Path.DirectorySeparatorChar}{fileName}";
 
             var mediaInfo = new MediaInfo
