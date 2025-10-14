@@ -21,6 +21,9 @@
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
 
-	<Import Project="..\Dappi.Shared\Dappi.Shared.projitems" Label="Shared" />
-
+    <ItemGroup>
+        <Compile Include="..\Dappi.Core\**\*.cs" LinkBase="Common" />
+        <Compile Remove="..\Dappi.Core\**\*.AssemblyAttributes.cs" />
+        <Compile Remove="..\Dappi.Core\**\AssemblyInfo.cs" />
+    </ItemGroup>
 </Project>

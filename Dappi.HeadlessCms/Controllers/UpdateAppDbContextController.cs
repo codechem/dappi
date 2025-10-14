@@ -1,6 +1,6 @@
 using System.Reflection;
 using System.Text;
-using Dappi.Shared.Utils;
+using Dappi.Core.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dappi.HeadlessCms.Controllers;

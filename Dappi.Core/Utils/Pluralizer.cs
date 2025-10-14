@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Dappi.Shared.Utils
+namespace Dappi.Core.Utils
 {
     public static class Pluralizer
     {

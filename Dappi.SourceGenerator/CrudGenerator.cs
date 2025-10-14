@@ -3,7 +3,7 @@ using System.Text;
 using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Generators;
 using Dappi.SourceGenerator.Models;
-using Dappi.Shared.Utils;
+using Dappi.Core.Utils;
 using Microsoft.CodeAnalysis;
 using static Dappi.SourceGenerator.Utilities.ClassPropertiesAnalyzer;
 
