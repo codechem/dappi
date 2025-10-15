@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dappi.HeadlessCms", "..\Dap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dappi.SourceGenerator", "..\Dappi.SourceGenerator\Dappi.SourceGenerator.csproj", "{39F59607-D583-4EE4-A23A-F30DB21FB63C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dappi.Core", "..\Dappi.Core\Dappi.Core.csproj", "{14795895-628E-4115-8317-B5017C6CA765}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{39F59607-D583-4EE4-A23A-F30DB21FB63C}.Release|x64.Build.0 = Release|Any CPU
 		{39F59607-D583-4EE4-A23A-F30DB21FB63C}.Release|x86.ActiveCfg = Release|Any CPU
 		{39F59607-D583-4EE4-A23A-F30DB21FB63C}.Release|x86.Build.0 = Release|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Debug|x64.Build.0 = Debug|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Debug|x86.Build.0 = Debug|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Release|x64.ActiveCfg = Release|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Release|x64.Build.0 = Release|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Release|x86.ActiveCfg = Release|Any CPU
+		{14795895-628E-4115-8317-B5017C6CA765}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

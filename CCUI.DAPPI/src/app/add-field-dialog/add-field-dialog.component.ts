@@ -23,6 +23,7 @@ import { Subscription } from 'rxjs';
 import { EnumsResponse } from '../models/enums-response.model';
 import { EnumsService } from '../services/common/enums.service';
 import { ModelValidators } from '../validators/model-validators';
+import { Pluralizer } from '../utils/pluralizer'
 
 interface FieldType {
   icon: string;
@@ -186,12 +187,12 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.collectionTypes$.subscribe(
         (types) =>
-          (this.availableModels = types
-            .filter((m) => m != this.selectedType)
-            .map((type) => ({
-              label: type,
-              value: type,
-            })))
+        (this.availableModels = types
+          .filter((m) => m != this.selectedType)
+          .map((type) => ({
+            label: type,
+            value: type,
+          })))
       )
     );
 
@@ -223,17 +224,17 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     this.relationTypes = [
       {
         label: 'Many-to-many',
-        description: `Many ${this.selectedType}s can relate to many ${modelName}s`,
+        description: `Many ${Pluralizer.pluralizeEN(this.selectedType)} can relate to many ${Pluralizer.pluralizeEN(modelName)}`,
         value: 'many-to-many',
       },
       {
         label: 'One-to-many',
-        description: `One ${this.selectedType} can relate to many ${modelName}s`,
+        description: `One ${this.selectedType} can relate to many ${Pluralizer.pluralizeEN(modelName)}`,
         value: 'one-to-many',
       },
       {
         label: 'Many-to-one',
-        description: `Many ${this.selectedType}s can relate to one ${modelName}`,
+        description: `Many ${Pluralizer.pluralizeEN(this.selectedType)} can relate to one ${modelName}`,
         value: 'many-to-one',
       },
       {
