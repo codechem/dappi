@@ -17,7 +17,7 @@ namespace Dappi.HeadlessCms.Controllers
         public ContentTypeChangesController(
             IDbContextAccessor dappiDbContextAccessor,
             ILogger<ContentTypeChangesController> logger,
-            ICurrentSessionProvider currentSessionProvider)
+            ICurrentDappiSessionProvider currentSessionProvider)
         {
             _dbContext = dappiDbContextAccessor.DbContext;
             _logger = logger;

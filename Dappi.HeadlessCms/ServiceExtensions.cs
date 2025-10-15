@@ -23,38 +23,33 @@ public static class ServiceExtensions
     public static IServiceCollection AddDappi<TDbContext>(
         this IServiceCollection services,
         IConfiguration configuration,
-        Action<JsonOptions>? jsonOptions = null,
-        Action<DbContextOptionsBuilder>? dbContextOptions = null)
+        Action<JsonOptions>? jsonOptions = null)
         where TDbContext : DappiDbContext
     {
         services.AddScoped<AuditTrailInterceptor>();
-        
+
         services.AddDbContext<TDbContext>((provider, options) =>
         {
-            if (dbContextOptions != null)
-            {
-                dbContextOptions(options);
-            }
-            else
-            {
-                var dataSourceBuilder = new NpgsqlDataSourceBuilder(configuration.GetValue<string>(Constants.Configuration.PostgresConnection));
-                dataSourceBuilder.EnableDynamicJson();
+            var dataSourceBuilder =
+                new NpgsqlDataSourceBuilder(configuration.GetValue<string>(Constants.Configuration.PostgresConnection));
+            dataSourceBuilder.EnableDynamicJson();
 
-                var interceptor = provider.GetRequiredService<AuditTrailInterceptor>();
+            var interceptor = provider.GetRequiredService<AuditTrailInterceptor>();
 
-                options.UseNpgsql(dataSourceBuilder.Build())
-                    .AddInterceptors(interceptor);
-            }
+            options.UseNpgsql(dataSourceBuilder.Build())
+                .AddInterceptors(interceptor);
         });
-        
+
         services.AddScoped<IDbContextAccessor, DbContextAccessor<TDbContext>>();
 
         services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
 
         services.AddHttpContextAccessor();
+
+        services.AddScoped<ICurrentDappiSessionProvider, CurrentDappiSessionProvider>();
         
-        services.AddScoped<ICurrentSessionProvider, CurrentSessionProvider>();
-        
+        services.AddScoped<ICurrentExternalSessionProvider, CurrentExternalSessionProvider>();
+
         services.AddDappiSwaggerGen();
 
         services.AddControllers()

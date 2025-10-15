@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Dappi.HeadlessCms.Database.Interceptors
 {
-    public class AuditTrailInterceptor(ICurrentSessionProvider currentSessionProvider) : SaveChangesInterceptor
+    public class AuditTrailInterceptor(ICurrentExternalSessionProvider currentSessionProvider) : SaveChangesInterceptor
     {
         public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result,
             CancellationToken cancellationToken = new CancellationToken())
