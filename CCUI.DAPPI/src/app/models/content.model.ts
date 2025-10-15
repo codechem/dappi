@@ -20,6 +20,7 @@ export enum FieldType {
   'number',
   'checkbox',
   'date',
+  'dateonly',
   'select',
   'role',
   'enum',

@@ -79,7 +79,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     {
       icon: 'calendar_today',
       label: 'Date',
-      description: 'For selecting dates and times',
+      description: 'For selecting dates',
       value: 'date',
       netType: 'DateOnly',
     },

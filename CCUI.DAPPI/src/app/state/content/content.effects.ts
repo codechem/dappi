@@ -417,6 +417,7 @@ export class ContentEffects {
         'bool',
         'date',
         'datetime',
+        'dateonly',
         'time',
         'char',
         'enum',
@@ -462,6 +463,11 @@ export class ContentEffects {
     // Date/Time
     if (['date', 'datetime', 'time'].includes(lowerFieldType)) {
       return FieldType.date;
+    }
+
+    //DateOnly
+    if(lowerFieldType === 'dateonly'){
+      return FieldType.dateonly;
     }
 
     // Enum

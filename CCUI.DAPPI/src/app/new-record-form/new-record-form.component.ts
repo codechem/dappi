@@ -1,5 +1,5 @@
-import { Location } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Location , formatDate} from '@angular/common';
+import { Component, Inject, LOCALE_ID, OnDestroy, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -103,7 +103,8 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private location: Location,
     private store: Store,
-    private actions$: Actions
+    private actions$: Actions,
+    @Inject(LOCALE_ID)private locale: string
   ) {
     this.contentForm = this.fb.group({});
   }
@@ -582,7 +583,9 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
           } else {
             formData[key] = value;
           }
-        } else {
+        } else if(field?.type === FieldType.dateonly && value){
+          formData[key] = formatDate(value, "yyyy-MM-dd" , this.locale);
+        }else {
           formData[key] = value;
         }
       });

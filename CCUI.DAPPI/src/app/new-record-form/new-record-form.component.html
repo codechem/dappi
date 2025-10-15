@@ -49,6 +49,21 @@
                   <mat-datepicker #leftDatePicker></mat-datepicker>
                 </ng-container>
               }
+              @case (fieldType.dateonly) {
+                <ng-container>
+                  <input
+                    matInput
+                    [matDatepicker]="leftDatePicker"
+                    [placeholder]="field.placeholder || ''"
+                    [formControlName]="field.key"
+                    [required]="field.required"
+                  />
+                  <ng-container matSuffix>
+                    <mat-datepicker-toggle [for]="leftDatePicker"></mat-datepicker-toggle>
+                  </ng-container>
+                  <mat-datepicker #leftDatePicker></mat-datepicker>
+                </ng-container>
+              }
               @case (fieldType.select) {
                 <mat-select [formControlName]="field.key" [compareWith]="compareObjects">
                   @for (item of field.relatedItems || []; track item) {
@@ -213,6 +228,21 @@
                 />
               }
               @case (fieldType.date) {
+                <ng-container>
+                  <input
+                    matInput
+                    [matDatepicker]="rightDatePicker"
+                    [placeholder]="field.placeholder || ''"
+                    [formControlName]="field.key"
+                    [required]="field.required"
+                  />
+                  <ng-container matSuffix>
+                    <mat-datepicker-toggle [for]="rightDatePicker"></mat-datepicker-toggle>
+                  </ng-container>
+                  <mat-datepicker #rightDatePicker></mat-datepicker>
+                </ng-container>
+              }
+              @case (fieldType.dateonly) {
                 <ng-container>
                   <input
                     matInput
