@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using Dappi.HeadlessCms.Database;
+using Dappi.HeadlessCms.Database.Interceptors;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Npgsql;
 
 namespace Dappi.HeadlessCms;
 
@@ -21,18 +23,32 @@ public static class ServiceExtensions
     public static IServiceCollection AddDappi<TDbContext>(
         this IServiceCollection services,
         IConfiguration configuration,
-        Action<JsonOptions>? jsonOptions = null,
-        Action<DbContextOptionsBuilder>? dbContextOptions = null)
+        Action<JsonOptions>? jsonOptions = null)
         where TDbContext : DappiDbContext
     {
-        services.AddDbContext<TDbContext>(dbContextOptions ?? (builder =>
-            builder.UseNpgsql(configuration.GetValue<string>(Constants.Configuration.PostgresConnection))));
+        services.AddScoped<AuditTrailInterceptor>();
+
+        services.AddDbContext<TDbContext>((provider, options) =>
+        {
+            var dataSourceBuilder =
+                new NpgsqlDataSourceBuilder(configuration.GetValue<string>(Constants.Configuration.PostgresConnection));
+            dataSourceBuilder.EnableDynamicJson();
+
+            var interceptor = provider.GetRequiredService<AuditTrailInterceptor>();
+
+            options.UseNpgsql(dataSourceBuilder.Build())
+                .AddInterceptors(interceptor);
+        });
 
         services.AddScoped<IDbContextAccessor, DbContextAccessor<TDbContext>>();
 
         services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
 
-        services.AddScoped<ICurrentSessionProvider, CurrentSessionProvider>();
+        services.AddHttpContextAccessor();
+
+        services.AddScoped<ICurrentDappiSessionProvider, CurrentDappiSessionProvider>();
+        
+        services.AddScoped<ICurrentExternalSessionProvider, CurrentExternalSessionProvider>();
 
         services.AddDappiSwaggerGen();
 

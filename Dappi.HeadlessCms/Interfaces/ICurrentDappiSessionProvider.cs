@@ -1,6 +1,6 @@
 namespace Dappi.HeadlessCms.Interfaces
 {
-    public interface ICurrentSessionProvider
+    public interface ICurrentDappiSessionProvider
     {
         public Guid? GetCurrentUserId();
     }

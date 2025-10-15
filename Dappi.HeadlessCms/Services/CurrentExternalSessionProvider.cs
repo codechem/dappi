@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Http;
 
 namespace Dappi.HeadlessCms.Services
 {
-    public class CurrentSessionProvider : ICurrentSessionProvider
+    public class CurrentExternalSessionProvider : ICurrentExternalSessionProvider
     {
-        private readonly Guid? _currentUserId;
+        private readonly string? _currentUserId;
 
-        public CurrentSessionProvider(IHttpContextAccessor accessor)
+        public CurrentExternalSessionProvider(IHttpContextAccessor accessor)
         {
             var userId = accessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId is null)
@@ -16,9 +16,9 @@ namespace Dappi.HeadlessCms.Services
                 return;
             }
 
-            _currentUserId = Guid.TryParse(userId, out var guid) ? guid : null;
+            _currentUserId = userId;
         }
 
-        public Guid? GetCurrentUserId() => _currentUserId;
+        public string? GetCurrentUserId() => _currentUserId;
     }
 }

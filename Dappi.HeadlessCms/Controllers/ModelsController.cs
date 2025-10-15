@@ -18,7 +18,7 @@ namespace Dappi.HeadlessCms.Controllers
     [ApiController]
     public class ModelsController : ControllerBase
     {
-        private readonly ICurrentSessionProvider _currentSessionProvider;
+        private readonly ICurrentDappiSessionProvider _currentSessionProvider;
         private readonly DappiDbContext _dbContext;
 
         private readonly string _entitiesFolderPath = Path.Combine(
@@ -33,7 +33,7 @@ namespace Dappi.HeadlessCms.Controllers
 
         public ModelsController(
             IDbContextAccessor dappiDbContextAccessor,
-            ICurrentSessionProvider currentSessionProvider)
+            ICurrentDappiSessionProvider currentSessionProvider)
         {
             _currentSessionProvider = currentSessionProvider;
             _dbContext = dappiDbContextAccessor.DbContext;

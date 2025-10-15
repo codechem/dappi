@@ -9,10 +9,13 @@ namespace Dappi.HeadlessCms.Database
         : IdentityDbContext<DappiUser, DappiRole, string>(options)
     {
         public DbSet<ContentTypeChange> ContentTypeChanges { get; set; }
+        
+        public DbSet<AuditTrail> AuditTrails { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             new ContentTypeChangeConfiguration().Configure(builder.Entity<ContentTypeChange>());
+            new AuditTrailConfiguration().Configure(builder.Entity<AuditTrail>());
 
             base.OnModelCreating(builder);
         }
