@@ -11,7 +11,8 @@ namespace Dappi.SourceGenerator;
 [Generator]
 public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
 {
-    protected override void Execute(SourceProductionContext context, (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input)
+    protected override void Execute(SourceProductionContext context,
+        (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input)
     {
         var (compilation, collectedData) = input;
         var dbContextData = compilation.GetDbContextInformation();
@@ -26,6 +27,8 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
             var collectionUpdateCode = GenerateCollectionUpdateCode(item);
             var includesCode = GetIncludesIfAny(item.PropertiesInfos, mediaInfoPropertyNames, item.ClassName);
             var authorizationTags = PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET");
+            var mediaInfoUpdateCode =
+                GenerateMediaInfoCreationCode("model", "existingModel", mediaInfoPropertyNames[item.ClassName]);
             // TODO: Change to new project names
             var generatedCode = $@"using Microsoft.AspNetCore.Mvc;
 using {dbContextData.ResidingNamespace};
@@ -146,6 +149,7 @@ public partial class {item.ClassName}Controller(
         model.Id = id;
 
 {collectionUpdateCode}
+{mediaInfoUpdateCode}
 
         dbContext.Entry(existingModel).CurrentValues.SetValues(model);
 
@@ -305,11 +309,12 @@ public partial class {item.ClassName}Controller(
     private static bool ContainsCollectionTypeName(PropertyInfo x)
     {
         return x.PropertyType.Name.Contains("IEnumerable")
-        || x.PropertyType.Name.Contains("List")
-        || x.PropertyType.Name.Contains("ICollection");
+               || x.PropertyType.Name.Contains("List")
+               || x.PropertyType.Name.Contains("ICollection");
     }
 
-    private static Dictionary<string, IEnumerable<string>> GetMediaInfoPropertyNames(ImmutableArray<SourceModel> collectedData)
+    private static Dictionary<string, IEnumerable<string>> GetMediaInfoPropertyNames(
+        ImmutableArray<SourceModel> collectedData)
     {
         return collectedData
             .SelectMany(s => s.PropertiesInfos
@@ -319,4 +324,32 @@ public partial class {item.ClassName}Controller(
             .ToDictionary(g => g.Key, g => g.Select(item => item.PropertyName));
     }
 
+    private static string GenerateMediaInfoCreationCode(string updatedModelName, string existingModelName,
+        IEnumerable<string> mediaInfoPropertyNames)
+    {
+        var sb = new StringBuilder();
+        foreach (var prop in mediaInfoPropertyNames)
+        {
+            sb.AppendLine($@"
+        if ({updatedModelName}.{prop} != null) {{
+            var existing{prop} = await dbContext.Set<MediaInfo>().FirstOrDefaultAsync(media => media.Url.Equals({updatedModelName}.{prop}.Url) && media.FileSize == {updatedModelName}.{prop}.FileSize);
+            if (existing{prop} == null) {{
+                var mediaInfo = new MediaInfo
+                {{
+                   Url = {updatedModelName}.{prop}.Url,
+                   OriginalFileName = {updatedModelName}.{prop}.OriginalFileName,
+                   FileSize = {updatedModelName}.{prop}.FileSize,
+                   UploadDate = {updatedModelName}.{prop}.UploadDate
+                }};
+                await dbContext.Set<MediaInfo>().AddAsync(mediaInfo);
+                {existingModelName}.{prop} = mediaInfo;
+            }}
+            else {{
+                {existingModelName}.{prop} = existing{prop};
+            }}
+        }}");
+        }
+
+        return sb.ToString().TrimEnd();
+    }
 }
