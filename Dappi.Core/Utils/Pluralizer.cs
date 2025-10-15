@@ -74,6 +74,12 @@ namespace Dappi.Core.Utils
                 return MatchCase(word, irregular);
             }
 
+            // Ends with -is → -es
+            if (lower.EndsWith("is"))
+            {
+                return MatchCase(word, word.TakeCharsFromEnd(2) + "es");
+            }
+
             // Common endings: s, x, z, ch, sh → +es
             if (Regex.IsMatch(lower, "(s|x|z|ch|sh)$"))
             {
@@ -118,12 +124,6 @@ namespace Dappi.Core.Utils
                     return MatchCase(word, word + "es");
                 }
                 return MatchCase(word, word + "s");
-            }
-
-            // Ends with -is → -es
-            if (lower.EndsWith("is"))
-            {
-                return MatchCase(word, word.TakeCharsFromEnd(2) + "es");
             }
 
             // Default: add 's'
