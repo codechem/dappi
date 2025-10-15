@@ -6,7 +6,7 @@ namespace Dappi.HeadlessCms.Services
 {
     public class CurrentSessionProvider : ICurrentSessionProvider
     {
-        private readonly Guid? _currentUserId;
+        private readonly string? _currentUserId;
 
         public CurrentSessionProvider(IHttpContextAccessor accessor)
         {
@@ -16,9 +16,9 @@ namespace Dappi.HeadlessCms.Services
                 return;
             }
 
-            _currentUserId = Guid.TryParse(userId, out var guid) ? guid : null;
+            _currentUserId = userId;
         }
 
-        public Guid? GetCurrentUserId() => _currentUserId;
+        public string? GetCurrentUserId() => _currentUserId;
     }
 }

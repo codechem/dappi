@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using Dappi.HeadlessCms.Database;
+using Dappi.HeadlessCms.Database.Interceptors;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Npgsql;
 
 namespace Dappi.HeadlessCms;
 
@@ -25,15 +27,34 @@ public static class ServiceExtensions
         Action<DbContextOptionsBuilder>? dbContextOptions = null)
         where TDbContext : DappiDbContext
     {
-        services.AddDbContext<TDbContext>(dbContextOptions ?? (builder =>
-            builder.UseNpgsql(configuration.GetValue<string>(Constants.Configuration.PostgresConnection))));
+        services.AddScoped<AuditTrailInterceptor>();
+        
+        services.AddDbContext<TDbContext>((provider, options) =>
+        {
+            if (dbContextOptions != null)
+            {
+                dbContextOptions(options);
+            }
+            else
+            {
+                var dataSourceBuilder = new NpgsqlDataSourceBuilder(configuration.GetValue<string>(Constants.Configuration.PostgresConnection));
+                dataSourceBuilder.EnableDynamicJson();
 
+                var interceptor = provider.GetRequiredService<AuditTrailInterceptor>();
+
+                options.UseNpgsql(dataSourceBuilder.Build())
+                    .AddInterceptors(interceptor);
+            }
+        });
+        
         services.AddScoped<IDbContextAccessor, DbContextAccessor<TDbContext>>();
 
         services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
 
+        services.AddHttpContextAccessor();
+        
         services.AddScoped<ICurrentSessionProvider, CurrentSessionProvider>();
-
+        
         services.AddDappiSwaggerGen();
 
         services.AddControllers()

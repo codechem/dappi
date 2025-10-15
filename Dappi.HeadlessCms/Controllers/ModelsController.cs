@@ -286,7 +286,7 @@ namespace Dappi.HeadlessCms.Controllers
             {
                 ModelName = modelName,
                 Fields = JsonSerializer.Serialize(fields),
-                ModifiedBy = _currentSessionProvider.GetCurrentUserId() ?? Guid.Empty,
+                ModifiedBy = Guid.TryParse(_currentSessionProvider.GetCurrentUserId(), out var guid) ? guid : Guid.Empty,
             };
 
             _dbContext.ContentTypeChanges.Add(contentTypeChange);
