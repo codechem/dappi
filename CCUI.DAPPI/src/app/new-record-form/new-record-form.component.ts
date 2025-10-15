@@ -249,11 +249,9 @@ export class NewRecordFormComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.headers$.subscribe((fields) => {
         this.fields = fields;
-        console.log(FieldType);
         this.contentFields = this.fields
           .filter((field) => field.type !== FieldType.id)
           .map((field) => {
-            console.log(field);
             const contentField: ContentField = {
               key: field.key,
               label: field.label,
