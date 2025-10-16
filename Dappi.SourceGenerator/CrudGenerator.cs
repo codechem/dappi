@@ -28,8 +28,11 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
             var collectionUpdateCode = GenerateCollectionUpdateCode(item);
             var includesCode = GetIncludesIfAny(item.PropertiesInfos, mediaInfoPropertyNames, item.ClassName);
             var authorizationTags = PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET");
-            var mediaInfoUpdateCode =
-                GenerateMediaInfoCreationCode("model", "existingModel", mediaInfoPropertyNames[item.ClassName]);
+            var mediaInfoUpdateCode = string.Empty;
+            if (mediaInfoPropertyNames.ContainsKey(item.ClassName))
+            {
+                mediaInfoUpdateCode = GenerateMediaInfoCreationCode("model", "existingModel", mediaInfoPropertyNames[item.ClassName]);
+            }
             (string includeCode , string removeCode) = GenerateDeleteCodeForMediaInfo(item);
             // TODO: Change to new project names
             var generatedCode = $@"using Microsoft.AspNetCore.Mvc;
@@ -330,6 +333,10 @@ public partial class {item.ClassName}Controller(
     private static string GenerateMediaInfoCreationCode(string updatedModelName, string existingModelName,
         IEnumerable<string> mediaInfoPropertyNames)
     {
+        if (!mediaInfoPropertyNames.Any())
+        {
+            return string.Empty;
+        }
         var sb = new StringBuilder();
         foreach (var prop in mediaInfoPropertyNames)
         {
