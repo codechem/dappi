@@ -28,7 +28,10 @@ jobs:
 
     - name: Build SourceGenerator project
       run: dotnet build Dappi.SourceGenerator --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
-      
+    
+    - name: Build Core project
+      run: dotnet build Dappi.Core --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
+
     - name: Pack DependencyInjection
       run: dotnet pack Dappi.HeadlessCms --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
       
@@ -37,6 +40,9 @@ jobs:
 
     - name: Pack Cli
       run: dotnet pack Dappi.Cli --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
+
+    - name: Pack Core
+      run: dotnet pack Dappi.Core --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
              
              
     - name: Publish to GitHub Packages
