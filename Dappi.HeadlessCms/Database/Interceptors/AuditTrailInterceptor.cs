@@ -32,7 +32,7 @@ namespace Dappi.HeadlessCms.Database.Interceptors
         private void SetAuditableProperties(DbContext context, string? userId)
         {
             const string systemSource = "system";
-            foreach (var entry in context.ChangeTracker.Entries<IAuditableEntity>())
+            foreach (var entry in context.ChangeTracker.Entries<AuditableEntity>())
             {
                 switch (entry.State)
                 {
@@ -53,7 +53,7 @@ namespace Dappi.HeadlessCms.Database.Interceptors
         
         private List<AuditTrail> HandleAuditingBeforeSaveChanges(DbContext context, string? userId)
         {
-            var auditableEntries = context.ChangeTracker.Entries<IAuditableEntity>()
+            var auditableEntries = context.ChangeTracker.Entries<AuditableEntity>()
                 .Where(x => x.State is EntityState.Added or EntityState.Deleted or EntityState.Modified)
                 .Select(x => CreateTrailEntry(userId, x))
                 .ToList();
@@ -61,7 +61,7 @@ namespace Dappi.HeadlessCms.Database.Interceptors
             return auditableEntries;
         }
 
-        private static AuditTrail CreateTrailEntry(string? userId, EntityEntry<IAuditableEntity> entry)
+        private static AuditTrail CreateTrailEntry(string? userId, EntityEntry<AuditableEntity> entry)
         {
             var trailEntry = new AuditTrail
             {

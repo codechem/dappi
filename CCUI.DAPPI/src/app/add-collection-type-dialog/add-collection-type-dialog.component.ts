@@ -17,6 +17,7 @@ import { Store } from '@ngrx/store';
 import * as CollectionActions from '../state/collection/collection.actions';
 import { ModelValidators } from '../validators/model-validators';
 import { selectCollectionTypes } from '../state/collection/collection.selectors';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-add-collection-type-dialog',
@@ -29,6 +30,7 @@ import { selectCollectionTypes } from '../state/collection/collection.selectors'
     MatIconModule,
     FormsModule,
     ReactiveFormsModule,
+    MatCheckboxModule
   ],
   templateUrl: './add-collection-type-dialog.component.html',
   styleUrl: './add-collection-type-dialog.component.scss',
@@ -45,6 +47,7 @@ export class AddCollectionTypeDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {
     this.collectionForm = this.fb.group({
+      isAuditableEntity : [false , {}],
       displayName: [
         '',
         {
@@ -56,7 +59,7 @@ export class AddCollectionTypeDialogComponent {
           ],
           asyncValidators: [ModelValidators.collectionNameIsTaken(this.collectionTypes$)],
         },
-      ],
+      ]
     });
   }
 
@@ -67,10 +70,10 @@ export class AddCollectionTypeDialogComponent {
     }
 
     this.isSubmitting = true;
-
     this.store.dispatch(
       CollectionActions.addCollectionType({
         collectionType: this.collectionForm.value.displayName,
+        isAuditableEntity : this.collectionForm.value.isAuditableEntity
       })
     );
 

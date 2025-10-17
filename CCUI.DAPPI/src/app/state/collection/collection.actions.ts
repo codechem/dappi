@@ -53,7 +53,7 @@ export const loadFieldsFailure = createAction(
 
 export const addCollectionType = createAction(
   '[Collection] Add Collection Type',
-  props<{ collectionType: string }>()
+  props<{ collectionType: string  , isAuditableEntity:boolean}>()
 );
 
 export const addCollectionTypeSuccess = createAction(
