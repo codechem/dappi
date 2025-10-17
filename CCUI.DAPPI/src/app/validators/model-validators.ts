@@ -156,4 +156,19 @@ export class ModelValidators {
       );
     };
   }
+
+   static fieldNameSameAsModel(modelName:string) {
+    return (control: AbstractControl) : ValidationErrors | null => {
+      const value = control.value;
+
+      if (!value) {
+        return null;
+      }
+      if (value === modelName) {
+        return { fieldNameSameAsModel: true };
+      }
+
+      return null;
+      }
+  }
 }

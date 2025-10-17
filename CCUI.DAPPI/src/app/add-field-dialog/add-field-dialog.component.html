@@ -59,6 +59,9 @@
               {{ fieldForm.get('fieldName')?.value }}</mat-error
             >
           }
+          @if (fieldForm.get('fieldName')?.hasError('fieldNameSameAsModel')) {
+            <mat-error> Field name must be different than the model</mat-error>
+          }
         </mat-form-field>
         <div class="required-field">
           <mat-checkbox formControlName="requiredField">Required field</mat-checkbox>

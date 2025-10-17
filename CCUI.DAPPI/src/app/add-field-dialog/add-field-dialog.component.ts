@@ -157,6 +157,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
             Validators.maxLength(50),
             ModelValidators.pascalCase,
             ModelValidators.reservedKeyword,
+            ModelValidators.collectionNameIsTaken
           ],
           asyncValidators: [ModelValidators.fieldNameIsTaken(this.selectedTypeFields$)],
         },
@@ -179,11 +180,9 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     this.enumsService.getEnums().subscribe((result: EnumsResponse) => {
       this.availableEnums = Object.keys(result);
     });
-
     this.fieldForm.get('relatedModel')?.valueChanges.subscribe((value) => {
       this.selectedEnum = value;
     });
-
     this.subscription.add(
       this.collectionTypes$.subscribe(
         (types) =>
@@ -214,6 +213,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
         this.updateRelationTypes();
       })
     );
+    this.fieldForm.get('fieldName')?.addValidators(ModelValidators.fieldNameSameAsModel(this.selectedType));
     this.fieldForm.get('relatedModel')?.setValidators([Validators.required]);
     this.updateRelationTypes();
   }
