@@ -184,6 +184,11 @@ namespace Dappi.HeadlessCms.Controllers
                 return BadRequest($"Property name {request.FieldName} is invalid");
             }
 
+            if (request.FieldName == modelName)
+            {
+                return BadRequest($"Property name {request.FieldName} cannot be the same as the model name.");
+            }
+
             try
             {
                 var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
