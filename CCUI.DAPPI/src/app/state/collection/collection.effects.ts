@@ -199,7 +199,7 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.addCollectionType),
       switchMap((action) => {
-        const payload = { modelName: action.collectionType };
+        const payload = { modelName: action.collectionType , isAuditableEntity : action.isAuditableEntity};
         return this.http.post(`${BASE_API_URL}models`, payload).pipe(
           switchMap(() =>
             this.http.get(`${BASE_API_URL}update-db-context`).pipe(

@@ -93,7 +93,7 @@ namespace Dappi.HeadlessCms.Controllers
 
                 var fileName = $"{modelType.Name}.cs";
                 var filePath = Path.Combine(_entitiesFolderPath, fileName);
-                var classCode = GenerateClassCode(modelType);
+                var classCode = GenerateClassCode(modelType , request.IsAuditableEntity);
 
                 System.IO.File.WriteAllText(filePath, classCode);
 
@@ -599,7 +599,7 @@ namespace Dappi.HeadlessCms.Controllers
             }
         }
 
-        private static string GenerateClassCode(Type modelType)
+        private static string GenerateClassCode(Type modelType , bool isAuditableEntity)
         {
             var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
             var assemblyName = assembly.GetName().Name;
@@ -613,7 +613,14 @@ namespace Dappi.HeadlessCms.Controllers
             sb.AppendLine($"namespace {assemblyName}.Entities;");
             sb.AppendLine();
             sb.AppendLine("[CCController]");
-            sb.AppendLine($"public class {modelType.Name}");
+            if (isAuditableEntity)
+            {
+                sb.AppendLine($"public class {modelType.Name} : {nameof(AuditableEntity)}");
+            }
+            else
+            {
+                sb.AppendLine($"public class {modelType.Name}");
+            }
             sb.AppendLine("{");
             sb.AppendLine("    [Key]");
             sb.AppendLine("    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]");
