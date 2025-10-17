@@ -70,7 +70,6 @@ export class AddCollectionTypeDialogComponent {
     }
 
     this.isSubmitting = true;
-    console.log(this.collectionForm.value);
     this.store.dispatch(
       CollectionActions.addCollectionType({
         collectionType: this.collectionForm.value.displayName,
