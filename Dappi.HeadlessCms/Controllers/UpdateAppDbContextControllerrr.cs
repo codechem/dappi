@@ -6,7 +6,7 @@ namespace Dappi.HeadlessCms.Controllers;
 [ApiExplorerSettings(GroupName = "Toolkit")]
 [Route("api/update-db-context")]
 [ApiController]
-public class UpdateAppDbContextController(DbContextEditor dbContextEditor, DomainModelEditor domainModelEditor)
+public class UpdateAppDbContextControllerrr(DbContextEditor dbContextEditor, DomainModelEditor domainModelEditor)
     : ControllerBase
 {
     [HttpGet]

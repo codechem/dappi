@@ -17,7 +17,7 @@ namespace Dappi.HeadlessCms.Controllers;
 [ApiExplorerSettings(GroupName = "Toolkit")]
 [Route("api/models")]
 [ApiController]
-public class ModelsController : ControllerBase
+public class ModelsControllerrr : ControllerBase
 {
     private readonly ICurrentSessionProvider _currentSessionProvider;
     private readonly DbContextEditor _dbContextEditor;
@@ -34,7 +34,7 @@ public class ModelsController : ControllerBase
         "Controllers"
     );
 
-    public ModelsController(
+    public ModelsControllerrr(
         IDbContextAccessor dappiDbContextAccessor,
         ICurrentSessionProvider currentSessionProvider,
         DbContextEditor dbContextEditor,
