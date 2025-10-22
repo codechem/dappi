@@ -23,4 +23,11 @@ internal static class Constants
         public static readonly string[] All = { Admin, Maintainer, User };
     }
 
+    public static class Relations
+    {
+        public const string OneToOne = "OneToOne";
+        public const string OneToMany = "OneToMany";
+        public const string ManyToOne = "ManyToOne";
+        public const string ManyToMany = "ManyToMany";
+    }
 }

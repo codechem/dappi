@@ -167,11 +167,13 @@ public partial class {item.ClassName}Controller(
     public async Task<IActionResult> Delete(Guid id)
     {{
         {includeCode}
+
         if (model is null)
             return NotFound();
 
         dbContext.{item.ClassName.Pluralize()}.Remove(model);
         {removeCode}
+
         await dbContext.SaveChangesAsync();
 
         return Ok();
@@ -365,20 +367,23 @@ public partial class {item.ClassName}Controller(
     
     private static (string include, string remove) GenerateDeleteCodeForMediaInfo(SourceModel model)
     {
-        var include = string.Empty;
-        var remove = string.Empty;
-        var mediaInfo = model.PropertiesInfos.FirstOrDefault(p => p.PropertyType.Name.Contains("MediaInfo"));
-        if (mediaInfo is not null)
+
+        var includeCode = new StringBuilder($"var model = dbContext.{model.ClassName.Pluralize()} \n");
+        var removeCode = new StringBuilder();
+        var mediaInfos = model.PropertiesInfos.Where(p => p.PropertyType.Name.Contains("MediaInfo")).ToList();
+        if (mediaInfos.Any())
         {
-            include = $"var model = dbContext.{model.ClassName.Pluralize()}.Include(p => p.{mediaInfo.PropertyName}).FirstOrDefault(p => p.Id == id);";
-            remove = $@"dbContext.Set<MediaInfo>().Attach(model.{mediaInfo.PropertyName}); 
+            foreach (var mediaInfo in mediaInfos)
+            {
+                includeCode.AppendLine($@"                  .Include(p => p.{mediaInfo.PropertyName})");
+                removeCode.AppendLine($@"
+        dbContext.Set<MediaInfo>().Attach(model.{mediaInfo.PropertyName}); 
         dbContext.Set<MediaInfo>().Remove(model.{mediaInfo.PropertyName});
-        uploadService.DeleteMedia(model.{mediaInfo.PropertyName});";
-            return (include, remove);
+        uploadService.DeleteMedia(model.{mediaInfo.PropertyName});");
+            }
         }
 
-        include = $"var model = dbContext.{model.ClassName.Pluralize()}.FirstOrDefault(p => p.Id == id);";
-
-        return (include, remove);
+        includeCode.AppendLine("                  .FirstOrDefault(p => p.Id == id);");
+        return (includeCode.ToString().TrimEnd(), removeCode.ToString().TrimEnd());
     }
 }
