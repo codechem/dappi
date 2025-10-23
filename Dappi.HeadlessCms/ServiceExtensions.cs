@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
 using Dappi.HeadlessCms.Database;
@@ -5,6 +6,7 @@ using Dappi.HeadlessCms.Database.Interceptors;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
+using Dappi.HeadlessCms.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -58,7 +60,18 @@ public static class ServiceExtensions
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
             }));
-
+        
+        var dbContextType = typeof(TDbContext);
+        var location = Assembly.GetAssembly(dbContextType)?.Location;
+        
+        services.AddScoped<DbContextEditor>((_) => new DbContextEditor(
+            Path.Combine(Directory.GetCurrentDirectory(), "Data"),
+            dbContextName: dbContextType.Name));
+        
+        services.AddScoped<DomainModelEditor>(_ => new DomainModelEditor(Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "Entities"
+        )));
         services.AddEndpointsApiExplorer();
 
         return services;
