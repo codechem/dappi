@@ -216,25 +216,25 @@ namespace Dappi.HeadlessCms.Controllers
                     {
                         case Constants.Relations.OneToOne:
                             {
-                                await HandleOneToOneRelationship(request, modelName, modelFilePath, existingCode, modelRelatedToFilePath, existingRelatedToCode);
+                                await HandleOneToOneRelationship(request, modelName);
                                 relatedFieldDict.Add(request.RelatedRelationName ?? modelName, request.FieldType);
                                 break;
                             }
                         case Constants.Relations.OneToMany: 
                             {
-                                await HandleOneToManyRelationship(request, modelName, modelFilePath, existingCode, modelRelatedToFilePath, existingRelatedToCode);
+                                await HandleOneToManyRelationship(request, modelName);
                                 relatedFieldDict.Add(request.RelatedRelationName ?? modelName, Constants.Relations.ManyToOne);
                                 break;
                             }
                         case Constants.Relations.ManyToOne:
                             {
-                                await HandleManyToOneRelationship(request, modelName, modelFilePath, existingCode, modelRelatedToFilePath, existingRelatedToCode);
+                                await HandleManyToOneRelationship(request, modelName);
                                 relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}", Constants.Relations.OneToMany);
                                 break;
                             }
                         case Constants.Relations.ManyToMany:
                             {
-                                await HandleManyToManyRelationship(request, modelName, modelFilePath, existingCode, modelRelatedToFilePath, existingRelatedToCode);
+                                await HandleManyToManyRelationship(request, modelName);
                                 relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}", Constants.Relations.ManyToMany);
                                 break;
                             }
@@ -346,242 +346,58 @@ namespace Dappi.HeadlessCms.Controllers
             }
         }
 
-        private async Task HandleOneToOneRelationship(FieldRequest request, string modelName, string modelFilePath,
-            string existingCode, string modelRelatedToFilePath, string existingRelatedToCode)
+        private async Task HandleOneToOneRelationship(FieldRequest request, string modelName)
         {
             var foreignKeyRelatedName = $"{modelName}Id";
             _domainModelEditor.GenerateProperty(request.FieldName, request.RelatedTo!, modelName, request.IsRequired);
-            // UpdateClassCode(
-            //     modelFilePath,
-            //     existingCode,
-            //     request.FieldName,
-            //     $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}",
-            //     "",
-            //     request.IsRequired
-            // );
             
             _domainModelEditor.GenerateProperty(request.RelatedRelationName ?? modelName, modelName , request.RelatedTo!, request.IsRequired);
-            // UpdateClassCode(modelRelatedToFilePath,
-            //     existingRelatedToCode,
-            //     request.RelatedRelationName ?? modelName,
-            //     $"{modelName}{(!request.IsRequired ? "?" : "")}",
-            //     "",
-            //     request.IsRequired);
-
-            var updatedExistingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
             _domainModelEditor.GenerateProperty(foreignKeyRelatedName,nameof(Guid) , request.RelatedTo! ,request.IsRequired);
-            // UpdateClassCode(modelRelatedToFilePath,
-            //     updatedExistingRelatedToCode,
-            //     foreignKeyRelatedName,
-            //     $"Guid{(!request.IsRequired ? "?" : "")}",
-            //     "",
-            //     request.IsRequired);
 
             await _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.OneToOne,
                 request.FieldName,
                 request.RelatedRelationName ?? modelName);
         }
 
-        private async Task HandleOneToManyRelationship(FieldRequest request, string modelName, string modelFilePath,
-            string existingCode, string modelRelatedToFilePath, string existingRelatedToCode)
+        private async Task HandleOneToManyRelationship(FieldRequest request, string modelName)
         {
             var foreignKeyName = $"{request.RelatedRelationName ?? modelName}Id";
             
             _domainModelEditor.GenerateProperty(request.FieldName,$"ICollection<{request.RelatedTo}>", modelName, request.IsRequired);
-            // UpdateClassCode(modelFilePath, existingCode, request.FieldName,
-            //     $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>",
-            //     $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
-            
             _domainModelEditor.GenerateProperty(foreignKeyName, nameof(Guid), request.RelatedTo, request.IsRequired);
-            // UpdateClassCode(modelRelatedToFilePath, existingRelatedToCode, foreignKeyName,
-            //     $"Guid{(!request.IsRequired ? "?" : "")}",
-            //     "", request.IsRequired);
 
-            var updatedExistingRelatedToCode = System.IO.File.ReadAllText(modelRelatedToFilePath);
             _domainModelEditor.GenerateProperty(request.RelatedRelationName ?? modelName, modelName,request.RelatedTo, request.IsRequired);
-            // UpdateClassCode(modelRelatedToFilePath, updatedExistingRelatedToCode, request.RelatedRelationName ?? modelName,
-            //     $"{modelName}{(!request.IsRequired ? "?" : "")}",
-            //     "", request.IsRequired);
+           
 
             await _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo, Constants.Relations.OneToMany,
                 request.FieldName,
                 request.RelatedRelationName ?? modelName);
         }
 
-        private async Task HandleManyToOneRelationship(FieldRequest request, string modelName, string modelFilePath,
-            string existingCode, string modelRelatedToFilePath, string existingRelatedToCode)
+        private async Task HandleManyToOneRelationship(FieldRequest request, string modelName)
         {
             var foreignKeyName = $"{request.FieldName}Id";
-            // UpdateClassCode(modelFilePath, existingCode, foreignKeyName, $"Guid{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
             _domainModelEditor.GenerateProperty(foreignKeyName , nameof(Guid) , modelName, request.IsRequired);
 
-            var updatedExistingCode = System.IO.File.ReadAllText(modelFilePath);
-            // UpdateClassCode(modelFilePath, updatedExistingCode, request.FieldName, $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", "", request.IsRequired);
             _domainModelEditor.GenerateProperty(request.FieldName,request.RelatedTo!, modelName, request.IsRequired );
 
             _domainModelEditor.GenerateProperty(request.RelatedRelationName ?? modelName.Pluralize() , $"ICollection<{modelName}>", request.RelatedTo, request.IsRequired);
-            // UpdateClassCode(modelRelatedToFilePath, existingRelatedToCode, request.RelatedRelationName ?? $"{modelName.Pluralize()}", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
 
            await _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo, Constants.Relations.ManyToOne,
                 request.FieldName,
                 request.RelatedRelationName ?? $"{modelName.Pluralize()}");
         }
 
-        private async Task HandleManyToManyRelationship(FieldRequest request, string modelName, string modelFilePath,
-            string existingCode, string modelRelatedToFilePath, string existingRelatedToCode)
+        private async Task HandleManyToManyRelationship(FieldRequest request, string modelName)
         {
             _domainModelEditor.GenerateProperty(request.FieldName, $"ICollection<{request.RelatedTo}>", modelName, request.IsRequired);
-            // UpdateClassCode(modelFilePath, existingCode, request.FieldName, $"ICollection<{request.RelatedTo}{(!request.IsRequired ? "?" : "")}>", $"{request.RelatedTo}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
 
             _domainModelEditor.GenerateProperty(request.RelatedRelationName ?? $"{modelName.Pluralize()}", $"ICollection<{modelName}>", request.RelatedTo, request.IsRequired);
-            // UpdateClassCode(modelRelatedToFilePath, existingRelatedToCode, request.RelatedRelationName ?? $"{modelName.Pluralize()}", $"ICollection<{modelName}{(!request.IsRequired ? "?" : "")}>", $"{modelName}{(!request.IsRequired ? "?" : "")}", request.IsRequired);
             
             await _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo, Constants.Relations.ManyToMany,
                 request.FieldName,
                 request.RelatedRelationName ?? $"{modelName.Pluralize()}");
         }
-
-//         private void UpdateDbContextWithRelationship(string modelName, string relatedTo, string relationshipType,
-//             string propertyName, string? relatedPropertyName = null)
-//         {
-//             var dbContextFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "AppDbContext.cs");
-//
-//             if (!System.IO.File.Exists(dbContextFilePath))
-//             {
-//                 throw new FileNotFoundException($"DbContext file not found at {dbContextFilePath}");
-//             }
-//
-//             var dbContextContent = System.IO.File.ReadAllText(dbContextFilePath);
-//             var configCode = GenerateRelationshipConfiguration(modelName, relatedTo, relationshipType, propertyName,
-//                 relatedPropertyName);
-//
-//             var onModelCreatingIndex =
-//                 dbContextContent.IndexOf("protected override void OnModelCreating(ModelBuilder modelBuilder)",
-//                     StringComparison.InvariantCulture);
-//
-//             if (onModelCreatingIndex == -1)
-//             {
-//                 var lastClosingBrace = dbContextContent.LastIndexOf("}", StringComparison.InvariantCulture);
-//                 var onModelCreatingMethod = $@"
-//     protected override void OnModelCreating(ModelBuilder modelBuilder)
-//     {{
-// {configCode}
-//
-//         base.OnModelCreating(modelBuilder);
-//     }}
-// ";
-//                 dbContextContent = dbContextContent.Insert(lastClosingBrace, onModelCreatingMethod);
-//             }
-//             else
-//             {
-//                 const string baseCall = "base.OnModelCreating(modelBuilder);";
-//                 var baseCallIndex =
-//                     dbContextContent.IndexOf(baseCall, onModelCreatingIndex, StringComparison.InvariantCulture);
-//
-//                 if (baseCallIndex == -1)
-//                 {
-//                     var methodEndPosition = FindMethodEndPosition(dbContextContent, onModelCreatingIndex);
-//                     var configCodeWithBase = $@"
-// {configCode}
-//
-//         base.OnModelCreating(modelBuilder);
-// ";
-//                     dbContextContent = dbContextContent.Insert(methodEndPosition, configCodeWithBase);
-//                 }
-//                 else
-//                 {
-//                     var configCodeWithSpacing = $@"
-// {configCode}
-// ";
-//                     dbContextContent = dbContextContent.Insert(baseCallIndex, configCodeWithSpacing);
-//                 }
-//             }
-//
-//             System.IO.File.WriteAllText(dbContextFilePath, dbContextContent);
-//         }
-
-        // private static string GenerateRelationshipConfiguration(string modelName, string relatedTo,
-        //     string relationshipType,
-        //     string propertyName, string? relatedPropertyName = null)
-        // {
-        //     return relationshipType switch
-        //     {
-        //         Constants.Relations.OneToOne => $@"        modelBuilder.Entity<{modelName}>()
-        //     .HasOne<{relatedTo}>(s => s.{propertyName})
-        //     .WithOne(e => e.{relatedPropertyName ?? modelName})
-        //     .HasForeignKey<{relatedTo}>(ad => ad.{relatedPropertyName ?? modelName}Id);",
-        //
-        //         Constants.Relations.OneToMany => $@"        modelBuilder.Entity<{modelName}>()
-        //     .HasMany<{relatedTo}>(s => s.{propertyName})
-        //     .WithOne(e => e.{relatedPropertyName ?? modelName})
-        //     .HasForeignKey(s => s.{relatedPropertyName ?? modelName}Id);",
-        //
-        //         Constants.Relations.ManyToOne => $@"        modelBuilder.Entity<{modelName}>()
-        //     .HasOne<{relatedTo}>(s => s.{propertyName})
-        //     .WithMany(e => e.{relatedPropertyName ?? $"{modelName.Pluralize()}"})
-        //     .HasForeignKey(s => s.{propertyName}Id);",
-        //
-        //         Constants.Relations.ManyToMany => $@"        modelBuilder.Entity<{modelName}>()
-        //     .HasMany(m => m.{propertyName})
-        //     .WithMany(r => r.{relatedPropertyName})
-        //     .UsingEntity(j => j.ToTable(""{modelName}{relatedTo.Pluralize()}""));",
-        //
-        //         _ => throw new ArgumentException($"Unsupported relationship type: {relationshipType}")
-        //     };
-        // }
-
-        // private static int FindMethodEndPosition(string content, int methodStartIndex)
-        // {
-        //     var methodStartBrace = content.IndexOf('{', methodStartIndex);
-        //     var currentPos = methodStartBrace + 1;
-        //     var openBraces = 1;
-        //
-        //     while (openBraces > 0 && currentPos < content.Length)
-        //     {
-        //         if (content[currentPos] == '{')
-        //             openBraces++;
-        //         else if (content[currentPos] == '}')
-        //             openBraces--;
-        //
-        //         if (openBraces > 0)
-        //             currentPos++;
-        //     }
-        //
-        //     return currentPos;
-        // }
-
-        // private static string AddFieldToClass(
-        //     string classCode,
-        //     string fieldName,
-        //     string fieldType,
-        //     string collectionType = "",
-        //     bool isRequired = false
-        // )
-        // {
-        //     const string requiredAttribute = "    [Required]";
-        //     var propertyCode = fieldType.Contains("ICollection")
-        //         ? $"    public {fieldType} {fieldName} {{ get; set; }} = new List<{collectionType}>();"
-        //         : $"    public {fieldType} {fieldName} {{ get; set; }}";
-        //
-        //     var classCodeBuilder = new StringBuilder();
-        //
-        //     if (isRequired)
-        //     {
-        //         classCodeBuilder.AppendLine(requiredAttribute);
-        //     }
-        //
-        //     classCodeBuilder.AppendLine(propertyCode);
-        //
-        //     var newPropertyCode = classCodeBuilder.ToString();
-        //     var insertPosition = classCode.LastIndexOf("}", StringComparison.Ordinal);
-        //     var updatedCode = classCode.Insert(
-        //         insertPosition,
-        //         newPropertyCode + Environment.NewLine
-        //     );
-        //
-        //     return updatedCode;
-        // }
-
         private static Type? CreateModel(string modelName)
         {
             try
@@ -615,38 +431,6 @@ namespace Dappi.HeadlessCms.Controllers
                 return null;
             }
         }
-
-        // private static string GenerateClassCode(Type modelType , bool isAuditableEntity)
-        // {
-        //     var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
-        //     var assemblyName = assembly.GetName().Name;
-        //     var sb = new StringBuilder();
-        //
-        //     sb.AppendLine("using System.ComponentModel.DataAnnotations;");
-        //     sb.AppendLine("using System.ComponentModel.DataAnnotations.Schema;");
-        //     sb.AppendLine("using Dappi.SourceGenerator.Attributes;");
-        //     sb.AppendLine("using Dappi.HeadlessCms.Models;");
-        //     sb.AppendLine();
-        //     sb.AppendLine($"namespace {assemblyName}.Entities;");
-        //     sb.AppendLine();
-        //     sb.AppendLine("[CCController]");
-        //     if (isAuditableEntity)
-        //     {
-        //         sb.AppendLine($"public class {modelType.Name} : {nameof(IAuditableEntity)}");
-        //     }
-        //     else
-        //     {
-        //         sb.AppendLine($"public class {modelType.Name}");
-        //     }
-        //     sb.AppendLine("{");
-        //     sb.AppendLine("    [Key]");
-        //     sb.AppendLine("    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]");
-        //     sb.AppendLine("    public Guid Id { get; set; }");
-        //     sb.AppendLine();
-        //     sb.AppendLine("}");
-        //
-        //     return sb.ToString();
-        // }          
         private static List<FieldsInfo> ExtractFieldsFromModel(string classCode)
         {
             var auditableProps = new List<string>{ "CreatedAtUtc", "UpdatedAtUtc" , "CreatedBy" , "UpdatedBy"};
@@ -685,19 +469,5 @@ namespace Dappi.HeadlessCms.Controllers
 
             return fieldList;
         }
-
-        // private static void UpdateClassCode(string modelFilePath, string existingClassCode, string newFieldName,
-        //     string newFieldType, string collectionType = "", bool isRequired = false)
-        // {
-        //     var updatedCode = AddFieldToClass(
-        //         existingClassCode,
-        //         newFieldName,
-        //         newFieldType,
-        //         collectionType,
-        //         isRequired
-        //     );
-        //     System.IO.File.WriteAllText(modelFilePath, updatedCode);
-        // }
-       
     }
 }
