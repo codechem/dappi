@@ -164,6 +164,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       ],
       requiredField: [false],
       relatedModel: [''],
+      relatedRelationName : ['']
     });
   }
 
