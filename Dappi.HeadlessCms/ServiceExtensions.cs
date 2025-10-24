@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
+using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Database.Interceptors;
 using Dappi.HeadlessCms.Interfaces;
@@ -8,6 +9,7 @@ using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
 using Dappi.HeadlessCms.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -78,7 +80,8 @@ public static class ServiceExtensions
 
     public static IServiceCollection AddDappiAuthentication<TUser, TRole, TContext>(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        Action<JwtBearerOptions>? externalJwtBearerOptions = null)
         where TUser : IdentityUser, new()
         where TRole : IdentityRole, new()
         where TContext : DbContext
@@ -107,52 +110,67 @@ public static class ServiceExtensions
         var key = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ??
                                          throw new InvalidOperationException("JWT SecretKey is not configured"));
 
-        services.AddAuthentication(options =>
+        var authenticationBuilder = services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        });
+        
+        authenticationBuilder.AddJwtBearer(DappiAuthenticationSchemes.DappiAuthenticationScheme, options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
             {
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtSettings["Issuer"],
+                ValidAudience = jwtSettings["Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ClockSkew = TimeSpan.Zero
+            };
+
+            options.Events = new JwtBearerEvents
             {
-                options.TokenValidationParameters = new TokenValidationParameters
+                OnAuthenticationFailed = context =>
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSettings["Issuer"],
-                    ValidAudience = jwtSettings["Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                options.Events = new JwtBearerEvents
-                {
-                    OnAuthenticationFailed = context =>
+                    if (context.Exception is SecurityTokenExpiredException)
                     {
-                        if (context.Exception is SecurityTokenExpiredException)
-                        {
-                            context.Response.Headers.Add("Token-Expired", "true");
-                        }
-
-                        return Task.CompletedTask;
-                    },
-                    OnChallenge = context =>
-                    {
-                        context.HandleResponse();
-                        context.Response.StatusCode = 401;
-                        context.Response.ContentType = "application/json";
-
-                        var result =
-                            System.Text.Json.JsonSerializer.Serialize(new { error = "You are not authorized" });
-                        return context.Response.WriteAsync(result);
+                        context.Response.Headers.Add("Token-Expired", "true");
                     }
-                };
-            });
+
+                    return Task.CompletedTask;
+                },
+                OnChallenge = context =>
+                {
+                    context.HandleResponse();
+                    context.Response.StatusCode = 401;
+                    context.Response.ContentType = "application/json";
+
+                    var result =
+                        System.Text.Json.JsonSerializer.Serialize(new { error = "You are not authorized" });
+                    return context.Response.WriteAsync(result);
+                }
+            };
+        });
+
+        if (externalJwtBearerOptions is not null)
+        {
+            authenticationBuilder.AddJwtBearer(DappiAuthenticationSchemes.ExternalAuthenticationScheme, externalJwtBearerOptions);
+        }
 
         services.AddScoped<TokenService<TUser>>();
-        services.AddAuthorization();
+        
+        services.AddAuthorization(opts =>
+        {
+            var defaultPolicy = new AuthorizationPolicyBuilder(DappiAuthenticationSchemes.DappiAuthenticationScheme,
+                DappiAuthenticationSchemes.ExternalAuthenticationScheme)
+                .RequireAuthenticatedUser()
+                .Build();
+            
+            opts.DefaultPolicy = defaultPolicy;
+        });
 
         return services;
     }
