@@ -1,3 +1,4 @@
+using System.Reflection;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Models;
 
@@ -7,10 +8,12 @@ namespace Dappi.HeadlessCms.Tests.Core
     {
         private const string DomainModelName = "Product";
         private const string TestPropertyName = "ProductName";
+        private string? AssemblyName { get; set; }
         private readonly string _tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-
         public DomainModelEditorTests()
         {
+            var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+            AssemblyName = assembly.GetName().Name;
             Directory.CreateDirectory(_tempDir);
         }
        
@@ -32,23 +35,24 @@ namespace Dappi.HeadlessCms.Tests.Core
         [Fact]
         public async Task DomainModelEditor_Should_Generate_Class_With_CCController_Attribute()
         {
-            const string expected = $$"""
-                                      using System.ComponentModel.DataAnnotations;
-                                      using System.ComponentModel.DataAnnotations.Schema;
-                                      using Dappi.SourceGenerator.Attributes;
-                                      using Dappi.HeadlessCms.Models;
+           
+            var expected = $$"""
+                             using System.ComponentModel.DataAnnotations;
+                             using System.ComponentModel.DataAnnotations.Schema;
+                             using Dappi.SourceGenerator.Attributes;
+                             using Dappi.HeadlessCms.Models;
 
-                                      namespace ReSharperTestRunner.Entities
-                                      {
-                                          [CCController]
-                                          public class {{DomainModelName}}
-                                          {
-                                              [Key]
-                                              [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-                                              public Guid Id { get; set; }
-                                          }
-                                      }
-                                      """;
+                             namespace {{AssemblyName}}.Entities
+                             {
+                                 [CCController]
+                                 public class {{DomainModelName}}
+                                 {
+                                     [Key]
+                                     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+                                     public Guid Id { get; set; }
+                                 }
+                             }
+                             """;
             var filePath = Path.Combine(_tempDir, $"{DomainModelName}.cs");
             DomainModelEditor editor = new(_tempDir);
 
@@ -61,13 +65,13 @@ namespace Dappi.HeadlessCms.Tests.Core
         [Fact]
         public async Task DomainModelEditor_Should_Generate_Class_With_IAuditable_Props()
         {
-            const string expected = $$"""
+             string expected = $$"""
                                       using System.ComponentModel.DataAnnotations;
                                       using System.ComponentModel.DataAnnotations.Schema;
                                       using Dappi.SourceGenerator.Attributes;
                                       using Dappi.HeadlessCms.Models;
 
-                                      namespace ReSharperTestRunner.Entities
+                                      namespace {{AssemblyName}}.Entities
                                       {
                                           [CCController]
                                           public class {{DomainModelName}} : {{nameof(IAuditableEntity)}}
@@ -93,25 +97,25 @@ namespace Dappi.HeadlessCms.Tests.Core
 
         [Fact]
         public async Task DomainModelEditor_Should_Add_Required_Property()
-        {
-            const string expected = $$"""
-                                      using System.ComponentModel.DataAnnotations;
-                                      using System.ComponentModel.DataAnnotations.Schema;
-                                      using Dappi.SourceGenerator.Attributes;
-                                      using Dappi.HeadlessCms.Models;
+        { 
+            var expected = $$"""
+                             using System.ComponentModel.DataAnnotations;
+                             using System.ComponentModel.DataAnnotations.Schema;
+                             using Dappi.SourceGenerator.Attributes;
+                             using Dappi.HeadlessCms.Models;
 
-                                      namespace ReSharperTestRunner.Entities
-                                      {
-                                          [CCController]
-                                          public class {{DomainModelName}}
-                                          {
-                                              [Key]
-                                              [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-                                              public Guid Id { get; set; }
-                                              public string {{TestPropertyName}} { get; set; }
-                                          }
-                                      }
-                                      """;
+                             namespace {{AssemblyName}}.Entities
+                             {
+                                 [CCController]
+                                 public class {{DomainModelName}}
+                                 {
+                                     [Key]
+                                     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+                                     public Guid Id { get; set; }
+                                     public string {{TestPropertyName}} { get; set; }
+                                 }
+                             }
+                             """;
             
             var filePath = Path.Combine(_tempDir, $"{DomainModelName}.cs");
             DomainModelEditor editor = new(_tempDir);
@@ -125,24 +129,24 @@ namespace Dappi.HeadlessCms.Tests.Core
         [Fact]
         public async Task DomainModelEditor_Should_Add_Optional_Property()
         {
-            const string expected = $$"""
-                                      using System.ComponentModel.DataAnnotations;
-                                      using System.ComponentModel.DataAnnotations.Schema;
-                                      using Dappi.SourceGenerator.Attributes;
-                                      using Dappi.HeadlessCms.Models;
+             var expected = $$"""
+                              using System.ComponentModel.DataAnnotations;
+                              using System.ComponentModel.DataAnnotations.Schema;
+                              using Dappi.SourceGenerator.Attributes;
+                              using Dappi.HeadlessCms.Models;
 
-                                      namespace ReSharperTestRunner.Entities
-                                      {
-                                          [CCController]
-                                          public class {{DomainModelName}}
-                                          {
-                                              [Key]
-                                              [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-                                              public Guid Id { get; set; }
-                                              public string? {{TestPropertyName}} { get; set; }
-                                          }
-                                      }
-                                      """;
+                              namespace {{AssemblyName}}.Entities
+                              {
+                                  [CCController]
+                                  public class {{DomainModelName}}
+                                  {
+                                      [Key]
+                                      [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+                                      public Guid Id { get; set; }
+                                      public string? {{TestPropertyName}} { get; set; }
+                                  }
+                              }
+                              """;
             
             var filePath = Path.Combine(_tempDir, $"{DomainModelName}.cs");
             DomainModelEditor editor = new(_tempDir);
