@@ -373,7 +373,6 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
 
   onClose(): void {
     this.dialogRef.close();
-    console.log(this.fieldForm.value);
   }
 
   get canSubmit(): boolean | undefined {
