@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Dappi.SourceGenerator.Attributes;
 using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
@@ -12,20 +13,21 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var syntaxProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
-            "Dappi.SourceGenerator.Attributes.CCControllerAttribute",
+            typeof(CCControllerAttribute).FullName ?? throw new NullReferenceException(),
             predicate: (node, _) => node is ClassDeclarationSyntax,
             transform: (ctx, _) =>
             {
                 var classDeclaration = (ClassDeclarationSyntax)ctx.TargetNode;
                 var classSymbol = ctx.TargetSymbol;
                 var namedClassTypeSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
-
+                var authorizeAttributeName =
+                    typeof(DappiAuthorizeAttribute).FullName ?? throw new NullReferenceException();
                 var authorizeAttributes = classSymbol.GetAttributes()
-                    .Where(attr => attr.AttributeClass?.ToDisplayString() == "Dappi.SourceGenerator.Attributes.DappiAuthorizeAttribute")
+                    .Where(attr => attr.AttributeClass?.ToDisplayString() == authorizeAttributeName)
                     .Select(attr =>
                     {
-                        List<string> roles = new();
-                        List<string> methods = new();
+                        List<string> roles = [];
+                        List<string> methods = [];
 
                         if (attr.ConstructorArguments.Length >= 2)
                         {

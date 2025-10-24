@@ -22,7 +22,8 @@ public class PropertyInfo
 
 public class DappiAuthorizeInfo
 {
-    public List<string> Roles { get; set; }
-    public List<string> Methods { get; set; }
+    public List<string>? Roles { get; set; }
+    public List<string>? Methods { get; set; }
     public bool IsAuthenticated { get; set; } = true;
+    public bool OnControllerLevel => Methods is null or {Count: 0};
 }

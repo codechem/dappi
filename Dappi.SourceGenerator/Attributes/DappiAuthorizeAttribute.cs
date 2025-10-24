@@ -10,7 +10,13 @@ public class DappiAuthorizeAttribute : Attribute
         Authenticated = authenticated;
     }
 
-    public string[] Roles { get; }
-    public string[] Methods { get; }
-    public bool Authenticated { get; }
+    public DappiAuthorizeAttribute()
+    {
+        Authenticated = true;
+
+    }
+    
+    public string[]? Roles { get; }
+    public string[]? Methods { get; }
+    public bool? Authenticated { get; }
 }
