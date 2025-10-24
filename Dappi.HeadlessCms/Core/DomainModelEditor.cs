@@ -1,5 +1,7 @@
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
+using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
 using Dappi.HeadlessCms.Core.SyntaxVisitors;
@@ -13,6 +15,8 @@ namespace Dappi.HeadlessCms.Core;
 
 public class DomainModelEditor(string domainModelFolderPath)
 {
+    private bool HasChanges { get; set; }
+    private readonly Dictionary<string, string> _codeChanges = new();
     public async Task<DomainModelEntityInfo[]> GetDomainModelEntityInfosAsync()
     {
         var modelFiles = Directory.GetFiles(domainModelFolderPath, "*.cs", SearchOption.AllDirectories);
@@ -39,12 +43,12 @@ public class DomainModelEditor(string domainModelFolderPath)
         return results.Where(r => r != null).ToArray()!;
     }
 
-    public string GenerateClassCode(Type modelType, bool isAuditableEntity)
+    public void CreateEntityModel(string name, bool isAuditableEntity = false)
     {
         var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
         var assemblyName = assembly.GetName().Name;
 
-        var classDeclaration = SyntaxFactory.ClassDeclaration(modelType.Name)
+        var classDeclaration = SyntaxFactory.ClassDeclaration(name)
             .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
             .AddAttributeLists(RoslynHelpers.WithCcControllerAttribute())
             .AddMembers(RoslynHelpers.IdentityProperty()
@@ -66,40 +70,59 @@ public class DomainModelEditor(string domainModelFolderPath)
             .AddUsings(_domainModelsUsingDirectives)
             .AddMembers(namesSpaceDeclaration);
 
-        return compilationUnit.NormalizeWhitespace().ToFullString();
+        var code = compilationUnit.NormalizeWhitespace().ToFullString();
+        _codeChanges[name] = code;
+        HasChanges = true;
     }
 
-    
-
-    public void GenerateProperty(
+    public void AddProperty(
         string fieldName,
         string fieldType,
         string entityType,
         bool isRequired = false)
     {
         var filePath = Path.Combine(domainModelFolderPath, $"{entityType}.cs");
-        var syntaxTree = RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+        var syntaxTree = _codeChanges.TryGetValue(entityType, out var value)
+            ? CSharpSyntaxTree.ParseText(value)
+            : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+        
         var root = syntaxTree.GetCompilationUnitRoot();
         var classNode = root.DescendantNodes().FindClassDeclarationByName(entityType);
-        
+
         if (classNode is null)
         {
             throw new Exception("Class not found");
         }
-        
+
         var newProperty = RoslynHelpers.GenerateDynamicProperty(fieldType, fieldName, isRequired)
             .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
             .WithAccessorList(RoslynHelpers.WithGetAndSet());
-        
+
         var newNode = classNode.AddMembers(newProperty);
         var newRoot = root.ReplaceNode(classNode, newNode);
         var newCode = newRoot.NormalizeWhitespace().ToFullString();
-        File.WriteAllText(Path.Combine(domainModelFolderPath, $"{entityType}.cs"), newCode);
+       
+        _codeChanges[entityType] = newCode;
+        HasChanges = true;
     }
 
+    public async Task SaveAsync()
+    {
+        if (HasChanges)
+        {
+            var tasks = new List<Task>();
+            foreach (var (file, newCode) in _codeChanges)
+            {
+                var path = Path.Combine(domainModelFolderPath, $"{file}.cs");
+                tasks.Add(File.WriteAllTextAsync(path, newCode));
+            }
+            await Task.WhenAll(tasks);
+            HasChanges = false;
+        }
+    }
+    
     public void AddDomainModelEntityInfo(DomainModelEntityInfo entityInfo)
     {
-        
     }
 
     private readonly UsingDirectiveSyntax[] _domainModelsUsingDirectives =
