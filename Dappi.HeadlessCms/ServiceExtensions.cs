@@ -164,11 +164,19 @@ public static class ServiceExtensions
         
         services.AddAuthorization(opts =>
         {
-            var defaultPolicy = new AuthorizationPolicyBuilder(DappiAuthenticationSchemes.DappiAuthenticationScheme,
-                DappiAuthenticationSchemes.ExternalAuthenticationScheme)
+            var dappiPolicy = new AuthorizationPolicyBuilder(DappiAuthenticationSchemes.DappiAuthenticationScheme)
                 .RequireAuthenticatedUser()
                 .Build();
             
+            var externalPolicy = new AuthorizationPolicyBuilder(DappiAuthenticationSchemes.ExternalAuthenticationScheme)
+                .RequireAuthenticatedUser()
+                .Build();
+            
+            var defaultPolicy = new AuthorizationPolicyBuilder(dappiPolicy).Combine(externalPolicy)
+                .Build();  
+            
+            opts.AddPolicy(DappiAuthenticationSchemes.DappiAuthenticationScheme, dappiPolicy);
+            opts.AddPolicy(DappiAuthenticationSchemes.ExternalAuthenticationScheme,  externalPolicy);
             opts.DefaultPolicy = defaultPolicy;
         });
 
