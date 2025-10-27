@@ -165,45 +165,71 @@ public partial class {item.ClassName}Controller(
     [HttpPatch(""{{id}}"")]
     public async Task<IActionResult> JsonPatch{item.ClassName}(Guid id, JsonDocument patchOperations)
     {{
-            if (patchOperations is null || id == Guid.Empty)
-                return BadRequest(""Invalid data provided."");
+        if (patchOperations is null || id == Guid.Empty)
+            return BadRequest(""Invalid data provided."");
 
-            var entity = await dbContext.{item.ClassName.Pluralize()}{includesCode}.FirstOrDefaultAsync(s => s.Id == id);
-            
-            if (entity is null)
+        var entity = await dbContext.{item.ClassName.Pluralize()}{includesCode}.FirstOrDefaultAsync(s => s.Id == id);
+        
+        if (entity is null)
+        {{
+            return BadRequest(""{item.ClassName} with this id not found."");
+        }}
+        
+        if (patchOperations.RootElement.ValueKind == JsonValueKind.Array)
+        {{
+            foreach (var patchOperation in patchOperations.RootElement.EnumerateArray())
             {{
-                return BadRequest(""{item.ClassName} with this id not found."");
-            }}
-            
-            if (patchOperations.RootElement.ValueKind == JsonValueKind.Array)
-            {{
-                foreach (var patchOperation in patchOperations.RootElement.EnumerateArray())
+                patchOperation.TryGetProperty(""op"", out var operation);
+                patchOperation.TryGetProperty(""path"", out var path);
+                patchOperation.TryGetProperty(""value"", out var value);
+                if (operation.ValueKind == JsonValueKind.String)
                 {{
-                    patchOperation.TryGetProperty(""op"", out var operation);
-                    patchOperation.TryGetProperty(""path"", out var path);
-                    patchOperation.TryGetProperty(""value"", out var value);
-                    if (operation.ValueKind == JsonValueKind.String)
+                    var propertyPathValue = path.GetString();
+                    var propertyPath = propertyPathValue[0] == '/' ? propertyPathValue.Substring(1, propertyPathValue.Length - 1) : propertyPathValue;
+                    var (propertyEntity, property) = GetEntityProperty(entity, propertyPath);
+                    switch (operation.GetString())
                     {{
-                        var propertyPathValue = path.GetString();
-                        var propertyPath = propertyPathValue[0] == '/' ? propertyPathValue.Substring(1, propertyPathValue.Length - 1) : propertyPathValue;
-                        var (propertyEntity, property) = GetEntityProperty(entity, propertyPath);
-                        switch (operation.GetString())
-                        {{
-                            case ""add"":
-                            case ""replace"":
-                                SetValueToProperty(propertyEntity, property, value);
-                                break;
-                            case ""remove"":
-                                SetValueToProperty(propertyEntity, property, null);
-                                break;
-                            case ""test"":
-                                return Ok(property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType)));
-                        }}
+                        case ""add"":
+                            if (property.PropertyType.IsGenericType &&
+                                property.PropertyType.GetGenericTypeDefinition() == typeof(ICollection<>))
+                            {{
+                                dynamic propertyList = property.GetValue(propertyEntity);
+                                dynamic deserializedValue = value.Deserialize(property.PropertyType.GetGenericArguments()[0]);
+                                propertyList?.Add(deserializedValue);
+                                property.SetValue(propertyEntity, propertyList);
+                            }}
+                            else
+                                property.SetValue(propertyEntity, value.Deserialize(property.PropertyType));
+                            break;
+                        case ""replace"":
+                            property.SetValue(propertyEntity, value.Deserialize(property.PropertyType));
+                            break;
+                        case ""remove"":
+                            property.SetValue(propertyEntity, null);
+                            break;
+                        case ""test"":
+                            return Ok(property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType)));
+                        case ""copy"":
+                            patchOperation.TryGetProperty(""from"", out var from);
+                            if (path.ValueKind == JsonValueKind.String && from.ValueKind == JsonValueKind.String)
+                            {{
+                                var sourcePath = from.GetString();
+                                var destinationPath = propertyPath;
+                                if (string.IsNullOrEmpty(sourcePath) && string.IsNullOrEmpty(destinationPath))
+                                {{
+                                    return BadRequest(""Invalid data provided."");
+                                }}
+                                var sourcePropertyPath = sourcePath[0] == '/' ? sourcePath.Substring(1, sourcePath.Length - 1) : sourcePath;
+                                var (sourceEntity, sourceProperty) = GetEntityProperty(entity, sourcePropertyPath);
+                                property.SetValue(propertyEntity, sourceProperty.GetValue(sourceEntity));
+                            }}
+                            break;
                     }}
                 }}
             }}
-            await dbContext.SaveChangesAsync();
-            return Ok(entity);
+        }}
+        await dbContext.SaveChangesAsync();
+        return Ok(entity);
     }}
 
     [HttpDelete(""{{id}}"")]
@@ -259,11 +285,6 @@ public partial class {item.ClassName}Controller(
         {{
             return BadRequest(new {{ message = ex.Message }});
         }}
-    }}
-
-    private static void SetValueToProperty(object entity, PropertyInfo property, JsonElement? value)
-    {{
-        property.SetValue(entity, value?.Deserialize(property.PropertyType));
     }}
 
     private static (object entity, PropertyInfo property) GetEntityProperty(object entity, string propertyName)
