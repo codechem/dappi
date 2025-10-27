@@ -162,6 +162,50 @@ public partial class {item.ClassName}Controller(
         return Ok(existingModel);
     }}
 
+    [HttpPatch(""{{id}}"")]
+    public async Task<IActionResult> JsonPatch{item.ClassName}(Guid id, JsonDocument patchOperations)
+    {{
+            if (patchOperations is null || id == Guid.Empty)
+                return BadRequest(""Invalid data provided."");
+
+            var entity = await dbContext.{item.ClassName.Pluralize()}{includesCode}.FirstOrDefaultAsync(s => s.Id == id);
+            
+            if (entity is null)
+            {{
+                return BadRequest(""{item.ClassName} with this id not found."");
+            }}
+            
+            if (patchOperations.RootElement.ValueKind == JsonValueKind.Array)
+            {{
+                foreach (var patchOperation in patchOperations.RootElement.EnumerateArray())
+                {{
+                    patchOperation.TryGetProperty(""op"", out var operation);
+                    patchOperation.TryGetProperty(""path"", out var path);
+                    patchOperation.TryGetProperty(""value"", out var value);
+                    if (operation.ValueKind == JsonValueKind.String)
+                    {{
+                        var propertyPathValue = path.GetString();
+                        var propertyPath = propertyPathValue[0] == '/' ? propertyPathValue.Substring(1, propertyPathValue.Length - 1) : propertyPathValue;
+                        var (propertyEntity, property) = GetEntityProperty(entity, propertyPath);
+                        switch (operation.GetString())
+                        {{
+                            case ""add"":
+                            case ""replace"":
+                                SetValueToProperty(propertyEntity, property, value);
+                                break;
+                            case ""remove"":
+                                SetValueToProperty(propertyEntity, property, null);
+                                break;
+                            case ""test"":
+                                return Ok(property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType)));
+                        }}
+                    }}
+                }}
+            }}
+            await dbContext.SaveChangesAsync();
+            return Ok(entity);
+    }}
+
     [HttpDelete(""{{id}}"")]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "DELETE")}
     public async Task<IActionResult> Delete(Guid id)
@@ -216,6 +260,27 @@ public partial class {item.ClassName}Controller(
             return BadRequest(new {{ message = ex.Message }});
         }}
     }}
+
+    private static void SetValueToProperty(object entity, PropertyInfo property, JsonElement? value)
+    {{
+        property.SetValue(entity, value?.Deserialize(property.PropertyType));
+    }}
+
+    private static (object entity, PropertyInfo property) GetEntityProperty(object entity, string propertyName)
+    {{
+        if (entity is null || string.IsNullOrEmpty(propertyName)) throw new ArgumentNullException(nameof(entity));
+        if (!propertyName.Contains(""/""))
+        {{
+            var property = entity.GetType().GetProperty(propertyName);
+            return (entity, property);
+        }}
+        
+        var nestedProperties = propertyName.Split('/');
+        var nestedPropertyName = nestedProperties[0];
+        var nestedEntity = entity.GetType().GetProperty(nestedPropertyName)?.GetValue(entity);
+        return GetEntityProperty(nestedEntity, string.Join('/', nestedProperties.Skip(1)));
+    }}
+
 
     private dynamic GetDbSetForType(string typeName)
     {{
