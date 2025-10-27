@@ -19,6 +19,7 @@ namespace Dappi.HeadlessCms.Tests.Core
             _tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             _domainModelEditor = new DomainModelEditor(_tempDir);
             _filePath = Path.Combine(_tempDir, $"{DomainModelName}.cs");
+            
             Directory.CreateDirectory(_tempDir);
         }
        
@@ -94,8 +95,9 @@ namespace Dappi.HeadlessCms.Tests.Core
             Assert.Equal(expected.ReplaceLineEndings(), actual.ReplaceLineEndings());
         }
 
-        [Fact]
-        public async Task DomainModelEditor_Should_Add_Required_Property()
+        [Theory]
+        [ClassData(typeof(PropertyTestData))]
+        public async Task DomainModelEditor_Should_Add_Required_Property(string type)
         { 
             var expected = $$"""
                              using System.ComponentModel.DataAnnotations;
@@ -111,21 +113,22 @@ namespace Dappi.HeadlessCms.Tests.Core
                                      [Key]
                                      [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
                                      public Guid Id { get; set; }
-                                     public string {{TestPropertyName}} { get; set; }
+                                     public {{type}} {{TestPropertyName}} { get; set; }
                                  }
                              }
                              """;
             
             _domainModelEditor.CreateEntityModel(DomainModelName);
-            _domainModelEditor.AddProperty(TestPropertyName, "string" , DomainModelName , true);
+            _domainModelEditor.AddProperty(TestPropertyName, type , DomainModelName , true);
             await _domainModelEditor.SaveAsync();
             
             var actual = await File.ReadAllTextAsync(_filePath);
             Assert.Equal(expected.ReplaceLineEndings(), actual.ReplaceLineEndings());
         }
         
-        [Fact]
-        public async Task DomainModelEditor_Should_Add_Optional_Property()
+        [Theory]
+        [ClassData(typeof(PropertyTestData))]
+        public async Task DomainModelEditor_Should_Add_Optional_Property(string type)
         {
              var expected = $$"""
                               using System.ComponentModel.DataAnnotations;
@@ -141,13 +144,13 @@ namespace Dappi.HeadlessCms.Tests.Core
                                       [Key]
                                       [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
                                       public Guid Id { get; set; }
-                                      public string? {{TestPropertyName}} { get; set; }
+                                      public {{type}}? {{TestPropertyName}} { get; set; }
                                   }
                               }
                               """;
             
             _domainModelEditor.CreateEntityModel(DomainModelName);
-            _domainModelEditor.AddProperty(TestPropertyName, "string" , DomainModelName);
+            _domainModelEditor.AddProperty(TestPropertyName, type , DomainModelName);
             await _domainModelEditor.SaveAsync();
             var actual = await File.ReadAllTextAsync(_filePath);
             Assert.Equal(expected.ReplaceLineEndings(), actual.ReplaceLineEndings());

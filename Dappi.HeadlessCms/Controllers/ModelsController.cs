@@ -85,9 +85,6 @@ namespace Dappi.HeadlessCms.Controllers
             
             try
             {
-                
-                // var fileName = $"{request.ModelName}.cs";
-                // var filePath = Path.Combine(_entitiesFolderPath, fileName);
                 _domainModelEditor.CreateEntityModel(request.ModelName , request.IsAuditableEntity);
                 
                 await AddContentTypeChangeAsync(
