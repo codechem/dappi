@@ -43,7 +43,7 @@ namespace Dappi.HeadlessCms.Controllers
             _domainModelEditor = domainModelEditor;
             _dbContextEditor = dbContextEditor;
             _dbContext = dappiDbContextAccessor.DbContext;
-
+            
             if (!Directory.Exists(_entitiesFolderPath))
             {
                 Directory.CreateDirectory(_entitiesFolderPath);
