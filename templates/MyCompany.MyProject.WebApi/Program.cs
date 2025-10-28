@@ -4,7 +4,7 @@ using MyCompany.MyProject.WebApi.Data;
 
 namespace MyCompany.MyProject.WebApi;
 
-internal class Program
+public class Program
 {
     private static async Task Main(string[] args)
     {

@@ -73,7 +73,6 @@ public static class ServiceExtensions
             "Entities"
         )));
         services.AddEndpointsApiExplorer();
-
         return services;
     }
 

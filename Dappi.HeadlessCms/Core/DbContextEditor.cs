@@ -56,7 +56,6 @@ public class DbContextEditor(
 
     public void RemoveSetFromDbContext(DomainModelEntityInfo modelType)
     {
-        HasChanges = false;
         var syntaxTree = GetSyntaxTreeFromDbContextSource();
         var root = syntaxTree.GetCompilationUnitRoot();
         var classNode = FindDbContextClassDeclaration(root);
@@ -71,13 +70,12 @@ public class DbContextEditor(
                 p.Type is GenericNameSyntax { Identifier.Text: "DbSet" } generic &&
                 generic.TypeArgumentList.Arguments.FirstOrDefault()?.ToString() == modelName);
 
-        if (existing is not null)
+        if (existing is null)
         {
-            var newRoot = root.RemoveNode(existing, SyntaxRemoveOptions.KeepNoTrivia);
-            _currentCode = newRoot?.NormalizeWhitespace().ToFullString()!;
             return;
         }
-
+        var newRoot = root.RemoveNode(existing, SyntaxRemoveOptions.KeepNoTrivia);
+        _currentCode = newRoot?.NormalizeWhitespace().ToFullString()!;
         HasChanges = true;
     }
 
@@ -188,7 +186,6 @@ public class DbContextEditor(
         }
 
         HasChanges = true;
-        await SaveAsync();
     }
 
     private ClassDeclarationSyntax FindDbContextClassDeclaration(CompilationUnitSyntax root)
