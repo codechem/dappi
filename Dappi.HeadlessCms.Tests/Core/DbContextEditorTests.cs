@@ -47,7 +47,7 @@ namespace Dappi.HeadlessCms.Tests.Core
             await _dbContextEditor.SaveAsync();
 
             var updatedCode = await File.ReadAllTextAsync(_dbContextPath);
-
+            
             // Assert
             Assert.Contains($"DbSet<{DomainModelName}>", updatedCode);
             Assert.Contains($"public DbSet<{DomainModelName}> {DomainModelName}s", updatedCode);
@@ -143,7 +143,7 @@ namespace Dappi.HeadlessCms.Tests.Core
             await File.WriteAllTextAsync(_dbContextPath, dbContextCode);
             const string expected = "protected override void OnModelCreating(ModelBuilder modelBuilder)";
             
-            await _dbContextEditor.UpdateOnModelCreating("Product", "Category", "OneToOne", "Products", "Categories");
+            _dbContextEditor.UpdateOnModelCreating("Product", "Category", "OneToOne", "Products", "Categories");
             await _dbContextEditor.SaveAsync();
             
             var actual = await File.ReadAllTextAsync(_dbContextPath);
@@ -167,7 +167,7 @@ namespace Dappi.HeadlessCms.Tests.Core
                                          """;
             await File.WriteAllTextAsync(_dbContextPath, dbContextCode);
             
-            await _dbContextEditor.UpdateOnModelCreating(ModelName, RelatedTo, "OneToOne", PropertyName, RelatedPropertyName);
+            _dbContextEditor.UpdateOnModelCreating(ModelName, RelatedTo, "OneToOne", PropertyName, RelatedPropertyName);
             await _dbContextEditor.SaveAsync();
             
             var actual = await File.ReadAllTextAsync(_dbContextPath);
@@ -194,7 +194,7 @@ namespace Dappi.HeadlessCms.Tests.Core
                                            """;
             await File.WriteAllTextAsync(_dbContextPath, dbContextCode);
             
-            await _dbContextEditor.UpdateOnModelCreating(ModelName, RelatedTo, "OneToMany", PropertyName, RelatedPropertyName);
+            _dbContextEditor.UpdateOnModelCreating(ModelName, RelatedTo, "OneToMany", PropertyName, RelatedPropertyName);
             await _dbContextEditor.SaveAsync();
             
             var actual = await File.ReadAllTextAsync(_dbContextPath);
@@ -221,7 +221,7 @@ namespace Dappi.HeadlessCms.Tests.Core
                                            """;
             await File.WriteAllTextAsync(_dbContextPath, dbContextCode);
             
-            await _dbContextEditor.UpdateOnModelCreating(ModelName, RelatedTo, "ManyToOne", PropertyName, RelatedPropertyName);
+            _dbContextEditor.UpdateOnModelCreating(ModelName, RelatedTo, "ManyToOne", PropertyName, RelatedPropertyName);
             await _dbContextEditor.SaveAsync();
             
             var actual = await File.ReadAllTextAsync(_dbContextPath);
@@ -248,7 +248,7 @@ namespace Dappi.HeadlessCms.Tests.Core
                                            """;
             await File.WriteAllTextAsync(_dbContextPath, dbContextCode);
             
-            await _dbContextEditor.UpdateOnModelCreating(ModelName, RelatedTo, "ManyToMany", PropertyName, RelatedPropertyName);
+            _dbContextEditor.UpdateOnModelCreating(ModelName, RelatedTo, "ManyToMany", PropertyName, RelatedPropertyName);
             await _dbContextEditor.SaveAsync();
             
             var actual = await File.ReadAllTextAsync(_dbContextPath);
