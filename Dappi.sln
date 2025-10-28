@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dappi.Core.Tests", "Dappi.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dappi.HeadlessCms.Tests", "Dappi.HeadlessCms.Tests\Dappi.HeadlessCms.Tests.csproj", "{6E977115-6193-4044-A878-7C6371D65CA8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dappi.TestEnv", "Dappi.TestEnv\Dappi.TestEnv.csproj", "{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -102,6 +104,18 @@ Global
 		{6E977115-6193-4044-A878-7C6371D65CA8}.Release|x64.Build.0 = Release|Any CPU
 		{6E977115-6193-4044-A878-7C6371D65CA8}.Release|x86.ActiveCfg = Release|Any CPU
 		{6E977115-6193-4044-A878-7C6371D65CA8}.Release|x86.Build.0 = Release|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Debug|x64.Build.0 = Debug|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Debug|x86.Build.0 = Debug|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Release|x64.ActiveCfg = Release|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Release|x64.Build.0 = Release|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Release|x86.ActiveCfg = Release|Any CPU
+		{B67A1448-0F60-47A6-A0E6-E91A6A44CA74}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

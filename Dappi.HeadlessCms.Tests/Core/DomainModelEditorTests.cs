@@ -1,6 +1,7 @@
 using System.Reflection;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Models;
+using Dappi.HeadlessCms.Tests.TestData;
 
 namespace Dappi.HeadlessCms.Tests.Core
 {
@@ -96,7 +97,7 @@ namespace Dappi.HeadlessCms.Tests.Core
         }
 
         [Theory]
-        [ClassData(typeof(PropertyTestData))]
+        [ClassData(typeof(ValidPropertyTypes))]
         public async Task DomainModelEditor_Should_Add_Required_Property(string type)
         { 
             var expected = $$"""
@@ -127,7 +128,7 @@ namespace Dappi.HeadlessCms.Tests.Core
         }
         
         [Theory]
-        [ClassData(typeof(PropertyTestData))]
+        [ClassData(typeof(ValidPropertyTypes))]
         public async Task DomainModelEditor_Should_Add_Optional_Property(string type)
         {
              var expected = $$"""

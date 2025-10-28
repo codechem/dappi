@@ -1,30 +1,21 @@
+using System.Linq;
 using Dappi.HeadlessCms.Core;
-using Dappi.HeadlessCms.Database;
-using Dappi.HeadlessCms.Interfaces;
-using Dappi.HeadlessCms.Tests;
-using Microsoft.AspNetCore.Mvc.Testing;
+using Dappi.TestEnv.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-// using MyCompany.MyProject.WebApi.Data;
+using Xunit;
 
-namespace Dappi.IntegrationTests
+namespace Dappi.HeadlessCms.Tests
 {
     public class BaseIntegrationTest : IClassFixture<IntegrationWebAppFactory>
     {
-        protected readonly DappiDbContext DbContext;
-        protected readonly DomainModelEditor DomainModelEditor;
-        protected readonly DbContextEditor DbContextEditor;
-        protected readonly string TempDir;
+        protected readonly TestDbContext DbContext;
         public BaseIntegrationTest(IntegrationWebAppFactory factory)
         { 
-            TempDir = factory.TempDir;
-            DbContext = factory.Services.GetRequiredService<DappiDbContext>();
-            DomainModelEditor = factory.Services.GetRequiredService<DomainModelEditor>();
-            DbContextEditor = factory.Services.GetRequiredService<DbContextEditor>();
-
+            DbContext = factory.Services.GetRequiredService<TestDbContext>();
             if (DbContext.Database.GetPendingMigrations().Any())
             {
-                DbContext.Database.Migrate();
+                DbContext.Database.MigrateAsync();
             }
         }
     }

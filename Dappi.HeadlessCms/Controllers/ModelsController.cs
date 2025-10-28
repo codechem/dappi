@@ -200,8 +200,6 @@ namespace Dappi.HeadlessCms.Controllers
 
                 if (!string.IsNullOrEmpty(request.RelatedTo))
                 {
-                    var modelRelatedToFilePath = Path.Combine(_entitiesFolderPath, $"{request.RelatedTo}.cs");
-
                     switch (request.FieldType)
                     {
                         case Constants.Relations.OneToOne:
