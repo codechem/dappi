@@ -3,7 +3,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Dappi.HeadlessCms.Core.Attributes;
+using Dappi.Core.Attributes;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Extensions;
 using Dappi.HeadlessCms.Interfaces;

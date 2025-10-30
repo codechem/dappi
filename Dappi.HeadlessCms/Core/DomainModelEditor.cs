@@ -1,7 +1,4 @@
 using System.Reflection;
-using System.Reflection.Emit;
-using System.Text;
-using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
 using Dappi.HeadlessCms.Core.SyntaxVisitors;
@@ -9,7 +6,6 @@ using Dappi.HeadlessCms.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Dappi.HeadlessCms.Core;
 
@@ -129,7 +125,7 @@ public class DomainModelEditor(string domainModelFolderPath)
     [
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations")),
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations.Schema")),
-        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.SourceGenerator.Attributes")),
-        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.HeadlessCms.Models"))
+        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.HeadlessCms.Models")),
+        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.Core.Attributes"))
     ];
 }

@@ -28,7 +28,7 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
             var collectionUpdateCode = GenerateCollectionUpdateCode(item);
             var includesCode = GetIncludesIfAny(item.PropertiesInfos, mediaInfoPropertyNames, item.ClassName);
             var authorizationTags = PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET");
-            var hasAuthorizationOnControllerLevel = item.AuthorizeAttributes.First().OnControllerLevel;
+            var hasAuthorizationOnControllerLevel = item.AuthorizeAttributes.FirstOrDefault() is { OnControllerLevel: true };
             var authorizeTag = hasAuthorizationOnControllerLevel ? "[Authorize]" : null; 
             var mediaInfoUpdateCode = string.Empty;
             if (mediaInfoPropertyNames.ContainsKey(item.ClassName))

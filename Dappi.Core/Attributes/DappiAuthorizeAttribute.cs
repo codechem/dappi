@@ -1,4 +1,6 @@
-namespace Dappi.SourceGenerator.Attributes;
+using System;
+
+namespace Dappi.Core.Attributes;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public class DappiAuthorizeAttribute : Attribute

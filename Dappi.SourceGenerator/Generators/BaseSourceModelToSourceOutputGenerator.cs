@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Dappi.SourceGenerator.Attributes;
+using Dappi.Core.Attributes;
 using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
