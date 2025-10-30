@@ -201,21 +201,10 @@ export class CollectionEffects {
       switchMap((action) => {
         const payload = { modelName: action.collectionType , isAuditableEntity : action.isAuditableEntity};
         return this.http.post(`${BASE_API_URL}models`, payload).pipe(
-          switchMap(() =>
-            this.http.get(`${BASE_API_URL}update-db-context`).pipe(
-              map(() =>
-                CollectionActions.addCollectionTypeSuccess({
-                  collectionType: action.collectionType,
-                })
-              ),
-              catchError((error) => {
-                console.error('Error updating DB context:', error);
-                this.showErrorPopup(
-                  `Model created but failed to update DB context: ${error.error}`
-                );
-                return of(CollectionActions.addCollectionTypeFailure({ error }));
-              })
-            )
+          map(() =>
+            CollectionActions.addCollectionTypeSuccess({
+              collectionType: action.collectionType,
+            })
           ),
           catchError((error) => {
             console.error('Error creating model:', error);

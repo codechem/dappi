@@ -103,7 +103,7 @@ public class DbContextEditor(
         }
     }
 
-    public async Task UpdateOnModelCreating(string modelName, string relatedTo, string relationshipType,
+    public void UpdateOnModelCreating(string modelName, string relatedTo, string relationshipType,
         string propertyName,
         string? relatedPropertyName = null)
     { 
