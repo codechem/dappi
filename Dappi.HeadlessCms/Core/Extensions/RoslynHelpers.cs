@@ -1,11 +1,8 @@
 using System.Reflection;
-using Dappi.HeadlessCms.Core.Attributes;
-using Dappi.HeadlessCms.Models;
+using Dappi.Core.Attributes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.OpenApi.Extensions;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Dappi.HeadlessCms.Core.Extensions
 {
