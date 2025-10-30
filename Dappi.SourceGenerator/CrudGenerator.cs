@@ -370,16 +370,20 @@ public partial class {item.ClassName}Controller(
 
         var includeCode = new StringBuilder($"var model = dbContext.{model.ClassName.Pluralize()} \n");
         var removeCode = new StringBuilder();
+        removeCode.AppendLine("");
         var mediaInfos = model.PropertiesInfos.Where(p => p.PropertyType.Name.Contains("MediaInfo")).ToList();
         if (mediaInfos.Any())
         {
             foreach (var mediaInfo in mediaInfos)
             {
+                removeCode.AppendLine($$"""         if(model.{{mediaInfo.PropertyName}} is not null){ """);
                 includeCode.AppendLine($@"                  .Include(p => p.{mediaInfo.PropertyName})");
                 removeCode.AppendLine($@"
-        dbContext.Set<MediaInfo>().Attach(model.{mediaInfo.PropertyName}); 
-        dbContext.Set<MediaInfo>().Remove(model.{mediaInfo.PropertyName});
-        uploadService.DeleteMedia(model.{mediaInfo.PropertyName});");
+            dbContext.Set<MediaInfo>().Attach(model.{mediaInfo.PropertyName}); 
+            dbContext.Set<MediaInfo>().Remove(model.{mediaInfo.PropertyName});
+            uploadService.DeleteMedia(model.{mediaInfo.PropertyName});");
+                removeCode.AppendLine("         }");
+                removeCode.AppendLine("");
             }
         }
 
