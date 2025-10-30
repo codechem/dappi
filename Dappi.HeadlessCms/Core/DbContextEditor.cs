@@ -142,7 +142,7 @@ public class DbContextEditor(
             Constants.Relations.OneToOne => $@"modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
             .WithOne(e => e.{relatedPropertyName ?? modelName})
-            .HasForeignKey<{relatedTo}>(ad => ad.{relatedPropertyName ?? modelName}Id);",
+            .HasForeignKey<{relatedTo}>(ad => ad.{modelName}Id);",
 
             Constants.Relations.OneToMany => $@"modelBuilder.Entity<{modelName}>()
             .HasMany<{relatedTo}>(s => s.{propertyName})
