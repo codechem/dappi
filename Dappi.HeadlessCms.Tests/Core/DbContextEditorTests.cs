@@ -174,7 +174,7 @@ namespace Dappi.HeadlessCms.Tests.Core
             Assert.Contains($"modelBuilder.Entity<{ModelName}>()", actual);
             Assert.Contains($".HasOne<{RelatedTo}>(s => s.{PropertyName})", actual);
             Assert.Contains($".WithOne(e => e.{RelatedPropertyName ?? ModelName})", actual);
-            Assert.Contains($".HasForeignKey<{RelatedTo}>(ad => ad.{RelatedPropertyName ?? ModelName}Id)", actual);
+            Assert.Contains($".HasForeignKey<{RelatedTo}>(ad => ad.{ModelName}Id)", actual);
             Assert.Contains("base.OnModelCreating(modelBuilder);", actual);
         }
 
