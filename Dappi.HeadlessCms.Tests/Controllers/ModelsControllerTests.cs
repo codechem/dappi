@@ -75,10 +75,14 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         public async Task CreateModel_Should_Create_Model_File()
         {
             var request = new ModelRequest { ModelName = "Product", IsAuditableEntity = false };
-            await _controller.CreateModel(request);
+            var res = await _controller.CreateModel(request);
             var filePath = Path.Combine(_entitiesPath, $"{request.ModelName}.cs");
+            var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
+            var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
             var actual = await File.ReadAllTextAsync(filePath);
+            Assert.IsType<OkObjectResult>(res);
             Assert.NotNull(actual);
+            Assert.Contains($$"""public DbSet<{{request.ModelName}}> {{request.ModelName.Pluralize()}} { get; set; }""", dbContext);
         }
 
         [Fact, Order(4)]
@@ -93,15 +97,19 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         public async Task CreateModel_Should_Create_Model_File_With_Auditable_Props()
         {
             var request = new ModelRequest { ModelName = "InventoryItem", IsAuditableEntity = true };
-            await _controller.CreateModel(request);
+            var res= await _controller.CreateModel(request);
             var filePath = Path.Combine(_entitiesPath, $"{request.ModelName}.cs");
+            var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
+            var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
             var actual = await File.ReadAllTextAsync(filePath);
+            Assert.IsType<OkObjectResult>(res);
             Assert.NotNull(actual);
             Assert.Contains($"{request.ModelName} : {nameof(IAuditableEntity)}", actual);
             Assert.Contains("public DateTime? CreatedAtUtc { get; set; }", actual);
             Assert.Contains("public DateTime? UpdatedAtUtc { get; set; }", actual);
             Assert.Contains("public string? CreatedBy { get; set; }", actual);
             Assert.Contains("public string? UpdatedBy { get; set; }", actual);
+            Assert.Contains($$"""public DbSet<{{request.ModelName}}> {{request.ModelName.Pluralize()}} { get; set; }""", dbContext);
         }
 
         [Fact, Order(6)]
@@ -238,15 +246,25 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             };
             await _controller.CreateModel(new ModelRequest { ModelName = type1, IsAuditableEntity = false });
             await _controller.CreateModel(new ModelRequest { ModelName = type2, IsAuditableEntity = false });
-
+            
             var res = await _controller.AddField(type1, request);
-
-            Assert.IsType<OkObjectResult>(res);
             var file1 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type1}.cs"));
             var file2 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type2}.cs"));
+            var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
+            var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
+            
             Assert.Contains($$"""public {{type2}}? {{request.FieldName}} { get; set; }""", file1);
             Assert.Contains($$"""public {{type1}}? {{request.RelatedRelationName ?? type1}} { get; set; }""", file2);
             Assert.Contains($$"""public {{nameof(Guid)}}? {{type1}}Id { get; set; }""", file2);
+            Assert.Contains($$"""public DbSet<{{type1}}> {{type1.Pluralize()}} { get; set; }""", dbContext);
+            Assert.Contains($$"""public DbSet<{{type2}}> {{type2.Pluralize()}} { get; set; }""", dbContext);
+            
+            Assert.Contains($"modelBuilder.Entity<{type1}>()" , dbContext);
+            Assert.Contains($".HasOne<{type2}>(s => s.{request.FieldName})", dbContext);
+            Assert.Contains($".WithOne(e => e.{request.RelatedRelationName ?? type1})", dbContext);
+            Assert.Contains($".HasForeignKey<{type2}>(ad => ad.{type1}Id)", dbContext);
+            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
+            Assert.IsType<OkObjectResult>(res);
         }
 
         [Fact , Order(14)]
@@ -267,14 +285,21 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             
             var res = await _controller.AddField(type1 , request);
             
-            Assert.IsType<OkObjectResult>(res);
             var file1 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type1}.cs"));
             var file2= await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type2}.cs"));
-            
+            var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
+            var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
             
             Assert.Contains($$"""public ICollection<{{type2}}>? {{request.FieldName}} { get; set; }""" , file1);
             Assert.Contains($$"""public {{type1}}? {{request.RelatedRelationName ?? type1}} { get; set; }""" , file2);
             Assert.Contains($$"""public {{nameof(Guid)}}? {{type1}}Id { get; set; }""" , file2);
+            
+            Assert.Contains($"modelBuilder.Entity<{type1}>()", dbContext);
+            Assert.Contains($".HasMany<{type2}>(s => s.{request.FieldName})", dbContext);
+            Assert.Contains($".WithOne(e => e.{request.RelatedRelationName ?? type1})", dbContext);
+            Assert.Contains($".HasForeignKey(s => s.{request.RelatedRelationName ?? type1}Id);", dbContext);
+            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
+            Assert.IsType<OkObjectResult>(res);
         }
         
         [Fact , Order(15)]
@@ -295,13 +320,21 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             
             var res = await _controller.AddField(type1 , request);
             
-            Assert.IsType<OkObjectResult>(res);
             var file1 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type1}.cs"));
             var file2= await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type2}.cs"));
+            var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
+            var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
         
             Assert.Contains($$"""public {{nameof(Guid)}}? {{request.FieldName}}Id { get; set; }""" , file1);
             Assert.Contains($$"""public {{type2}}? {{request.FieldName}} { get; set; }""" , file1);
             Assert.Contains($$"""public ICollection<{{type1}}>? {{request.RelatedRelationName ?? type1.Pluralize()}} { get; set; }""" , file2);
+            
+            Assert.Contains($"modelBuilder.Entity<{type1}>()", dbContext);
+            Assert.Contains($".HasOne<{type2}>(s => s.{request.FieldName})", dbContext);
+            Assert.Contains($".WithMany(e => e.{request.RelatedRelationName ?? $"{type1.Pluralize()}"})", dbContext);
+            Assert.Contains($".HasForeignKey(s => s.{request.FieldName}Id);", dbContext);
+            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
+            Assert.IsType<OkObjectResult>(res);
         }
         
         [Fact , Order(16)]
@@ -322,12 +355,20 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             
             var res = await _controller.AddField(type1 , request);
             
-            Assert.IsType<OkObjectResult>(res);
             var file1 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type1}.cs"));
             var file2= await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type2}.cs"));
+            var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
+            var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
             
             Assert.Contains($$"""public ICollection<{{type2}}>? {{request.FieldName}} { get; set; }""" , file1);
             Assert.Contains($$"""public ICollection<{{type1}}>? {{request.RelatedRelationName ?? type1.Pluralize()}} { get; set; }""" , file2);
+            
+            Assert.Contains($"modelBuilder.Entity<{type1}>()", dbContext);
+            Assert.Contains($".HasMany(m => m.{request.FieldName})", dbContext);
+            Assert.Contains($".WithMany(r => r.{type1.Pluralize()})", dbContext);
+            Assert.Contains($".UsingEntity(j => j.ToTable(\"{type1}{type2.Pluralize()}\"));", dbContext);
+            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
+            Assert.IsType<OkObjectResult>(res);
         }
         public void Dispose()
         {
