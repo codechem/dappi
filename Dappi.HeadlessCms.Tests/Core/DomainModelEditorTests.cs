@@ -33,7 +33,7 @@ namespace Dappi.HeadlessCms.Tests.Core
             var actual = await File.ReadAllTextAsync(_filePath);
             Assert.Contains("using System.ComponentModel.DataAnnotation", actual);
             Assert.Contains("using System.ComponentModel.DataAnnotations.Schema", actual);
-            Assert.Contains("using Dappi.SourceGenerator.Attributes", actual);
+            Assert.Contains("using Dappi.Core.Attributes", actual);
             Assert.Contains("using Dappi.HeadlessCms.Model", actual);
         }
 
@@ -44,8 +44,8 @@ namespace Dappi.HeadlessCms.Tests.Core
             var expected = $$"""
                              using System.ComponentModel.DataAnnotations;
                              using System.ComponentModel.DataAnnotations.Schema;
-                             using Dappi.SourceGenerator.Attributes;
                              using Dappi.HeadlessCms.Models;
+                             using Dappi.Core.Attributes;
 
                              namespace {{_assemblyName}}.Entities
                              {
@@ -71,8 +71,8 @@ namespace Dappi.HeadlessCms.Tests.Core
              string expected = $$"""
                                       using System.ComponentModel.DataAnnotations;
                                       using System.ComponentModel.DataAnnotations.Schema;
-                                      using Dappi.SourceGenerator.Attributes;
                                       using Dappi.HeadlessCms.Models;
+                                      using Dappi.Core.Attributes;
 
                                       namespace {{_assemblyName}}.Entities
                                       {
@@ -103,8 +103,8 @@ namespace Dappi.HeadlessCms.Tests.Core
             var expected = $$"""
                              using System.ComponentModel.DataAnnotations;
                              using System.ComponentModel.DataAnnotations.Schema;
-                             using Dappi.SourceGenerator.Attributes;
                              using Dappi.HeadlessCms.Models;
+                             using Dappi.Core.Attributes;
 
                              namespace {{_assemblyName}}.Entities
                              {
@@ -134,8 +134,8 @@ namespace Dappi.HeadlessCms.Tests.Core
              var expected = $$"""
                               using System.ComponentModel.DataAnnotations;
                               using System.ComponentModel.DataAnnotations.Schema;
-                              using Dappi.SourceGenerator.Attributes;
                               using Dappi.HeadlessCms.Models;
+                              using Dappi.Core.Attributes;
 
                               namespace {{_assemblyName}}.Entities
                               {
