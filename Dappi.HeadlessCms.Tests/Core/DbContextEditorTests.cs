@@ -89,9 +89,6 @@ namespace Dappi.HeadlessCms.Tests.Core
         {
             // Arrange
             const string dbContextCode = $$"""
-                                      using Microsoft.EntityFrameworkCore;
-                                      using MyApp.Models;
-
                                       namespace MyApp.Data
                                       {
                                           public class {{DbContextName}} : DbContext
@@ -102,9 +99,6 @@ namespace Dappi.HeadlessCms.Tests.Core
                                       """;
             
             const string expected = $$"""
-                                           using Microsoft.EntityFrameworkCore;
-                                           using MyApp.Models;
-
                                            namespace MyApp.Data
                                            {
                                                public class {{DbContextName}} : DbContext

@@ -1,6 +1,8 @@
+using System.Reflection;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
 using Dappi.Core.Utils;
+using Dappi.HeadlessCms.Extensions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -15,7 +17,7 @@ public class DbContextEditor(
     private bool HasChanges { get; set; }
     private const string BaseOnModelCreating = "base.OnModelCreating(modelBuilder);";
     private const string OnModelCreatingMethodName = "OnModelCreating";
-    
+
     public void AddDbSetToDbContext(DomainModelEntityInfo modelType)
     {
         var syntaxTree = GetSyntaxTreeFromDbContextSource();
@@ -62,7 +64,6 @@ public class DbContextEditor(
 
         var modelName = modelType.Name;
         var propertyName = $"{modelName}s";
-
         var existing = classNode.Members
             .OfType<PropertyDeclarationSyntax>()
             .FirstOrDefault(p =>
@@ -74,8 +75,32 @@ public class DbContextEditor(
         {
             return;
         }
+        var assemblyReferences = AppDomain.CurrentDomain
+            .GetAssemblies()
+            .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+            .Select(a => MetadataReference.CreateFromFile(a.Location))
+            .ToList();
+        
         var newRoot = root.RemoveNode(existing, SyntaxRemoveOptions.KeepNoTrivia);
+        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+        
+        var compilation = CSharpCompilation.Create("InMemoryAssembly")
+            .AddSyntaxTrees(syntaxTree)
+            .AddReferences(assemblyReferences)
+            .WithOptions(options);
+        
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var validUsings = root.Usings
+            .Where(u =>
+            {
+                var info = semanticModel.GetSymbolInfo(u.Name!);
+                return info.Symbol != null;
+            })
+            .ToList();
+        newRoot = newRoot.WithUsings(SyntaxFactory.List(validUsings));
+
         _currentCode = newRoot?.NormalizeWhitespace().ToFullString()!;
+
         HasChanges = true;
     }
 
@@ -94,6 +119,33 @@ public class DbContextEditor(
             .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
     }
 
+    public void Cleanup()
+    {
+        var syntaxTree = GetSyntaxTreeFromDbContextSource();
+        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+        var assemblyReferences = AppDomain.CurrentDomain
+            .GetAssemblies()
+            .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+            .Select(a => MetadataReference.CreateFromFile(a.Location))
+            .ToList();
+
+        var comp = CSharpCompilation.Create("InMemoryAssembly")
+            .AddSyntaxTrees(syntaxTree)
+            .AddReferences(assemblyReferences)
+            .WithOptions(options);
+
+        using var ms = new MemoryStream();
+        var emitResult = comp.Emit(ms);
+        if (!emitResult.Success)
+        {
+            var diagnostics = emitResult.Diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToList();
+            foreach (var diagnostic in diagnostics)
+            {
+                
+            }
+        }
+    }
+
     public async Task SaveAsync()
     {
         if (HasChanges)
@@ -106,7 +158,7 @@ public class DbContextEditor(
     public void UpdateOnModelCreating(string modelName, string relatedTo, string relationshipType,
         string propertyName,
         string? relatedPropertyName = null)
-    { 
+    {
         var syntaxTree = GetSyntaxTreeFromDbContextSource();
         var root = syntaxTree.GetCompilationUnitRoot();
         var classNode = FindDbContextClassDeclaration(root);
@@ -165,12 +217,14 @@ public class DbContextEditor(
         var body = onModelCreating.Body ?? SyntaxFactory.Block();
         var newBody = body.AddStatements(SyntaxFactory.ParseStatement(relationCode));
         var newMethod = onModelCreating.WithBody(newBody);
-        
-        var baseOnModelCreating = newMethod?.Body?.Statements.FirstOrDefault(s => s.ToString().Contains(BaseOnModelCreating));
+
+        var baseOnModelCreating =
+            newMethod?.Body?.Statements.FirstOrDefault(s => s.ToString().Contains(BaseOnModelCreating));
         if (baseOnModelCreating is not null)
         {
             newMethod = newMethod?.RemoveNode(baseOnModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
         }
+
         newMethod = newMethod?.AddBodyStatements(SyntaxFactory.ParseStatement(BaseOnModelCreating));
         var newClassNode = classNode.RemoveNode(onModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
         if (newMethod != null)
@@ -181,7 +235,7 @@ public class DbContextEditor(
         if (newClassNode != null)
         {
             var newRoot = root.ReplaceNode(classNode, newClassNode);
-       
+
             _currentCode = newRoot.NormalizeWhitespace().ToFullString();
         }
 
