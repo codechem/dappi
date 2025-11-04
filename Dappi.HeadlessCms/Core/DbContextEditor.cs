@@ -75,15 +75,15 @@ public class DbContextEditor(
         {
             return;
         }
+        
+        var newRoot = root.RemoveNode(existing, SyntaxRemoveOptions.KeepNoTrivia);
+        
+        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
         var assemblyReferences = AppDomain.CurrentDomain
             .GetAssemblies()
             .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
             .Select(a => MetadataReference.CreateFromFile(a.Location))
             .ToList();
-        
-        var newRoot = root.RemoveNode(existing, SyntaxRemoveOptions.KeepNoTrivia);
-        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-        
         var compilation = CSharpCompilation.Create("InMemoryAssembly")
             .AddSyntaxTrees(syntaxTree)
             .AddReferences(assemblyReferences)
@@ -97,7 +97,7 @@ public class DbContextEditor(
                 return info.Symbol != null;
             })
             .ToList();
-        newRoot = newRoot.WithUsings(SyntaxFactory.List(validUsings));
+        newRoot = newRoot?.WithUsings(SyntaxFactory.List(validUsings));
 
         _currentCode = newRoot?.NormalizeWhitespace().ToFullString()!;
 
@@ -117,33 +117,6 @@ public class DbContextEditor(
             .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
             .WithAccessorList(RoslynHelpers.WithGetAndSet())
             .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
-    }
-
-    public void Cleanup()
-    {
-        var syntaxTree = GetSyntaxTreeFromDbContextSource();
-        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-        var assemblyReferences = AppDomain.CurrentDomain
-            .GetAssemblies()
-            .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
-            .Select(a => MetadataReference.CreateFromFile(a.Location))
-            .ToList();
-
-        var comp = CSharpCompilation.Create("InMemoryAssembly")
-            .AddSyntaxTrees(syntaxTree)
-            .AddReferences(assemblyReferences)
-            .WithOptions(options);
-
-        using var ms = new MemoryStream();
-        var emitResult = comp.Emit(ms);
-        if (!emitResult.Success)
-        {
-            var diagnostics = emitResult.Diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToList();
-            foreach (var diagnostic in diagnostics)
-            {
-                
-            }
-        }
     }
 
     public async Task SaveAsync()
@@ -219,10 +192,10 @@ public class DbContextEditor(
         var newMethod = onModelCreating.WithBody(newBody);
 
         var baseOnModelCreating =
-            newMethod?.Body?.Statements.FirstOrDefault(s => s.ToString().Contains(BaseOnModelCreating));
+            newMethod.Body?.Statements.FirstOrDefault(s => s.ToString().Contains(BaseOnModelCreating));
         if (baseOnModelCreating is not null)
         {
-            newMethod = newMethod?.RemoveNode(baseOnModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
+            newMethod = newMethod.RemoveNode(baseOnModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
         }
 
         newMethod = newMethod?.AddBodyStatements(SyntaxFactory.ParseStatement(BaseOnModelCreating));
@@ -245,7 +218,7 @@ public class DbContextEditor(
     private ClassDeclarationSyntax FindDbContextClassDeclaration(CompilationUnitSyntax root)
     {
         var classNode = root.DescendantNodes()
-            .FindClassDeclarationByName(dbContextName!);
+            .FindClassDeclarationByName(dbContextName);
 
         if (classNode == null)
             throw new InvalidOperationException("DbContext class not found");
@@ -255,7 +228,7 @@ public class DbContextEditor(
 
     private SyntaxTree GetSyntaxTreeFromDbContextSource()
     {
-        var dbContextSourceCode = File.ReadAllText(Path.Combine(dbContextFilePath, $"{dbContextName}.cs"!));
+        var dbContextSourceCode = File.ReadAllText(Path.Combine(dbContextFilePath, $"{dbContextName}.cs"));
         var syntaxTree = CSharpSyntaxTree.ParseText(dbContextSourceCode);
         return syntaxTree;
     }

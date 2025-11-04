@@ -6,6 +6,7 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Dappi.Core.Utils;
 using Dappi.HeadlessCms.Core;
+using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Core.Schema;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -128,15 +129,24 @@ namespace Dappi.HeadlessCms.Controllers
                     return NotFound("Model file not found.");
                 }
 
+                var properties = _domainModelEditor.GetPropertiesContainingAttribute(modelName,
+                    DappiRelationAttribute.ShortName).ToList();
+                var relatedEntities = _domainModelEditor.GetRelatedEntities(properties);
+
+                foreach (var relatedEntity in relatedEntities)
+                {
+                    _domainModelEditor.DeleteRelatedProperties(relatedEntity);
+                }
+
+                await _domainModelEditor.SaveAsync();
                 System.IO.File.Delete(modelFilePath);
 
                 _dbContextEditor.RemoveSetFromDbContext(new DomainModelEntityInfo()
                 {
                     Name = modelName, Namespace = Directory.GetCurrentDirectory()
                 });
-                await _dbContextEditor.SaveAsync();
 
-                // _dbContextEditor.Cleanup();
+                await _dbContextEditor.SaveAsync();
 
                 var controllerFilePath = Path.Combine(
                     _controllersFolderPath,
@@ -208,26 +218,36 @@ namespace Dappi.HeadlessCms.Controllers
                         case Constants.Relations.OneToMany:
                             {
                                 HandleOneToManyRelationship(request, modelName);
-                                relatedFieldDict.Add(request.RelatedRelationName ?? modelName, Constants.Relations.ManyToOne);
+                                relatedFieldDict.Add(request.RelatedRelationName ?? modelName,
+                                    Constants.Relations.ManyToOne);
                                 break;
                             }
                         case Constants.Relations.ManyToOne:
                             {
                                 HandleManyToOneRelationship(request, modelName);
-                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}", Constants.Relations.OneToMany);
+                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
+                                    Constants.Relations.OneToMany);
                                 break;
                             }
                         case Constants.Relations.ManyToMany:
                             {
                                 HandleManyToManyRelationship(request, modelName);
-                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}", Constants.Relations.ManyToMany);
+                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
+                                    Constants.Relations.ManyToMany);
                                 break;
                             }
                     }
                 }
                 else
                 {
-                    _domainModelEditor.AddProperty(request.FieldName, request.FieldType, modelName, request.IsRequired);
+                    var property = new Property
+                    {
+                        DomainModel = modelName,
+                        Name = request.FieldName,
+                        Type = request.FieldType,
+                        IsRequired = request.IsRequired,
+                    };
+                    _domainModelEditor.AddProperty(property);
                 }
 
                 await UpdateContentTypeChangeFieldsAsync(modelName, fieldDict);
@@ -269,34 +289,6 @@ namespace Dappi.HeadlessCms.Controllers
             var fieldData = ExtractFieldsFromModel(modelCode);
 
             return Ok(fieldData);
-        }
-
-        //FOR TESTING PURPOSES ONLY
-        [HttpGet("{modelName}")]
-        public async Task<IActionResult> GetAllReferences(string modelName)
-        {
-            return Ok();
-        }
-
-        static string FindSolutionPath(string startDir)
-        {
-            // Go up to the parent directory and search for the solution file
-            var dir = new DirectoryInfo(startDir);
-
-            while (dir.Parent != null)
-            {
-                // Look for the .sln file in the current directory
-                var slnFile = Directory.GetFiles(dir.FullName, "*.sln").FirstOrDefault();
-                if (slnFile != null)
-                {
-                    return slnFile;
-                }
-
-                // Move up one directory level
-                dir = dir.Parent;
-            }
-
-            return null; // No solution file found
         }
 
         private async Task AddContentTypeChangeAsync(
@@ -359,11 +351,34 @@ namespace Dappi.HeadlessCms.Controllers
         private void HandleOneToOneRelationship(FieldRequest request, string modelName)
         {
             var foreignKeyRelatedName = $"{modelName}Id";
+            Property property = new()
+            {
+                DomainModel = modelName,
+                Name = request.FieldName,
+                Type = request.RelatedTo!,
+                IsRequired = request.IsRequired,
+                RelationKind = DappiRelationKind.OneToOne,
+                RelatedDomainModel = request.RelatedTo
+            };
+            _domainModelEditor.AddProperty(property);
 
-            _domainModelEditor.AddProperty(request.FieldName, request.RelatedTo!, modelName, request.IsRequired);
-            _domainModelEditor.AddProperty(request.RelatedRelationName ?? modelName, modelName, request.RelatedTo!,
-                request.IsRequired);
-            _domainModelEditor.AddProperty(foreignKeyRelatedName, nameof(Guid), request.RelatedTo!, request.IsRequired);
+            Property relatedModelProperty = new()
+            {
+                DomainModel = request.RelatedTo!,
+                Name = request.RelatedRelationName ?? modelName,
+                Type = modelName,
+                IsRequired = request.IsRequired,
+                RelationKind = DappiRelationKind.OneToOne,
+                RelatedDomainModel = modelName
+            };
+
+            _domainModelEditor.AddProperty(relatedModelProperty);
+            _domainModelEditor.AddProperty(relatedModelProperty with
+            {
+                Name = foreignKeyRelatedName, Type = nameof(Guid)
+            });
+
+
             _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.OneToOne,
                 request.FieldName,
                 request.RelatedRelationName ?? modelName);
@@ -371,38 +386,94 @@ namespace Dappi.HeadlessCms.Controllers
 
         private void HandleOneToManyRelationship(FieldRequest request, string modelName)
         {
-            var foreignKeyName = $"{request.RelatedRelationName ?? modelName}Id";
+            var foreignKeyName = $"{modelName}Id";
+            Property property = new()
+            {
+                DomainModel = modelName,
+                Name = request.FieldName,
+                Type = $"ICollection<{request.RelatedTo!}>",
+                IsRequired = request.IsRequired,
+                RelationKind = DappiRelationKind.OneToMany,
+                RelatedDomainModel = request.RelatedTo
+            };
+            _domainModelEditor.AddProperty(property);
 
-            _domainModelEditor.AddProperty(request.FieldName, $"ICollection<{request.RelatedTo}>", modelName,
-                request.IsRequired);
-            _domainModelEditor.AddProperty(foreignKeyName, nameof(Guid), request.RelatedTo, request.IsRequired);
-            _domainModelEditor.AddProperty(request.RelatedRelationName ?? modelName, modelName, request.RelatedTo,
-                request.IsRequired);
-            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo, Constants.Relations.OneToMany,
+            Property relatedModelProperty = new()
+            {
+                DomainModel = request.RelatedTo!,
+                Name = request.RelatedRelationName ?? modelName,
+                Type = $"{modelName}",
+                IsRequired = request.IsRequired,
+                RelationKind = DappiRelationKind.ManyToOne,
+                RelatedDomainModel = modelName
+            };
+
+            _domainModelEditor.AddProperty(relatedModelProperty);
+            _domainModelEditor.AddProperty(relatedModelProperty with { Name = foreignKeyName, Type = nameof(Guid) });
+            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.OneToMany,
                 request.FieldName,
                 request.RelatedRelationName ?? modelName);
         }
 
         private void HandleManyToOneRelationship(FieldRequest request, string modelName)
         {
-            var foreignKeyName = $"{request.FieldName}Id";
+            var foreignKeyName = $"{request.RelatedTo}Id";
+            Property property = new()
+            {
+                DomainModel = modelName,
+                Name = request.FieldName,
+                Type = request.RelatedTo!,
+                IsRequired = request.IsRequired,
+                RelationKind = DappiRelationKind.ManyToOne,
+                RelatedDomainModel = request.RelatedTo
+            };
 
-            _domainModelEditor.AddProperty(foreignKeyName, nameof(Guid), modelName, request.IsRequired);
-            _domainModelEditor.AddProperty(request.FieldName, request.RelatedTo!, modelName, request.IsRequired);
-            _domainModelEditor.AddProperty(request.RelatedRelationName ?? modelName.Pluralize(),
-                $"ICollection<{modelName}>", request.RelatedTo, request.IsRequired);
-            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo, Constants.Relations.ManyToOne,
+            _domainModelEditor.AddProperty(property);
+            _domainModelEditor.AddProperty(property with { Name = foreignKeyName, Type = nameof(Guid) });
+
+            Property relatedModelProperty = new()
+            {
+                DomainModel = request.RelatedTo!,
+                Name = request.RelatedRelationName ?? modelName.Pluralize(),
+                Type = $"ICollection<{modelName}>",
+                IsRequired = request.IsRequired,
+                RelationKind = DappiRelationKind.OneToMany,
+                RelatedDomainModel = modelName
+            };
+
+            _domainModelEditor.AddProperty(relatedModelProperty);
+
+            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToOne,
                 request.FieldName,
                 request.RelatedRelationName ?? $"{modelName.Pluralize()}");
         }
 
         private void HandleManyToManyRelationship(FieldRequest request, string modelName)
         {
-            _domainModelEditor.AddProperty(request.FieldName, $"ICollection<{request.RelatedTo}>", modelName,
-                request.IsRequired);
-            _domainModelEditor.AddProperty(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
-                $"ICollection<{modelName}>", request.RelatedTo, request.IsRequired);
-            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo, Constants.Relations.ManyToMany,
+            Property property = new()
+            {
+                DomainModel = modelName,
+                Name = request.FieldName,
+                Type = $"ICollection<{request.RelatedTo}>",
+                IsRequired = request.IsRequired,
+                RelationKind = DappiRelationKind.ManyToMany,
+                RelatedDomainModel = request.RelatedTo
+            };
+
+            _domainModelEditor.AddProperty(property);
+
+            Property relatedModelProperty = new()
+            {
+                DomainModel = request.RelatedTo!,
+                Name = request.RelatedRelationName ?? modelName.Pluralize(),
+                Type = $"ICollection<{modelName}>",
+                IsRequired = request.IsRequired,
+                RelationKind = DappiRelationKind.ManyToMany,
+                RelatedDomainModel = modelName
+            };
+            _domainModelEditor.AddProperty(relatedModelProperty);
+
+            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToMany,
                 request.FieldName,
                 request.RelatedRelationName ?? $"{modelName.Pluralize()}");
         }

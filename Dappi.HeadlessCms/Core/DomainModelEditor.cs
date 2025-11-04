@@ -1,4 +1,5 @@
 using System.Reflection;
+using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
 using Dappi.HeadlessCms.Core.SyntaxVisitors;
@@ -13,6 +14,7 @@ public class DomainModelEditor(string domainModelFolderPath)
 {
     private bool HasChanges { get; set; }
     private readonly Dictionary<string, string> _codeChanges = new();
+
     public async Task<DomainModelEntityInfo[]> GetDomainModelEntityInfosAsync()
     {
         var modelFiles = Directory.GetFiles(domainModelFolderPath, "*.cs", SearchOption.AllDirectories);
@@ -71,34 +73,66 @@ public class DomainModelEditor(string domainModelFolderPath)
         HasChanges = true;
     }
 
-    public void AddProperty(
-        string fieldName,
-        string fieldType,
-        string entityType,
-        bool isRequired = false)
+    public void DeleteRelatedProperties(string modelName)
     {
-        var filePath = Path.Combine(domainModelFolderPath, $"{entityType}.cs");
-        var syntaxTree = _codeChanges.TryGetValue(entityType, out var value)
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+
+        var syntaxTree = _codeChanges.TryGetValue(modelName, out var value)
             ? CSharpSyntaxTree.ParseText(value)
             : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
-        
+
         var root = syntaxTree.GetCompilationUnitRoot();
-        var classNode = root.DescendantNodes().FindClassDeclarationByName(entityType);
+        var classNode = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classNode == null)
+        {
+            throw new Exception($"Class {modelName} not found.");
+        }
+        var properties = GetPropertiesContainingAttributeFromClassNode
+            (classNode, modelName, DappiRelationAttribute.ShortName);
+        var newRoot = root.RemoveNodes(properties, SyntaxRemoveOptions.KeepNoTrivia);
+        if (newRoot == null)
+        {
+            throw new Exception("Failed to remove properties.");
+        }
+
+        var newCode = newRoot.NormalizeWhitespace().ToFullString();
+        if (!string.IsNullOrEmpty(newCode))
+        {
+            _codeChanges[modelName] = newCode;
+        }
+
+        HasChanges = true;
+    }
+    
+    public void AddProperty(Property property)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{property.DomainModel}.cs");
+        var syntaxTree = _codeChanges.TryGetValue(property.DomainModel, out var value)
+            ? CSharpSyntaxTree.ParseText(value)
+            : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = root.DescendantNodes().FindClassDeclarationByName(property.DomainModel);
 
         if (classNode is null)
         {
             throw new Exception("Class not found");
         }
 
-        var newProperty = RoslynHelpers.GenerateDynamicProperty(fieldType, fieldName, isRequired)
+        var newProperty = RoslynHelpers.GenerateDynamicProperty(property.Type, property.Name, property.IsRequired)
             .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
             .WithAccessorList(RoslynHelpers.WithGetAndSet());
+        if (property.RelationKind is not null)
+        {
+            newProperty = newProperty.WithRelationAttribute(property.RelationKind,property.RelatedDomainModel);
+        }
 
         var newNode = classNode.AddMembers(newProperty);
         var newRoot = root.ReplaceNode(classNode, newNode);
         var newCode = newRoot.NormalizeWhitespace().ToFullString();
-       
-        _codeChanges[entityType] = newCode;
+
+        _codeChanges[property.DomainModel] = newCode;
         HasChanges = true;
     }
 
@@ -112,11 +146,90 @@ public class DomainModelEditor(string domainModelFolderPath)
                 var path = Path.Combine(domainModelFolderPath, $"{file}.cs");
                 tasks.Add(File.WriteAllTextAsync(path, newCode));
             }
+
             await Task.WhenAll(tasks);
             HasChanges = false;
         }
     }
+
+    public List<PropertyDeclarationSyntax> GetPropertiesContainingAttribute(string modelName,
+        string attributeName)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        var syntaxTree = RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = root.DescendantNodes().FindClassDeclarationByName(modelName);
+        if (classNode == null)
+        {
+            return [];
+        }
+        var properties = GetPropertiesContainingAttributeFromClassNode(classNode, modelName, attributeName);
+
+        return properties.ToList();
+    }
     
+    public List<PropertyDeclarationSyntax> GetPropertiesContainingAttributeFromClassNode
+        (ClassDeclarationSyntax classNode , string modelName, string attributeName)
+    {
+        var properties = classNode.DescendantNodes().OfType<PropertyDeclarationSyntax>()
+            .Where(p =>
+                p.AttributeLists.Any(a => a.Attributes.Any(a1 => a1.Name.ToString() == attributeName)));
+        return properties.ToList();
+    }
+
+    private string? GetPropertyType(GenericNameSyntax genericNameSyntax)
+    {
+        return genericNameSyntax.TypeArgumentList.Arguments.FirstOrDefault()?.ToString();
+    }
+
+    private string GetPropertyType(IdentifierNameSyntax identifierNameSyntax)
+    {
+        return identifierNameSyntax.Identifier.Text;
+    }
+
+    public List<string> GetRelatedEntities(List<PropertyDeclarationSyntax> properties)
+    {
+        List<string> relatedModels = [];
+        var propertyType = string.Empty;
+
+        foreach (var property in properties)
+        {
+            if (property.Type is IdentifierNameSyntax)
+            {
+                var typeSyntax = (IdentifierNameSyntax)property.Type;
+                propertyType = GetPropertyType(typeSyntax);
+            }
+            else if (property.Type is GenericNameSyntax)
+            {
+                var typeSyntax = (GenericNameSyntax)property.Type;
+                propertyType = GetPropertyType(typeSyntax);
+            }
+            else if (property.Type is NullableTypeSyntax nullableTypeSyntax)
+            {
+                if (nullableTypeSyntax.ElementType is IdentifierNameSyntax)
+                {
+                    var identifierNameSyntax = (IdentifierNameSyntax)nullableTypeSyntax.ElementType;
+                    propertyType = GetPropertyType(identifierNameSyntax);
+                }
+
+                if (nullableTypeSyntax.ElementType is GenericNameSyntax)
+                {
+                    var genericNameSyntax = (GenericNameSyntax)nullableTypeSyntax.ElementType;
+                    propertyType = GetPropertyType(genericNameSyntax);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(propertyType) &&
+                !relatedModels.Contains(propertyType) &&
+                propertyType != nameof(Guid))
+            {
+                relatedModels.Add(propertyType);
+            }
+        }
+
+        return relatedModels;
+    }
+
     public void AddDomainModelEntityInfo(DomainModelEntityInfo entityInfo)
     {
     }
@@ -126,6 +239,7 @@ public class DomainModelEditor(string domainModelFolderPath)
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations")),
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations.Schema")),
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.HeadlessCms.Models")),
-        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.Core.Attributes"))
+        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.Core.Attributes")),
+        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.HeadlessCms.Core.Attributes"))
     ];
 }

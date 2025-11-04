@@ -325,7 +325,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
             var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
         
-            Assert.Contains($$"""public {{nameof(Guid)}}? {{request.FieldName}}Id { get; set; }""" , file1);
+            Assert.Contains($$"""public {{nameof(Guid)}}? {{request.RelatedTo}}Id { get; set; }""" , file1);
             Assert.Contains($$"""public {{type2}}? {{request.FieldName}} { get; set; }""" , file1);
             Assert.Contains($$"""public ICollection<{{type1}}>? {{request.RelatedRelationName ?? type1.Pluralize()}} { get; set; }""" , file2);
             
