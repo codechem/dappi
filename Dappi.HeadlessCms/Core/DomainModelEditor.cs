@@ -73,7 +73,7 @@ public class DomainModelEditor(string domainModelFolderPath)
         HasChanges = true;
     }
 
-    public void DeleteRelatedProperties(string modelName)
+    public void DeleteRelatedProperties(string modelName, string relatedModelName)
     {
         var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
 
@@ -88,8 +88,9 @@ public class DomainModelEditor(string domainModelFolderPath)
         {
             throw new Exception($"Class {modelName} not found.");
         }
-        var properties = GetPropertiesContainingAttributeFromClassNode
-            (classNode, modelName, DappiRelationAttribute.ShortName);
+
+        var properties = GetRelatedPropertiesForDeletion
+            (classNode, relatedModelName, DappiRelationAttribute.ShortName);
         var newRoot = root.RemoveNodes(properties, SyntaxRemoveOptions.KeepNoTrivia);
         if (newRoot == null)
         {
@@ -104,7 +105,7 @@ public class DomainModelEditor(string domainModelFolderPath)
 
         HasChanges = true;
     }
-    
+
     public void AddProperty(Property property)
     {
         var filePath = Path.Combine(domainModelFolderPath, $"{property.DomainModel}.cs");
@@ -125,7 +126,7 @@ public class DomainModelEditor(string domainModelFolderPath)
             .WithAccessorList(RoslynHelpers.WithGetAndSet());
         if (property.RelationKind is not null)
         {
-            newProperty = newProperty.WithRelationAttribute(property.RelationKind,property.RelatedDomainModel);
+            newProperty = newProperty.WithRelationAttribute(property.RelationKind, property.RelatedDomainModel);
         }
 
         var newNode = classNode.AddMembers(newProperty);
@@ -163,17 +164,24 @@ public class DomainModelEditor(string domainModelFolderPath)
         {
             return [];
         }
-        var properties = GetPropertiesContainingAttributeFromClassNode(classNode, modelName, attributeName);
 
-        return properties.ToList();
-    }
-    
-    public List<PropertyDeclarationSyntax> GetPropertiesContainingAttributeFromClassNode
-        (ClassDeclarationSyntax classNode , string modelName, string attributeName)
-    {
         var properties = classNode.DescendantNodes().OfType<PropertyDeclarationSyntax>()
             .Where(p =>
                 p.AttributeLists.Any(a => a.Attributes.Any(a1 => a1.Name.ToString() == attributeName)));
+        return properties.ToList();
+    }
+
+    public List<PropertyDeclarationSyntax> GetRelatedPropertiesForDeletion
+        (ClassDeclarationSyntax classNode, string relatedModelName, string attributeName)
+    {
+        var properties = classNode.DescendantNodes().OfType<PropertyDeclarationSyntax>()
+            .Where(p =>
+                p.AttributeLists.Any(a => a.Attributes.Any(a1 => a1.Name.ToString() == attributeName))
+                && p.AttributeLists.Any(a =>
+                    a.Attributes.Any(a1 =>
+                        a1.ArgumentList != null &&
+                        a1.ArgumentList.Arguments.Any(a2 => a2.ToString().Contains(relatedModelName)))));
+        
         return properties.ToList();
     }
 

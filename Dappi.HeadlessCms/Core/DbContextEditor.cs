@@ -58,12 +58,14 @@ public class DbContextEditor(
 
     public void RemoveSetFromDbContext(DomainModelEntityInfo modelType)
     {
-        var syntaxTree = GetSyntaxTreeFromDbContextSource();
+        var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
+            ? GetSyntaxTreeFromDbContextSource()
+            : CSharpSyntaxTree.ParseText(_currentCode);
         var root = syntaxTree.GetCompilationUnitRoot();
         var classNode = FindDbContextClassDeclaration(root);
 
         var modelName = modelType.Name;
-        var propertyName = $"{modelName}s";
+        var propertyName = modelName.Pluralize();
         var existing = classNode.Members
             .OfType<PropertyDeclarationSyntax>()
             .FirstOrDefault(p =>
@@ -75,9 +77,9 @@ public class DbContextEditor(
         {
             return;
         }
-        
+
         var newRoot = root.RemoveNode(existing, SyntaxRemoveOptions.KeepNoTrivia);
-        
+
         var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
         var assemblyReferences = AppDomain.CurrentDomain
             .GetAssemblies()
@@ -88,7 +90,7 @@ public class DbContextEditor(
             .AddSyntaxTrees(syntaxTree)
             .AddReferences(assemblyReferences)
             .WithOptions(options);
-        
+
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var validUsings = root.Usings
             .Where(u =>
@@ -172,12 +174,12 @@ public class DbContextEditor(
             Constants.Relations.OneToMany => $@"modelBuilder.Entity<{modelName}>()
             .HasMany<{relatedTo}>(s => s.{propertyName})
             .WithOne(e => e.{relatedPropertyName ?? modelName})
-            .HasForeignKey(s => s.{relatedPropertyName ?? modelName}Id);",
+            .HasForeignKey(s => s.{modelName}Id);",
 
             Constants.Relations.ManyToOne => $@"modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
             .WithMany(e => e.{relatedPropertyName ?? $"{modelName.Pluralize()}"})
-            .HasForeignKey(s => s.{propertyName}Id);",
+            .HasForeignKey(s => s.{relatedTo}Id);",
 
             Constants.Relations.ManyToMany => $@"modelBuilder.Entity<{modelName}>()
             .HasMany(m => m.{propertyName})
@@ -212,6 +214,50 @@ public class DbContextEditor(
             _currentCode = newRoot.NormalizeWhitespace().ToFullString();
         }
 
+        HasChanges = true;
+    }
+
+    public void DeleteRelations(string entity, List<string> relatedEntities)
+    {
+        var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
+            ? GetSyntaxTreeFromDbContextSource()
+            : CSharpSyntaxTree.ParseText(_currentCode);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = FindDbContextClassDeclaration(root);
+
+        var onModelCreating = classNode.Members.OfType<MethodDeclarationSyntax>()
+            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
+
+        if (onModelCreating is null)
+        {
+            return;
+        }
+
+        var block = onModelCreating.Body;
+        var statementsToRemove = new List<StatementSyntax>();
+
+        // Search for relation configurations to remove (e.g., HasMany, HasOne)
+        foreach (var relation in relatedEntities)
+        {
+            var relationStatements = block?.Statements
+                .OfType<ExpressionStatementSyntax>()
+                .Where(s => s.ToString().Contains(relation) && s.ToString().Contains(entity))
+                .ToList();
+
+            if (relationStatements != null)
+            {
+                statementsToRemove.AddRange(relationStatements);
+            }
+        }
+
+        // Remove the relation statements
+        var modifiedStatements = block.Statements.Except(statementsToRemove).ToList();
+        var modifiedBlock = block.WithStatements(SyntaxFactory.List(modifiedStatements));
+
+        // Rebuild the method with the updated block
+        var modifiedMethod = onModelCreating.WithBody(modifiedBlock);
+        var modifiedRoot = root.ReplaceNode(onModelCreating, modifiedMethod);
+        _currentCode = modifiedRoot.NormalizeWhitespace().ToFullString();
         HasChanges = true;
     }
 

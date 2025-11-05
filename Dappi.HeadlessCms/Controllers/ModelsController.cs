@@ -132,21 +132,24 @@ namespace Dappi.HeadlessCms.Controllers
                 var properties = _domainModelEditor.GetPropertiesContainingAttribute(modelName,
                     DappiRelationAttribute.ShortName).ToList();
                 var relatedEntities = _domainModelEditor.GetRelatedEntities(properties);
-
+                
+               
+                
                 foreach (var relatedEntity in relatedEntities)
                 {
-                    _domainModelEditor.DeleteRelatedProperties(relatedEntity);
+                    _domainModelEditor.DeleteRelatedProperties(relatedEntity , modelName);
                 }
-
+                
                 await _domainModelEditor.SaveAsync();
-                System.IO.File.Delete(modelFilePath);
-
+                
                 _dbContextEditor.RemoveSetFromDbContext(new DomainModelEntityInfo()
                 {
                     Name = modelName, Namespace = Directory.GetCurrentDirectory()
                 });
-
+                
+                _dbContextEditor.DeleteRelations(modelName,relatedEntities);
                 await _dbContextEditor.SaveAsync();
+                System.IO.File.Delete(modelFilePath);
 
                 var controllerFilePath = Path.Combine(
                     _controllersFolderPath,

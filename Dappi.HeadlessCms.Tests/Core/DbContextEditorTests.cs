@@ -1,6 +1,7 @@
 using Dappi.Core.Utils;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Core.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dappi.HeadlessCms.Tests.Core
 {
@@ -195,7 +196,7 @@ namespace Dappi.HeadlessCms.Tests.Core
             Assert.Contains($"modelBuilder.Entity<{ModelName}>()", actual);
             Assert.Contains($".HasMany<{RelatedTo}>(s => s.{PropertyName})", actual);
             Assert.Contains($".WithOne(e => e.{RelatedPropertyName ?? ModelName})", actual);
-            Assert.Contains($".HasForeignKey(s => s.{RelatedPropertyName ?? ModelName}Id);", actual);
+            Assert.Contains($".HasForeignKey(s => s.{ModelName}Id);", actual);
             Assert.Contains("base.OnModelCreating(modelBuilder);", actual);
         }
         
@@ -222,7 +223,7 @@ namespace Dappi.HeadlessCms.Tests.Core
             Assert.Contains($"modelBuilder.Entity<{ModelName}>()", actual);
             Assert.Contains($".HasOne<{RelatedTo}>(s => s.{PropertyName})", actual);
             Assert.Contains($".WithMany(e => e.{RelatedPropertyName ?? $"{ModelName.Pluralize()}"})", actual);
-            Assert.Contains($".HasForeignKey(s => s.{PropertyName}Id);", actual);
+            Assert.Contains($".HasForeignKey(s => s.{RelatedTo}Id);", actual);
             Assert.Contains("base.OnModelCreating(modelBuilder);", actual);
         }
         
