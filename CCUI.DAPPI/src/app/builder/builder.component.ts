@@ -127,7 +127,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
   }
 
   private updateSaveButtonState(): void {
-    this.disabled = !this.selectedType || !this.draftCollectionTypes.includes(this.selectedType);
+    this.disabled = this.draftCollectionTypes.length == 0;
   }
 
   private formatFields(fields: ModelField[]): void {

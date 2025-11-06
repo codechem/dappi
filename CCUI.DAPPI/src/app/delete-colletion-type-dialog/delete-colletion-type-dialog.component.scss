@@ -1,0 +1,88 @@
+@use '../../variables' as vars;
+@use 'sass:color';
+
+.delete-collection-type-dialog {
+  background-color: vars.$background-paper-elevation-1;
+  color: vars.$text-primary;
+  border-radius: 8px;
+  min-width: 400px;
+  max-width: 90vw;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 400;
+  }
+
+  button[mat-icon-button] {
+    color: vars.$text-primary;
+  }
+}
+
+.dialog-content {
+  padding: 0 16px 16px;
+
+  .form-field {
+    margin-bottom: 16px;
+
+    label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .helper-text {
+      font-size: 12px;
+      margin-top: 4px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+  }
+
+  .input-field {
+    width: 100%;
+  }
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+
+  .continue-button {
+    background-color: vars.$primary-main;
+    color: vars.$primary-contrast-text;
+    font-weight: 500;
+    text-transform: none;
+    transition: all 0.2s ease;
+    min-width: 100px;
+    border-radius: 4px;
+
+    &:hover {
+      background-color: color.adjust(vars.$primary-main, $lightness: -5%);
+    }
+
+    &[disabled] {
+      color: vars.$action-disabled !important;
+      background-color: vars.$action-disabled-background;
+      cursor: not-allowed;
+    }
+  }
+}
+form {
+  margin-top: 20px;
+}
+
+.description {
+  font-size: 12px;
+  color: vars.$text-secondary;
+  text-align: center;
+  line-height: 1.4;
+}

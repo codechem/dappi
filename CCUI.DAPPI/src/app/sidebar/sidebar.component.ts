@@ -41,6 +41,7 @@ import {
   loadPublishedCollectionTypes,
 } from '../state/collection/collection.actions';
 import { selectUser } from '../state/auth/auth.selectors';
+import { DeleteColletionTypeDialogComponent } from '../delete-colletion-type-dialog/delete-colletion-type-dialog.component';
 
 @Component({
   selector: 'app-sidebar',
@@ -73,7 +74,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   filteredCollectionTypes: string[] = [];
   searchText = '';
-
+  selectedType = '';
   private destroy$ = new Subject<void>();
   private searchTextChanged = new Subject<string>();
 
@@ -217,6 +218,21 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
         } else {
           this.store.dispatch(loadPublishedCollectionTypes());
         }
+      })
+    );
+  }
+
+  openDeleteCollectionTypeDialog(type:string): void {
+    const dialogRef = this.dialog.open(DeleteColletionTypeDialogComponent, {
+      width: '450px',
+      panelClass: 'dark-theme-dialog',
+      disableClose: true,
+      data: { selectedType: type },
+    });
+
+    this.subscriptions.add(
+      dialogRef.afterClosed().subscribe(() => {
+        this.store.dispatch(loadCollectionTypes());
       })
     );
   }

@@ -1,0 +1,24 @@
+<div class="delete-collection-type-dialog">
+  <div class="dialog-header">
+    <h2>Delete {{selectedType}}</h2>
+    <button mat-icon-button (click)="onClose()" aria-label="Close dialog">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div class="dialog-content">
+    <hr />
+
+     @let hasRelatedProperties = hasRelatedProperties$ | async;
+      @if(hasRelatedProperties){
+        <h3>Warning model contains related models</h3>
+      }@else{
+        <h3>Has no related properties</h3>
+      }
+      <h4>This action is not reversable</h4>
+  </div>
+  <div class="dialog-footer">
+    <button mat-flat-button class="continue-button" (click) = onDelete()>
+        <span>Delete</span>
+    </button>
+  </div>
+</div>

@@ -154,6 +154,25 @@
     background-color: rgba(vars.$success-main, 0.2);
     color: vars.$success-main;
   }
+  
+  &.deleted {
+    background-color: rgba(vars.$error-light, 0.2);
+    color: vars.$success-main;
+  }
+}
+
+
+.status-pill-deleted {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  &.deleted {
+    background-color: rgba(vars.$error-light, 0.2);
+    color: #ffff;
+  }
 }
 
 .status-pill-draft {

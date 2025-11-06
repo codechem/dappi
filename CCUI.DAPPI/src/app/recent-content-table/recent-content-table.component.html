@@ -51,15 +51,22 @@
                 </div>
               </td>
               <td class="cell" role="cell">
-                @if (item.isPublished) {
+                @if(item.state == state.Deleted){
+                  <div class="status-pill-deleted deleted">Deleted</div>
+                }
+                @if(item.state == state.PendingDelete){
+                  <div class="status-pill-deleted deleted">Pending Delete</div>
+                }
+                @if(item.state == state.PendingPublish){
+                  <div class="status-pill published">Pending Publish</div>
+                }
+                 @if(item.state == state.Published){
                   <div class="status-pill published">Published</div>
-                } @else {
-                  <div class="status-pill-draft draft">Draft</div>
                 }
               </td>
               <td class="cell" role="cell">{{ item.modifiedAt }}</td>
               <td class="small-cell actions-cell" role="cell">
-                @if (!item.isPublished) {
+                @if (item.state != state.Published) {
                   <button
                     mat-icon-button
                     (click)="editContentType(item.modelName)"

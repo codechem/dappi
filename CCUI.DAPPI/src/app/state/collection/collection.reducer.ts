@@ -114,5 +114,41 @@ export const collectionReducer = createReducer(
     ...state,
     isSaving: false,
     saveError: error,
+  })),
+  
+    on(CollectionActions.collectionHasRelatedProperties, (state) => ({
+    ...state,
+    loading:true
+  })),
+
+  on(CollectionActions.collectionHasRelatedPropertiesSuccess, (state, { hasRelatedProperties }) => ({
+    ...state,
+    hasRelatedProperties,
+    loading:false,
+    error:null
+  })),
+
+  on(CollectionActions.collectionHasRelatedPropertiesFailure, (state, { error }) => ({
+    ...state,
+    error,
+    loading:false,
+  })),
+
+   on(CollectionActions.deleteCollectionType, (state) => ({
+    ...state,
+    loading:true,
+    error:null
+  })),
+
+  on(CollectionActions.deleteCollectionTypeSuccess, (state, { message }) => ({
+    ...state,
+    message,
+    loading:false
+  })),
+
+  on(CollectionActions.deleteCollectionTypeFailure, (state, { error }) => ({
+    ...state,
+    error,
+    loading:false
   }))
 );

@@ -11,6 +11,7 @@ export interface CollectionState {
   serverRestarting: boolean;
   publishedCollectionTypes: string[];
   draftCollectionTypes: string[];
+  hasRelatedProperties:boolean;
 }
 
 export const initialCollectionState: CollectionState = {
@@ -24,4 +25,5 @@ export const initialCollectionState: CollectionState = {
   saveError: null,
   serverRestarting: false,
   draftCollectionTypes: [],
+  hasRelatedProperties:false
 };
