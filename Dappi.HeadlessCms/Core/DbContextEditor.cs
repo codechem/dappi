@@ -80,29 +80,32 @@ public class DbContextEditor(
 
         var newRoot = root.RemoveNode(existing, SyntaxRemoveOptions.KeepNoTrivia);
 
-        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-        var assemblyReferences = AppDomain.CurrentDomain
-            .GetAssemblies()
-            .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
-            .Select(a => MetadataReference.CreateFromFile(a.Location))
-            .ToList();
-        var compilation = CSharpCompilation.Create("InMemoryAssembly")
-            .AddSyntaxTrees(syntaxTree)
-            .AddReferences(assemblyReferences)
-            .WithOptions(options);
-
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
-        var validUsings = root.Usings
-            .Where(u =>
-            {
-                var info = semanticModel.GetSymbolInfo(u.Name!);
-                return info.Symbol != null;
-            })
-            .ToList();
-        newRoot = newRoot?.WithUsings(SyntaxFactory.List(validUsings));
-
         _currentCode = newRoot?.NormalizeWhitespace().ToFullString()!;
 
+        HasChanges = true;
+    }
+
+    public void UpdateUsings()
+    {
+        var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
+            ? GetSyntaxTreeFromDbContextSource()
+            : CSharpSyntaxTree.ParseText(_currentCode);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = FindDbContextClassDeclaration(root);
+        
+        var hasDbSet = classNode.Members
+            .OfType<PropertyDeclarationSyntax>()
+            .Any(p =>
+                p.Type is GenericNameSyntax { Identifier.Text: "DbSet" });
+
+        if (hasDbSet)
+        {
+            return;
+        }
+
+        var usings = root.Usings.Where(u => u.Name != null && !u.Name.ToString().Contains("Entities"));
+        var newRoot = root?.WithUsings(SyntaxFactory.List(usings));
+        _currentCode = newRoot?.NormalizeWhitespace().ToFullString()!;
         HasChanges = true;
     }
 

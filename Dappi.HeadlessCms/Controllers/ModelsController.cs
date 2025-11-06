@@ -8,6 +8,7 @@ using Dappi.Core.Utils;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Core.Schema;
+using Dappi.HeadlessCms.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -89,7 +90,8 @@ namespace Dappi.HeadlessCms.Controllers
 
                 await AddContentTypeChangeAsync(
                     request.ModelName,
-                    new Dictionary<string, string>() { { "Id", "Guid" } }
+                    new Dictionary<string, string> { { "Id", "Guid" } },
+                    ContentTypeState.PendingPublish
                 );
 
                 await _domainModelEditor.SaveAsync();
@@ -132,36 +134,35 @@ namespace Dappi.HeadlessCms.Controllers
                 var properties = _domainModelEditor.GetPropertiesContainingAttribute(modelName,
                     DappiRelationAttribute.ShortName).ToList();
                 var relatedEntities = _domainModelEditor.GetRelatedEntities(properties);
-                
-               
-                
-                foreach (var relatedEntity in relatedEntities)
-                {
-                    _domainModelEditor.DeleteRelatedProperties(relatedEntity , modelName);
-                }
-                
-                await _domainModelEditor.SaveAsync();
-                
+
                 _dbContextEditor.RemoveSetFromDbContext(new DomainModelEntityInfo()
                 {
                     Name = modelName, Namespace = Directory.GetCurrentDirectory()
                 });
-                
-                _dbContextEditor.DeleteRelations(modelName,relatedEntities);
+                _dbContextEditor.DeleteRelations(modelName, relatedEntities);
+                _dbContextEditor.UpdateUsings();
                 await _dbContextEditor.SaveAsync();
-                System.IO.File.Delete(modelFilePath);
+
+                foreach (var relatedEntity in relatedEntities)
+                {
+                    _domainModelEditor.DeleteRelatedProperties(relatedEntity, modelName);
+                }
+
+                await _domainModelEditor.SaveAsync();
+
+                await Task.Run(() => System.IO.File.Delete(modelFilePath));
 
                 var controllerFilePath = Path.Combine(
                     _controllersFolderPath,
                     $"{modelName}Controller.cs"
                 );
-
+                
                 if (System.IO.File.Exists(controllerFilePath))
                 {
                     System.IO.File.Delete(controllerFilePath);
                 }
 
-                await AddContentTypeChangeAsync(modelName, new Dictionary<string, string>());
+                await AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(),ContentTypeState.PendingDelete);
 
                 return Ok(
                     new { Message = $"Model '{modelName}' deleted successfully.", FilePath = modelFilePath, }
@@ -294,9 +295,18 @@ namespace Dappi.HeadlessCms.Controllers
             return Ok(fieldData);
         }
 
-        private async Task AddContentTypeChangeAsync(
-            string modelName,
-            Dictionary<string, string> fields
+        [HttpGet("hasRelatedProperties/{modelName}")]
+        public IActionResult HasRelatedProperties(string modelName)
+        {
+            var properties = _domainModelEditor.GetPropertiesContainingAttribute(modelName,
+                DappiRelationAttribute.ShortName).ToList();
+            var hasRelatedProperties = _domainModelEditor.GetRelatedEntities(properties).Count > 0;
+            return Ok(new { hasRelatedProperties });
+        }
+
+        private async Task AddContentTypeChangeAsync(string modelName,
+            Dictionary<string, string> fields,
+            ContentTypeState state
         )
         {
             var contentTypeChange = new ContentTypeChange()
@@ -304,6 +314,7 @@ namespace Dappi.HeadlessCms.Controllers
                 ModelName = modelName,
                 Fields = JsonSerializer.Serialize(fields),
                 ModifiedBy = _currentSessionProvider.GetCurrentUserId() ?? Guid.Empty,
+                State = state
             };
 
             _dbContext.ContentTypeChanges.Add(contentTypeChange);
@@ -316,7 +327,7 @@ namespace Dappi.HeadlessCms.Controllers
             try
             {
                 var contentTypeChangeForModel = await _dbContext.ContentTypeChanges
-                    .Where(ctc => ctc.ModelName == modelName && !ctc.IsPublished)
+                    .Where(ctc => ctc.ModelName == modelName && ctc.State == ContentTypeState.PendingPublish)
                     .OrderByDescending(ctc => ctc.ModifiedAt)
                     .FirstOrDefaultAsync();
 
@@ -337,6 +348,7 @@ namespace Dappi.HeadlessCms.Controllers
                     contentTypeChangeForModel = new ContentTypeChange()
                     {
                         ModelName = modelName, Fields = JsonSerializer.Serialize(newFields),
+                        State = ContentTypeState.PendingPublish
                     };
 
                     _dbContext.ContentTypeChanges.Add(contentTypeChangeForModel);

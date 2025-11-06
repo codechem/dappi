@@ -1,4 +1,5 @@
 using Dappi.HeadlessCms.Database;
+using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models.Mapping;
 using Microsoft.AspNetCore.Mvc;
@@ -48,17 +49,11 @@ namespace Dappi.HeadlessCms.Controllers
         {
             try
             {
-                var draftModelNames = _dbContext.ContentTypeChanges
-                    .Where(ctc => !ctc.IsPublished)
+                var publishedOnlyModels = _dbContext.ContentTypeChanges
+                    .Where(ctc => ctc.State == ContentTypeState.Published)
                     .Select(x => x.ModelName)
                     .Distinct();
-
-                var publishedOnlyModels = _dbContext.ContentTypeChanges
-                    .Where(ctc => ctc.IsPublished)
-                    .Select(x => x.ModelName)
-                    .Distinct()
-                    .Where(modelName => !draftModelNames.Contains(modelName));
-
+                
                 return Ok(await publishedOnlyModels.ToListAsync());
             }
             catch (Exception ex)
@@ -75,7 +70,8 @@ namespace Dappi.HeadlessCms.Controllers
             {
                 var draftModels = _dbContext.ContentTypeChanges
                     .AsNoTracking()
-                    .Where(ctc => !ctc.IsPublished)
+                    .Where(ctc =>
+                        ctc.State == ContentTypeState.PendingPublish || ctc.State == ContentTypeState.PendingDelete)
                     .Select(x => x.ModelName)
                     .Distinct();
 
