@@ -298,6 +298,17 @@ namespace Dappi.HeadlessCms.Controllers
         [HttpGet("hasRelatedProperties/{modelName}")]
         public IActionResult HasRelatedProperties(string modelName)
         {
+            if (string.IsNullOrWhiteSpace(modelName))
+            {
+                return BadRequest("Model name must be provided.");
+            }
+            
+            var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
+            if (!System.IO.File.Exists(modelFilePath))
+            {
+                return NotFound("Model class not found.");
+            }
+            
             var properties = _domainModelEditor.GetPropertiesContainingAttribute(modelName,
                 DappiRelationAttribute.ShortName).ToList();
             var hasRelatedProperties = _domainModelEditor.GetRelatedEntities(properties).Count > 0;

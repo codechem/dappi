@@ -1,8 +1,11 @@
+using Dappi.Core.Utils;
+using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models.Mapping;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -14,14 +17,16 @@ namespace Dappi.HeadlessCms.Controllers
     {
         private readonly DappiDbContext _dbContext;
         private readonly ILogger<ContentTypeChangesController> _logger;
-
+        private readonly DomainModelEditor _domainModelEditor;
         public ContentTypeChangesController(
             IDbContextAccessor dappiDbContextAccessor,
             ILogger<ContentTypeChangesController> logger,
-            ICurrentDappiSessionProvider currentSessionProvider)
+            ICurrentDappiSessionProvider currentSessionProvider,
+            DomainModelEditor domainModelEditor)
         {
             _dbContext = dappiDbContextAccessor.DbContext;
             _logger = logger;
+            _domainModelEditor = domainModelEditor;
         }
 
         [HttpGet]
@@ -48,13 +53,21 @@ namespace Dappi.HeadlessCms.Controllers
         public async Task<IActionResult> GetPublishedModels()
         {
             try
-            {
-                var publishedOnlyModels = _dbContext.ContentTypeChanges
-                    .Where(ctc => ctc.State == ContentTypeState.Published)
-                    .Select(x => x.ModelName)
-                    .Distinct();
+            { 
+                var models = (await _domainModelEditor.GetDomainModelEntityInfosAsync())
+                    .Select(x => x.Name).ToList();
+                var existingTables = _dbContext.Model.GetEntityTypes().Select(x => x.GetTableName()).ToList();
                 
-                return Ok(await publishedOnlyModels.ToListAsync());
+                var publishedOnlyModels = await _dbContext.ContentTypeChanges
+                    .Where(ctc =>
+                        ctc.State == ContentTypeState.Published &&
+                        models.Contains(ctc.ModelName))
+                    .Select(x => x.ModelName)
+                    .Distinct()
+                    .ToListAsync();
+                
+                var filteredPublishedModels = publishedOnlyModels.Where(x => existingTables.Contains(x.Pluralize())).ToList();
+                return Ok(filteredPublishedModels);
             }
             catch (Exception ex)
             {
