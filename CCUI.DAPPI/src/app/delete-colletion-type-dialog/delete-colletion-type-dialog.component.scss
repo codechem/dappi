@@ -5,19 +5,19 @@
   background-color: vars.$background-paper-elevation-1;
   color: vars.$text-primary;
   border-radius: 8px;
-  min-width: 400px;
-  max-width: 90vw;
+  width: 759px;
 }
 
 .dialog-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 16px;
-
-  h2 {
+  flex-direction: column;
+  gap: 24px;
+  h1 {
     margin: 0;
-    font-size: 16px;
+    font-size: 24px;
     font-weight: 400;
   }
 
@@ -28,7 +28,6 @@
 
 .dialog-content {
   padding: 0 16px 16px;
-
   .form-field {
     margin-bottom: 16px;
 
@@ -55,8 +54,9 @@
   display: flex;
   justify-content: flex-end;
   padding: 16px;
+  gap: 10px;
 
-  .continue-button {
+  .cancel-button {
     background-color: vars.$primary-main;
     color: vars.$primary-contrast-text;
     font-weight: 500;
@@ -66,7 +66,7 @@
     border-radius: 4px;
 
     &:hover {
-      background-color: color.adjust(vars.$primary-main, $lightness: -5%);
+      background-color: color.adjust(vars.$primary-main, $lightness: -8%);
     }
 
     &[disabled] {
@@ -75,7 +75,41 @@
       cursor: not-allowed;
     }
   }
+
+  .delete-button{
+    border-radius: 4px;
+    background-color: #E47273;
+    color: #212021;
+    font-weight: 500;
+    text-transform: none;
+    transition: all 0.2s ease;
+    min-width: 100px;
+    border-radius: 4px;
+
+    &:hover {
+      background-color: color.adjust(#E47273, $lightness: -5%);
+    }
+  }
 }
+
+.warning-icon{
+  color : #E47273;
+}
+
+.dialog-message{
+  color: var(--text-secondary, rgba(255, 255, 255, 0.70));
+  text-align: start;
+  font-feature-settings: 'liga' off, 'clig' off;
+  /* typography/body2 */
+  font-family: var(--fontFamily, Roboto);
+  font-size: var(--font-size-0875-rem, 14px);
+  font-style: normal;
+  font-weight: var(--fontWeightRegular, 400);
+  line-height: 143%; /* 20.02px */
+  letter-spacing: 0.17px;
+}
+
+
 form {
   margin-top: 20px;
 }

@@ -1,23 +1,26 @@
 <div class="delete-collection-type-dialog">
   <div class="dialog-header">
-    <h2>Delete {{selectedType}}</h2>
-    <button mat-icon-button (click)="onClose()" aria-label="Close dialog">
-      <mat-icon>close</mat-icon>
-    </button>
+    <h1>Confirmation</h1>
+    <div>
+      <mat-icon class="warning-icon">error</mat-icon>
+    </div>
   </div>
   <div class="dialog-content">
     <hr />
 
-     @let hasRelatedProperties = hasRelatedProperties$ | async;
+     <!-- @let hasRelatedProperties = hasRelatedProperties$ | async;
       @if(hasRelatedProperties){
         <h3>Warning model contains related models</h3>
       }@else{
         <h3>Has no related properties</h3>
-      }
-      <h4>This action is not reversable</h4>
+      } -->
+      <p class="dialog-message">Are you sure you want to delete this document? This action is irreversible.</p>
   </div>
   <div class="dialog-footer">
-    <button mat-flat-button class="continue-button" (click) = onDelete()>
+     <button mat-flat-button class="cancel-button" (click)="onClose()" aria-label="Close dialog">
+      <Span>Close</Span>
+    </button>
+    <button mat-flat-button class="delete-button" (click) = onDelete()>
         <span>Delete</span>
     </button>
   </div>

@@ -10,11 +10,19 @@
         }
         <p>Build the data architecture of your design</p>
       </div>
-      <button mat-icon-button class="settings-button" aria-label="Settings">
-        <mat-icon>more_vert</mat-icon>
-      </button>
+      @if(selectedType){
+        <button mat-icon-button class="settings-button" aria-label="Settings" [matMenuTriggerFor]="menu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu" class="menu-container">
+          <button mat-menu-item class="menu-delete" (click) = "openDeleteCollectionTypeDialog()">
+            <mat-icon class="menu-delete">delete</mat-icon>
+            <span>Delete Collection</span>
+          </button>
+        </mat-menu>
+      }
     </header>
-    @if (!fieldsData.length) {
+    @if (!fieldsData.length || selectedType === '') {
       <div class="content">
         <img src="assets/illustration.svg" alt="No content" />
         <h2>There are no fields created yet</h2>

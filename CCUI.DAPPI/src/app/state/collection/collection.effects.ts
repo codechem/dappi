@@ -229,6 +229,23 @@ export class CollectionEffects {
     )
   );
 
+  // reloadCollectionTypesAfterDelete$ = createEffect(() =>
+  //   this.actions$.pipe(
+  //     ofType(CollectionActions.deleteCollectionTypeSuccess),
+  //     withLatestFrom(this.store.pipe(select(selectCollectionTypes))),
+  //     concatMap(([_ , collectionTypes]) => {
+  //       return [
+  //       CollectionActions.loadPublishedCollectionTypes(),
+  //       CollectionActions.loadDraftCollectionTypes(),
+  //       ContentActions.setContentType({
+  //         selectedType: collectionTypes[0],
+  //       }),
+  //       CollectionActions.loadFields({modelType: collectionTypes[0]})
+  //     ]
+  //     })
+  //   )
+  // );
+
   addField$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.addField),

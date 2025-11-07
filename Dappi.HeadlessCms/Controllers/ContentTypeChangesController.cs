@@ -66,7 +66,8 @@ namespace Dappi.HeadlessCms.Controllers
                     .Distinct()
                     .ToListAsync();
                 
-                var filteredPublishedModels = publishedOnlyModels.Where(x => existingTables.Contains(x.Pluralize())).ToList();
+                var filteredPublishedModels =
+                    publishedOnlyModels.Where(x => existingTables.Any(e => e == x.Pluralize())).ToList();
                 return Ok(filteredPublishedModels);
             }
             catch (Exception ex)

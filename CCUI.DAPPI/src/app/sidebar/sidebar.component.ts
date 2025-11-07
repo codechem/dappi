@@ -41,7 +41,6 @@ import {
   loadPublishedCollectionTypes,
 } from '../state/collection/collection.actions';
 import { selectUser } from '../state/auth/auth.selectors';
-import { DeleteColletionTypeDialogComponent } from '../delete-colletion-type-dialog/delete-colletion-type-dialog.component';
 
 @Component({
   selector: 'app-sidebar',
@@ -58,6 +57,7 @@ import { DeleteColletionTypeDialogComponent } from '../delete-colletion-type-dia
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
 })
+
 export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() headerText: string = 'Builder';
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
@@ -69,6 +69,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   selectedType$ = this.store.select(selectSelectedType);
   collectionTypes$ = this.store.select(selectCollectionTypes);
+  collectionTypes:string[] = [];
   collectionTypesError$ = this.store.select(selectCollectionTypesError);
   publishedCollectionTypes$ = this.store.select(selectPublishedCollectionTypes);
 
@@ -143,6 +144,13 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       })
     );
+
+    this.subscriptions.add(
+      this.collectionTypes$.subscribe(types => 
+        this.collectionTypes = types
+      )
+    )
+
   }
 
   ngAfterViewInit(): void {
@@ -218,21 +226,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
         } else {
           this.store.dispatch(loadPublishedCollectionTypes());
         }
-      })
-    );
-  }
-
-  openDeleteCollectionTypeDialog(type:string): void {
-    const dialogRef = this.dialog.open(DeleteColletionTypeDialogComponent, {
-      width: '450px',
-      panelClass: 'dark-theme-dialog',
-      disableClose: true,
-      data: { selectedType: type },
-    });
-
-    this.subscriptions.add(
-      dialogRef.afterClosed().subscribe(() => {
-        this.store.dispatch(loadCollectionTypes());
       })
     );
   }

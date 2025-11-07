@@ -32,7 +32,8 @@ export class DeleteColletionTypeDialogComponent implements OnInit {
   constructor
   (
     private dialogRef: MatDialogRef<DeleteColletionTypeDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) private data: any,
+    @Inject(MAT_DIALOG_DATA) 
+    data: any,
     private store:Store
   ) { 
     this.selectedType = data.selectedType;
