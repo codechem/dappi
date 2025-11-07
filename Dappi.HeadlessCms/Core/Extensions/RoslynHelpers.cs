@@ -1,11 +1,9 @@
 using System.Reflection;
+using Dappi.Core.Attributes;
 using Dappi.HeadlessCms.Core.Attributes;
-using Dappi.HeadlessCms.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.OpenApi.Extensions;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Dappi.HeadlessCms.Core.Extensions
 {
@@ -25,7 +23,8 @@ namespace Dappi.HeadlessCms.Core.Extensions
         public static AttributeListSyntax WithCcControllerAttribute()
         {
             return SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
-                SyntaxFactory.Attribute(SyntaxFactory.ParseName(nameof(CCControllerAttribute).Replace("Attribute", "")))));
+                SyntaxFactory.Attribute(
+                    SyntaxFactory.ParseName(nameof(CCControllerAttribute).Replace("Attribute", "")))));
         }
 
         public static PropertyDeclarationSyntax IdentityProperty()
@@ -43,6 +42,24 @@ namespace Dappi.HeadlessCms.Core.Extensions
                 );
         }
 
+        public static PropertyDeclarationSyntax WithRelationAttribute(this PropertyDeclarationSyntax property,
+            DappiRelationKind? relationType = null, string? relatedType = null)
+        {
+            var attributeList = SyntaxFactory.AttributeList(
+                SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.Attribute(
+                            SyntaxFactory.ParseName(DappiRelationAttribute.ShortName))
+                        .AddArgumentListArguments(
+                            SyntaxFactory.AttributeArgument(
+                                SyntaxFactory.ParseExpression($"{nameof(DappiRelationKind)}.{relationType}")),
+                            SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression($"typeof({relatedType})"))
+                        )
+                )
+            );
+
+            return property.AddAttributeLists(attributeList);
+        }
+
         public static MemberDeclarationSyntax[] GeneratePropertiesFromType(Type type)
         {
             var memberList = new List<MemberDeclarationSyntax>();
@@ -53,7 +70,8 @@ namespace Dappi.HeadlessCms.Core.Extensions
 
             foreach (var member in typeMembers)
             {
-                var newMember = GenerateDynamicProperty(member.PropertyType.GetDisplayName(),member.Name,!member.IsNullable())
+                var newMember = GenerateDynamicProperty(member.PropertyType.GetDisplayName(), member.Name,
+                        !member.IsNullable())
                     .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                     .WithAccessorList(WithGetAndSet());
                 memberList.Add(newMember);
@@ -61,19 +79,21 @@ namespace Dappi.HeadlessCms.Core.Extensions
 
             return memberList.ToArray();
         }
-        
-        public static PropertyDeclarationSyntax GenerateDynamicProperty(string propertyType , string propertyName , bool isRequired = false)
+
+        public static PropertyDeclarationSyntax GenerateDynamicProperty(string propertyType, string propertyName,
+            bool isRequired = false)
         {
             if (isRequired)
             {
                 return SyntaxFactory.PropertyDeclaration(SyntaxFactory.IdentifierName(propertyType), propertyName);
             }
+
             return SyntaxFactory
                 .PropertyDeclaration(
                     SyntaxFactory.NullableType(SyntaxFactory.IdentifierName(propertyType),
                         SyntaxFactory.Token(SyntaxKind.QuestionToken)), propertyName);
         }
-        
+
         public static SyntaxTree GetSyntaxTreeFromSource(string filePath)
         {
             var dbContextSourceCode = File.ReadAllText(filePath);

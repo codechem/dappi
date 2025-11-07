@@ -1,3 +1,4 @@
+using Dappi.Core.Attributes;
 using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
@@ -164,11 +165,9 @@ public class DomainModelToSchemaVisitor : CSharpSyntaxWalker
         mappedBy = null;
         inversedBy = null;
 
-        var attributeShortName = nameof(DappiRelationAttribute).Replace("Attribute", "");
-
         var relationAttribute = property.AttributeLists
             .SelectMany(al => al.Attributes)
-            .FirstOrDefault(attr => attr.Name.ToString().Contains(attributeShortName));
+            .FirstOrDefault(attr => attr.Name.ToString().Contains(DappiRelationAttribute.ShortName));
 
         if (relationAttribute is null)
             return false;

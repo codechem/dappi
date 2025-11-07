@@ -12,10 +12,10 @@ namespace Dappi.HeadlessCms.Models.Mapping
             {
                 Fields = JsonSerializer.Deserialize<Dictionary<string, string>>(contentTypeChange.Fields)!,
                 ModelName = contentTypeChange.ModelName,
-                IsPublished = contentTypeChange.IsPublished,
                 ModifiedAt = contentTypeChange.ModifiedAt,
                 ModifiedBy = contentTypeChange.ModifiedBy,
                 Id = contentTypeChange.Id,
+                State = contentTypeChange.State,
             };
     }
 }

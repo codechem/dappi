@@ -1,4 +1,5 @@
 using Dappi.HeadlessCms.Database;
+using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -14,7 +15,7 @@ public static class AppExtensions
 {
     public static async Task<IApplicationBuilder> UseDappi<TDbContext>(this WebApplication app,
         Action<SwaggerUIOptions>? configureSwagger = null)
-       where TDbContext : DappiDbContext
+        where TDbContext : DappiDbContext
     {
         if (app.Environment.IsDevelopment())
         {
@@ -116,8 +117,12 @@ public static class AppExtensions
         {
             var dbContext = serviceProvider.GetRequiredService<TDbContext>();
             await dbContext.ContentTypeChanges
-                .Where(ctc => !ctc.IsPublished)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(e => e.IsPublished, true));
+                .Where(ctc => ctc.State == ContentTypeState.PendingPublish || ctc.State == ContentTypeState.PendingDelete)
+                .ExecuteUpdateAsync(setters => 
+                    setters.SetProperty(e => e.State,
+                        e => e.State == ContentTypeState.PendingPublish
+                            ? ContentTypeState.Published
+                            : ContentTypeState.Deleted));
         }
         catch (Exception ex)
         {

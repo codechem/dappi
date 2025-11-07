@@ -297,7 +297,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             Assert.Contains($"modelBuilder.Entity<{type1}>()", dbContext);
             Assert.Contains($".HasMany<{type2}>(s => s.{request.FieldName})", dbContext);
             Assert.Contains($".WithOne(e => e.{request.RelatedRelationName ?? type1})", dbContext);
-            Assert.Contains($".HasForeignKey(s => s.{request.RelatedRelationName ?? type1}Id);", dbContext);
+            Assert.Contains($".HasForeignKey(s => s.{type1}Id);", dbContext);
             Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
             Assert.IsType<OkObjectResult>(res);
         }
@@ -325,14 +325,14 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
             var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
         
-            Assert.Contains($$"""public {{nameof(Guid)}}? {{request.FieldName}}Id { get; set; }""" , file1);
+            Assert.Contains($$"""public {{nameof(Guid)}}? {{request.RelatedTo}}Id { get; set; }""" , file1);
             Assert.Contains($$"""public {{type2}}? {{request.FieldName}} { get; set; }""" , file1);
             Assert.Contains($$"""public ICollection<{{type1}}>? {{request.RelatedRelationName ?? type1.Pluralize()}} { get; set; }""" , file2);
             
             Assert.Contains($"modelBuilder.Entity<{type1}>()", dbContext);
             Assert.Contains($".HasOne<{type2}>(s => s.{request.FieldName})", dbContext);
             Assert.Contains($".WithMany(e => e.{request.RelatedRelationName ?? $"{type1.Pluralize()}"})", dbContext);
-            Assert.Contains($".HasForeignKey(s => s.{request.FieldName}Id);", dbContext);
+            Assert.Contains($".HasForeignKey(s => s.{type2}Id);", dbContext);
             Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
             Assert.IsType<OkObjectResult>(res);
         }

@@ -1,7 +1,11 @@
+using System;
+using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Tests.TestData;
+using Xunit;
 
 namespace Dappi.HeadlessCms.Tests.Core
 {
@@ -33,7 +37,7 @@ namespace Dappi.HeadlessCms.Tests.Core
             var actual = await File.ReadAllTextAsync(_filePath);
             Assert.Contains("using System.ComponentModel.DataAnnotation", actual);
             Assert.Contains("using System.ComponentModel.DataAnnotations.Schema", actual);
-            Assert.Contains("using Dappi.SourceGenerator.Attributes", actual);
+            Assert.Contains("using Dappi.Core.Attributes", actual);
             Assert.Contains("using Dappi.HeadlessCms.Model", actual);
         }
 
@@ -44,8 +48,9 @@ namespace Dappi.HeadlessCms.Tests.Core
             var expected = $$"""
                              using System.ComponentModel.DataAnnotations;
                              using System.ComponentModel.DataAnnotations.Schema;
-                             using Dappi.SourceGenerator.Attributes;
                              using Dappi.HeadlessCms.Models;
+                             using Dappi.Core.Attributes;
+                             using Dappi.HeadlessCms.Core.Attributes;
 
                              namespace {{_assemblyName}}.Entities
                              {
@@ -71,8 +76,9 @@ namespace Dappi.HeadlessCms.Tests.Core
              string expected = $$"""
                                       using System.ComponentModel.DataAnnotations;
                                       using System.ComponentModel.DataAnnotations.Schema;
-                                      using Dappi.SourceGenerator.Attributes;
                                       using Dappi.HeadlessCms.Models;
+                                      using Dappi.Core.Attributes;
+                                      using Dappi.HeadlessCms.Core.Attributes;
 
                                       namespace {{_assemblyName}}.Entities
                                       {
@@ -103,8 +109,9 @@ namespace Dappi.HeadlessCms.Tests.Core
             var expected = $$"""
                              using System.ComponentModel.DataAnnotations;
                              using System.ComponentModel.DataAnnotations.Schema;
-                             using Dappi.SourceGenerator.Attributes;
                              using Dappi.HeadlessCms.Models;
+                             using Dappi.Core.Attributes;
+                             using Dappi.HeadlessCms.Core.Attributes;
 
                              namespace {{_assemblyName}}.Entities
                              {
@@ -120,7 +127,14 @@ namespace Dappi.HeadlessCms.Tests.Core
                              """;
             
             _domainModelEditor.CreateEntityModel(DomainModelName);
-            _domainModelEditor.AddProperty(TestPropertyName, type , DomainModelName , true);
+            Property property = new Property
+            {
+                DomainModel = DomainModelName,
+                Name = TestPropertyName,
+                Type = type,
+                IsRequired = true,
+            };
+            _domainModelEditor.AddProperty(property);
             await _domainModelEditor.SaveAsync();
             
             var actual = await File.ReadAllTextAsync(_filePath);
@@ -131,11 +145,13 @@ namespace Dappi.HeadlessCms.Tests.Core
         [ClassData(typeof(ValidPropertyTypes))]
         public async Task DomainModelEditor_Should_Add_Optional_Property(string type)
         {
+
              var expected = $$"""
                               using System.ComponentModel.DataAnnotations;
                               using System.ComponentModel.DataAnnotations.Schema;
-                              using Dappi.SourceGenerator.Attributes;
                               using Dappi.HeadlessCms.Models;
+                              using Dappi.Core.Attributes;
+                              using Dappi.HeadlessCms.Core.Attributes;
 
                               namespace {{_assemblyName}}.Entities
                               {
@@ -149,9 +165,12 @@ namespace Dappi.HeadlessCms.Tests.Core
                                   }
                               }
                               """;
-            
+             Property property = new()
+             {
+                 DomainModel = DomainModelName, Name = TestPropertyName, Type = type, IsRequired = false,
+             };
             _domainModelEditor.CreateEntityModel(DomainModelName);
-            _domainModelEditor.AddProperty(TestPropertyName, type , DomainModelName);
+            _domainModelEditor.AddProperty(property);
             await _domainModelEditor.SaveAsync();
             var actual = await File.ReadAllTextAsync(_filePath);
             Assert.Equal(expected.ReplaceLineEndings(), actual.ReplaceLineEndings());

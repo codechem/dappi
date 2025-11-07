@@ -11,14 +11,18 @@ import { MatSpinner } from '@angular/material/progress-spinner';
 import { ModelField } from '../models/content.model';
 import { select, Store } from '@ngrx/store';
 import * as CollectionActions from '../state/collection/collection.actions';
+import * as ContentActions from '../state/content/content.actions';
 import { selectSelectedType } from '../state/content/content.selectors';
 import {
+  selectCollectionTypes,
   selectDraftCollectionTypes,
   selectFields,
   selectSaveError,
   selectServerRestarting,
 } from '../state/collection/collection.selectors';
-
+import {MatMenuModule} from '@angular/material/menu';
+import { loadCollectionTypes } from '../state/collection/collection.actions';
+import { DeleteColletionTypeDialogComponent } from '../delete-colletion-type-dialog/delete-colletion-type-dialog.component';
 @Component({
   selector: 'app-builder',
   standalone: true,
@@ -29,6 +33,7 @@ import {
     ButtonComponent,
     FieldsListComponent,
     MatSpinner,
+    MatMenuModule
   ],
   templateUrl: './builder.component.html',
   styleUrl: './builder.component.scss',
@@ -46,6 +51,9 @@ export class BuilderComponent implements OnInit, OnDestroy {
 
   draftCollectionTypes: string[] = [];
   draftCollectionTypes$ = this.store.select(selectDraftCollectionTypes);
+
+  collectionTypes: string[] = [];
+  collectionTypes$ = this.store.select(selectCollectionTypes);
 
   private subscription: Subscription = new Subscription();
 
@@ -108,12 +116,15 @@ export class BuilderComponent implements OnInit, OnDestroy {
           this.closeModal();
         })
     );
+    this.subscription.add(
+      this.collectionTypes$.subscribe(types => 
+        this.collectionTypes = types
+      )
+    )
   }
 
   openAddFieldDialog(): void {
     const dialogRef = this.dialog.open(AddFieldDialogComponent, {
-      width: '67vw',
-      maxWidth: '100vw',
       panelClass: 'add-field-dialog-container',
       disableClose: true,
       data: { selectedType: this.selectedType },
@@ -127,7 +138,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
   }
 
   private updateSaveButtonState(): void {
-    this.disabled = !this.selectedType || !this.draftCollectionTypes.includes(this.selectedType);
+    this.disabled = this.draftCollectionTypes.length == 0;
   }
 
   private formatFields(fields: ModelField[]): void {
@@ -194,6 +205,25 @@ export class BuilderComponent implements OnInit, OnDestroy {
         };
       });
     }
+  }
+
+  openDeleteCollectionTypeDialog(): void {
+    if(!this.selectedType) return;
+    const dialogRef = this.dialog.open(DeleteColletionTypeDialogComponent, {
+      minWidth: 759,
+      panelClass: 'dark-theme-dialog',
+      disableClose: true,
+      data: { selectedType: this.selectedType },
+    });
+
+    var newSelection = this.collectionTypes.filter(x => x !== this.selectedType)[0]; 
+    this.subscription.add(
+      dialogRef.afterClosed().subscribe(() => {
+        this.store.dispatch(loadCollectionTypes());
+        this.store.dispatch(ContentActions.setContentType({selectedType: newSelection ?? ""}));
+        this.store.dispatch(CollectionActions.loadFields({modelType : newSelection}));
+      })
+    );
   }
 
   private closeModal(): void {
