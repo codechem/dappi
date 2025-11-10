@@ -77,6 +77,9 @@ public static class ServiceExtensions
             Directory.GetCurrentDirectory(),
             "Entities"
         )));
+
+        services.AddScoped<EnumEditor>(_ => new EnumEditor(Path.Combine(Directory.GetCurrentDirectory(), "Enums")));
+        
         services.AddEndpointsApiExplorer();
         return services;
     }

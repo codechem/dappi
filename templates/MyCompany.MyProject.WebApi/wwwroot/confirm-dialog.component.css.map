@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/confirm-dialog/confirm-dialog.component.scss"],
+  "sourcesContent": [".confirm-dialog {\n  width: 100%;\n  max-width: 400px;\n\n  .dialog-header {\n    padding: 24px 24px 0 24px;\n    border-bottom: 1px solid #e0e0e0;\n    margin-bottom: 24px;\n\n    h2 {\n      margin: 0;\n      font-size: 1.25rem;\n      font-weight: 500;\n    }\n  }\n\n  .dialog-content {\n    padding: 0 24px;\n\n    p {\n      margin: 0;\n      line-height: 1.5;\n      color: #666;\n    }\n  }\n\n  .dialog-footer {\n    display: flex;\n    justify-content: flex-end;\n    gap: 12px;\n    padding: 24px;\n    border-top: 1px solid #e0e0e0;\n    margin-top: 24px;\n  }\n}"],
+  "mappings": ";AAAA,CAAA;AACE,SAAA;AACA,aAAA;;AAEA,CAJF,eAIE,CAAA;AACE,WAAA,KAAA,KAAA,EAAA;AACA,iBAAA,IAAA,MAAA;AACA,iBAAA;;AAEA,CATJ,eASI,CALF,cAKE;AACE,UAAA;AACA,aAAA;AACA,eAAA;;AAIJ,CAhBF,eAgBE,CAAA;AACE,WAAA,EAAA;;AAEA,CAnBJ,eAmBI,CAHF,eAGE;AACE,UAAA;AACA,eAAA;AACA,SAAA;;AAIJ,CA1BF,eA0BE,CAAA;AACE,WAAA;AACA,mBAAA;AACA,OAAA;AACA,WAAA;AACA,cAAA,IAAA,MAAA;AACA,cAAA;;",
+  "names": []
+}

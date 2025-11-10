@@ -224,9 +224,26 @@ namespace Dappi.HeadlessCms.Controllers
                             break;
 
                         case Constants.Relations.ManyToMany:
-                            HandleManyToManyRelationship(request, modelName);
-                            relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}", Constants.Relations.ManyToMany);
-                            break;
+                            {
+                                HandleManyToManyRelationship(request, modelName);
+                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
+                                    Constants.Relations.ManyToMany);
+                                break;
+                            }
+                        default:
+                            {
+                                Property property = new()
+                                {
+                                    DomainModel = modelName,
+                                    Name = request.FieldName,
+                                    Type = request.FieldType,
+                                    IsRequired = request.IsRequired,
+                                };
+                                _domainModelEditor.AddProperty(property);
+                                _domainModelEditor.AddEnumNamespaceIfMissing(property.DomainModel);
+                                await _domainModelEditor.SaveAsync();
+                                break;
+                            }
                     }
                 }
                 else

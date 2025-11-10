@@ -184,17 +184,7 @@ public class DomainModelEditor(string domainModelFolderPath)
         
         return properties.ToList();
     }
-
-    private string? GetPropertyType(GenericNameSyntax genericNameSyntax)
-    {
-        return genericNameSyntax.TypeArgumentList.Arguments.FirstOrDefault()?.ToString();
-    }
-
-    private string GetPropertyType(IdentifierNameSyntax identifierNameSyntax)
-    {
-        return identifierNameSyntax.Identifier.Text;
-    }
-
+    
     public List<string> GetRelatedEntities(List<PropertyDeclarationSyntax> properties)
     {
         List<string> relatedModels = [];
@@ -238,10 +228,81 @@ public class DomainModelEditor(string domainModelFolderPath)
         return relatedModels;
     }
 
-    public void AddDomainModelEntityInfo(DomainModelEntityInfo entityInfo)
+    public void RemoveEnumProperty(string modelName , string enumName)
     {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        var syntaxTree = _codeChanges.TryGetValue(modelName, out var value)
+            ? CSharpSyntaxTree.ParseText(value)
+            : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classNode is null)
+        {
+            throw new Exception("Class not found");
+        }
+
+        var properties = classNode.DescendantNodes().OfType<PropertyDeclarationSyntax>()
+            .Where(p => (p.Type is IdentifierNameSyntax identifierNameSyntax && identifierNameSyntax.Identifier.Text == enumName) || 
+                        p.Type is NullableTypeSyntax nullableType &&
+                        nullableType.ElementType is IdentifierNameSyntax nameSyntax &&
+                        nameSyntax.Identifier.Text == enumName)
+            .ToList();
+        var newRoot = root.RemoveNodes(properties, SyntaxRemoveOptions.KeepNoTrivia);
+        
+        if (newRoot == null) 
+            return;
+        
+        var newCode = newRoot.NormalizeWhitespace().ToFullString();
+        _codeChanges[modelName] = newCode;
+        HasChanges = true;
+    }
+    
+    public void UpdateUsings(DomainModelEntityInfo model)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{model.Name}.cs");
+        var syntaxTree = _codeChanges.TryGetValue(model.Name, out var value)
+            ? CSharpSyntaxTree.ParseText(value)
+            : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var usings = root.Usings.Where(u => u.Name != null && !u.Name.ToString().Contains("Enums"));
+        var newRoot = root?.WithUsings(SyntaxFactory.List(usings));
+        var newCode = newRoot.NormalizeWhitespace().ToFullString();
+        _codeChanges[model.Name] = newCode;
+        HasChanges = true;
+    }
+    public void AddEnumNamespaceIfMissing(string modelName)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        var syntaxTree = _codeChanges.TryGetValue(modelName, out var value)
+            ? CSharpSyntaxTree.ParseText(value)
+            : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+        var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+        var enumsAssemblyName = $"{assembly.GetName().Name}.Enums";
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var newRoot = root?.AddUsings(
+            SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(enumsAssemblyName))
+            );
+        var newCode = newRoot?.NormalizeWhitespace().ToFullString();
+        _codeChanges[modelName] = newCode!;
+        HasChanges = true;
     }
 
+    public void AddDomainModelEntityInfo(DomainModelEntityInfo entityInfo)
+    {
+        
+    }
+    
+    private string? GetPropertyType(GenericNameSyntax genericNameSyntax)
+    {
+        return genericNameSyntax.TypeArgumentList.Arguments.FirstOrDefault()?.ToString();
+    }
+
+    private string GetPropertyType(IdentifierNameSyntax identifierNameSyntax)
+    {
+        return identifierNameSyntax.Identifier.Text;
+    }
+    
     private readonly UsingDirectiveSyntax[] _domainModelsUsingDirectives =
     [
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations")),
