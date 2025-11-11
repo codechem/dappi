@@ -36,6 +36,12 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
       id: 'content-manager',
     },
     {
+      icon: 'list',
+      tooltip: 'Enum Manager',
+      route: '/enum-manager',
+      id: 'enum-manager',
+    },
+    {
       icon: 'import_export',
       tooltip: 'Schema Importer',
       route: '/schema-importer',

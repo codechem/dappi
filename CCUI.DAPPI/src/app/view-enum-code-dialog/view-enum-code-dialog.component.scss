@@ -1,0 +1,168 @@
+@use '../../variables' as vars;
+@use 'sass:color';
+
+.view-code-dialog {
+  width: 100%;
+  max-width: 700px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background-color: vars.$background-paper-elevation-1;
+  color: vars.$text-primary;
+
+  .dialog-header {
+    background-color: vars.$background-paper-elevation-2;
+    color: vars.$text-primary;
+    padding: 20px 24px;
+    border-bottom: vars.$divider;
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .title-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .code-icon {
+          font-size: 24px;
+          width: 24px;
+          height: 24px;
+          color: vars.$primary-main;
+        }
+
+        h2 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 500;
+        }
+
+        p {
+          margin: 2px 0 0 0;
+          color: vars.$text-secondary;
+          font-size: 14px;
+        }
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 4px;
+
+        button {
+          color: vars.$text-secondary;
+          width: 32px;
+          height: 32px;
+          border-radius: 4px;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background-color: vars.$background-hover;
+            color: vars.$text-primary;
+          }
+
+          &.copy-btn:hover {
+            color: vars.$success-main;
+          }
+
+          &.close-btn:hover {
+            color: vars.$error-light;
+          }
+
+          mat-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+    }
+  }
+
+  .dialog-content {
+    flex: 1;
+    overflow: hidden;
+    background-color: vars.$background-default;
+
+    .code-container {
+      height: 100%;
+      overflow: auto;
+      padding: 0;
+
+      .code-block {
+        margin: 0;
+        padding: 20px;
+        background-color: vars.$background-default;
+        color: vars.$text-primary;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        border: none;
+        outline: none;
+      }
+    }
+  }
+
+  .dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    background-color: vars.$background-paper-elevation-1;
+    border-top: vars.$divider;
+
+    button {
+      border-radius: 4px;
+      font-weight: 500;
+      padding: 6px 16px;
+      transition: all 0.2s ease;
+
+      &[color="primary"] {
+        background-color: vars.$primary-main;
+        color: vars.$primary-contrast-text;
+
+        &:hover {
+          background-color: color.adjust(vars.$primary-main, $lightness: -10%);
+        }
+
+        mat-icon {
+          margin-right: 8px;
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      &:not([color]) {
+        color: vars.$text-secondary;
+
+        &:hover {
+          background-color: vars.$background-hover;
+          color: vars.$text-primary;
+        }
+      }
+    }
+  }
+
+  // Scrollbar styling for code container
+  .code-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .code-container::-webkit-scrollbar-track {
+    background: vars.$background-paper-elevation-1;
+  }
+
+  .code-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}

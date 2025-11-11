@@ -44,6 +44,18 @@
       <li class="sidenav__menu-item">
         <a
           class="sidenav__link"
+          routerLink="/enum-manager"
+          routerLinkActive="sidenav__link--active"
+          (click)="onMenuItemClick('enum-manager')"
+          matTooltip="Enum Manager"
+          matTooltipPosition="right"
+        >
+          <mat-icon>format_list_numbered</mat-icon>
+        </a>
+      </li>
+      <li class="sidenav__menu-item">
+        <a
+          class="sidenav__link"
           routerLink="/schema-importer"
           routerLinkActive="sidenav__link--active"
           (click)="onMenuItemClick('schema-importer')"

@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Dappi.HeadlessCms.Database;
@@ -23,26 +25,22 @@ namespace Dappi.HeadlessCms.Controllers
         private readonly DbContextEditor _dbContextEditor;
         private readonly ICurrentDappiSessionProvider _currentSessionProvider;
         private readonly DappiDbContext _dbContext;
-
-        private readonly string _entitiesFolderPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "Entities"
-        );
-
-        private readonly string _controllersFolderPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "Controllers"
-        );
+        private readonly string _entitiesFolderPath;
+        private readonly string _controllersFolderPath;
 
         public ModelsController(
             IDbContextAccessor dappiDbContextAccessor,
             ICurrentDappiSessionProvider currentSessionProvider,
-            DomainModelEditor domainModelEditor, DbContextEditor dbContextEditor)
+            DomainModelEditor domainModelEditor,
+            DbContextEditor dbContextEditor)
         {
             _currentSessionProvider = currentSessionProvider;
             _domainModelEditor = domainModelEditor;
             _dbContextEditor = dbContextEditor;
             _dbContext = dappiDbContextAccessor.DbContext;
+
+            _entitiesFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "Entities");
+            _controllersFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "Controllers");
 
             if (!Directory.Exists(_entitiesFolderPath))
             {
@@ -75,7 +73,7 @@ namespace Dappi.HeadlessCms.Controllers
 
             if (!request.ModelName.IsValidClassNameOrPropertyName())
             {
-                return BadRequest("Model name is invalid");
+                return BadRequest("Model name is invalid.");
             }
 
             var modelNames = DirectoryUtils.GetClassNamesFromDirectory(_entitiesFolderPath);
@@ -104,9 +102,7 @@ namespace Dappi.HeadlessCms.Controllers
 
                 await _dbContextEditor.SaveAsync();
 
-                return Ok(
-                    new { Message = $"Model class '{request.ModelName}' created successfully." }
-                );
+                return Ok(new { Message = $"Model class '{request.ModelName}' created successfully." });
             }
             catch (Exception ex)
             {
@@ -131,14 +127,15 @@ namespace Dappi.HeadlessCms.Controllers
                     return NotFound("Model file not found.");
                 }
 
-                var properties = _domainModelEditor.GetPropertiesContainingAttribute(modelName,
-                    DappiRelationAttribute.ShortName).ToList();
+                var properties = _domainModelEditor.GetPropertiesContainingAttribute(modelName, DappiRelationAttribute.ShortName).ToList();
                 var relatedEntities = _domainModelEditor.GetRelatedEntities(properties);
 
-                _dbContextEditor.RemoveSetFromDbContext(new DomainModelEntityInfo()
+                _dbContextEditor.RemoveSetFromDbContext(new DomainModelEntityInfo
                 {
-                    Name = modelName, Namespace = Directory.GetCurrentDirectory()
+                    Name = modelName,
+                    Namespace = Directory.GetCurrentDirectory()
                 });
+
                 _dbContextEditor.DeleteRelations(modelName, relatedEntities);
                 _dbContextEditor.UpdateUsings();
                 await _dbContextEditor.SaveAsync();
@@ -150,23 +147,21 @@ namespace Dappi.HeadlessCms.Controllers
 
                 await _domainModelEditor.SaveAsync();
 
-                await Task.Run(() => System.IO.File.Delete(modelFilePath));
+                System.IO.File.Delete(modelFilePath);
 
-                var controllerFilePath = Path.Combine(
-                    _controllersFolderPath,
-                    $"{modelName}Controller.cs"
-                );
-                
+                var controllerFilePath = Path.Combine(_controllersFolderPath, $"{modelName}Controller.cs");
                 if (System.IO.File.Exists(controllerFilePath))
                 {
                     System.IO.File.Delete(controllerFilePath);
                 }
 
-                await AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(),ContentTypeState.PendingDelete);
+                await AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(), ContentTypeState.PendingDelete);
 
-                return Ok(
-                    new { Message = $"Model '{modelName}' deleted successfully.", FilePath = modelFilePath, }
-                );
+                return Ok(new
+                {
+                    Message = $"Model '{modelName}' deleted successfully.",
+                    FilePath = modelFilePath
+                });
             }
             catch (Exception ex)
             {
@@ -184,7 +179,7 @@ namespace Dappi.HeadlessCms.Controllers
 
             if (!request.FieldName.IsValidClassNameOrPropertyName())
             {
-                return BadRequest($"Property name {request.FieldName} is invalid");
+                return BadRequest($"Property name {request.FieldName} is invalid.");
             }
 
             if (request.FieldName == modelName)
@@ -202,8 +197,8 @@ namespace Dappi.HeadlessCms.Controllers
 
                 var fieldDict = new Dictionary<string, string> { { request.FieldName, request.FieldType } };
                 var relatedFieldDict = new Dictionary<string, string>();
-                var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
 
+                var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
                 if (PropertyCheckUtils.PropertyNameExists(existingCode, request.FieldName))
                 {
                     return BadRequest($"Property {request.FieldName} name already exists in {modelFilePath}.");
@@ -214,32 +209,24 @@ namespace Dappi.HeadlessCms.Controllers
                     switch (request.FieldType)
                     {
                         case Constants.Relations.OneToOne:
-                            {
-                                HandleOneToOneRelationship(request, modelName);
-                                relatedFieldDict.Add(request.RelatedRelationName ?? modelName, request.FieldType);
-                                break;
-                            }
+                            HandleOneToOneRelationship(request, modelName);
+                            relatedFieldDict.Add(request.RelatedRelationName ?? modelName, request.FieldType);
+                            break;
+
                         case Constants.Relations.OneToMany:
-                            {
-                                HandleOneToManyRelationship(request, modelName);
-                                relatedFieldDict.Add(request.RelatedRelationName ?? modelName,
-                                    Constants.Relations.ManyToOne);
-                                break;
-                            }
+                            HandleOneToManyRelationship(request, modelName);
+                            relatedFieldDict.Add(request.RelatedRelationName ?? modelName, Constants.Relations.ManyToOne);
+                            break;
+
                         case Constants.Relations.ManyToOne:
-                            {
-                                HandleManyToOneRelationship(request, modelName);
-                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
-                                    Constants.Relations.OneToMany);
-                                break;
-                            }
+                            HandleManyToOneRelationship(request, modelName);
+                            relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}", Constants.Relations.OneToMany);
+                            break;
+
                         case Constants.Relations.ManyToMany:
-                            {
-                                HandleManyToManyRelationship(request, modelName);
-                                relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
-                                    Constants.Relations.ManyToMany);
-                                break;
-                            }
+                            HandleManyToManyRelationship(request, modelName);
+                            relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}", Constants.Relations.ManyToMany);
+                            break;
                     }
                 }
                 else
@@ -249,7 +236,7 @@ namespace Dappi.HeadlessCms.Controllers
                         DomainModel = modelName,
                         Name = request.FieldName,
                         Type = request.FieldType,
-                        IsRequired = request.IsRequired,
+                        IsRequired = request.IsRequired
                     };
                     _domainModelEditor.AddProperty(property);
                 }
@@ -257,18 +244,18 @@ namespace Dappi.HeadlessCms.Controllers
                 await UpdateContentTypeChangeFieldsAsync(modelName, fieldDict);
 
                 if (request.RelatedTo != null && relatedFieldDict.Count != 0)
+                {
                     await UpdateContentTypeChangeFieldsAsync(request.RelatedTo, relatedFieldDict);
+                }
 
                 await _domainModelEditor.SaveAsync();
                 await _dbContextEditor.SaveAsync();
-                return Ok(
-                    new
-                    {
-                        Message =
-                            $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
-                        FilePath = modelFilePath,
-                    }
-                );
+
+                return Ok(new
+                {
+                    Message = $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
+                    FilePath = modelFilePath
+                });
             }
             catch (Exception ex)
             {
@@ -280,18 +267,14 @@ namespace Dappi.HeadlessCms.Controllers
         [HttpGet("fields/{modelName}")]
         public IActionResult GetModelFields(string modelName)
         {
-            var modelFilePath = Path.Combine(
-                Path.Combine(Directory.GetCurrentDirectory(), "Entities"),
-                $"{modelName}.cs"
-            );
+            var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
             if (!System.IO.File.Exists(modelFilePath))
             {
-                return NotFound($"Model '{{modelName}}' not found.");
+                return NotFound($"Model '{modelName}' not found.");
             }
 
             var modelCode = System.IO.File.ReadAllText(modelFilePath);
             var fieldData = ExtractFieldsFromModel(modelCode);
-
             return Ok(fieldData);
         }
 
@@ -302,25 +285,22 @@ namespace Dappi.HeadlessCms.Controllers
             {
                 return BadRequest("Model name must be provided.");
             }
-            
+
             var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
             if (!System.IO.File.Exists(modelFilePath))
             {
                 return NotFound("Model class not found.");
             }
-            
-            var properties = _domainModelEditor.GetPropertiesContainingAttribute(modelName,
-                DappiRelationAttribute.ShortName).ToList();
+
+            var properties = _domainModelEditor.GetPropertiesContainingAttribute(modelName, DappiRelationAttribute.ShortName).ToList();
             var hasRelatedProperties = _domainModelEditor.GetRelatedEntities(properties).Count > 0;
+
             return Ok(new { hasRelatedProperties });
         }
 
-        private async Task AddContentTypeChangeAsync(string modelName,
-            Dictionary<string, string> fields,
-            ContentTypeState state
-        )
+        private async Task AddContentTypeChangeAsync(string modelName, Dictionary<string, string> fields, ContentTypeState state)
         {
-            var contentTypeChange = new ContentTypeChange()
+            var contentTypeChange = new ContentTypeChange
             {
                 ModelName = modelName,
                 Fields = JsonSerializer.Serialize(fields),
@@ -329,7 +309,6 @@ namespace Dappi.HeadlessCms.Controllers
             };
 
             _dbContext.ContentTypeChanges.Add(contentTypeChange);
-
             await _dbContext.SaveChangesAsync();
         }
 
@@ -344,8 +323,7 @@ namespace Dappi.HeadlessCms.Controllers
 
                 if (contentTypeChangeForModel is not null)
                 {
-                    var oldFields =
-                        JsonSerializer.Deserialize<Dictionary<string, string>>(contentTypeChangeForModel.Fields);
+                    var oldFields = JsonSerializer.Deserialize<Dictionary<string, string>>(contentTypeChangeForModel.Fields);
                     foreach (var kvp in newFields)
                     {
                         oldFields?.Add(kvp.Key, kvp.Value);
@@ -356,12 +334,12 @@ namespace Dappi.HeadlessCms.Controllers
                 }
                 else
                 {
-                    contentTypeChangeForModel = new ContentTypeChange()
+                    contentTypeChangeForModel = new ContentTypeChange
                     {
-                        ModelName = modelName, Fields = JsonSerializer.Serialize(newFields),
+                        ModelName = modelName,
+                        Fields = JsonSerializer.Serialize(newFields),
                         State = ContentTypeState.PendingPublish
                     };
-
                     _dbContext.ContentTypeChanges.Add(contentTypeChangeForModel);
                 }
 
@@ -377,7 +355,8 @@ namespace Dappi.HeadlessCms.Controllers
         private void HandleOneToOneRelationship(FieldRequest request, string modelName)
         {
             var foreignKeyRelatedName = $"{modelName}Id";
-            Property property = new()
+
+            var property = new Property
             {
                 DomainModel = modelName,
                 Name = request.FieldName,
@@ -388,7 +367,7 @@ namespace Dappi.HeadlessCms.Controllers
             };
             _domainModelEditor.AddProperty(property);
 
-            Property relatedModelProperty = new()
+            var relatedModelProperty = new Property
             {
                 DomainModel = request.RelatedTo!,
                 Name = request.RelatedRelationName ?? modelName,
@@ -397,23 +376,17 @@ namespace Dappi.HeadlessCms.Controllers
                 RelationKind = DappiRelationKind.OneToOne,
                 RelatedDomainModel = modelName
             };
-
             _domainModelEditor.AddProperty(relatedModelProperty);
-            _domainModelEditor.AddProperty(relatedModelProperty with
-            {
-                Name = foreignKeyRelatedName, Type = nameof(Guid)
-            });
+            _domainModelEditor.AddProperty(relatedModelProperty with { Name = foreignKeyRelatedName, Type = nameof(Guid) });
 
-
-            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.OneToOne,
-                request.FieldName,
-                request.RelatedRelationName ?? modelName);
+            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.OneToOne, request.FieldName, request.RelatedRelationName ?? modelName);
         }
 
         private void HandleOneToManyRelationship(FieldRequest request, string modelName)
         {
             var foreignKeyName = $"{modelName}Id";
-            Property property = new()
+
+            var property = new Property
             {
                 DomainModel = modelName,
                 Name = request.FieldName,
@@ -424,7 +397,7 @@ namespace Dappi.HeadlessCms.Controllers
             };
             _domainModelEditor.AddProperty(property);
 
-            Property relatedModelProperty = new()
+            var relatedModelProperty = new Property
             {
                 DomainModel = request.RelatedTo!,
                 Name = request.RelatedRelationName ?? modelName,
@@ -433,18 +406,17 @@ namespace Dappi.HeadlessCms.Controllers
                 RelationKind = DappiRelationKind.ManyToOne,
                 RelatedDomainModel = modelName
             };
-
             _domainModelEditor.AddProperty(relatedModelProperty);
             _domainModelEditor.AddProperty(relatedModelProperty with { Name = foreignKeyName, Type = nameof(Guid) });
-            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.OneToMany,
-                request.FieldName,
-                request.RelatedRelationName ?? modelName);
+
+            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.OneToMany, request.FieldName, request.RelatedRelationName ?? modelName);
         }
 
         private void HandleManyToOneRelationship(FieldRequest request, string modelName)
         {
             var foreignKeyName = $"{request.RelatedTo}Id";
-            Property property = new()
+
+            var property = new Property
             {
                 DomainModel = modelName,
                 Name = request.FieldName,
@@ -453,11 +425,10 @@ namespace Dappi.HeadlessCms.Controllers
                 RelationKind = DappiRelationKind.ManyToOne,
                 RelatedDomainModel = request.RelatedTo
             };
-
             _domainModelEditor.AddProperty(property);
             _domainModelEditor.AddProperty(property with { Name = foreignKeyName, Type = nameof(Guid) });
 
-            Property relatedModelProperty = new()
+            var relatedModelProperty = new Property
             {
                 DomainModel = request.RelatedTo!,
                 Name = request.RelatedRelationName ?? modelName.Pluralize(),
@@ -466,17 +437,14 @@ namespace Dappi.HeadlessCms.Controllers
                 RelationKind = DappiRelationKind.OneToMany,
                 RelatedDomainModel = modelName
             };
-
             _domainModelEditor.AddProperty(relatedModelProperty);
 
-            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToOne,
-                request.FieldName,
-                request.RelatedRelationName ?? $"{modelName.Pluralize()}");
+            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToOne, request.FieldName, request.RelatedRelationName ?? $"{modelName.Pluralize()}");
         }
 
         private void HandleManyToManyRelationship(FieldRequest request, string modelName)
         {
-            Property property = new()
+            var property = new Property
             {
                 DomainModel = modelName,
                 Name = request.FieldName,
@@ -485,10 +453,9 @@ namespace Dappi.HeadlessCms.Controllers
                 RelationKind = DappiRelationKind.ManyToMany,
                 RelatedDomainModel = request.RelatedTo
             };
-
             _domainModelEditor.AddProperty(property);
 
-            Property relatedModelProperty = new()
+            var relatedModelProperty = new Property
             {
                 DomainModel = request.RelatedTo!,
                 Name = request.RelatedRelationName ?? modelName.Pluralize(),
@@ -499,21 +466,22 @@ namespace Dappi.HeadlessCms.Controllers
             };
             _domainModelEditor.AddProperty(relatedModelProperty);
 
-            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToMany,
-                request.FieldName,
-                request.RelatedRelationName ?? $"{modelName.Pluralize()}");
+            _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToMany, request.FieldName, request.RelatedRelationName ?? $"{modelName.Pluralize()}");
         }
 
         private static List<FieldsInfo> ExtractFieldsFromModel(string classCode)
         {
             var auditableProps = new List<string> { "CreatedAtUtc", "UpdatedAtUtc", "CreatedBy", "UpdatedBy" };
             var fieldList = new List<FieldsInfo>();
+
             var propertyPattern = new Regex(
                 @"public\s+(required\s+)?([\w<>\[\]?]+)\s+(\w+)\s*\{\s*get;\s*set;\s*\}",
                 RegexOptions.Multiline
             );
+
             var isAuditableEntity = classCode.Contains("IAuditableEntity");
             var matches = propertyPattern.Matches(classCode);
+
             foreach (Match match in matches)
             {
                 if (match.Groups.Count >= 4)
@@ -526,16 +494,15 @@ namespace Dappi.HeadlessCms.Controllers
                     var hasRequiredKeyword = !string.IsNullOrEmpty(match.Groups[1].Value);
                     var fieldType = match.Groups[2].Value;
                     var fieldName = match.Groups[3].Value;
-
                     var isNullable = fieldType.Contains("?");
                     var isRequired = hasRequiredKeyword || !isNullable;
 
-                    fieldList.Add(
-                        new FieldsInfo
-                        {
-                            FieldName = fieldName, FieldType = fieldType.Replace("?", ""), IsRequired = isRequired,
-                        }
-                    );
+                    fieldList.Add(new FieldsInfo
+                    {
+                        FieldName = fieldName,
+                        FieldType = fieldType.Replace("?", ""),
+                        IsRequired = isRequired
+                    });
                 }
             }
 
