@@ -1,0 +1,105 @@
+<div class="edit-enum-dialog">
+  <div class="dialog-header">
+    <div class="header-content">
+      <div class="title-section">
+        <div class="icon-wrapper">
+          <mat-icon class="header-icon">edit</mat-icon>
+        </div>
+        <div class="title-content">
+          <h2>Edit {{ data.name }}</h2>
+          <p>Modify the C# enumeration values</p>
+        </div>
+      </div>
+      <button mat-icon-button (click)="onCancel()" aria-label="Close dialog" class="close-btn">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="dialog-content">
+    <form [formGroup]="enumForm" (ngSubmit)="onSubmit()">
+      <!-- Enum Info Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <mat-icon class="section-icon">info</mat-icon>
+          <h3>Enum Information</h3>
+        </div>
+        <div class="enum-info">
+          <div class="info-item">
+            <span class="info-label">Name:</span>
+            <span class="info-value">{{ data.name }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Total Values:</span>
+            <span class="info-value">{{ values.length }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Values Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <mat-icon class="section-icon">list</mat-icon>
+          <h3>Enum Values</h3>
+          <div class="section-actions">
+            <button type="button" mat-fab mini color="primary" (click)="addValue()" class="add-value-btn">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div formArrayName="values" class="values-container">
+          @for (valueControl of values.controls; track $index; let i = $index) {
+            <div [formGroupName]="i" class="value-card">
+              <div class="value-header">
+                <span class="value-index">#{{ i + 1 }}</span>
+                <button
+                  type="button"
+                  mat-icon-button
+                  (click)="removeValue(i)"
+                  [disabled]="values.length <= 1"
+                  class="remove-btn"
+                  [class.disabled]="values.length <= 1"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+              
+              <div class="value-fields">
+                <mat-form-field appearance="outline" class="name-field modern-field">
+                  <mat-label>Name</mat-label>
+                  <input matInput formControlName="name" placeholder="e.g., Active, Pending" />
+                  @if (getNameError(i)) {
+                    <mat-error>{{ getNameError(i) }}</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="value-field modern-field">
+                  <mat-label>Value</mat-label>
+                  <input matInput type="number" formControlName="value" />
+                  @if (getValueError(i)) {
+                    <mat-error>{{ getValueError(i) }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="dialog-footer">
+    <button mat-button (click)="onCancel()" class="cancel-btn">Cancel</button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="onSubmit()"
+      [disabled]="!enumForm.valid"
+      class="update-btn"
+    >
+      <mat-icon>save</mat-icon>
+      Update Enum
+    </button>
+  </div>
+</div>

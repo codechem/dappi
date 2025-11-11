@@ -1,0 +1,331 @@
+@use '../../variables' as vars;
+@use 'sass:color';
+
+:host {
+  display: flex;
+  flex-grow: 1;
+}
+
+.enum-manager-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background-color: #141414;
+  color: vars.$text-primary;
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    .title-block {
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 500;
+      }
+
+      p {
+        margin: 4px 0 0;
+        font-size: 14px;
+        color: vars.$text-secondary;
+      }
+    }
+
+    .create-button {
+      color: vars.$primary-main;
+      border: vars.$primary-outlined-border;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+      padding: 6px 16px;
+
+      &:hover {
+        background-color: rgba(vars.$primary-main, 0.1);
+      }
+
+      mat-icon {
+        margin-right: 8px;
+      }
+    }
+  }
+
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px;
+    text-align: center;
+
+    mat-spinner {
+      margin-bottom: 16px;
+      
+      ::ng-deep circle {
+        stroke: vars.$primary-main;
+      }
+    }
+
+    p {
+      color: vars.$text-secondary;
+      margin: 0;
+    }
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 0;
+
+    .empty-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      color: vars.$text-secondary;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    p {
+      margin: 0 0 24px;
+      font-size: 14px;
+      color: vars.$text-secondary;
+      max-width: 400px;
+      line-height: 1.5;
+    }
+
+    .primary-action {
+      border-radius: 4px;
+      background-color: vars.$primary-main;
+      color: vars.$primary-contrast-text;
+      transition: background-color 0.2s ease;
+      padding: 6px 16px;
+
+      &:hover {
+        background-color: color.adjust(vars.$primary-main, $lightness: -10%);
+      }
+
+      mat-icon {
+        margin-right: 8px;
+      }
+    }
+  }
+
+  .enums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    padding: 0;
+
+    .enum-card {
+      background-color: vars.$background-paper-elevation-1;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.2s ease;
+      overflow: hidden;
+
+      &:hover {
+        background-color: vars.$background-paper-elevation-2;
+        border-color: rgba(vars.$primary-main, 0.3);
+      }
+
+      .mat-mdc-card-header {
+        padding: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+
+        .enum-avatar {
+          background-color: vars.$primary-main;
+          color: vars.$primary-contrast-text;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 4px;
+
+          mat-icon {
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+          }
+        }
+
+        .mat-mdc-card-title {
+          font-size: 16px;
+          font-weight: 500;
+          color: vars.$text-primary;
+          margin: 0;
+        }
+
+        .mat-mdc-card-subtitle {
+          font-size: 14px;
+          color: vars.$text-secondary;
+          margin: 2px 0 0 0;
+        }
+
+        .card-actions {
+          margin-left: auto;
+          display: flex;
+          gap: 4px;
+
+          button {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+
+            &.edit-btn {
+              color: vars.$primary-main;
+              
+              &:hover {
+                background-color: rgba(vars.$primary-main, 0.1);
+              }
+            }
+
+            &.delete-btn {
+              color: vars.$error-light;
+              
+              &:hover {
+                background-color: rgba(vars.$error-light, 0.1);
+              }
+            }
+
+            mat-icon {
+              font-size: 16px;
+              width: 16px;
+              height: 16px;
+            }
+          }
+        }
+      }
+
+      .mat-mdc-card-content {
+        padding: 16px;
+
+        .enum-values {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+
+          .enum-value-chip {
+            display: flex;
+            align-items: center;
+            background-color: vars.$background-paper-elevation-2;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 4px 8px;
+            font-size: 12px;
+            transition: all 0.2s ease;
+
+            &:hover {
+              background-color: vars.$background-paper-elevation-8;
+            }
+
+            .value-name {
+              font-weight: 500;
+              color: vars.$text-primary;
+            }
+
+            .value-number {
+              margin-left: 6px;
+              background-color: vars.$primary-main;
+              color: vars.$primary-contrast-text;
+              border-radius: 8px;
+              padding: 1px 6px;
+              font-size: 11px;
+              font-weight: 500;
+            }
+          }
+
+          .more-values {
+            display: flex;
+            align-items: center;
+            color: vars.$text-secondary;
+            font-size: 12px;
+            font-style: italic;
+            padding: 4px 8px;
+          }
+        }
+      }
+
+      .mat-mdc-card-actions {
+        padding: 12px 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        display: flex;
+        gap: 8px;
+
+        button {
+          flex: 1;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: 500;
+          padding: 6px 12px;
+          transition: all 0.2s ease;
+
+          &[color="primary"] {
+            color: vars.$primary-main;
+            border: 1px solid rgba(vars.$primary-main, 0.3);
+
+            &:hover {
+              background-color: rgba(vars.$primary-main, 0.1);
+            }
+          }
+
+          &[color="accent"] {
+            color: vars.$success-main;
+            border: 1px solid rgba(vars.$success-main, 0.3);
+
+            &:hover {
+              background-color: rgba(vars.$success-main, 0.1);
+            }
+          }
+
+          mat-icon {
+            margin-right: 4px;
+            font-size: 14px;
+            width: 14px;
+            height: 14px;
+          }
+        }
+      }
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+
+      .create-button {
+        align-self: stretch;
+        justify-content: center;
+      }
+    }
+
+    .enums-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+  }
+}

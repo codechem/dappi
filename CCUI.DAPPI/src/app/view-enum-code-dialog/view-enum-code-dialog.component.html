@@ -1,0 +1,35 @@
+<div class="view-code-dialog">
+  <div class="dialog-header">
+    <div class="header-content">
+      <div class="title-section">
+        <mat-icon class="code-icon">code</mat-icon>
+        <div>
+          <h2>{{ data.name }}.cs</h2>
+          <p>Generated C# Enumeration</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-icon-button (click)="copyToClipboard()" title="Copy to clipboard" class="copy-btn">
+          <mat-icon>content_copy</mat-icon>
+        </button>
+        <button mat-icon-button (click)="onClose()" title="Close" class="close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-content">
+    <div class="code-container">
+      <pre class="code-block"><code>{{ generatedCode }}</code></pre>
+    </div>
+  </div>
+
+  <div class="dialog-footer">
+    <button mat-button (click)="onClose()">Close</button>
+    <button mat-raised-button color="primary" (click)="copyToClipboard()">
+      <mat-icon>content_copy</mat-icon>
+      Copy Code
+    </button>
+  </div>
+</div>

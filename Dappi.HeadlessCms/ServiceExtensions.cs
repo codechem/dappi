@@ -19,6 +19,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Npgsql;
+using CCApi.Extensions.DependencyInjection.Interfaces;
+using CCApi.Extensions.DependencyInjection.Services;
 
 namespace Dappi.HeadlessCms;
 
@@ -45,6 +47,7 @@ public static class ServiceExtensions
         });
 
         services.AddScoped<IDbContextAccessor, DbContextAccessor<TDbContext>>();
+        services.AddScoped<IEnumService, EnumService>();
 
         services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
 
@@ -90,14 +93,12 @@ public static class ServiceExtensions
             {
                 options.User.RequireUniqueEmail = true;
 
-                // Password settings
                 options.Password.RequireDigit = true;
                 options.Password.RequireLowercase = true;
                 options.Password.RequireNonAlphanumeric = true;
                 options.Password.RequireUppercase = true;
                 options.Password.RequiredLength = 8;
 
-                // Lockout settings
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.AllowedForNewUsers = true;
@@ -107,8 +108,8 @@ public static class ServiceExtensions
 
         // JWT Authentication
         var jwtSettings = configuration.GetSection("JwtSettings");
-        var key = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ??
-                                         throw new InvalidOperationException("JWT SecretKey is not configured"));
+        var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured");
+        var key = Encoding.UTF8.GetBytes(secretKey);
 
         var authenticationBuilder = services.AddAuthentication(options =>
         {

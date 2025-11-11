@@ -1,0 +1,106 @@
+<div class="create-enum-dialog">
+  <div class="dialog-header">
+    <div class="header-content">
+      <div class="title-section">
+        <div class="icon-wrapper">
+          <mat-icon class="header-icon">add_circle</mat-icon>
+        </div>
+        <div class="title-content">
+          <h2>Create New Enumeration</h2>
+          <p>Define a new C# enum with custom values</p>
+        </div>
+      </div>
+      <button mat-icon-button (click)="onCancel()" aria-label="Close dialog" class="close-btn">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="dialog-content">
+    <form [formGroup]="enumForm" (ngSubmit)="onSubmit()">
+      <!-- Enum Name Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <mat-icon class="section-icon">label</mat-icon>
+          <h3>Enum Information</h3>
+        </div>
+        <mat-form-field appearance="outline" class="full-width modern-field">
+          <mat-label>Enum Name</mat-label>
+          <input matInput formControlName="name" placeholder="e.g., Status, Priority, Category" />
+          <mat-hint>Must start with uppercase letter (PascalCase)</mat-hint>
+          @if (enumForm.get('name')?.hasError('required') && enumForm.get('name')?.touched) {
+            <mat-error>Enum name is required</mat-error>
+          }
+          @if (enumForm.get('name')?.hasError('pattern') && enumForm.get('name')?.touched) {
+            <mat-error>Name must start with uppercase letter and contain only alphanumeric characters</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <!-- Values Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <mat-icon class="section-icon">list</mat-icon>
+          <h3>Enum Values</h3>
+          <div class="section-actions">
+            <button type="button" mat-fab mini color="primary" (click)="addValue()" class="add-value-btn">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div formArrayName="values" class="values-container">
+          @for (valueControl of values.controls; track $index; let i = $index) {
+            <div [formGroupName]="i" class="value-card">
+              <div class="value-header">
+                <span class="value-index">#{{ i + 1 }}</span>
+                <button
+                  type="button"
+                  mat-icon-button
+                  (click)="removeValue(i)"
+                  [disabled]="values.length <= 1"
+                  class="remove-btn"
+                  [class.disabled]="values.length <= 1"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+              
+              <div class="value-fields">
+                <mat-form-field appearance="outline" class="name-field modern-field">
+                  <mat-label>Name</mat-label>
+                  <input matInput formControlName="name" placeholder="e.g., Active, Pending" />
+                  @if (getNameError(i)) {
+                    <mat-error>{{ getNameError(i) }}</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="value-field modern-field">
+                  <mat-label>Value</mat-label>
+                  <input matInput type="number" formControlName="value" />
+                  @if (getValueError(i)) {
+                    <mat-error>{{ getValueError(i) }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="dialog-footer">
+    <button mat-button (click)="onCancel()" class="cancel-btn">Cancel</button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="onSubmit()"
+      [disabled]="!enumForm.valid"
+      class="create-btn"
+    >
+      <mat-icon>code</mat-icon>
+      Create Enum
+    </button>
+  </div>
+</div>

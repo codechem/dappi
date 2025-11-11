@@ -1,0 +1,79 @@
+<div class="enum-manager-container">
+  <div class="header">
+    <div class="title-block">
+      <h1>Enum Manager</h1>
+      <p>Create and manage C# enumerations for your application</p>
+    </div>
+    <button mat-stroked-button (click)="createEnum()" class="create-button">
+      <mat-icon>add</mat-icon>
+      Create Enum
+    </button>
+  </div>
+
+  <div class="content">
+    @if (loading) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading enumerations...</p>
+    </div>
+    } @else if (enums.length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon">code_off</mat-icon>
+      <h2>No Enumerations Yet</h2>
+      <p>Start building your application by creating your first enumeration. Enums help you define sets of named
+        constants that make your code more readable and maintainable.</p>
+      <button mat-raised-button (click)="createEnum()" class="primary-action">
+        <mat-icon>add</mat-icon>
+        Create Your First Enum
+      </button>
+    </div>
+    } @else {
+    <div class="enums-grid">
+      @for (enum of enums; track enum.name) {
+      <mat-card class="enum-card" [class.loading]="loading">
+        <mat-card-header>
+          <div mat-card-avatar class="enum-avatar">
+            <mat-icon>code</mat-icon>
+          </div>
+          <mat-card-title>{{ enum.name }}</mat-card-title>
+          <mat-card-subtitle>{{ enum.valueCount }} values</mat-card-subtitle>
+          <div class="card-actions">
+            <button mat-icon-button (click)="editEnum(enum)" title="Edit enum" class="edit-btn">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button (click)="deleteEnum(enum)" title="Delete enum" class="delete-btn">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="enum-values">
+            @for (value of enum.values.slice(0, 4); track value.name) {
+            <div class="enum-value-chip">
+              <span class="value-name">{{ value.name }}</span>
+              <span class="value-number">{{ value.value }}</span>
+            </div>
+            }
+            @if (enum.values.length > 4) {
+            <div class="more-values">
+              +{{ enum.values.length - 4 }} more
+            </div>
+            }
+          </div>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-button (click)="editEnum(enum)" color="primary">
+            <mat-icon>edit</mat-icon>
+            Edit
+          </button>
+          <button mat-button (click)="viewEnum(enum)" color="accent">
+            <mat-icon>visibility</mat-icon>
+            View Code
+          </button>
+        </mat-card-actions>
+      </mat-card>
+      }
+    </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,35 @@
+.confirm-dialog {
+  width: 100%;
+  max-width: 400px;
+
+  .dialog-header {
+    padding: 24px 24px 0 24px;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 24px;
+
+    h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+  }
+
+  .dialog-content {
+    padding: 0 24px;
+
+    p {
+      margin: 0;
+      line-height: 1.5;
+      color: #666;
+    }
+  }
+
+  .dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 24px;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 24px;
+  }
+}
