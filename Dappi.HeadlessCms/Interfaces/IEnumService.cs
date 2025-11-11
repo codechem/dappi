@@ -1,6 +1,6 @@
-using CCApi.Extensions.DependencyInjection.Controllers;
+using Dappi.HeadlessCms.Controllers;
 
-namespace CCApi.Extensions.DependencyInjection.Interfaces;
+namespace Dappi.HeadlessCms.Interfaces;
 
 public interface IEnumService
 {

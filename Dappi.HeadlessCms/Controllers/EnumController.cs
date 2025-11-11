@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
-using CCApi.Extensions.DependencyInjection.Interfaces;
+using Dappi.HeadlessCms.Interfaces;
 
-namespace CCApi.Extensions.DependencyInjection.Controllers;
+namespace Dappi.HeadlessCms.Controllers;
 
 [ApiController]
 [Route("api/enum-manager")]

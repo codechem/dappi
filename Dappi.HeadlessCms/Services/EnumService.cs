@@ -1,17 +1,16 @@
-using CCApi.Extensions.DependencyInjection.Interfaces;
-using CCApi.Extensions.DependencyInjection.Controllers;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Hosting;
 using System.Text;
+using Dappi.HeadlessCms.Controllers;
+using Dappi.HeadlessCms.Interfaces;
 
-namespace CCApi.Extensions.DependencyInjection.Services;
-
+namespace Dappi.HeadlessCms.Services;
 public class EnumService : IEnumService
 {
     private readonly string _enumsFilePath;
-    private readonly string _modelsPath;
+    private readonly string _enumsPath;
     private readonly ILogger<EnumService> _logger;
     private readonly IWebHostEnvironment _environment;
 
@@ -23,10 +22,10 @@ public class EnumService : IEnumService
         Directory.CreateDirectory(dataPath);
         _enumsFilePath = Path.Combine(dataPath, "enums.json");
         
-        _modelsPath = "Models";
-        Directory.CreateDirectory(_modelsPath);
+        _enumsPath = "Enums";
+        Directory.CreateDirectory(_enumsPath);
         
-        _logger.LogInformation("EnumService initialized with models path: {ModelsPath}", Path.GetFullPath(_modelsPath));
+        _logger.LogInformation("EnumService initialized with enums path: {ModelsPath}", Path.GetFullPath(_enumsPath));
     }
 
     public async Task<Dictionary<string, Dictionary<string, int>>> GetAllEnumsAsync()
@@ -181,7 +180,7 @@ public class EnumService : IEnumService
     {
         try
         {
-            var enumFilePath = Path.Combine(_modelsPath, $"{enumName}.cs");
+            var enumFilePath = Path.Combine(_enumsPath, $"{enumName}.cs");
             var enumContent = GenerateEnumCode(enumName, enumValues);
             await File.WriteAllTextAsync(enumFilePath, enumContent);
             _logger.LogInformation("Generated enum file for '{EnumName}' at '{FilePath}'", enumName, enumFilePath);
@@ -196,7 +195,7 @@ public class EnumService : IEnumService
     {
         try
         {
-            var enumFilePath = Path.Combine(_modelsPath, $"{enumName}.cs");
+            var enumFilePath = Path.Combine(_enumsPath, $"{enumName}.cs");
             if (File.Exists(enumFilePath))
             {
                 File.Delete(enumFilePath);

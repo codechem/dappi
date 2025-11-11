@@ -12,6 +12,7 @@ namespace Dappi.HeadlessCms.Core
         private bool HasChanges { get; set; }
         private string _currentCode = string.Empty;
         private string _enumName = string.Empty;
+        
         public void CreateEnum(string enumName)
         {
             var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
@@ -58,7 +59,6 @@ namespace Dappi.HeadlessCms.Core
             {
                 throw new ArgumentException($"A member with the value '{request.Value}' already exists.");
             }
-            
             
             var newMember = SyntaxFactory.EnumMemberDeclaration(request.Name);
             if (request.Value is not null)

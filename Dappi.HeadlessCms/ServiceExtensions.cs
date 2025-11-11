@@ -19,8 +19,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Npgsql;
-using CCApi.Extensions.DependencyInjection.Interfaces;
-using CCApi.Extensions.DependencyInjection.Services;
 
 namespace Dappi.HeadlessCms;
 
