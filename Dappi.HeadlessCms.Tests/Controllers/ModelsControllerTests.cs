@@ -19,6 +19,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
     {
         private readonly ModelsController _controller;
         private readonly string _entitiesPath;
+        private readonly string _enumsPath;
         private readonly string _dbContextPath;
 
         private const string InitialDbContext = """
@@ -38,10 +39,11 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         public ModelsControllerTests(IntegrationWebAppFactory factory) : base(factory)
         {
             _entitiesPath = "Entities";
+            _enumsPath = "Enums";
             _dbContextPath = "Data";
 
             IDbContextAccessor accessor = new DbContextAccessor<DappiDbContext>(DbContext);
-            var domainModelEditor = new DomainModelEditor(_entitiesPath);
+            var domainModelEditor = new DomainModelEditor(_entitiesPath , _enumsPath);
             var dbContextEditor = new DbContextEditor(_dbContextPath, "TestDbContext");
             ICurrentDappiSessionProvider sessionProvider = new CurrentDappiSessionProvider(new HttpContextAccessor());
             _controller = new ModelsController(accessor, sessionProvider, domainModelEditor, dbContextEditor);

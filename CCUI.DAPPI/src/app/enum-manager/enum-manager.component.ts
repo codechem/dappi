@@ -111,10 +111,10 @@ export class EnumManagerComponent implements OnInit, OnDestroy {
 
   deleteEnum(enumData: EnumDisplayData): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
+      minWidth: 759,
       data: {
         title: 'Delete Enum',
-        message: `Are you sure you want to delete the enum "${enumData.name}"? This action cannot be undone.`,
+        message: `Are you sure you want to delete the enum "${enumData.name}"? This action is irreversible.`,
         confirmText: 'Delete',
         cancelText: 'Cancel',
       },

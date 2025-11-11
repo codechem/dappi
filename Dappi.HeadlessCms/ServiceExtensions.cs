@@ -19,8 +19,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Npgsql;
-using CCApi.Extensions.DependencyInjection.Interfaces;
-using CCApi.Extensions.DependencyInjection.Services;
 
 namespace Dappi.HeadlessCms;
 
@@ -57,6 +55,8 @@ public static class ServiceExtensions
         
         services.AddScoped<ICurrentExternalSessionProvider, CurrentExternalSessionProvider>();
 
+        services.AddScoped<IContentTypeChangesService, ContentTypeChangesService>();
+        
         services.AddDappiSwaggerGen();
 
         services.AddControllers()
@@ -76,7 +76,7 @@ public static class ServiceExtensions
         services.AddScoped<DomainModelEditor>(_ => new DomainModelEditor(Path.Combine(
             Directory.GetCurrentDirectory(),
             "Entities"
-        )));
+        ),Path.Combine(Directory.GetCurrentDirectory(), "Enums")));
         services.AddEndpointsApiExplorer();
         return services;
     }
