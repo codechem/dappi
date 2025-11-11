@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using Dappi.HeadlessCms.Core;
+using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 
@@ -12,10 +13,14 @@ public class EnumsController : ControllerBase
 {
     private readonly IEnumService _enumService;
     private readonly DomainModelEditor _domainModelEditor;
-    public EnumsController(IEnumService enumService, DomainModelEditor domainModelEditor)
+    private readonly string _enumsFolderPath;
+    private readonly IContentTypeChangesService _contentTypeChangesService;
+    public EnumsController(IEnumService enumService, DomainModelEditor domainModelEditor, IContentTypeChangesService contentTypeChangesService)
     {
         _enumService = enumService;
         _domainModelEditor = domainModelEditor;
+        _contentTypeChangesService = contentTypeChangesService;
+        _enumsFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "Enums");
     }
 
     [HttpGet("getAll")]
@@ -109,7 +114,22 @@ public class EnumsController : ControllerBase
                 return BadRequest(new { message = result.ErrorMessage });
             }
 
-            await _domainModelEditor.DeleteEnum(enumName);
+            var filePath = Path.Combine(_enumsFolderPath, $"{enumName}.cs");
+            var models = await _domainModelEditor.GetDomainModelEntityInfosAsync();
+            System.IO.File.Delete(filePath);
+            foreach (var model in models)
+            {
+                _domainModelEditor.RemoveEnumProperty(model.Name, enumName);
+                if (!Directory.EnumerateFiles(_enumsFolderPath, "*.cs", SearchOption.AllDirectories).Any())
+                {
+                    _domainModelEditor.UpdateUsings(model);
+                }
+                //TODO: Add changedFields
+                await _contentTypeChangesService.AddContentTypeChangeAsync(model.Name,
+                    new Dictionary<string, string>(),
+                    ContentTypeState.PendingPublish);
+            }
+            await _domainModelEditor.SaveAsync();
 
             return NoContent();
         }

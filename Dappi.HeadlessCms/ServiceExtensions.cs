@@ -55,6 +55,8 @@ public static class ServiceExtensions
         
         services.AddScoped<ICurrentExternalSessionProvider, CurrentExternalSessionProvider>();
 
+        services.AddScoped<IContentTypeChangesService, ContentTypeChangesService>();
+        
         services.AddDappiSwaggerGen();
 
         services.AddControllers()
@@ -75,7 +77,6 @@ public static class ServiceExtensions
             Directory.GetCurrentDirectory(),
             "Entities"
         ),Path.Combine(Directory.GetCurrentDirectory(), "Enums")));
-
         services.AddEndpointsApiExplorer();
         return services;
     }

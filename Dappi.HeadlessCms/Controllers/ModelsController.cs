@@ -1,5 +1,3 @@
-using System.Reflection;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Dappi.HeadlessCms.Database;
@@ -23,21 +21,16 @@ namespace Dappi.HeadlessCms.Controllers
     {
         private readonly DomainModelEditor _domainModelEditor;
         private readonly DbContextEditor _dbContextEditor;
-        private readonly ICurrentDappiSessionProvider _currentSessionProvider;
-        private readonly DappiDbContext _dbContext;
         private readonly string _entitiesFolderPath;
         private readonly string _controllersFolderPath;
-
-        public ModelsController(
-            IDbContextAccessor dappiDbContextAccessor,
-            ICurrentDappiSessionProvider currentSessionProvider,
-            DomainModelEditor domainModelEditor,
-            DbContextEditor dbContextEditor)
+        private readonly IContentTypeChangesService _contentTypeChangesService;
+        public ModelsController(DomainModelEditor domainModelEditor,
+            DbContextEditor dbContextEditor,
+            IContentTypeChangesService contentTypeChangesService)
         {
-            _currentSessionProvider = currentSessionProvider;
             _domainModelEditor = domainModelEditor;
             _dbContextEditor = dbContextEditor;
-            _dbContext = dappiDbContextAccessor.DbContext;
+            _contentTypeChangesService = contentTypeChangesService;
 
             _entitiesFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "Entities");
             _controllersFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "Controllers");
@@ -86,7 +79,7 @@ namespace Dappi.HeadlessCms.Controllers
             {
                 _domainModelEditor.CreateEntityModel(request.ModelName, request.IsAuditableEntity);
 
-                await AddContentTypeChangeAsync(
+                await _contentTypeChangesService.AddContentTypeChangeAsync(
                     request.ModelName,
                     new Dictionary<string, string> { { "Id", "Guid" } },
                     ContentTypeState.PendingPublish
@@ -154,8 +147,7 @@ namespace Dappi.HeadlessCms.Controllers
                 {
                     System.IO.File.Delete(controllerFilePath);
                 }
-
-                await AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(), ContentTypeState.PendingDelete);
+                await _contentTypeChangesService.AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(), ContentTypeState.PendingDelete);
 
                 return Ok(new
                 {
@@ -258,11 +250,11 @@ namespace Dappi.HeadlessCms.Controllers
                     _domainModelEditor.AddProperty(property);
                 }
 
-                await UpdateContentTypeChangeFieldsAsync(modelName, fieldDict);
+                await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(modelName, fieldDict);
 
                 if (request.RelatedTo != null && relatedFieldDict.Count != 0)
                 {
-                    await UpdateContentTypeChangeFieldsAsync(request.RelatedTo, relatedFieldDict);
+                    await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(request.RelatedTo, relatedFieldDict);
                 }
 
                 await _domainModelEditor.SaveAsync();
@@ -313,60 +305,6 @@ namespace Dappi.HeadlessCms.Controllers
             var hasRelatedProperties = _domainModelEditor.GetRelatedEntities(properties).Count > 0;
 
             return Ok(new { hasRelatedProperties });
-        }
-
-        private async Task AddContentTypeChangeAsync(string modelName, Dictionary<string, string> fields, ContentTypeState state)
-        {
-            var contentTypeChange = new ContentTypeChange
-            {
-                ModelName = modelName,
-                Fields = JsonSerializer.Serialize(fields),
-                ModifiedBy = _currentSessionProvider.GetCurrentUserId() ?? Guid.Empty,
-                State = state
-            };
-
-            _dbContext.ContentTypeChanges.Add(contentTypeChange);
-            await _dbContext.SaveChangesAsync();
-        }
-
-        private async Task UpdateContentTypeChangeFieldsAsync(string modelName, Dictionary<string, string> newFields)
-        {
-            try
-            {
-                var contentTypeChangeForModel = await _dbContext.ContentTypeChanges
-                    .Where(ctc => ctc.ModelName == modelName && ctc.State == ContentTypeState.PendingPublish)
-                    .OrderByDescending(ctc => ctc.ModifiedAt)
-                    .FirstOrDefaultAsync();
-
-                if (contentTypeChangeForModel is not null)
-                {
-                    var oldFields = JsonSerializer.Deserialize<Dictionary<string, string>>(contentTypeChangeForModel.Fields);
-                    foreach (var kvp in newFields)
-                    {
-                        oldFields?.Add(kvp.Key, kvp.Value);
-                    }
-
-                    contentTypeChangeForModel.ModifiedAt = DateTimeOffset.UtcNow;
-                    contentTypeChangeForModel.Fields = JsonSerializer.Serialize(oldFields);
-                }
-                else
-                {
-                    contentTypeChangeForModel = new ContentTypeChange
-                    {
-                        ModelName = modelName,
-                        Fields = JsonSerializer.Serialize(newFields),
-                        State = ContentTypeState.PendingPublish
-                    };
-                    _dbContext.ContentTypeChanges.Add(contentTypeChangeForModel);
-                }
-
-                await _dbContext.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error updating ContentTypeChanges: {ex.Message}");
-                throw;
-            }
         }
 
         private void HandleOneToOneRelationship(FieldRequest request, string modelName)
