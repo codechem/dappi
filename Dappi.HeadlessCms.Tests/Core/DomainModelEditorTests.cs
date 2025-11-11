@@ -15,6 +15,7 @@ namespace Dappi.HeadlessCms.Tests.Core
         private const string TestPropertyName = "ProductName";
         private readonly string? _assemblyName;
         private readonly string _tempDir;
+        private readonly string _enumTempDir;
         private readonly DomainModelEditor _domainModelEditor;
         private readonly string _filePath;
         public DomainModelEditorTests()
@@ -22,7 +23,8 @@ namespace Dappi.HeadlessCms.Tests.Core
             var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
             _assemblyName = assembly.GetName().Name;
             _tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            _domainModelEditor = new DomainModelEditor(_tempDir);
+            _enumTempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            _domainModelEditor = new DomainModelEditor(_tempDir , _enumTempDir);
             _filePath = Path.Combine(_tempDir, $"{DomainModelName}.cs");
             
             Directory.CreateDirectory(_tempDir);

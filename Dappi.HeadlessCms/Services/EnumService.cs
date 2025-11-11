@@ -2,9 +2,9 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Hosting;
-using System.Text;
-using Dappi.HeadlessCms.Controllers;
+using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Interfaces;
+using Dappi.HeadlessCms.Models;
 
 namespace Dappi.HeadlessCms.Services;
 public class EnumService : IEnumService
@@ -13,11 +13,15 @@ public class EnumService : IEnumService
     private readonly string _enumsPath;
     private readonly ILogger<EnumService> _logger;
     private readonly IWebHostEnvironment _environment;
-
-    public EnumService(ILogger<EnumService> logger, IConfiguration configuration, IWebHostEnvironment environment)
+    private readonly DomainModelEditor _domainModelEditor;
+    public EnumService(ILogger<EnumService> logger,
+        IConfiguration configuration,
+        IWebHostEnvironment environment,
+        DomainModelEditor domainModelEditor)
     {
         _logger = logger;
         _environment = environment;
+        _domainModelEditor = domainModelEditor;
         var dataPath = configuration.GetValue<string>("DataPath") ?? "Data";
         Directory.CreateDirectory(dataPath);
         _enumsFilePath = Path.Combine(dataPath, "enums.json");
@@ -181,7 +185,7 @@ public class EnumService : IEnumService
         try
         {
             var enumFilePath = Path.Combine(_enumsPath, $"{enumName}.cs");
-            var enumContent = GenerateEnumCode(enumName, enumValues);
+            var enumContent = _domainModelEditor.GenerateEnumCode(enumName, enumValues);
             await File.WriteAllTextAsync(enumFilePath, enumContent);
             _logger.LogInformation("Generated enum file for '{EnumName}' at '{FilePath}'", enumName, enumFilePath);
         }
@@ -223,30 +227,5 @@ public class EnumService : IEnumService
         {
             _logger.LogError(ex, "Failed to regenerate enum files");
         }
-    }
-
-    private string GenerateEnumCode(string enumName, Dictionary<string, int> enumValues)
-    {
-        var sb = new StringBuilder();
-        var appName = _environment.ApplicationName?.Replace("-", ".") ?? "MyCompany.MyProject.WebApi";
-        
-        sb.AppendLine("// Auto-generated - do not modify");
-        sb.AppendLine($"// Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        sb.AppendLine();
-        sb.AppendLine($"namespace {appName}.Models;");
-        sb.AppendLine();
-        sb.AppendLine($"public enum {enumName}");
-        sb.AppendLine("{");
-
-        var sorted = enumValues.OrderBy(kv => kv.Value).ToList();
-        for (int i = 0; i < sorted.Count; i++)
-        {
-            var item = sorted[i];
-            sb.AppendLine($"    {item.Key} = {item.Value},");
-        }
-
-        sb.AppendLine("}");
-        
-        return sb.ToString();
     }
 }

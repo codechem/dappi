@@ -1,4 +1,5 @@
 using Dappi.HeadlessCms.Controllers;
+using Dappi.HeadlessCms.Models;
 
 namespace Dappi.HeadlessCms.Interfaces;
 

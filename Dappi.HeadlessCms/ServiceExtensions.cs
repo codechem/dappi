@@ -74,10 +74,8 @@ public static class ServiceExtensions
         services.AddScoped<DomainModelEditor>(_ => new DomainModelEditor(Path.Combine(
             Directory.GetCurrentDirectory(),
             "Entities"
-        )));
+        ),Path.Combine(Directory.GetCurrentDirectory(), "Enums")));
 
-        services.AddScoped<EnumEditor>(_ => new EnumEditor(Path.Combine(Directory.GetCurrentDirectory(), "Enums")));
-        
         services.AddEndpointsApiExplorer();
         return services;
     }

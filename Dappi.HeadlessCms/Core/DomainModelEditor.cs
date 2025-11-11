@@ -10,11 +10,11 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Dappi.HeadlessCms.Core;
 
-public class DomainModelEditor(string domainModelFolderPath)
+public class DomainModelEditor(string domainModelFolderPath , string enumsFolderPath)
 {
     private bool HasChanges { get; set; }
     private readonly Dictionary<string, string> _codeChanges = new();
-
+    
     public async Task<DomainModelEntityInfo[]> GetDomainModelEntityInfosAsync()
     {
         var modelFiles = Directory.GetFiles(domainModelFolderPath, "*.cs", SearchOption.AllDirectories);
@@ -286,6 +286,50 @@ public class DomainModelEditor(string domainModelFolderPath)
         var newCode = newRoot?.NormalizeWhitespace().ToFullString();
         _codeChanges[modelName] = newCode!;
         HasChanges = true;
+    }
+    public string GenerateEnumCode(string enumName, Dictionary<string, int> enumValues)
+    {
+        var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+        var assemblyName = assembly.GetName().Name;
+    
+        var enumDeclaration = SyntaxFactory.EnumDeclaration(enumName)
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
+        
+        var sorted = enumValues.OrderBy(kv => kv.Value).ToList();
+    
+        foreach (var item in sorted)
+        {
+            var newMember = SyntaxFactory.EnumMemberDeclaration(item.Key).WithEqualsValue(
+                SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                        SyntaxFactory.Literal(item.Value))));
+            enumDeclaration = enumDeclaration.AddMembers(newMember);
+        }
+
+        var namespaceDeclaration = SyntaxFactory
+            .NamespaceDeclaration(SyntaxFactory.ParseName(assemblyName + ".Enums"))
+            .AddMembers(enumDeclaration);
+    
+        var compilationUnit = SyntaxFactory.CompilationUnit()
+            .AddMembers(namespaceDeclaration);
+    
+        return compilationUnit.NormalizeWhitespace().ToFullString();
+    }
+
+    public async Task DeleteEnum(string enumName)
+    {
+        var filePath = Path.Combine(enumsFolderPath, $"{enumName}.cs");
+        var models = await GetDomainModelEntityInfosAsync();
+        File.Delete(filePath);
+        foreach (var model in models)
+        {
+            RemoveEnumProperty(model.Name, enumName);
+            if (!Directory.EnumerateFiles(enumsFolderPath, "*.cs", SearchOption.AllDirectories).Any())
+            {
+                UpdateUsings(model);
+            }
+        }
+        await SaveAsync();
     }
 
     public void AddDomainModelEntityInfo(DomainModelEntityInfo entityInfo)
