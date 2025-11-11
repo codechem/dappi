@@ -23,6 +23,7 @@ import {
 import {MatMenuModule} from '@angular/material/menu';
 import { loadCollectionTypes } from '../state/collection/collection.actions';
 import { DeleteColletionTypeDialogComponent } from '../delete-colletion-type-dialog/delete-colletion-type-dialog.component';
+import { AddCollectionTypeDialogComponent } from '../add-collection-type-dialog/add-collection-type-dialog.component';
 @Component({
   selector: 'app-builder',
   standalone: true,
@@ -137,6 +138,14 @@ export class BuilderComponent implements OnInit, OnDestroy {
         this.disabled = false;
       })
     );
+  }
+
+  openAddCollectionTypeDialog(): void {
+      const dialogRef = this.dialog.open(AddCollectionTypeDialogComponent, {
+        width: '450px',
+        panelClass: 'dark-theme-dialog',
+        disableClose: true,
+      });
   }
 
   private updateSaveButtonState(): void {
