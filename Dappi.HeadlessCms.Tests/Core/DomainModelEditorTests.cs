@@ -1,11 +1,7 @@
-using System;
-using System.IO;
 using System.Reflection;
-using System.Threading.Tasks;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Tests.TestData;
-using Xunit;
 
 namespace Dappi.HeadlessCms.Tests.Core
 {
