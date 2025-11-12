@@ -1,7 +1,5 @@
-using Dappi.Core.Utils;
 using Dappi.HeadlessCms.Controllers;
 using Dappi.HeadlessCms.Core;
-using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
@@ -17,6 +15,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         private readonly ModelsController _controller;
         private readonly string _entitiesPath;
         private readonly string _dbContextPath;
+        private readonly string _snapshotPath = $"../snapshots/{nameof(ModelsControllerTests)}";
 
         private const string InitialDbContext = """
                                                 using Dappi.HeadlessCms.Database;
@@ -39,11 +38,12 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             _dbContextPath = "Data";
 
             IDbContextAccessor accessor = new DbContextAccessor<DappiDbContext>(DbContext);
-            var domainModelEditor = new DomainModelEditor(_entitiesPath , enumsPath);
+            var domainModelEditor = new DomainModelEditor(_entitiesPath, enumsPath);
             var dbContextEditor = new DbContextEditor(_dbContextPath, "TestDbContext");
             ICurrentDappiSessionProvider sessionProvider = new CurrentDappiSessionProvider(new HttpContextAccessor());
-            IContentTypeChangesService contentTypeChangesService = new ContentTypeChangesService(sessionProvider,accessor);
-            _controller = new ModelsController(domainModelEditor, dbContextEditor , contentTypeChangesService);
+            IContentTypeChangesService contentTypeChangesService =
+                new ContentTypeChangesService(sessionProvider, accessor);
+            _controller = new ModelsController(domainModelEditor, dbContextEditor, contentTypeChangesService);
 
             Directory.CreateDirectory(_entitiesPath);
             Directory.CreateDirectory(_dbContextPath);
@@ -79,9 +79,13 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
             var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
             var actual = await File.ReadAllTextAsync(filePath);
-            Assert.IsType<OkObjectResult>(res);
-            Assert.NotNull(actual);
-            Assert.Contains($$"""public DbSet<{{request.ModelName}}> {{request.ModelName.Pluralize()}} { get; set; }""", dbContext);
+
+            var verifySettings = new VerifySettings();
+            verifySettings.UseDirectory($"{_snapshotPath}/{nameof(CreateModel_Should_Create_Model_File)}");
+
+            await Verify(dbContext, verifySettings).UseFileName("dbContext");
+            await Verify(actual, verifySettings).UseFileName("model");
+            await Verify(res, verifySettings).UseFileName("response");
         }
 
         [Fact]
@@ -97,19 +101,17 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         public async Task CreateModel_Should_Create_Model_File_With_Auditable_Props()
         {
             var request = new ModelRequest { ModelName = "InventoryItem", IsAuditableEntity = true };
-            var res= await _controller.CreateModel(request);
+            var res = await _controller.CreateModel(request);
             var filePath = Path.Combine(_entitiesPath, $"{request.ModelName}.cs");
             var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
             var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
             var actual = await File.ReadAllTextAsync(filePath);
-            Assert.IsType<OkObjectResult>(res);
-            Assert.NotNull(actual);
-            Assert.Contains($"{request.ModelName} : {nameof(IAuditableEntity)}", actual);
-            Assert.Contains("public DateTime? CreatedAtUtc { get; set; }", actual);
-            Assert.Contains("public DateTime? UpdatedAtUtc { get; set; }", actual);
-            Assert.Contains("public string? CreatedBy { get; set; }", actual);
-            Assert.Contains("public string? UpdatedBy { get; set; }", actual);
-            Assert.Contains($$"""public DbSet<{{request.ModelName}}> {{request.ModelName.Pluralize()}} { get; set; }""", dbContext);
+
+            var verifySettings = new VerifySettings();
+            verifySettings.UseDirectory($"{_snapshotPath}/{nameof(CreateModel_Should_Create_Model_File_With_Auditable_Props)}");
+            await Verify(dbContext, verifySettings).UseFileName("dbContext");
+            await Verify(actual, verifySettings).UseFileName("model");
+            await Verify(res, verifySettings).UseFileName("response");
         }
 
         [Fact]
@@ -119,11 +121,11 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             await _controller.CreateModel(new ModelRequest { ModelName = "TestModel2", IsAuditableEntity = false });
             await _controller.CreateModel(new ModelRequest { ModelName = "TestModel3", IsAuditableEntity = false });
             var res = await _controller.GetAllModels();
-            Assert.IsType<OkObjectResult>(res);
-            var result = (OkObjectResult)res;
-            Assert.NotNull(result.Value);
-            Assert.IsAssignableFrom<List<string>>(result.Value);
-            Assert.NotEmpty((List<string>)result.Value);
+
+            var verifySettings = new VerifySettings();
+            verifySettings.UseDirectory($"{_snapshotPath}/{nameof(GetAllModels_Should_Return_All_Models)}");
+
+            await Verify(res, verifySettings).UseFileName("response");
         }
 
         [Fact]
@@ -233,7 +235,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
                              """;
             Assert.Contains(expected, actual);
         }
-        
+
         [Fact]
         public async Task AddField_Should_Add_OneToOne_Relation_To_Models()
         {
@@ -249,29 +251,19 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             };
             await _controller.CreateModel(new ModelRequest { ModelName = type1, IsAuditableEntity = false });
             await _controller.CreateModel(new ModelRequest { ModelName = type2, IsAuditableEntity = false });
-            
+
             var res = await _controller.AddField(type1, request);
             var file1 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type1}.cs"));
             var file2 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type2}.cs"));
             var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
             var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
-            
-            Assert.Contains($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{DappiRelationKind.OneToOne}, typeof({type2}))]", file1);
-            Assert.Contains($$"""public {{type2}}? {{request.FieldName}} { get; set; }""", file1);
-            
-            Assert.Contains($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{DappiRelationKind.OneToOne}, typeof({type1}))]", file2);
-            Assert.Contains($$"""public {{type1}}? {{request.RelatedRelationName ?? type1}} { get; set; }""", file2);
-            Assert.Contains($$"""public {{nameof(Guid)}}? {{type1}}Id { get; set; }""", file2);
-            
-            Assert.Contains($$"""public DbSet<{{type1}}> {{type1.Pluralize()}} { get; set; }""", dbContext);
-            Assert.Contains($$"""public DbSet<{{type2}}> {{type2.Pluralize()}} { get; set; }""", dbContext);
-            
-            Assert.Contains($"modelBuilder.Entity<{type1}>()" , dbContext);
-            Assert.Contains($".HasOne<{type2}>(s => s.{request.FieldName})", dbContext);
-            Assert.Contains($".WithOne(e => e.{request.RelatedRelationName ?? type1})", dbContext);
-            Assert.Contains($".HasForeignKey<{type2}>(ad => ad.{type1}Id)", dbContext);
-            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
-            Assert.IsType<OkObjectResult>(res);
+
+            var verifySettings = new VerifySettings();
+            verifySettings.UseDirectory($"{_snapshotPath}/{nameof(AddField_Should_Add_OneToOne_Relation_To_Models)}");
+            await Verify(dbContext, verifySettings).UseFileName("dbContext");
+            await Verify(file1, verifySettings).UseFileName("file1");
+            await Verify(file2, verifySettings).UseFileName("file2");
+            await Verify(res, verifySettings).UseFileName("response");
         }
 
         [Fact]
@@ -289,29 +281,22 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             };
             await _controller.CreateModel(new ModelRequest { ModelName = type1, IsAuditableEntity = false });
             await _controller.CreateModel(new ModelRequest { ModelName = type2, IsAuditableEntity = false });
-            
-            var res = await _controller.AddField(type1 , request);
-            
+
+            var res = await _controller.AddField(type1, request);
+
             var file1 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type1}.cs"));
-            var file2= await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type2}.cs"));
+            var file2 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type2}.cs"));
             var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
             var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
-            
-            Assert.Contains($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{DappiRelationKind.OneToMany}, typeof({type2}))]", file1);
-            Assert.Contains($$"""public ICollection<{{type2}}>? {{request.FieldName}} { get; set; }""" , file1);
-            
-            Assert.Contains($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{DappiRelationKind.ManyToOne}, typeof({type1}))]", file2);
-            Assert.Contains($$"""public {{type1}}? {{request.RelatedRelationName ?? type1}} { get; set; }""" , file2);
-            Assert.Contains($$"""public {{nameof(Guid)}}? {{type1}}Id { get; set; }""" , file2);
-            
-            Assert.Contains($"modelBuilder.Entity<{type1}>()", dbContext);
-            Assert.Contains($".HasMany<{type2}>(s => s.{request.FieldName})", dbContext);
-            Assert.Contains($".WithOne(e => e.{request.RelatedRelationName ?? type1})", dbContext);
-            Assert.Contains($".HasForeignKey(s => s.{type1}Id);", dbContext);
-            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
-            Assert.IsType<OkObjectResult>(res);
+
+            var verifySettings = new VerifySettings();
+            verifySettings.UseDirectory($"{_snapshotPath}/{nameof(AddField_Should_Add_OneToMany_Relation_To_Models)}");
+            await Verify(dbContext, verifySettings).UseFileName("dbContext");
+            await Verify(file1, verifySettings).UseFileName("file1");
+            await Verify(file2, verifySettings).UseFileName("file2");
+            await Verify(res, verifySettings).UseFileName("response");
         }
-        
+
         [Fact]
         public async Task AddField_Should_Add_ManyToOne_Relation_To_Models()
         {
@@ -327,29 +312,22 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             };
             await _controller.CreateModel(new ModelRequest { ModelName = type1, IsAuditableEntity = false });
             await _controller.CreateModel(new ModelRequest { ModelName = type2, IsAuditableEntity = false });
-            
-            var res = await _controller.AddField(type1 , request);
-            
+
+            var res = await _controller.AddField(type1, request);
+
             var file1 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type1}.cs"));
-            var file2= await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type2}.cs"));
+            var file2 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type2}.cs"));
             var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
             var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
-        
-            Assert.Contains($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{DappiRelationKind.ManyToOne}, typeof({type2}))]", file1);
-            Assert.Contains($$"""public {{nameof(Guid)}}? {{request.RelatedTo}}Id { get; set; }""" , file1);
-            Assert.Contains($$"""public {{type2}}? {{request.FieldName}} { get; set; }""" , file1);
-            
-            Assert.Contains($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{nameof(DappiRelationKind.OneToMany)}, typeof({type1}))]", file2);
-            Assert.Contains($$"""public ICollection<{{type1}}>? {{request.RelatedRelationName ?? type1.Pluralize()}} { get; set; }""" , file2);
-            
-            Assert.Contains($"modelBuilder.Entity<{type1}>()", dbContext);
-            Assert.Contains($".HasOne<{type2}>(s => s.{request.FieldName})", dbContext);
-            Assert.Contains($".WithMany(e => e.{request.RelatedRelationName ?? $"{type1.Pluralize()}"})", dbContext);
-            Assert.Contains($".HasForeignKey(s => s.{type2}Id);", dbContext);
-            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
-            Assert.IsType<OkObjectResult>(res);
+
+            var verifySettings = new VerifySettings();
+            verifySettings.UseDirectory($"{_snapshotPath}/{nameof(AddField_Should_Add_ManyToOne_Relation_To_Models)}");
+            await Verify(dbContext, verifySettings).UseFileName("dbContext");
+            await Verify(file1, verifySettings).UseFileName("file1");
+            await Verify(file2, verifySettings).UseFileName("file2");
+            await Verify(res, verifySettings).UseFileName("response");
         }
-        
+
         [Fact]
         public async Task AddField_Should_Add_ManyToMany_Relation_To_Models()
         {
@@ -365,28 +343,22 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             };
             await _controller.CreateModel(new ModelRequest { ModelName = type1, IsAuditableEntity = false });
             await _controller.CreateModel(new ModelRequest { ModelName = type2, IsAuditableEntity = false });
-            
-            var res = await _controller.AddField(type1 , request);
-            
+
+            var res = await _controller.AddField(type1, request);
+
             var file1 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type1}.cs"));
-            var file2= await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type2}.cs"));
+            var file2 = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{type2}.cs"));
             var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
             var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
-            
-            Assert.Contains($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{nameof(DappiRelationKind.ManyToMany)}, typeof({type1}))]", file2);
-            Assert.Contains($$"""public ICollection<{{type2}}>? {{request.FieldName}} { get; set; }""" , file1);
-            
-            Assert.Contains($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{nameof(DappiRelationKind.ManyToMany)}, typeof({type2}))]", file1);
-            Assert.Contains($$"""public ICollection<{{type1}}>? {{request.RelatedRelationName ?? type1.Pluralize()}} { get; set; }""" , file2);
-            
-            Assert.Contains($"modelBuilder.Entity<{type1}>()", dbContext);
-            Assert.Contains($".HasMany(m => m.{request.FieldName})", dbContext);
-            Assert.Contains($".WithMany(r => r.{type1.Pluralize()})", dbContext);
-            Assert.Contains($".UsingEntity(j => j.ToTable(\"{type1}{type2.Pluralize()}\"));", dbContext);
-            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
-            Assert.IsType<OkObjectResult>(res);
+
+            var verifySettings = new VerifySettings();
+            verifySettings.UseDirectory($"{_snapshotPath}/{nameof(AddField_Should_Add_ManyToMany_Relation_To_Models)}");
+            await Verify(dbContext, verifySettings).UseFileName("dbContext");
+            await Verify(file1, verifySettings).UseFileName("file1");
+            await Verify(file2, verifySettings).UseFileName("file2");
+            await Verify(res, verifySettings).UseFileName("response");
         }
-        
+
         [Fact]
         public async Task DeleteModel_Should_Return_NotFound_If_Model_Does_Not_Exist()
         {
@@ -400,7 +372,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             var res = await _controller.DeleteModel(string.Empty);
             Assert.IsType<BadRequestObjectResult>(res);
         }
-        
+
         [Fact]
         public async Task DeleteModel_Should_Delete_Model_File()
         {
@@ -409,9 +381,13 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             var res = await _controller.DeleteModel(modelName);
             var filePath = Path.Combine(_entitiesPath, $"{modelName}.cs");
             var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
-            Assert.IsType<OkObjectResult>(res);
+            var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
+            
             Assert.False(File.Exists(filePath));
-            Assert.DoesNotContain($"DbSet<{modelName}> {modelName.Pluralize()}", await File.ReadAllTextAsync(dbContextFilePath), StringComparison.InvariantCultureIgnoreCase);
+            var verifySettings = new VerifySettings();
+            verifySettings.UseDirectory($"{_snapshotPath}/{nameof(DeleteModel_Should_Delete_Model_File)}");
+            await Verify(dbContext, verifySettings).UseFileName("dbContext");
+            await Verify(res, verifySettings).UseFileName("response");
         }
 
         [Fact]
@@ -429,27 +405,22 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             };
             await _controller.CreateModel(new ModelRequest { ModelName = user, IsAuditableEntity = false });
             await _controller.CreateModel(new ModelRequest { ModelName = post, IsAuditableEntity = false });
-            
-            await _controller.AddField(user , request);
-            
+
+            await _controller.AddField(user, request);
+
             await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{user}.cs"));
             await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{post}.cs"));
             var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
-            
+
             var res = await _controller.DeleteModel(user);
             var updatedDbContextCode = await File.ReadAllTextAsync(dbContextFilePath);
             var updatedPostFile = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{post}.cs"));
             
-            Assert.DoesNotContain($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{nameof(DappiRelationKind.ManyToOne)}, typeof({user}))]", updatedPostFile);
-            Assert.DoesNotContain($$"""public {{user}}? {{request.RelatedRelationName ?? user}} { get; set; }""" , updatedPostFile);
-            Assert.DoesNotContain($$"""public {{nameof(Guid)}}? {{user}}Id { get; set; }""", updatedPostFile);
-            
-            Assert.DoesNotContain($"DbSet<{user}> {user.Pluralize()}", updatedDbContextCode);
-            Assert.DoesNotContain($"modelBuilder.Entity<{user}>()", updatedDbContextCode);
-            Assert.DoesNotContain($".HasMany<{post}>(s => s.{request.FieldName})", updatedDbContextCode);
-            Assert.DoesNotContain($".WithOne(e => e.{request.RelatedRelationName ?? user})", updatedDbContextCode);
-            Assert.DoesNotContain($".HasForeignKey(s => s.{user}Id);", updatedDbContextCode);
-            Assert.IsType<OkObjectResult>(res);
+            var verifySettings = new VerifySettings();
+            verifySettings.UseDirectory($"{_snapshotPath}/{nameof(DeleteModel_Should_Delete_Relations_And_References)}");
+            await Verify(updatedDbContextCode, verifySettings).UseFileName("dbContext");
+            await Verify(updatedPostFile, verifySettings).UseFileName(post);
+            await Verify(res, verifySettings).UseFileName("response");
         }
 
         [Fact]
@@ -458,7 +429,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             const string user = "User";
             const string post = "Post";
             const string comment = "Comment";
-            
+
             var postRequest = new FieldRequest
             {
                 FieldName = "TestRelation",
@@ -470,65 +441,40 @@ namespace Dappi.HeadlessCms.Tests.Controllers
 
             var commentsRequest = new FieldRequest()
             {
-                FieldName = "Comments",
-                FieldType = "OneToMany",
-                RelatedTo = comment,
-                IsRequired = false,
+                FieldName = "Comments", FieldType = "OneToMany", RelatedTo = comment, IsRequired = false,
             };
-            
+
             await _controller.CreateModel(new ModelRequest { ModelName = user, IsAuditableEntity = false });
             await _controller.CreateModel(new ModelRequest { ModelName = post, IsAuditableEntity = false });
             await _controller.CreateModel(new ModelRequest { ModelName = comment, IsAuditableEntity = false });
-            
-            await _controller.AddField(user , postRequest);
-            await _controller.AddField(post , commentsRequest);
+
+            await _controller.AddField(user, postRequest);
+            await _controller.AddField(post, commentsRequest);
             await _controller.AddField(user, commentsRequest);
-            
+
             var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
-            
+
             var deleteRes = await _controller.DeleteModel(user);
             var updatedDbContextCode = await File.ReadAllTextAsync(dbContextFilePath);
             var updatedPostFile = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{post}.cs"));
             var updatedCommentFile = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{comment}.cs"));
-            
-            Assert.DoesNotContain($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{nameof(DappiRelationKind.ManyToOne)}, typeof({user}))]", updatedPostFile);
-            Assert.DoesNotContain($$"""public {{user}}? {{postRequest.RelatedRelationName ?? user}} { get; set; }""" , updatedPostFile);
-            Assert.DoesNotContain($$"""public {{nameof(Guid)}}? {{user}}Id { get; set; }""", updatedPostFile);
-            Assert.Contains($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{nameof(DappiRelationKind.OneToMany)}, typeof({comment}))]", updatedPostFile);
-            Assert.Contains($$"""public ICollection<{{comment}}>? {{commentsRequest.FieldName}} { get; set; }""" , updatedPostFile);
-            
-            Assert.DoesNotContain($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{nameof(DappiRelationKind.ManyToOne)}, typeof({user}))]", updatedCommentFile);
-            Assert.DoesNotContain($$"""public {{user}}? {{postRequest.RelatedRelationName ?? user}} { get; set; }""" , updatedCommentFile);
-            Assert.DoesNotContain($$"""public {{nameof(Guid)}}? {{user}}Id { get; set; }""", updatedCommentFile);
-            Assert.Contains($"[{DappiRelationAttribute.ShortName}({nameof(DappiRelationKind)}.{nameof(DappiRelationKind.ManyToOne)}, typeof({post}))]", updatedCommentFile);
-            Assert.Contains($$"""public {{post}}? {{commentsRequest.RelatedRelationName ?? post}} { get; set; }""" , updatedCommentFile);
-            Assert.Contains($$"""public {{nameof(Guid)}}? {{post}}Id { get; set; }""" , updatedCommentFile);
-            
-            Assert.DoesNotContain($"DbSet<{user}> {user.Pluralize()}", updatedDbContextCode);
-            
-            Assert.DoesNotContain($"modelBuilder.Entity<{user}>()", updatedDbContextCode);
-            Assert.DoesNotContain($".HasMany<{post}>(s => s.{postRequest.FieldName})", updatedDbContextCode);
-            Assert.DoesNotContain($".WithOne(e => e.{postRequest.RelatedRelationName ?? user})", updatedDbContextCode);
-            Assert.DoesNotContain($".HasForeignKey(s => s.{user}Id);", updatedDbContextCode);
-            
-            Assert.DoesNotContain($"modelBuilder.Entity<{user}>()", updatedDbContextCode);
-            Assert.DoesNotContain($".WithOne(e => e.{commentsRequest.RelatedRelationName ?? user})", updatedDbContextCode);
-            
-            Assert.Contains($"modelBuilder.Entity<{post}>()", updatedDbContextCode);
-            Assert.Contains($".HasMany<{comment}>(s => s.{commentsRequest.FieldName})", updatedDbContextCode);
-            Assert.Contains($".WithOne(e => e.{commentsRequest.RelatedRelationName ?? post})", updatedDbContextCode);
-            Assert.Contains($".HasForeignKey(s => s.{post}Id);", updatedDbContextCode);
-            Assert.Contains("base.OnModelCreating(modelBuilder);", updatedDbContextCode);
 
-            Assert.IsType<OkObjectResult>(deleteRes);
+            var verifySettings = new VerifySettings();
+            verifySettings.UseDirectory($"{_snapshotPath}/{nameof(Other_Relations_Should_Not_Be_Deleted)}");
+            
+            await Verify(updatedDbContextCode, verifySettings).UseFileName("dbContext");
+            await Verify(updatedPostFile, verifySettings).UseFileName(post);
+            await Verify(updatedCommentFile, verifySettings).UseFileName(comment);
+            await Verify(deleteRes, verifySettings).UseFileName("response");
         }
-        
+
         public void Dispose()
         {
             if (Directory.Exists(_entitiesPath))
             {
                 Directory.Delete(_entitiesPath, true);
             }
+
             if (Directory.Exists(_dbContextPath))
             {
                 Directory.Delete(_dbContextPath, true);

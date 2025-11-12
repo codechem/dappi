@@ -1,0 +1,7 @@
+﻿{
+  Value: {
+    Message: Field 'TestRelation' of type 'ManyToMany' added successfully to 'TestClassSeven' model.,
+    FilePath: {CurrentDirectory}Entities/TestClassSeven.cs
+  },
+  StatusCode: 200
+}

@@ -1,0 +1,7 @@
+﻿{
+  Value: {
+    Message: Model 'User' deleted successfully.,
+    FilePath: {CurrentDirectory}Entities/User.cs
+  },
+  StatusCode: 200
+}

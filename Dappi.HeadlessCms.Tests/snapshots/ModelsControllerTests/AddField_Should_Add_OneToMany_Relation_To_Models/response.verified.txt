@@ -1,0 +1,7 @@
+﻿{
+  Value: {
+    Message: Field 'TestRelation' of type 'OneToMany' added successfully to 'TestClassThree' model.,
+    FilePath: {CurrentDirectory}Entities/TestClassThree.cs
+  },
+  StatusCode: 200
+}

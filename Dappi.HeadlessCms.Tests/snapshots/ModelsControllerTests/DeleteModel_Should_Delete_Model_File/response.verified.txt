@@ -1,0 +1,7 @@
+﻿{
+  Value: {
+    Message: Model 'TestDeleteModel' deleted successfully.,
+    FilePath: {CurrentDirectory}Entities/TestDeleteModel.cs
+  },
+  StatusCode: 200
+}

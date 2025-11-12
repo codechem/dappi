@@ -1,0 +1,18 @@
+﻿using Dappi.HeadlessCms.Database;
+using Microsoft.EntityFrameworkCore;
+using ReSharperTestRunner.Entities;
+
+namespace Dappi.TestEnv.Data
+{
+    public class TestDbContext(DbContextOptions options) : DappiDbContext(options)
+    {
+        public DbSet<TestClassOne> TestClassOnes { get; set; }
+        public DbSet<TestClassTwo> TestClassTwos { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<TestClassOne>().HasOne<TestClassTwo>(s => s.TestRelation).WithOne(e => e.TestClassOne).HasForeignKey<TestClassTwo>(ad => ad.TestClassOneId);
+            base.OnModelCreating(modelBuilder);
+        }
+    }
+}

@@ -1,0 +1,7 @@
+﻿{
+  Value: {
+    Message: Field 'TestRelation' of type 'OneToOne' added successfully to 'TestClassOne' model.,
+    FilePath: {CurrentDirectory}Entities/TestClassOne.cs
+  },
+  StatusCode: 200
+}

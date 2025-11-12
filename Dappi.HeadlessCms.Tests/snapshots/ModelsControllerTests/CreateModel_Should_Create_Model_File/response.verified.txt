@@ -1,0 +1,6 @@
+﻿{
+  Value: {
+    Message: Model class 'Product' created successfully.
+  },
+  StatusCode: 200
+}

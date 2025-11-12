@@ -1,0 +1,6 @@
+﻿{
+  Value: {
+    Message: Model class 'InventoryItem' created successfully.
+  },
+  StatusCode: 200
+}
