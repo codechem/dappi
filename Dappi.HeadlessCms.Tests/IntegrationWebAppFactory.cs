@@ -1,7 +1,3 @@
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
 using Dappi.HeadlessCms.Core;
 using Dappi.TestEnv;
 using Dappi.TestEnv.Data;
@@ -10,7 +6,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
-using Xunit;
 
 namespace Dappi.HeadlessCms.Tests
 {

@@ -8,8 +8,6 @@ using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Tests.TestData;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.VisualStudio.TestPlatform.CrossPlatEngine;
 using Xunit.Extensions.Ordering;
 
 namespace Dappi.HeadlessCms.Tests.Controllers
@@ -19,7 +17,6 @@ namespace Dappi.HeadlessCms.Tests.Controllers
     {
         private readonly ModelsController _controller;
         private readonly string _entitiesPath;
-        private readonly string _enumsPath;
         private readonly string _dbContextPath;
 
         private const string InitialDbContext = """
@@ -39,14 +36,15 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         public ModelsControllerTests(IntegrationWebAppFactory factory) : base(factory)
         {
             _entitiesPath = "Entities";
-            _enumsPath = "Enums";
+            const string enumsPath = "Enums";
             _dbContextPath = "Data";
 
             IDbContextAccessor accessor = new DbContextAccessor<DappiDbContext>(DbContext);
-            var domainModelEditor = new DomainModelEditor(_entitiesPath , _enumsPath);
+            var domainModelEditor = new DomainModelEditor(_entitiesPath , enumsPath);
             var dbContextEditor = new DbContextEditor(_dbContextPath, "TestDbContext");
             ICurrentDappiSessionProvider sessionProvider = new CurrentDappiSessionProvider(new HttpContextAccessor());
-            _controller = new ModelsController(accessor, sessionProvider, domainModelEditor, dbContextEditor);
+            IContentTypeChangesService contentTypeChangesService = new ContentTypeChangesService(sessionProvider,accessor);
+            _controller = new ModelsController(domainModelEditor, dbContextEditor , contentTypeChangesService);
 
             Directory.CreateDirectory(_entitiesPath);
             Directory.CreateDirectory(_dbContextPath);
@@ -90,7 +88,8 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [Fact, Order(4)]
         public async Task CreateModel_Should_Return_BadRequest_If_Model_Name_Is_Already_Taken()
         {
-            var request = new ModelRequest { ModelName = "Product", IsAuditableEntity = false };
+            var request = new ModelRequest { ModelName = "DuplicateModel", IsAuditableEntity = false };
+            await _controller.CreateModel(request);
             var res = await _controller.CreateModel(request);
             Assert.IsType<BadRequestObjectResult>(res);
         }
@@ -117,6 +116,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [Fact, Order(6)]
         public async Task GetAllModels_Should_Return_All_Models()
         {
+            await _controller.CreateModel(new ModelRequest { ModelName = "TestModel1", IsAuditableEntity = false });
+            await _controller.CreateModel(new ModelRequest { ModelName = "TestModel2", IsAuditableEntity = false });
+            await _controller.CreateModel(new ModelRequest { ModelName = "TestModel3", IsAuditableEntity = false });
             var res = await _controller.GetAllModels();
             Assert.IsType<OkObjectResult>(res);
             var result = (OkObjectResult)res;
@@ -372,16 +374,195 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
             Assert.IsType<OkObjectResult>(res);
         }
+        
+        [Fact]
+        public async Task DeleteModel_Should_Return_NotFound_If_Model_Does_Not_Exist()
+        {
+            var res = await _controller.DeleteModel("NotExistingClass");
+            Assert.IsType<NotFoundObjectResult>(res);
+        }
+
+        [Fact]
+        public async Task DeleteModel_Should_Return_BadRequest_If_ModelName_Is_Empty()
+        {
+            var res = await _controller.DeleteModel(string.Empty);
+            Assert.IsType<BadRequestObjectResult>(res);
+        }
+        
+        [Fact]
+        public async Task DeleteModel_Should_Delete_Model_File()
+        {
+            var modelName = "TestDeleteModel";
+            await _controller.CreateModel(new ModelRequest { ModelName = modelName, IsAuditableEntity = false });
+            var res = await _controller.DeleteModel(modelName);
+            var filePath = Path.Combine(_entitiesPath, $"{modelName}.cs");
+            var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
+            Assert.IsType<OkObjectResult>(res);
+            Assert.False(File.Exists(filePath));
+            Assert.DoesNotContain($"DbSet<{modelName}> {modelName.Pluralize()}", await File.ReadAllTextAsync(dbContextFilePath), StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        [Fact]
+        public async Task DeleteModel_Should_Delete_Relations_And_References()
+        {
+            const string user = "User";
+            const string post = "Post";
+            var request = new FieldRequest
+            {
+                FieldName = "TestRelation",
+                FieldType = "OneToMany",
+                RelatedTo = post,
+                IsRequired = false,
+                RelatedRelationName = null
+            };
+            await _controller.CreateModel(new ModelRequest { ModelName = user, IsAuditableEntity = false });
+            await _controller.CreateModel(new ModelRequest { ModelName = post, IsAuditableEntity = false });
+            
+            var res = await _controller.AddField(user , request);
+            
+            var userFile = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{user}.cs"));
+            var postFile= await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{post}.cs"));
+            var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
+            var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
+            
+            Assert.Contains($$"""public ICollection<{{post}}>? {{request.FieldName}} { get; set; }""" , userFile);
+            Assert.Contains($$"""public {{user}}? {{request.RelatedRelationName ?? user}} { get; set; }""" , postFile);
+            Assert.Contains($$"""public {{nameof(Guid)}}? {{user}}Id { get; set; }""" , postFile);
+            
+            Assert.Contains($"modelBuilder.Entity<{user}>()", dbContext);
+            Assert.Contains($".HasMany<{post}>(s => s.{request.FieldName})", dbContext);
+            Assert.Contains($".WithOne(e => e.{request.RelatedRelationName ?? user})", dbContext);
+            Assert.Contains($".HasForeignKey(s => s.{user}Id);", dbContext);
+            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
+            Assert.IsType<OkObjectResult>(res);
+            
+            var deleteRes = await _controller.DeleteModel(user);
+            var updatedDbContextCode = await File.ReadAllTextAsync(dbContextFilePath);
+            var updatedPostFile = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{post}.cs"));
+            
+            Assert.DoesNotContain($$"""public {{user}}? {{request.RelatedRelationName ?? user}} { get; set; }""" , updatedPostFile);
+            Assert.DoesNotContain($$"""public {{nameof(Guid)}}? {{user}}Id { get; set; }""", updatedPostFile);
+            
+            Assert.DoesNotContain($"DbSet<{user}> {user.Pluralize()}", updatedDbContextCode);
+            Assert.DoesNotContain($"modelBuilder.Entity<{user}>()", updatedDbContextCode);
+            Assert.DoesNotContain($".HasMany<{post}>(s => s.{request.FieldName})", updatedDbContextCode);
+            Assert.DoesNotContain($".WithOne(e => e.{request.RelatedRelationName ?? user})", updatedDbContextCode);
+            Assert.DoesNotContain($".HasForeignKey(s => s.{user}Id);", updatedDbContextCode);
+           
+            Assert.IsType<OkObjectResult>(deleteRes);
+        }
+
+        [Fact]
+        public async Task Other_Relations_Should_Not_Be_Deleted()
+        {
+            const string user = "User";
+            const string post = "Post";
+            const string comment = "Comment";
+            
+            var postRequest = new FieldRequest
+            {
+                FieldName = "TestRelation",
+                FieldType = "OneToMany",
+                RelatedTo = post,
+                IsRequired = false,
+                RelatedRelationName = null
+            };
+
+            var commentsRequest = new FieldRequest()
+            {
+                FieldName = "Comments",
+                FieldType = "OneToMany",
+                RelatedTo = comment,
+                IsRequired = false,
+            };
+            
+            await _controller.CreateModel(new ModelRequest { ModelName = user, IsAuditableEntity = false });
+            await _controller.CreateModel(new ModelRequest { ModelName = post, IsAuditableEntity = false });
+            await _controller.CreateModel(new ModelRequest { ModelName = comment, IsAuditableEntity = false });
+            
+            var res = await _controller.AddField(user , postRequest);
+            await _controller.AddField(post , commentsRequest);
+            await _controller.AddField(user, commentsRequest);
+            
+            var userFile = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{user}.cs"));
+            var postFile= await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{post}.cs"));
+            var commentFile= await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{comment}.cs"));
+            
+            var dbContextFilePath = Path.Combine(_dbContextPath, "TestDbContext.cs");
+            var dbContext = await File.ReadAllTextAsync(dbContextFilePath);
+            
+            Assert.Contains($$"""public ICollection<{{post}}>? {{postRequest.FieldName}} { get; set; }""" , userFile);
+            Assert.Contains($$"""public ICollection<{{comment}}>? {{commentsRequest.FieldName}} { get; set; }""" , userFile);
+            
+            Assert.Contains($$"""public {{user}}? {{postRequest.RelatedRelationName ?? user}} { get; set; }""" , postFile);
+            Assert.Contains($$"""public {{nameof(Guid)}}? {{user}}Id { get; set; }""" , postFile);
+            Assert.Contains($$"""public ICollection<{{comment}}>? {{commentsRequest.FieldName}} { get; set; }""" , postFile);
+
+            Assert.Contains($$"""public {{user}}? {{commentsRequest.RelatedRelationName ?? user}} { get; set; }""", commentFile);
+            Assert.Contains($$"""public {{nameof(Guid)}}? {{user}}Id { get; set; }""", commentFile);
+            Assert.Contains($$"""public {{post}}? {{commentsRequest.RelatedRelationName ?? post}} { get; set; }""" , commentFile);
+            Assert.Contains($$"""public {{nameof(Guid)}}? {{post}}Id { get; set; }""" , commentFile);
+            
+            Assert.Contains($"modelBuilder.Entity<{user}>()", dbContext);
+            Assert.Contains($".HasMany<{post}>(s => s.{postRequest.FieldName})", dbContext);
+            Assert.Contains($".WithOne(e => e.{postRequest.RelatedRelationName ?? user})", dbContext);
+            Assert.Contains($".HasForeignKey(s => s.{user}Id);", dbContext);
+            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
+            
+            Assert.Contains($"modelBuilder.Entity<{user}>()", dbContext);
+            Assert.Contains($".HasMany<{comment}>(s => s.{commentsRequest.FieldName})", dbContext);
+            Assert.Contains($".WithOne(e => e.{commentsRequest.RelatedRelationName ?? post})", dbContext);
+            Assert.Contains($".HasForeignKey(s => s.{post}Id);", dbContext);
+            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
+            
+            Assert.Contains($"modelBuilder.Entity<{post}>()", dbContext);
+            Assert.Contains($".HasMany<{comment}>(s => s.{commentsRequest.FieldName})", dbContext);
+            Assert.Contains($".WithOne(e => e.{commentsRequest.RelatedRelationName ?? post})", dbContext);
+            Assert.Contains($".HasForeignKey(s => s.{post}Id);", dbContext);
+            Assert.Contains("base.OnModelCreating(modelBuilder);", dbContext);
+            
+            Assert.IsType<OkObjectResult>(res);
+            
+            var deleteRes = await _controller.DeleteModel(user);
+            var updatedDbContextCode = await File.ReadAllTextAsync(dbContextFilePath);
+            var updatedPostFile = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{post}.cs"));
+            var updatedCommentFile = await File.ReadAllTextAsync(Path.Combine(_entitiesPath, $"{comment}.cs"));
+            
+            Assert.DoesNotContain($"DbSet<{user}> {user.Pluralize()}", updatedDbContextCode);
+            Assert.DoesNotContain($$"""public {{user}}? {{postRequest.RelatedRelationName ?? user}} { get; set; }""" , updatedPostFile);
+            Assert.DoesNotContain($$"""public {{nameof(Guid)}}? {{user}}Id { get; set; }""", updatedPostFile);
+            Assert.DoesNotContain($$"""public {{user}}? {{postRequest.RelatedRelationName ?? user}} { get; set; }""" , updatedPostFile);
+            Assert.DoesNotContain($$"""public {{nameof(Guid)}}? {{user}}Id { get; set; }""", updatedCommentFile);
+            
+            Assert.DoesNotContain($"modelBuilder.Entity<{user}>()", updatedDbContextCode);
+            Assert.DoesNotContain($".HasMany<{post}>(s => s.{postRequest.FieldName})", updatedDbContextCode);
+            Assert.DoesNotContain($".WithOne(e => e.{postRequest.RelatedRelationName ?? user})", updatedDbContextCode);
+            Assert.DoesNotContain($".HasForeignKey(s => s.{user}Id);", updatedDbContextCode);
+            
+            Assert.DoesNotContain($"modelBuilder.Entity<{user}>()", updatedDbContextCode);
+            Assert.DoesNotContain($".HasMany<{comment}>(s => s.{commentsRequest.FieldName})", updatedDbContextCode);
+            Assert.DoesNotContain($".WithOne(e => e.{commentsRequest.RelatedRelationName ?? post})", updatedDbContextCode);
+            Assert.DoesNotContain($".HasForeignKey(s => s.{post}Id);", updatedDbContextCode);
+            
+            Assert.Contains($"modelBuilder.Entity<{post}>()", updatedDbContextCode);
+            Assert.Contains($".HasMany<{comment}>(s => s.{commentsRequest.FieldName})", updatedDbContextCode);
+            Assert.Contains($".WithOne(e => e.{commentsRequest.RelatedRelationName ?? post})", updatedDbContextCode);
+            Assert.Contains($".HasForeignKey(s => s.{post}Id);", updatedDbContextCode);
+            Assert.Contains("base.OnModelCreating(modelBuilder);", updatedDbContextCode);
+            
+            Assert.IsType<OkObjectResult>(deleteRes);
+        }
+        
         public void Dispose()
         {
-            // if (Directory.Exists(_entitiesPath))
-            // {
-            //     Directory.Delete(_entitiesPath, true);
-            // }
-            // if (Directory.Exists(_dbContextPath))
-            // {
-            //     Directory.Delete(_dbContextPath, true);
-            // }
+            if (Directory.Exists(_entitiesPath))
+            {
+                Directory.Delete(_entitiesPath, true);
+            }
+            if (Directory.Exists(_dbContextPath))
+            {
+                Directory.Delete(_dbContextPath, true);
+            }
         }
     }
 }

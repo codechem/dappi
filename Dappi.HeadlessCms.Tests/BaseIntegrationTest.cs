@@ -1,9 +1,6 @@
-using System.Linq;
-using Dappi.HeadlessCms.Core;
 using Dappi.TestEnv.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace Dappi.HeadlessCms.Tests
 {
