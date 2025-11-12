@@ -57,6 +57,7 @@ import { selectUser } from '../state/auth/auth.selectors';
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
 })
+
 export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() headerText: string = 'Builder';
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
@@ -68,12 +69,13 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   selectedType$ = this.store.select(selectSelectedType);
   collectionTypes$ = this.store.select(selectCollectionTypes);
+  collectionTypes:string[] = [];
   collectionTypesError$ = this.store.select(selectCollectionTypesError);
   publishedCollectionTypes$ = this.store.select(selectPublishedCollectionTypes);
 
   filteredCollectionTypes: string[] = [];
   searchText = '';
-
+  selectedType = '';
   private destroy$ = new Subject<void>();
   private searchTextChanged = new Subject<string>();
 
@@ -142,6 +144,13 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       })
     );
+
+    this.subscriptions.add(
+      this.collectionTypes$.subscribe(types => 
+        this.collectionTypes = types
+      )
+    )
+
   }
 
   ngAfterViewInit(): void {

@@ -89,3 +89,26 @@ export const saveContentFailure = createAction(
   '[Collection] Save Content Failure',
   props<{ error: any }>()
 );
+
+export const deleteCollectionType = createAction('[Collection] Delete Collection Type' , props<{modelName:string}>());
+
+export const deleteCollectionTypeSuccess = createAction(
+  '[Collection] Delete Collection Type Success',
+  props<{message: string}>()
+)
+
+export const deleteCollectionTypeFailure = createAction(
+  '[Collection] Delete Collection Type Failure',
+  props<{ error: any }>()
+);
+
+export const collectionHasRelatedProperties = createAction('[Colleciton] Collection has related properties',
+  props<{modelName: string}>()
+)
+
+export const collectionHasRelatedPropertiesSuccess = createAction('[Colleciton] Collection has related properties Success',
+  props<{hasRelatedProperties: boolean}>()
+)
+export const collectionHasRelatedPropertiesFailure = createAction('[Colleciton] Collection has related properties Failure',
+  props<{error: any}>()
+)

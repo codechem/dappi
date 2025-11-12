@@ -123,11 +123,11 @@ export class CollectionEffects {
         const enumsRequest = this.enumsData
           ? of(this.enumsData)
           : this.http.get<any>(enumsEndpoint).pipe(
-              map((data) => {
-                this.enumsData = data;
-                return data;
-              })
-            );
+            map((data) => {
+              this.enumsData = data;
+              return data;
+            })
+          );
 
         return enumsRequest.pipe(
           mergeMap((enumsData) => {
@@ -199,23 +199,12 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.addCollectionType),
       switchMap((action) => {
-        const payload = { modelName: action.collectionType , isAuditableEntity : action.isAuditableEntity};
+        const payload = { modelName: action.collectionType, isAuditableEntity: action.isAuditableEntity };
         return this.http.post(`${BASE_API_URL}models`, payload).pipe(
-          switchMap(() =>
-            this.http.get(`${BASE_API_URL}update-db-context`).pipe(
-              map(() =>
-                CollectionActions.addCollectionTypeSuccess({
-                  collectionType: action.collectionType,
-                })
-              ),
-              catchError((error) => {
-                console.error('Error updating DB context:', error);
-                this.showErrorPopup(
-                  `Model created but failed to update DB context: ${error.error}`
-                );
-                return of(CollectionActions.addCollectionTypeFailure({ error }));
-              })
-            )
+          map(() =>
+            CollectionActions.addCollectionTypeSuccess({
+              collectionType: action.collectionType,
+            })
           ),
           catchError((error) => {
             console.error('Error creating model:', error);
@@ -239,6 +228,23 @@ export class CollectionEffects {
       ])
     )
   );
+
+  // reloadCollectionTypesAfterDelete$ = createEffect(() =>
+  //   this.actions$.pipe(
+  //     ofType(CollectionActions.deleteCollectionTypeSuccess),
+  //     withLatestFrom(this.store.pipe(select(selectCollectionTypes))),
+  //     concatMap(([_ , collectionTypes]) => {
+  //       return [
+  //       CollectionActions.loadPublishedCollectionTypes(),
+  //       CollectionActions.loadDraftCollectionTypes(),
+  //       ContentActions.setContentType({
+  //         selectedType: collectionTypes[0],
+  //       }),
+  //       CollectionActions.loadFields({modelType: collectionTypes[0]})
+  //     ]
+  //     })
+  //   )
+  // );
 
   addField$ = createEffect(() =>
     this.actions$.pipe(
@@ -268,6 +274,40 @@ export class CollectionEffects {
         CollectionActions.loadPublishedCollectionTypes(),
         CollectionActions.loadDraftCollectionTypes(),
       ])
+    )
+  );
+
+  collectionHasRelatedProperties$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.collectionHasRelatedProperties),
+      switchMap(action => {
+        return this.http.get<{ hasRelatedProperties: boolean }>(`${BASE_API_URL}models/hasRelatedProperties/${action.modelName}`).pipe(
+          map(res =>
+            CollectionActions.collectionHasRelatedPropertiesSuccess({ hasRelatedProperties : res.hasRelatedProperties})
+          ),
+          catchError(error => {
+            return of(CollectionActions.collectionHasRelatedPropertiesFailure({ error: error.message }))
+          }
+          )
+        )
+      })
+    )
+  );
+
+  deleteCollectionType$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.deleteCollectionType),
+      switchMap(action => {
+        return this.http.delete<{ message: string }>(`${BASE_API_URL}models/${action.modelName}`).pipe(
+          map(res =>
+            CollectionActions.deleteCollectionTypeSuccess({ message: res.message })
+          ),
+          catchError(error => {
+            return of(CollectionActions.deleteCollectionTypeFailure({ error: error.message }))
+          }
+          )
+        )
+      })
     )
   );
 

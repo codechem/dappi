@@ -30,7 +30,7 @@ public class EnumToolingGenerator : IIncrementalGenerator
             .OfType<INamedTypeSymbol>()
             .Where(t => t.TypeKind == TypeKind.Enum &&
                        t.ContainingNamespace != null &&
-                       t.ContainingNamespace.ToDisplayString().ToLower().Contains("models"))
+                       t.ContainingNamespace.ToDisplayString().ToLower().Contains("enums"))
             .Select(enumSymbol => new EnumInfo
             {
                 Name = enumSymbol.Name,
@@ -69,7 +69,7 @@ public class EnumToolingController : ControllerBase
     {{
         var enums = Assembly.GetExecutingAssembly()
             .GetTypes()
-            .Where(t => t.IsEnum && t.Namespace != null && t.Namespace.ToLower().Contains(""models""))
+            .Where(t => t.IsEnum && t.Namespace != null && t.Namespace.ToLower().Contains(""enums""))
             .ToDictionary(
                 enumType => enumType.Name,
                 enumType => Enum.GetNames(enumType)
@@ -90,6 +90,10 @@ public class EnumToolingController : ControllerBase
     {
         foreach (var enumInfo in enums)
         {
+            if (enumInfo.Members.Length == 0)
+            {
+                continue;
+            }
             var controllerName = $"{enumInfo.Name}Controller";
             var routeName = enumInfo.Name.ToLower();
 

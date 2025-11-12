@@ -22,8 +22,11 @@ import { selectSelectedType } from '../state/content/content.selectors';
 import { Subscription } from 'rxjs';
 import { EnumsResponse } from '../models/enums-response.model';
 import { EnumsService } from '../services/common/enums.service';
+import { EnumManagementService } from '../services/common/enum-management.service';
 import { ModelValidators } from '../validators/model-validators';
+import { forkJoin } from 'rxjs';
 import { Pluralizer } from '../utils/pluralizer'
+
 
 interface FieldType {
   icon: string;
@@ -145,6 +148,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     private dialogRef: MatDialogRef<AddFieldDialogComponent>,
     private fb: FormBuilder,
     private enumsService: EnumsService,
+    private enumManagementService: EnumManagementService,
     @Inject(MAT_DIALOG_DATA) public data: { selectedType: string },
     private store: Store
   ) {
@@ -164,6 +168,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       ],
       requiredField: [false],
       relatedModel: [''],
+      relatedRelationName: ['']
     });
   }
 
@@ -177,8 +182,28 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
   ngOnInit(): void {
-    this.enumsService.getEnums().subscribe((result: EnumsResponse) => {
-      this.availableEnums = Object.keys(result);
+    forkJoin({
+      generatedEnums: this.enumsService.getEnums(),
+      userCreatedEnums: this.enumManagementService.getAllEnums()
+    }).subscribe({
+      next: (result) => {
+        const generated = Object.keys(result.generatedEnums || {});
+        const userCreated = Object.keys(result.userCreatedEnums || {});
+        const combined = [...generated, ...userCreated];
+        this.availableEnums = [...new Set(combined)].sort();
+      },
+      error: (error) => {
+        console.error('Failed to load enums:', error);
+        this.enumsService.getEnums().subscribe({
+          next: (result: EnumsResponse) => {
+            this.availableEnums = Object.keys(result || {});
+          },
+          error: (err) => {
+            console.error('Fallback enum loading failed:', err);
+            this.availableEnums = [];
+          }
+        });
+      }
     });
     this.fieldForm.get('relatedModel')?.valueChanges.subscribe((value) => {
       this.selectedEnum = value;
@@ -221,20 +246,23 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   private updateRelationTypes(relatedModel?: string): void {
     const modelName = relatedModel || '/';
     this.relatedTo = relatedModel;
+    const pluralSelected = Pluralizer.pluralizeEN(this.selectedType);
+    const pluralRelated = Pluralizer.pluralizeEN(modelName);
+
     this.relationTypes = [
       {
         label: 'Many-to-many',
-        description: `Many ${Pluralizer.pluralizeEN(this.selectedType)} can relate to many ${Pluralizer.pluralizeEN(modelName)}`,
+        description: `Many ${pluralSelected} can relate to many ${pluralRelated}`,
         value: 'many-to-many',
       },
       {
         label: 'One-to-many',
-        description: `One ${this.selectedType} can relate to many ${Pluralizer.pluralizeEN(modelName)}`,
+        description: `One ${this.selectedType} can relate to many ${pluralRelated}`,
         value: 'one-to-many',
       },
       {
         label: 'Many-to-one',
-        description: `Many ${Pluralizer.pluralizeEN(this.selectedType)} can relate to one ${modelName}`,
+        description: `Many ${pluralSelected} can relate to one ${modelName}`,
         value: 'many-to-one',
       },
       {
@@ -247,22 +275,16 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
 
   selectRelationType(index: number): void {
     this.selectedRelationTypeIndex = index;
-    let netType: string = '';
 
-    switch (index) {
-      case 0:
-        netType = 'ManyToMany';
-        break;
-      case 1:
-        netType = 'OneToMany';
-        break;
-      case 2:
-        netType = 'ManyToOne';
-        break;
-      case 3:
-        netType = 'OneToOne';
-        break;
-    }
+    const relationTypeMap: { [key: number]: string } = {
+      0: 'ManyToMany',
+      1: 'OneToMany',
+      2: 'ManyToOne',
+      3: 'OneToOne'
+    };
+
+    const netType = relationTypeMap[index] || '';
+
     this.fieldTypes = [
       {
         icon: 'Aa',
@@ -341,9 +363,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       this.fieldForm.get('relatedRelationName')?.clearValidators();
     }
 
-    ['relatedModel', 'relatedRelationName'].forEach((control) => {
-      this.fieldForm.get(control)?.updateValueAndValidity();
-    });
+    this.fieldForm.get('relatedModel')?.updateValueAndValidity();
+    this.fieldForm.get('relatedRelationName')?.updateValueAndValidity();
     this.selectedRelationTypeIndex = null;
   }
 

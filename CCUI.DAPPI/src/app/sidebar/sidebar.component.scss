@@ -157,6 +157,16 @@
 .item-icon {
   margin-right: 5px;
 }
+
+.item-icon-end{
+  margin-left : auto;
+}
+
+.item-icon-red{
+  cursor: pointer;
+  color: vars.$error-light !important;;
+}
+
 ::ng-deep .custom-list-item {
   display: flex;
   height: 40px !important;
@@ -181,6 +191,7 @@
     .mdc-list-item__primary-text {
       color: vars.$primary-main !important;
     }
+    
   }
 
   &.selected {

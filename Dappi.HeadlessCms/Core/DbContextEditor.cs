@@ -1,6 +1,8 @@
+using System.Reflection;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
 using Dappi.Core.Utils;
+using Dappi.HeadlessCms.Extensions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -15,7 +17,7 @@ public class DbContextEditor(
     private bool HasChanges { get; set; }
     private const string BaseOnModelCreating = "base.OnModelCreating(modelBuilder);";
     private const string OnModelCreatingMethodName = "OnModelCreating";
-    
+
     public void AddDbSetToDbContext(DomainModelEntityInfo modelType)
     {
         var syntaxTree = GetSyntaxTreeFromDbContextSource();
@@ -56,14 +58,14 @@ public class DbContextEditor(
 
     public void RemoveSetFromDbContext(DomainModelEntityInfo modelType)
     {
-        HasChanges = false;
-        var syntaxTree = GetSyntaxTreeFromDbContextSource();
+        var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
+            ? GetSyntaxTreeFromDbContextSource()
+            : CSharpSyntaxTree.ParseText(_currentCode);
         var root = syntaxTree.GetCompilationUnitRoot();
         var classNode = FindDbContextClassDeclaration(root);
 
         var modelName = modelType.Name;
-        var propertyName = $"{modelName}s";
-
+        var propertyName = modelName.Pluralize();
         var existing = classNode.Members
             .OfType<PropertyDeclarationSyntax>()
             .FirstOrDefault(p =>
@@ -71,13 +73,39 @@ public class DbContextEditor(
                 p.Type is GenericNameSyntax { Identifier.Text: "DbSet" } generic &&
                 generic.TypeArgumentList.Arguments.FirstOrDefault()?.ToString() == modelName);
 
-        if (existing is not null)
+        if (existing is null)
         {
-            var newRoot = root.RemoveNode(existing, SyntaxRemoveOptions.KeepNoTrivia);
-            _currentCode = newRoot?.NormalizeWhitespace().ToFullString()!;
             return;
         }
 
+        var newRoot = root.RemoveNode(existing, SyntaxRemoveOptions.KeepNoTrivia);
+
+        _currentCode = newRoot?.NormalizeWhitespace().ToFullString()!;
+
+        HasChanges = true;
+    }
+
+    public void UpdateUsings()
+    {
+        var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
+            ? GetSyntaxTreeFromDbContextSource()
+            : CSharpSyntaxTree.ParseText(_currentCode);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = FindDbContextClassDeclaration(root);
+        
+        var hasDbSet = classNode.Members
+            .OfType<PropertyDeclarationSyntax>()
+            .Any(p =>
+                p.Type is GenericNameSyntax { Identifier.Text: "DbSet" });
+
+        if (hasDbSet)
+        {
+            return;
+        }
+
+        var usings = root.Usings.Where(u => u.Name != null && !u.Name.ToString().Contains("Entities"));
+        var newRoot = root?.WithUsings(SyntaxFactory.List(usings));
+        _currentCode = newRoot?.NormalizeWhitespace().ToFullString()!;
         HasChanges = true;
     }
 
@@ -105,10 +133,10 @@ public class DbContextEditor(
         }
     }
 
-    public async Task UpdateOnModelCreating(string modelName, string relatedTo, string relationshipType,
+    public void UpdateOnModelCreating(string modelName, string relatedTo, string relationshipType,
         string propertyName,
         string? relatedPropertyName = null)
-    { 
+    {
         var syntaxTree = GetSyntaxTreeFromDbContextSource();
         var root = syntaxTree.GetCompilationUnitRoot();
         var classNode = FindDbContextClassDeclaration(root);
@@ -144,17 +172,17 @@ public class DbContextEditor(
             Constants.Relations.OneToOne => $@"modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
             .WithOne(e => e.{relatedPropertyName ?? modelName})
-            .HasForeignKey<{relatedTo}>(ad => ad.{relatedPropertyName ?? modelName}Id);",
+            .HasForeignKey<{relatedTo}>(ad => ad.{modelName}Id);",
 
             Constants.Relations.OneToMany => $@"modelBuilder.Entity<{modelName}>()
             .HasMany<{relatedTo}>(s => s.{propertyName})
             .WithOne(e => e.{relatedPropertyName ?? modelName})
-            .HasForeignKey(s => s.{relatedPropertyName ?? modelName}Id);",
+            .HasForeignKey(s => s.{modelName}Id);",
 
             Constants.Relations.ManyToOne => $@"modelBuilder.Entity<{modelName}>()
             .HasOne<{relatedTo}>(s => s.{propertyName})
             .WithMany(e => e.{relatedPropertyName ?? $"{modelName.Pluralize()}"})
-            .HasForeignKey(s => s.{propertyName}Id);",
+            .HasForeignKey(s => s.{relatedTo}Id);",
 
             Constants.Relations.ManyToMany => $@"modelBuilder.Entity<{modelName}>()
             .HasMany(m => m.{propertyName})
@@ -167,12 +195,14 @@ public class DbContextEditor(
         var body = onModelCreating.Body ?? SyntaxFactory.Block();
         var newBody = body.AddStatements(SyntaxFactory.ParseStatement(relationCode));
         var newMethod = onModelCreating.WithBody(newBody);
-        
-        var baseOnModelCreating = newMethod?.Body?.Statements.FirstOrDefault(s => s.ToString().Contains(BaseOnModelCreating));
+
+        var baseOnModelCreating =
+            newMethod.Body?.Statements.FirstOrDefault(s => s.ToString().Contains(BaseOnModelCreating));
         if (baseOnModelCreating is not null)
         {
-            newMethod = newMethod?.RemoveNode(baseOnModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
+            newMethod = newMethod.RemoveNode(baseOnModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
         }
+
         newMethod = newMethod?.AddBodyStatements(SyntaxFactory.ParseStatement(BaseOnModelCreating));
         var newClassNode = classNode.RemoveNode(onModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
         if (newMethod != null)
@@ -183,18 +213,61 @@ public class DbContextEditor(
         if (newClassNode != null)
         {
             var newRoot = root.ReplaceNode(classNode, newClassNode);
-       
+
             _currentCode = newRoot.NormalizeWhitespace().ToFullString();
         }
 
         HasChanges = true;
-        await SaveAsync();
+    }
+
+    public void DeleteRelations(string entity, List<string> relatedEntities)
+    {
+        var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
+            ? GetSyntaxTreeFromDbContextSource()
+            : CSharpSyntaxTree.ParseText(_currentCode);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = FindDbContextClassDeclaration(root);
+
+        var onModelCreating = classNode.Members.OfType<MethodDeclarationSyntax>()
+            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
+
+        if (onModelCreating is null)
+        {
+            return;
+        }
+
+        var block = onModelCreating.Body;
+        var statementsToRemove = new List<StatementSyntax>();
+
+        // Search for relation configurations to remove (e.g., HasMany, HasOne)
+        foreach (var relation in relatedEntities)
+        {
+            var relationStatements = block?.Statements
+                .OfType<ExpressionStatementSyntax>()
+                .Where(s => s.ToString().Contains(relation) && s.ToString().Contains(entity))
+                .ToList();
+
+            if (relationStatements != null)
+            {
+                statementsToRemove.AddRange(relationStatements);
+            }
+        }
+
+        // Remove the relation statements
+        var modifiedStatements = block.Statements.Except(statementsToRemove).ToList();
+        var modifiedBlock = block.WithStatements(SyntaxFactory.List(modifiedStatements));
+
+        // Rebuild the method with the updated block
+        var modifiedMethod = onModelCreating.WithBody(modifiedBlock);
+        var modifiedRoot = root.ReplaceNode(onModelCreating, modifiedMethod);
+        _currentCode = modifiedRoot.NormalizeWhitespace().ToFullString();
+        HasChanges = true;
     }
 
     private ClassDeclarationSyntax FindDbContextClassDeclaration(CompilationUnitSyntax root)
     {
         var classNode = root.DescendantNodes()
-            .FindClassDeclarationByName(dbContextName!);
+            .FindClassDeclarationByName(dbContextName);
 
         if (classNode == null)
             throw new InvalidOperationException("DbContext class not found");
@@ -204,7 +277,7 @@ public class DbContextEditor(
 
     private SyntaxTree GetSyntaxTreeFromDbContextSource()
     {
-        var dbContextSourceCode = File.ReadAllText(Path.Combine(dbContextFilePath, $"{dbContextName}.cs"!));
+        var dbContextSourceCode = File.ReadAllText(Path.Combine(dbContextFilePath, $"{dbContextName}.cs"));
         var syntaxTree = CSharpSyntaxTree.ParseText(dbContextSourceCode);
         return syntaxTree;
     }

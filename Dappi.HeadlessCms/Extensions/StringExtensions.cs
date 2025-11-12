@@ -19,11 +19,17 @@ namespace Dappi.HeadlessCms.Extensions
             {
                 return false;
             }
+            var contextualKeywordKind = SyntaxFacts.GetContextualKeywordKind(name);
+            if (SyntaxFacts.IsContextualKeyword(contextualKeywordKind))
+            {
+                return false;
+            }
 
             // if it is a reserved keyword it will be parsed successfully to a Keyword kind.
             var keywordKind = SyntaxFacts.GetKeywordKind(name);
             
             return !SyntaxFacts.IsKeywordKind(keywordKind);
         }
+        
     }
 }

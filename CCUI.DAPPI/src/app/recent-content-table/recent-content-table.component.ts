@@ -14,6 +14,7 @@ import {
   selectLoadingContentTypeChanges,
 } from '../state/content/content.selectors';
 import { RecentContent } from '../models/recent-content';
+import { ContentTypeState } from '../enums/contentTypeState';
 
 interface ContentTypeChange {
   id: number;
@@ -23,7 +24,7 @@ interface ContentTypeChange {
   modifiedBy: string;
   additionalFields: number;
   modifiedAt: string;
-  isPublished: boolean;
+  state: ContentTypeState
 }
 
 @Component({
@@ -81,7 +82,7 @@ export class RecentContentTableComponent implements OnInit, OnDestroy {
   dataSource = new MatTableDataSource<ContentTypeChange>([]);
   loading = false;
   private destroy$ = new Subject<void>();
-
+  public state = ContentTypeState;
   constructor(
     private router: Router,
     private store: Store,
@@ -149,7 +150,6 @@ export class RecentContentTableComponent implements OnInit, OnDestroy {
       } else {
         lastEdited = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
       }
-
       return {
         id: change.Id,
         modelName: change.ModelName,
@@ -158,7 +158,7 @@ export class RecentContentTableComponent implements OnInit, OnDestroy {
         additionalFields: Math.max(0, fieldsCount - 3),
         modifiedBy: change.ModifiedBy,
         modifiedAt: lastEdited,
-        isPublished: change.IsPublished,
+        state: change.State        
       };
     });
 

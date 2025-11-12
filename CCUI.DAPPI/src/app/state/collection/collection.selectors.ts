@@ -1,4 +1,4 @@
-import { createFeatureSelector, createSelector } from '@ngrx/store';
+import { createFeatureSelector, createSelector, State } from '@ngrx/store';
 import { CollectionState } from './collection.state';
 
 export const selectCollectionState = createFeatureSelector<CollectionState>('collection');
@@ -42,3 +42,5 @@ export const selectServerRestarting = createSelector(
 );
 
 export const selectSaveError = createSelector(selectCollectionState, (state) => state.saveError);
+
+export const hasRelatedProperties = createSelector(selectCollectionState, (state) => state.hasRelatedProperties);

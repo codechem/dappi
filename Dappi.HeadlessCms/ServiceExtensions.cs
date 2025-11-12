@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
+using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Database.Interceptors;
 using Dappi.HeadlessCms.Interfaces;
@@ -8,6 +9,7 @@ using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
 using Dappi.HeadlessCms.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -43,6 +45,7 @@ public static class ServiceExtensions
         });
 
         services.AddScoped<IDbContextAccessor, DbContextAccessor<TDbContext>>();
+        services.AddScoped<IEnumService, EnumService>();
 
         services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
 
@@ -52,6 +55,8 @@ public static class ServiceExtensions
         
         services.AddScoped<ICurrentExternalSessionProvider, CurrentExternalSessionProvider>();
 
+        services.AddScoped<IContentTypeChangesService, ContentTypeChangesService>();
+        
         services.AddDappiSwaggerGen();
 
         services.AddControllers()
@@ -71,15 +76,15 @@ public static class ServiceExtensions
         services.AddScoped<DomainModelEditor>(_ => new DomainModelEditor(Path.Combine(
             Directory.GetCurrentDirectory(),
             "Entities"
-        )));
+        ),Path.Combine(Directory.GetCurrentDirectory(), "Enums")));
         services.AddEndpointsApiExplorer();
-
         return services;
     }
 
     public static IServiceCollection AddDappiAuthentication<TUser, TRole, TContext>(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        Action<JwtBearerOptions>? externalJwtBearerOptions = null)
         where TUser : IdentityUser, new()
         where TRole : IdentityRole, new()
         where TContext : DbContext
@@ -88,14 +93,12 @@ public static class ServiceExtensions
             {
                 options.User.RequireUniqueEmail = true;
 
-                // Password settings
                 options.Password.RequireDigit = true;
                 options.Password.RequireLowercase = true;
                 options.Password.RequireNonAlphanumeric = true;
                 options.Password.RequireUppercase = true;
                 options.Password.RequiredLength = 8;
 
-                // Lockout settings
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.AllowedForNewUsers = true;
@@ -105,55 +108,78 @@ public static class ServiceExtensions
 
         // JWT Authentication
         var jwtSettings = configuration.GetSection("JwtSettings");
-        var key = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ??
-                                         throw new InvalidOperationException("JWT SecretKey is not configured"));
+        var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured");
+        var key = Encoding.UTF8.GetBytes(secretKey);
 
-        services.AddAuthentication(options =>
+        var authenticationBuilder = services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        });
+        
+        authenticationBuilder.AddJwtBearer(DappiAuthenticationSchemes.DappiAuthenticationScheme, options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
             {
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtSettings["Issuer"],
+                ValidAudience = jwtSettings["Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ClockSkew = TimeSpan.Zero
+            };
+
+            options.Events = new JwtBearerEvents
             {
-                options.TokenValidationParameters = new TokenValidationParameters
+                OnAuthenticationFailed = context =>
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSettings["Issuer"],
-                    ValidAudience = jwtSettings["Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                options.Events = new JwtBearerEvents
-                {
-                    OnAuthenticationFailed = context =>
+                    if (context.Exception is SecurityTokenExpiredException)
                     {
-                        if (context.Exception is SecurityTokenExpiredException)
-                        {
-                            context.Response.Headers.Add("Token-Expired", "true");
-                        }
-
-                        return Task.CompletedTask;
-                    },
-                    OnChallenge = context =>
-                    {
-                        context.HandleResponse();
-                        context.Response.StatusCode = 401;
-                        context.Response.ContentType = "application/json";
-
-                        var result =
-                            System.Text.Json.JsonSerializer.Serialize(new { error = "You are not authorized" });
-                        return context.Response.WriteAsync(result);
+                        context.Response.Headers.Append("Token-Expired", "true");
                     }
-                };
-            });
+
+                    return Task.CompletedTask;
+                },
+                OnChallenge = context =>
+                {
+                    context.HandleResponse();
+                    context.Response.StatusCode = 401;
+                    context.Response.ContentType = "application/json";
+
+                    var result =
+                        System.Text.Json.JsonSerializer.Serialize(new { error = "You are not authorized" });
+                    return context.Response.WriteAsync(result);
+                }
+            };
+        });
+
+        if (externalJwtBearerOptions is not null)
+        {
+            authenticationBuilder.AddJwtBearer(DappiAuthenticationSchemes.ExternalAuthenticationScheme, externalJwtBearerOptions);
+        }
 
         services.AddScoped<TokenService<TUser>>();
-        services.AddAuthorization();
+        
+        services.AddAuthorization(opts =>
+        {
+            var dappiPolicy = new AuthorizationPolicyBuilder(DappiAuthenticationSchemes.DappiAuthenticationScheme)
+                .RequireAuthenticatedUser()
+                .Build();
+            
+            var externalPolicy = new AuthorizationPolicyBuilder(DappiAuthenticationSchemes.ExternalAuthenticationScheme)
+                .RequireAuthenticatedUser()
+                .Build();
+            
+            var defaultPolicy = new AuthorizationPolicyBuilder(dappiPolicy).Combine(externalPolicy)
+                .Build();  
+            
+            opts.AddPolicy(DappiAuthenticationSchemes.DappiAuthenticationScheme, dappiPolicy);
+            opts.AddPolicy(DappiAuthenticationSchemes.ExternalAuthenticationScheme,  externalPolicy);
+            opts.DefaultPolicy = defaultPolicy;
+        });
 
         return services;
     }
@@ -192,7 +218,6 @@ public static class ServiceExtensions
                     new string[] { }
                 }
             });
-
             c.TagActionsBy(api => api.GroupName ?? api.ActionDescriptor.RouteValues["controller"]);
         });
     }
