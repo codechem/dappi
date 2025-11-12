@@ -199,7 +199,7 @@ public class InitCommand(ILogger<InitCommand> logger) : AsyncCommand<InitCommand
             },
             {
                 @"..\..\Dappi.SourceGenerator\Dappi.SourceGenerator.csproj",
-                ("Dappi.SourceGenerator", [("Version", tagName), ("OutputItemType", "Analyzer")])
+                ("Dappi.SourceGenerator", [("Version", tagName), ("OutputItemType", "Analyzer"), ("IncludeAssets", "build; native; contentfiles; analyzers")])
             },
             {
                 @"..\..\Dappi.Core\Dappi.Core.csproj",
