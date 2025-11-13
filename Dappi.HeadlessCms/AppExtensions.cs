@@ -17,7 +17,7 @@ public static class AppExtensions
         Action<SwaggerUIOptions>? configureSwagger = null)
         where TDbContext : DappiDbContext
     {
-        if (app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
         {
             app.UseSwagger();
             app.UseSwaggerUI(configureSwagger ?? (c =>

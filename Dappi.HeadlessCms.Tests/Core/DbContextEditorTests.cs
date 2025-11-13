@@ -1,7 +1,6 @@
 using Dappi.Core.Utils;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Core.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dappi.HeadlessCms.Tests.Core
 {

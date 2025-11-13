@@ -1,0 +1,11 @@
+﻿using Dappi.HeadlessCms.Database;
+using Microsoft.EntityFrameworkCore;
+using Entities;
+
+namespace Dappi.TestEnv.Data
+{
+    public class TestDbContext(DbContextOptions options) : DappiDbContext(options)
+    {
+        public DbSet<InventoryItem> InventoryItems { get; set; }
+    }
+}

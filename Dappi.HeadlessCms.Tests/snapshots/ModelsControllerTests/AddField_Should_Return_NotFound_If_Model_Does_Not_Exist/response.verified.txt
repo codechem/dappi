@@ -1,0 +1,10 @@
+﻿{
+  Status: 404 Not Found,
+  Content: {
+    Headers: {
+      Content-Length: 22,
+      Content-Type: text/plain; charset=utf-8
+    },
+    Value: Model class not found.
+  }
+}

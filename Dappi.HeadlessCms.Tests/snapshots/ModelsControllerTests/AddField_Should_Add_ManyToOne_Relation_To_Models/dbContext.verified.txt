@@ -1,0 +1,18 @@
+﻿using Dappi.HeadlessCms.Database;
+using Microsoft.EntityFrameworkCore;
+using Entities;
+
+namespace Dappi.TestEnv.Data
+{
+    public class TestDbContext(DbContextOptions options) : DappiDbContext(options)
+    {
+        public DbSet<TestClassFive> TestClassFives { get; set; }
+        public DbSet<TestClassSix> TestClassSixes { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<TestClassFive>().HasOne<TestClassSix>(s => s.TestRelation).WithMany(e => e.TestClassFives).HasForeignKey(s => s.TestClassSixId);
+            base.OnModelCreating(modelBuilder);
+        }
+    }
+}

@@ -1,0 +1,13 @@
+﻿{
+  Status: 200 OK,
+  Content: {
+    Headers: {
+      Content-Length: 169,
+      Content-Type: application/json; charset=utf-8
+    },
+    Value: {
+      Message: Model 'TestDeleteModel' deleted successfully.,
+      FilePath: {CurrentDirectory}Entities/TestDeleteModel.cs
+    }
+  }
+}
