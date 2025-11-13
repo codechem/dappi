@@ -1,24 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>
-      <Reference Include="Microsoft.AspNetCore">
-        <HintPath>..\..\..\..\usr\local\share\dotnet\shared\Microsoft.AspNetCore.App\9.0.9\Microsoft.AspNetCore.dll</HintPath>
-      </Reference>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Controllers\" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Dappi.HeadlessCms\Dappi.HeadlessCms.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Entities\" />
     </ItemGroup>
 
 </Project>
