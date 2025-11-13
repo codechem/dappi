@@ -1,6 +1,0 @@
-@Dappi.TestEnv_HostAddress = http://localhost:5197
-
-GET {{Dappi.TestEnv_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
