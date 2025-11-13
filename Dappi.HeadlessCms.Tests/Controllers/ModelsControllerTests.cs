@@ -37,9 +37,6 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             _verifySettings = new VerifySettings();
             _verifySettings.ScrubMember("traceId");
             
-            // _verifySettings.ScrubLinesContaining(".Entities");
-            // _verifySettings.ScrubLinesContaining("namespace");
-            
             _verifySettings.ScrubLinesWithReplace(s => 
                 Regex.Replace(s, @"^.*\busing\b.*\.Entities.*$" , "using Entities;"));
             
@@ -59,7 +56,6 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         {
             var request = new ModelRequest { ModelName = string.Empty, IsAuditableEntity = false };
             var res = await _client.PostAsJsonAsync(_baseUrl, request);
-
 
             _verifySettings.UseDirectory(
                 $"{_snapshotPath}/{nameof(CreateModel_Should_Return_BadRequest_If_Model_Name_Is_Empty)}");
