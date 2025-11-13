@@ -2,11 +2,10 @@ using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Tests.TestData;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Dappi.HeadlessCms.Tests.Controllers
 {
-    public class ModelsControllerTests : BaseIntegrationTest, IDisposable
+    public class ModelsControllerTests : BaseIntegrationTestFixture, IDisposable
     {
         private readonly HttpClient _client;
         private readonly string _entitiesPath;
