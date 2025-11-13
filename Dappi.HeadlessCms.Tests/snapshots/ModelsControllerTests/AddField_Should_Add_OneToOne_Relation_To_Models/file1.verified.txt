@@ -4,7 +4,7 @@ using Dappi.HeadlessCms.Models;
 using Dappi.Core.Attributes;
 using Dappi.HeadlessCms.Core.Attributes;
 
-namespace ReSharperTestRunner.Entities
+namespace Entities
 {
     [CCController]
     public class TestClassOne

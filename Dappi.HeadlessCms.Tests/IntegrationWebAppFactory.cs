@@ -1,4 +1,3 @@
-using Dappi.HeadlessCms.Core;
 using Dappi.TestEnv;
 using Dappi.TestEnv.Data;
 using Microsoft.AspNetCore.Hosting;
@@ -25,15 +24,6 @@ namespace Dappi.HeadlessCms.Tests
                 var existingDbContext = services.SingleOrDefault(x => x.ServiceType == typeof(TestDbContext));
                 if (existingDbContext != null)
                     services.Remove(existingDbContext);
-
-                var existingDomainModelEditor =
-                    services.SingleOrDefault(x => x.ServiceType == typeof(DomainModelEditor));
-                if (existingDomainModelEditor != null)
-                    services.Remove(existingDomainModelEditor);
-
-                var existingDbContextEditor = services.SingleOrDefault(x => x.ServiceType == typeof(DbContextEditor));
-                if (existingDbContextEditor != null)
-                    services.Remove(existingDbContextEditor);
 
                 services.AddDbContext<TestDbContext>(options =>
                 {

@@ -1,8 +1,14 @@
 ﻿{
-  Value: [
-    TestModel1,
-    TestModel2,
-    TestModel3
-  ],
-  StatusCode: 200
+  Status: 200 OK,
+  Content: {
+    Headers: {
+      Content-Length: 40,
+      Content-Type: application/json; charset=utf-8
+    },
+    Value: [
+      TestModel1,
+      TestModel2,
+      TestModel3
+    ]
+  }
 }
