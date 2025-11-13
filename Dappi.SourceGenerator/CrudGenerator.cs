@@ -50,6 +50,7 @@ using {item.RootNamespace}.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
+using System.Collections;
 
 /*
 ==== area for testing ====
@@ -201,16 +202,36 @@ public partial class {item.ClassName}Controller(
                                 property.SetValue(propertyEntity, propertyList);
                             }}
                             else
-                                property.SetValue(propertyEntity, value.Deserialize(property.PropertyType));
+                            {{
+                                SetValueToProperty(propertyEntity, property, value);
+                            }}
                             break;
                         case ""replace"":
-                            property.SetValue(propertyEntity, value.Deserialize(property.PropertyType));
+                            SetValueToProperty(propertyEntity, property, value);
                             break;
                         case ""remove"":
-                            property.SetValue(propertyEntity, null);
+                            if (propertyEntity.GetType().IsGenericType &&
+                                propertyEntity.GetType().GetGenericTypeDefinition() == typeof(List<>))
+                            {{
+                                var propertyList = propertyEntity as IList;
+                                var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
+                                    StringComparison.InvariantCultureIgnoreCase) + 1, 1);
+                                if (int.TryParse(itemIndex, out int index))
+                                {{
+                                    var arrayItem = propertyList[index];
+                                    propertyList?.RemoveAt(index);
+                                    dbContext.Remove(arrayItem);
+                                }}
+                            }}
+                            else
+                                SetValueToProperty(propertyEntity, property, null);
                             break;
                         case ""test"":
-                            return Ok(property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType)));
+                            var result = property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType));
+                            if (result)
+                                return Ok(result);
+                            else
+                                return BadRequest(result);
                         case ""copy"":
                             patchOperation.TryGetProperty(""from"", out var from);
                             if (path.ValueKind == JsonValueKind.String && from.ValueKind == JsonValueKind.String)
@@ -300,8 +321,22 @@ public partial class {item.ClassName}Controller(
         
         var nestedProperties = propertyName.Split('/');
         var nestedPropertyName = nestedProperties[0];
+        if (int.TryParse(nestedPropertyName, out int index))
+        {{
+            if (entity.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            {{
+                var array = entity as IList;
+                var arrayElement = array[index];
+                return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
+            }}
+        }}
         var nestedEntity = entity.GetType().GetProperty(nestedPropertyName)?.GetValue(entity);
         return GetEntityProperty(nestedEntity, string.Join('/', nestedProperties.Skip(1)));
+    }}
+
+    private static void SetValueToProperty(object entity, PropertyInfo property, JsonElement? value)
+    {{
+        property.SetValue(entity, value?.Deserialize(property.PropertyType));
     }}
 
 
