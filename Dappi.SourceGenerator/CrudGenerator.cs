@@ -194,7 +194,7 @@ public partial class {item.ClassName}Controller(
                     {{
                         case ""add"":
                             if (property.PropertyType.IsGenericType &&
-                                property.PropertyType.GetGenericTypeDefinition() == typeof(ICollection<>))
+                                property.PropertyType.GetInterfaces().Contains(typeof(ICollection)) || entity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
                             {{
                                 dynamic propertyList = property.GetValue(propertyEntity);
                                 dynamic deserializedValue = value.Deserialize(property.PropertyType.GetGenericArguments()[0]);
@@ -211,7 +211,7 @@ public partial class {item.ClassName}Controller(
                             break;
                         case ""remove"":
                             if (propertyEntity.GetType().IsGenericType &&
-                                propertyEntity.GetType().GetGenericTypeDefinition() == typeof(List<>))
+                                propertyEntity.GetType().GetInterfaces().Contains(typeof(ICollection)) || entity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
                             {{
                                 var propertyList = propertyEntity as IList;
                                 var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
@@ -228,10 +228,9 @@ public partial class {item.ClassName}Controller(
                             break;
                         case ""test"":
                             var result = property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType));
-                            if (result)
+                            if (result)                            
                                 return Ok(result);
-                            else
-                                return BadRequest(result);
+                            return BadRequest(result);
                         case ""copy"":
                             patchOperation.TryGetProperty(""from"", out var from);
                             if (path.ValueKind == JsonValueKind.String && from.ValueKind == JsonValueKind.String)
@@ -323,12 +322,20 @@ public partial class {item.ClassName}Controller(
         var nestedPropertyName = nestedProperties[0];
         if (int.TryParse(nestedPropertyName, out int index))
         {{
-            if (entity.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            if (entity.GetType().GetInterfaces().Contains(typeof(ICollection)) || entity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
             {{
-                var array = entity as IList;
-                var arrayElement = array[index];
-                return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
-            }}
+                dynamic array = entity;
+                if (entity.GetType().GetInterfaces().Contains(typeof(IList)))
+                {{
+                    var arrayElement = array?[index];
+                    return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
+                }}
+                else if (entity.GetType().GetInterfaces().Contains(typeof(ISet)))
+                {{
+                    var hashList = array.ToList();
+                    var arrayElement = hashList?[index];
+                    return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
+                }}
         }}
         var nestedEntity = entity.GetType().GetProperty(nestedPropertyName)?.GetValue(entity);
         return GetEntityProperty(nestedEntity, string.Join('/', nestedProperties.Skip(1)));
