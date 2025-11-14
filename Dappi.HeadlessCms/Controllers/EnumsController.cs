@@ -152,4 +152,6 @@ public class EnumsController : ControllerBase
             return StatusCode(500, new { message = "Failed to regenerate enum files", error = ex.Message });
         }
     }
+    
+    
 }
