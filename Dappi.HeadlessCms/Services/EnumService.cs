@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Hosting;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Dappi.HeadlessCms.Services;
 public class EnumService : IEnumService
@@ -43,7 +45,34 @@ public class EnumService : IEnumService
 
             var json = await File.ReadAllTextAsync(_enumsFilePath);
             var enums = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, int>>>(json);
-            return enums ?? new Dictionary<string, Dictionary<string, int>>();
+            if (enums == null)
+            {
+                return enums ?? new Dictionary<string, Dictionary<string, int>>();
+            }
+
+            var enumFiles = Directory.GetFiles(_enumsPath, "*.cs");
+
+            foreach (var enumFile in enumFiles)
+            {
+                var enumCode = await File.ReadAllTextAsync(enumFile);
+                var root = (await SyntaxFactory.ParseSyntaxTree(enumCode).GetRootAsync()).DescendantNodes().OfType<EnumDeclarationSyntax>().First();
+                var enumName = root.Identifier.Text;
+                if (enums[enumName].Count == root.Members.Count && enums.ContainsKey(enumName))
+                {
+                    continue;
+                }
+
+                var enumMembers = root.Members
+                    .Select(n => new
+                    {
+                        Name = n.Identifier.Text,
+                        Value = int.Parse(n.EqualsValue?.Value.ToString() ?? "0")
+                    }).ToDictionary(n => n.Name, n => n.Value);
+                enums[enumName] = new Dictionary<string, int>(enumMembers);
+            }
+            await SaveEnumsAsync(enums);
+
+            return enums;
         }
         catch (Exception ex)
         {

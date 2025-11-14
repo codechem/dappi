@@ -49,7 +49,7 @@
         </div>
 
         <div formArrayName="values" class="values-container">
-          @for (valueControl of values.controls; track $index; let i = $index) {
+          @for (valueControl of values.controls; track valueControl; let i = $index) {
             <div [formGroupName]="i" class="value-card">
               <div class="value-header">
                 <span class="value-index">#{{ i + 1 }}</span>
