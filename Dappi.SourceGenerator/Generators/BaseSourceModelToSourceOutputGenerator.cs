@@ -43,7 +43,18 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
                             if (methodArg.Kind == TypedConstantKind.Array)
                             {
                                 methods = methodArg.Values
-                                    .Select(v => v.Value?.ToString()?.ToUpperInvariant() ?? string.Empty)
+                                    .Select(v => 
+                                    {
+                                        if (v.Value != null && v.Type is INamedTypeSymbol enumType && enumType.TypeKind == TypeKind.Enum)
+                                        {
+                                            var enumMember = enumType.GetMembers()
+                                                .OfType<IFieldSymbol>()
+                                                .FirstOrDefault(f => f.IsConst && Equals(f.ConstantValue, v.Value));
+                
+                                            return enumMember?.Name.ToUpperInvariant() ?? string.Empty;
+                                        }
+                                        return v.Value?.ToString()?.ToUpperInvariant() ?? string.Empty;
+                                    })
                                     .ToList();
                             }
                         }
