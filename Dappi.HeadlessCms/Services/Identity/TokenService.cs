@@ -20,7 +20,7 @@ namespace Dappi.HeadlessCms.Services.Identity
 
         public async Task<string> GenerateJwtToken(TUser user)
         {
-            var jwtSettings = _config.GetSection("JwtSettings");
+            var jwtSettings = _config.GetSection("Authentication:Dappi");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var roles = await _userManager.GetRolesAsync(user);

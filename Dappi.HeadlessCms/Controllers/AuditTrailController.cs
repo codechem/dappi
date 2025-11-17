@@ -1,13 +1,14 @@
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Dappi.HeadlessCms.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AuditTrailController(IDbContextAccessor dappiDbContextAccessor) : ControllerBase
 {
     private readonly DappiDbContext _dbContext = dappiDbContextAccessor.DbContext;

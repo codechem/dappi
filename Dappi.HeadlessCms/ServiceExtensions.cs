@@ -107,7 +107,7 @@ public static class ServiceExtensions
             .AddDefaultTokenProviders();
 
         // JWT Authentication
-        var jwtSettings = configuration.GetSection("JwtSettings");
+        var jwtSettings = configuration.GetSection("Authentication:Dappi");
         var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured");
         var key = Encoding.UTF8.GetBytes(secretKey);
 
