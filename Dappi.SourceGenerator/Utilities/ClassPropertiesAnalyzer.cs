@@ -1,4 +1,5 @@
 using System.Text;
+using Dappi.Core.Attributes;
 using Dappi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
 
@@ -86,18 +87,18 @@ public static class ClassPropertiesAnalyzer
     }
 
     public static string PropagateDappiAuthorizationTags(List<DappiAuthorizeInfo> dappiAuthorizeInfos,
-        string httpMethod)
+        AuthorizeMethods httpMethod)
     {
         foreach (var dappiInfo in dappiAuthorizeInfos)
         {
-            if (dappiInfo.Methods.Contains(httpMethod.ToUpperInvariant()))
+            if (dappiInfo.Methods.Contains(httpMethod.ToString().ToUpperInvariant()))
             {
-                if (dappiInfo.Roles != null && dappiInfo.Roles.Any())
+                if (dappiInfo.Roles.Any())
                 {
                     var rolesString = string.Join(",", dappiInfo.Roles.Select(r => $"\"{r}\""));
                     return $"[Authorize(Roles = {rolesString})]";
                 }
-                else if (dappiInfo.IsAuthenticated)
+                if (dappiInfo.IsAuthenticated)
                 {
                     return "[Authorize]";
                 }

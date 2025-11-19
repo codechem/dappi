@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
+using Dappi.HeadlessCms.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 
@@ -8,6 +10,7 @@ namespace Dappi.HeadlessCms.Controllers;
 [ApiExplorerSettings(GroupName = "Toolkit")]
 [ApiController]
 [Route("api/create-migrations-update-db")]
+[Authorize(Policy = DappiAuthenticationSchemes.DappiAuthenticationScheme)]
 public class MigrationController : ControllerBase
 {
     private readonly IHostApplicationLifetime _appLifetime;
