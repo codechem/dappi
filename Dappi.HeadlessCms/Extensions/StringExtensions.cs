@@ -39,29 +39,29 @@ namespace Dappi.HeadlessCms.Extensions
             
             foreach (var v in values)
             {
-                if (int.TryParse(value, out var intValue))
+                if (int.TryParse(v, out var intValue))
                 {
                     convertedValues.Add(intValue);
                 }
-                else if (DateTime.TryParse(value, out var dateTimeValue))
+                else if (DateOnly.TryParse(v, out var dateOnlyValue))
                 {
-                    convertedValues.Add(dateTimeValue);
+                    convertedValues.Add(v);
                 }
-                else if (DateOnly.TryParse(value, out var dateOnlyValue))
+                else if (DateTime.TryParse(v, out var dateTimeValue))
                 {
-                    convertedValues.Add(dateOnlyValue);
+                    convertedValues.Add(v);
                 }
-                else if (bool.TryParse(value, out var boolValue))
+                else if (bool.TryParse(v, out var boolValue))
                 {
                     convertedValues.Add(boolValue);
                 }
-                else if (Guid.TryParse(value, out var guidValue))
+                else if (Guid.TryParse(v, out var guidValue))
                 {
                     convertedValues.Add(guidValue);
                 }
                 else
                 {
-                    convertedValues.Add(value);
+                    convertedValues.Add(v);
                 }
             }
             
