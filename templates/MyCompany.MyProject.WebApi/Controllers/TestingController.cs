@@ -1,13 +1,11 @@
-using System.Text.RegularExpressions;
-using Dappi.HeadlessCms.Enums;
-using Dappi.HeadlessCms.Extensions;
+using System.Linq.Dynamic.Core;
+using System.Linq.Dynamic.Core.Exceptions;
+using System.Linq.Expressions;
+using Dappi.HeadlessCms.ActionFilters;
 using Dappi.HeadlessCms.Interfaces;
-using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Primitives;
 using MyCompany.MyProject.WebApi.Data;
-using MyCompany.MyProject.WebApi.Entities;
 
 namespace MyCompany.MyProject.WebApi.Controllers
 {
@@ -18,87 +16,48 @@ namespace MyCompany.MyProject.WebApi.Controllers
         AppDbContext dbContext,
         IMediaUploadService uploadService) : ControllerBase
     {
-        [HttpGet]
-        public async Task<IActionResult> Testing([FromQuery] FilterQuery filterQuery)
+        [HttpGet("filter")]
+        [CollectionFilter]
+        public async Task<IActionResult> FilterCollection()
         {
-            var filters = Request.Query
-                .Where(x =>
-                    x.Key.Contains("filter", StringComparison.CurrentCultureIgnoreCase)
-                ).ToList();
-            var parsed= ParseFilter(filters);
-            var query = dbContext.Authors.AsQueryable();
-            query = query.Include(x => x.Books)!.ThenInclude(x => x.Reviews).Include(x => x.Address);
-            if (parsed.Count > 0)
-            {
-                var res = await query.ApplyFilter<Author>(parsed).ToListAsync();
-                return Ok(res);
-            }
+            // query = query.Include(x => x.Books)!.ThenInclude(x => x.Reviews).Include(x => x.Address);
             
-            return Ok(await query.ToListAsync());
-        }
-
-        private List<Filter> ParseFilter(List<KeyValuePair<string, StringValues>> filters)
-        {
-            var filterList = new List<Filter>();
-            var nz = Newtonsoft.Json.JsonConvert.SerializeObject(filters);
-
-            foreach (var filter in filters)
+            try
             {
-                var pattern = @"\[(.*?)\]";
-
-                var matches = Regex.Matches(filter.Key, pattern);
-
-                var newFilter = new Filter
+                // var query = dbContext.Books.AsQueryable();
+                var guids = new List<Guid>
                 {
-                    Value = filter.Value.ToString(),
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    Guid.Parse("00000000-0000-0000-0000-000000000000")
                 };
-                foreach (Match match in matches)
-                {
-                    var value = match.Value.Replace("[", "").Replace("]", "");
-                    if (value.Equals("$and") || value.Equals("$or"))
-                    {
-                        value = value.Replace("$", "");
-                        var parsedOperator = Enum.Parse<Operator>(value, true);
-                        newFilter.Operator = parsedOperator;
-                    } 
-                    else if (value.StartsWith("$") && (!value.Equals("$and") || !value.Equals("$or")))
-                    {
-                        value = value.Replace("$", "");
-                        if (Enum.TryParse(value, true, out Operation operation))
-                        {
-                            newFilter.Operation = operation;
-                        }
-                        else
-                        {
-                            throw new ArgumentException($"Invalid filter operation: {value}");
-                        }
-                    }
-                    else if (int.TryParse(value, out int parsedValue))
-                    {
-                        //Logic for indexing TBD
-                    }
-                    else
-                    {
-                        newFilter.Fields.Add(value);
-                    }
-                }
+                // query = query.Where(x => guids.Contains(x.Id));
+                
+                var guidsString = string.Join(",", guids.Select(g => $"\"{g}\""));
 
-                filterList.Add(newFilter);
+                var query = dbContext.Books
+                    .AsQueryable()
+                    .Where($"Id IN ({guidsString})");
+
+                return Ok(await query.ToListAsync());
+                
+                // query = query.WhereInterpolated()
+                // query = query.WhereInterpolated($"Id IN ({string.Join(",", guids.Select(x => $"\"{Guid.Parse(x.ToString())}\""))}).ToArray()");
+                // query = query.Where($"\"{string.Join(",",guids.Select(x => $"\"{x}\""))}\".Contains(Id)");
+                // query = query.Where("@0.Contains(AuthorId)", guids.ToArray());
+                // query = query.Where($"Id.ToString() In({string.Join(",", guids)})");
+                // string ex = $"{guids}.Contains(Id)";
+                // query = query.Where(ex , guids);
             }
-
-            return filterList;
+            catch (ParseException e)
+            {
+                return BadRequest(e);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return BadRequest(e);
+            }
         }
-
-        // {
-        //     "Filters": {
-        //         "$and": [
-        //         { "Field": "name", "Operator": "$eq", "Value": "John" },
-        //         { "Field": "age", "Operator": "$gte", "Value": 30 }
-        //         ],
-        //         "$or": [
-        //         { "Field": "country", "Operator": "$eq", "Value": "USA" }
-        //         ]
-        //     }
-        // }
     }
 }

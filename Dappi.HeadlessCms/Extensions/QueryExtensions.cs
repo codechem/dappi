@@ -16,7 +16,6 @@ namespace Dappi.HeadlessCms.Extensions
 
             var sb = new StringBuilder();
 
-
             foreach (var filter in filters)
             {
                 var t = typeof(T);
@@ -111,7 +110,7 @@ namespace Dappi.HeadlessCms.Extensions
                     return $"{startQuery} == {value.SurroundWithQuotes()}{endQuery}";
                 //Equals Ignore Case
                 case Operation.Eqic:
-                    return $"{startQuery}.ToLower() == {value.SurroundWithQuotes(true)}{endQuery}";
+                    return $"{startQuery}.ToLower() == {value.SurroundWithQuotes(ignoreCase:true)}{endQuery}";
                 //Not Equals
                 case Operation.Ne:
                     return $"{startQuery} != {value.SurroundWithQuotes()}{endQuery}";
@@ -132,23 +131,25 @@ namespace Dappi.HeadlessCms.Extensions
                     return $"{startQuery}.Contains({value.SurroundWithQuotes()}){endQuery}";
                 //Contains ignore case
                 case Operation.Cic:
-                    return $"{startQuery}.ToLower().Contains({value.SurroundWithQuotes(true)}){endQuery}";
+                    return $"{startQuery}.ToLower().Contains({value.SurroundWithQuotes(ignoreCase: true)}){endQuery}";
                 //Not Contains
                 case Operation.Nc:
                     return $"NOT {startQuery}.Contains({value.SurroundWithQuotes()}){endQuery}";
                 //Not Contains Ignore Case
                 case Operation.Ncic:
-                    return $"NOT {startQuery}.ToLower().Contains({value.SurroundWithQuotes(true)}){endQuery}";
-                //Included in List
-                case Operation.In:
-                    if (value is IEnumerable<object> values)
-                        return $"{startQuery} IN @{values.SurroundWithQuotes()}{endQuery}";
-                    throw new ArgumentException($"Invalid value for operation{nameof(Operation.In)}: {value}");
-                //Not included in the List
-                case Operation.Notin:
-                    if (value is IEnumerable<object> notInValues)
-                        return $"{startQuery} NOT IN {notInValues}{endQuery}";
-                    throw new ArgumentException($"Invalid value for operation{nameof(Operation.In)}: {value}");
+                    return $"NOT {startQuery}.ToLower().Contains({value.SurroundWithQuotes(ignoreCase:true)}){endQuery}";
+                // Included in List
+                 // case Operation.In:
+                     // if (value is IEnumerable<object> values)
+                     // {
+                     //     return $"{startQuery} IN ({string.Join(" , ", values.Cast<Guid[]>().Select(g => $"\"{Guid.Parse(g.ToString())}"))}\"){endQuery}";
+                     // }
+                     // throw new ArgumentException($"Invalid value for operation{nameof(Operation.In)}: {value}");
+                // //Not included in the List
+                // case Operation.Notin:
+                    // if (value is IEnumerable<object> notInValues)
+                    //     return $"{startQuery} NOT IN ({notInValues.ToQuoteString()}){endQuery}";
+                    // throw new ArgumentException($"Invalid value for operation{nameof(Operation.In)}: {value}");
                 //Starts With
                 case Operation.Sw:
                     return $"{startQuery}.StartsWith({value.SurroundWithQuotes()}){endQuery}";
@@ -166,15 +167,12 @@ namespace Dappi.HeadlessCms.Extensions
 
         private static object SurroundWithQuotes(this object value, bool ignoreCase = false)
         {
-            if (value is string)
+            if (value is not (string or Guid or DateTime or DateOnly))
             {
-                if (ignoreCase)
-                {
-                    return $"\"{value.ToString()?.ToLower()}\"";
-                }
-                return $"\"{value}\"";
+                return value;
             }
-            return value;
+
+            return ignoreCase ? $"\"{value.ToString()?.ToLower()}\"" : $"\"{value}\"";
         }
     }
 }

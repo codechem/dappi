@@ -45,6 +45,7 @@ using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Extensions;
 using Dappi.HeadlessCms.Exceptions;
+using Dappi.HeadlessCms.ActionFilters;
 using {item.ModelNamespace};
 using {item.RootNamespace}.Filtering;
 using {item.RootNamespace}.HelperDtos;
@@ -71,6 +72,21 @@ public partial class {item.ClassName}Controller(
     IDataShaperService shaper, 
     IMediaUploadService uploadService) : ControllerBase
 {{
+    [HttpGet(""filter"")]
+    [CollectionFilter]
+    public async Task<IActionResult> FilterCollection()
+    {{
+        var query = dbContext.{item.ClassName.Pluralize()}.AsQueryable();
+            query = query{includesCode};
+
+        var filters = HttpContext.Items[CollectionFilter.FilterParamsKey] as List<Filter>;
+        if (filters is not null && filters.Count <= 0)
+        {{
+            return Ok(await query.ToListAsync());
+        }}
+        var res = await query.ApplyFilter(filters).ToListAsync();
+        return Ok(res);
+    }}
     [HttpGet]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
     public async Task<IActionResult> Get{item.ClassName.Pluralize()}([FromQuery] {item.ClassName}Filter? filter, [FromQuery] string? fields = null)
