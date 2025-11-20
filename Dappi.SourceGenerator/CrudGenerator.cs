@@ -52,6 +52,7 @@ using System.IO;
 using System.Reflection;
 using System.Linq;
 using System.Collections;
+using Dappi.Core.Constants;
 
 /*
 ==== area for testing ====
@@ -183,9 +184,9 @@ public partial class {item.ClassName}Controller(
         {{
             foreach (var patchOperation in patchOperations.RootElement.EnumerateArray())
             {{
-                patchOperation.TryGetProperty(""op"", out var operation);
-                patchOperation.TryGetProperty(""path"", out var path);
-                patchOperation.TryGetProperty(""value"", out var value);
+                patchOperation.TryGetProperty(JsonPatchProperties.OPERATION, out var operation);
+                patchOperation.TryGetProperty(JsonPatchProperties.PATH, out var path);
+                patchOperation.TryGetProperty(JsonPatchProperties.VALUE, out var value);
                 if (operation.ValueKind == JsonValueKind.String)
                 {{
                     var propertyPathValue = path.GetString();
@@ -193,7 +194,7 @@ public partial class {item.ClassName}Controller(
                     var (propertyEntity, property) = GetEntityProperty(entity, propertyPath);
                     switch (operation.GetString())
                     {{
-                        case ""add"":
+                        case JsonPatchOperations.ADD:
                             if (property.PropertyType.IsGenericType &&
                                 property.PropertyType.GetInterfaces().Contains(typeof(ICollection)) || property.PropertyType.GetInterfaces().Contains(typeof(IEnumerable)))
                             {{
@@ -207,14 +208,16 @@ public partial class {item.ClassName}Controller(
                                 SetValueToProperty(propertyEntity, property, value);
                             }}
                             break;
-                        case ""replace"":
+                        case JsonPatchOperations.REPLACE:
                             SetValueToProperty(propertyEntity, property, value);
                             break;
-                        case ""remove"":
+                        case JsonPatchOperations.REMOVE:
+                            var isCollection = propertyEntity.GetType().GetInterfaces().Contains(typeof(ICollection));
+                            var isEnumerable = propertyEntity.GetType().GetInterfaces().Contains(typeof(IEnumerable));
                             if (propertyEntity.GetType().IsGenericType &&
-                                propertyEntity.GetType().GetInterfaces().Contains(typeof(ICollection)) || propertyEntity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
+                                isCollection || isEnumerable)
                             {{
-                                if (propertyEntity.GetType().GetInterfaces().Contains(typeof(ICollection)))
+                                if (isCollection)
                                 {{
                                     var propertyList = propertyEntity as IList;
                                     var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
@@ -226,7 +229,7 @@ public partial class {item.ClassName}Controller(
                                         dbContext.Remove(arrayItem);
                                     }}
                                 }}
-                                else if (propertyEntity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
+                                else if (isEnumerable)
                                 {{
                                     var enumerableList = propertyEntity as IEnumerable<object>;
                                     var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
@@ -241,13 +244,13 @@ public partial class {item.ClassName}Controller(
                             else
                                 SetValueToProperty(propertyEntity, property, null);
                             break;
-                        case ""test"":
+                        case JsonPatchOperations.TEST:
                             var result = property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType));
                             if (result)                            
                                 return Ok(result);
                             return BadRequest(result);
-                        case ""copy"":
-                            patchOperation.TryGetProperty(""from"", out var from);
+                        case JsonPatchOperations.COPY:
+                            patchOperation.TryGetProperty(JsonPatchProperties.FROM, out var from);
                             if (path.ValueKind == JsonValueKind.String && from.ValueKind == JsonValueKind.String)
                             {{
                                 var sourcePath = from.GetString();
@@ -337,7 +340,8 @@ public partial class {item.ClassName}Controller(
         var nestedPropertyName = nestedProperties[0];
         if (int.TryParse(nestedPropertyName, out int index))
         {{
-            if (entity.GetType().GetInterfaces().Contains(typeof(ICollection)) || entity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
+            var isEnumerable = entity.GetType().GetInterfaces().Contains(typeof(IEnumerable));
+            if (entity.GetType().GetInterfaces().Contains(typeof(ICollection)) || isEnumerable)
             {{
                 dynamic array = entity;
                 if (entity.GetType().GetInterfaces().Contains(typeof(IList)))
@@ -345,7 +349,7 @@ public partial class {item.ClassName}Controller(
                     var arrayElement = array?[index];
                     return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
                 }}
-                else if (entity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
+                else if (isEnumerable)
                 {{
                     var enumerableList = entity as IEnumerable<object>;
                     var arrayElement = enumerableList.ElementAt(index);
