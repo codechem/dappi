@@ -50,6 +50,7 @@ using {item.RootNamespace}.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
+using System.Linq;
 using System.Collections;
 
 /*
@@ -194,7 +195,7 @@ public partial class {item.ClassName}Controller(
                     {{
                         case ""add"":
                             if (property.PropertyType.IsGenericType &&
-                                property.PropertyType.GetInterfaces().Contains(typeof(ICollection)) || entity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
+                                property.PropertyType.GetInterfaces().Contains(typeof(ICollection)) || property.PropertyType.GetInterfaces().Contains(typeof(IEnumerable)))
                             {{
                                 dynamic propertyList = property.GetValue(propertyEntity);
                                 dynamic deserializedValue = value.Deserialize(property.PropertyType.GetGenericArguments()[0]);
@@ -211,16 +212,30 @@ public partial class {item.ClassName}Controller(
                             break;
                         case ""remove"":
                             if (propertyEntity.GetType().IsGenericType &&
-                                propertyEntity.GetType().GetInterfaces().Contains(typeof(ICollection)) || entity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
+                                propertyEntity.GetType().GetInterfaces().Contains(typeof(ICollection)) || propertyEntity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
                             {{
-                                var propertyList = propertyEntity as IList;
-                                var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
-                                    StringComparison.InvariantCultureIgnoreCase) + 1, 1);
-                                if (int.TryParse(itemIndex, out int index))
+                                if (propertyEntity.GetType().GetInterfaces().Contains(typeof(ICollection)))
                                 {{
-                                    var arrayItem = propertyList[index];
-                                    propertyList?.RemoveAt(index);
-                                    dbContext.Remove(arrayItem);
+                                    var propertyList = propertyEntity as IList;
+                                    var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
+                                        StringComparison.InvariantCultureIgnoreCase) + 1, 1);
+                                    if (int.TryParse(itemIndex, out int index))
+                                    {{
+                                        var arrayItem = propertyList[index];
+                                        propertyList?.RemoveAt(index);
+                                        dbContext.Remove(arrayItem);
+                                    }}
+                                }}
+                                else if (propertyEntity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
+                                {{
+                                    var enumerableList = propertyEntity as IEnumerable<object>;
+                                    var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
+                                        StringComparison.InvariantCultureIgnoreCase) + 1, 1);
+                                    if (int.TryParse(itemIndex, out int index))
+                                    {{
+                                        var arrayElement = enumerableList.ElementAt(index);
+                                        dbContext.Remove(arrayElement);
+                                    }}
                                 }}
                             }}
                             else
@@ -330,12 +345,13 @@ public partial class {item.ClassName}Controller(
                     var arrayElement = array?[index];
                     return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
                 }}
-                else if (entity.GetType().GetInterfaces().Contains(typeof(ISet)))
+                else if (entity.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
                 {{
-                    var hashList = array.ToList();
-                    var arrayElement = hashList?[index];
+                    var enumerableList = entity as IEnumerable<object>;
+                    var arrayElement = enumerableList.ElementAt(index);
                     return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
                 }}
+            }}
         }}
         var nestedEntity = entity.GetType().GetProperty(nestedPropertyName)?.GetValue(entity);
         return GetEntityProperty(nestedEntity, string.Join('/', nestedProperties.Skip(1)));
