@@ -50,9 +50,10 @@ using {item.RootNamespace}.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
-using System.Linq;
 using System.Collections;
 using Dappi.Core.Constants;
+using System.Globalization;
+using System.Linq;
 
 /*
 ==== area for testing ====
@@ -190,13 +191,19 @@ public partial class {item.ClassName}Controller(
                 if (operation.ValueKind == JsonValueKind.String)
                 {{
                     var propertyPathValue = path.GetString();
-                    var propertyPath = propertyPathValue[0] == '/' ? propertyPathValue.Substring(1, propertyPathValue.Length - 1) : propertyPathValue;
+                    TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
+                    var propertyPath = propertyPathValue[0] == '/' ? propertyPathValue.Substring(1, propertyPathValue[propertyPathValue.Length - 1] == '/' ? propertyPathValue.Length - 2 : propertyPathValue.Length - 1) : propertyPathValue;
+                    propertyPath = textInfo.ToTitleCase(propertyPath);
                     var (propertyEntity, property) = GetEntityProperty(entity, propertyPath);
+                    var propertyEntityInterfaces = propertyEntity.GetType().GetInterfaces();
+                    var propertyInterfaces = property?.PropertyType?.GetInterfaces();
+                    var isCollection = propertyEntityInterfaces.Contains(typeof(ICollection));
+                    var isEnumerable = propertyEntityInterfaces.Contains(typeof(IEnumerable));
                     switch (operation.GetString())
                     {{
                         case JsonPatchOperations.ADD:
                             if (property.PropertyType.IsGenericType &&
-                                property.PropertyType.GetInterfaces().Contains(typeof(ICollection)) || property.PropertyType.GetInterfaces().Contains(typeof(IEnumerable)))
+                                propertyInterfaces?.Contains(typeof(ICollection)) || propertyInterfaces?.Contains(typeof(IEnumerable)))
                             {{
                                 dynamic propertyList = property.GetValue(propertyEntity);
                                 dynamic deserializedValue = value.Deserialize(property.PropertyType.GetGenericArguments()[0]);
@@ -212,16 +219,14 @@ public partial class {item.ClassName}Controller(
                             SetValueToProperty(propertyEntity, property, value);
                             break;
                         case JsonPatchOperations.REMOVE:
-                            var isCollection = propertyEntity.GetType().GetInterfaces().Contains(typeof(ICollection));
-                            var isEnumerable = propertyEntity.GetType().GetInterfaces().Contains(typeof(IEnumerable));
                             if (propertyEntity.GetType().IsGenericType &&
                                 isCollection || isEnumerable)
                             {{
+                                var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
+                                        StringComparison.InvariantCultureIgnoreCase) + 1, 1);
                                 if (isCollection)
                                 {{
                                     var propertyList = propertyEntity as IList;
-                                    var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
-                                        StringComparison.InvariantCultureIgnoreCase) + 1, 1);
                                     if (int.TryParse(itemIndex, out int index))
                                     {{
                                         var arrayItem = propertyList[index];
@@ -232,8 +237,6 @@ public partial class {item.ClassName}Controller(
                                 else if (isEnumerable)
                                 {{
                                     var enumerableList = propertyEntity as IEnumerable<object>;
-                                    var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
-                                        StringComparison.InvariantCultureIgnoreCase) + 1, 1);
                                     if (int.TryParse(itemIndex, out int index))
                                     {{
                                         var arrayElement = enumerableList.ElementAt(index);
@@ -259,7 +262,8 @@ public partial class {item.ClassName}Controller(
                                 {{
                                     return BadRequest(""Invalid data provided."");
                                 }}
-                                var sourcePropertyPath = sourcePath[0] == '/' ? sourcePath.Substring(1, sourcePath.Length - 1) : sourcePath;
+                                var sourcePropertyPath = sourcePath[0] == '/' ? sourcePath.Substring(1, sourcePath[sourcePath.Length - 1] == '/' ? sourcePath.Length - 2 : sourcePath.Length - 1) : sourcePath;
+                                sourcePropertyPath = textInfo.ToTitleCase(sourcePropertyPath);
                                 var (sourceEntity, sourceProperty) = GetEntityProperty(entity, sourcePropertyPath);
                                 property.SetValue(propertyEntity, sourceProperty.GetValue(sourceEntity));
                             }}
