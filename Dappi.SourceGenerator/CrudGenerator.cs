@@ -203,7 +203,7 @@ public partial class {item.ClassName}Controller(
                     {{
                         case JsonPatchOperations.ADD:
                             if (property.PropertyType.IsGenericType &&
-                                propertyInterfaces?.Contains(typeof(ICollection)) || propertyInterfaces?.Contains(typeof(IEnumerable)))
+                                propertyInterfaces.Contains(typeof(ICollection)) || propertyInterfaces.Contains(typeof(IEnumerable)))
                             {{
                                 dynamic propertyList = property.GetValue(propertyEntity);
                                 dynamic deserializedValue = value.Deserialize(property.PropertyType.GetGenericArguments()[0]);
