@@ -50,6 +50,10 @@ using {item.RootNamespace}.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
+using System.Collections;
+using Dappi.Core.Constants;
+using System.Globalization;
+using System.Linq;
 
 /*
 ==== area for testing ====
@@ -164,6 +168,114 @@ public partial class {item.ClassName}Controller(
         return Ok(existingModel);
     }}
 
+    [HttpPatch(""{{id}}"")]
+    public async Task<IActionResult> JsonPatch{item.ClassName}(Guid id, JsonDocument patchOperations)
+    {{
+        if (patchOperations is null || id == Guid.Empty)
+            return BadRequest(""Invalid data provided."");
+
+        var entity = await dbContext.{item.ClassName.Pluralize()}{includesCode}.FirstOrDefaultAsync(s => s.Id == id);
+        
+        if (entity is null)
+        {{
+            return BadRequest(""{item.ClassName} with this id not found."");
+        }}
+        
+        if (patchOperations.RootElement.ValueKind == JsonValueKind.Array)
+        {{
+            foreach (var patchOperation in patchOperations.RootElement.EnumerateArray())
+            {{
+                patchOperation.TryGetProperty(JsonPatchProperties.OPERATION, out var operation);
+                patchOperation.TryGetProperty(JsonPatchProperties.PATH, out var path);
+                patchOperation.TryGetProperty(JsonPatchProperties.VALUE, out var value);
+                if (operation.ValueKind == JsonValueKind.String)
+                {{
+                    var propertyPathValue = path.GetString();
+                    TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
+                    var propertyPath = propertyPathValue[0] == '/' ? propertyPathValue.Substring(1, propertyPathValue[propertyPathValue.Length - 1] == '/' ? propertyPathValue.Length - 2 : propertyPathValue.Length - 1) : propertyPathValue;
+                    propertyPath = textInfo.ToTitleCase(propertyPath);
+                    var (propertyEntity, property) = GetEntityProperty(entity, propertyPath);
+                    var propertyEntityInterfaces = propertyEntity.GetType().GetInterfaces();
+                    var propertyInterfaces = property?.PropertyType?.GetInterfaces();
+                    var isCollection = propertyEntityInterfaces.Contains(typeof(ICollection));
+                    var isEnumerable = propertyEntityInterfaces.Contains(typeof(IEnumerable));
+                    switch (operation.GetString())
+                    {{
+                        case JsonPatchOperations.ADD:
+                            if (property.PropertyType.IsGenericType &&
+                                propertyInterfaces.Contains(typeof(ICollection)) || propertyInterfaces.Contains(typeof(IEnumerable)))
+                            {{
+                                dynamic propertyList = property.GetValue(propertyEntity);
+                                dynamic deserializedValue = value.Deserialize(property.PropertyType.GetGenericArguments()[0]);
+                                propertyList?.Add(deserializedValue);
+                                property.SetValue(propertyEntity, propertyList);
+                            }}
+                            else
+                            {{
+                                SetValueToProperty(propertyEntity, property, value);
+                            }}
+                            break;
+                        case JsonPatchOperations.REPLACE:
+                            SetValueToProperty(propertyEntity, property, value);
+                            break;
+                        case JsonPatchOperations.REMOVE:
+                            if (propertyEntity.GetType().IsGenericType &&
+                                isCollection || isEnumerable)
+                            {{
+                                var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
+                                        StringComparison.InvariantCultureIgnoreCase) + 1, 1);
+                                if (isCollection)
+                                {{
+                                    var propertyList = propertyEntity as IList;
+                                    if (int.TryParse(itemIndex, out int index))
+                                    {{
+                                        var arrayItem = propertyList[index];
+                                        propertyList?.RemoveAt(index);
+                                        dbContext.Remove(arrayItem);
+                                    }}
+                                }}
+                                else if (isEnumerable)
+                                {{
+                                    var enumerableList = propertyEntity as IEnumerable<object>;
+                                    if (int.TryParse(itemIndex, out int index))
+                                    {{
+                                        var arrayElement = enumerableList.ElementAt(index);
+                                        dbContext.Remove(arrayElement);
+                                    }}
+                                }}
+                            }}
+                            else
+                                SetValueToProperty(propertyEntity, property, null);
+                            break;
+                        case JsonPatchOperations.TEST:
+                            var result = property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType));
+                            if (result)                            
+                                return Ok(result);
+                            return BadRequest(result);
+                        case JsonPatchOperations.COPY:
+                            patchOperation.TryGetProperty(JsonPatchProperties.FROM, out var from);
+                            if (path.ValueKind == JsonValueKind.String && from.ValueKind == JsonValueKind.String)
+                            {{
+                                var sourcePath = from.GetString();
+                                var destinationPath = propertyPath;
+                                if (string.IsNullOrEmpty(sourcePath) && string.IsNullOrEmpty(destinationPath))
+                                {{
+                                    return BadRequest(""Invalid data provided."");
+                                }}
+                                var sourcePropertyPath = sourcePath[0] == '/' ? sourcePath.Substring(1, sourcePath[sourcePath.Length - 1] == '/' ? sourcePath.Length - 2 : sourcePath.Length - 1) : sourcePath;
+                                sourcePropertyPath = textInfo.ToTitleCase(sourcePropertyPath);
+                                var (sourceEntity, sourceProperty) = GetEntityProperty(entity, sourcePropertyPath);
+                                property.SetValue(propertyEntity, sourceProperty.GetValue(sourceEntity));
+                            }}
+                            break;
+                    }}
+                }}
+            }}
+        }}
+        await dbContext.SaveChangesAsync();
+        return Ok(entity);
+    }}
+
     [HttpDelete(""{{id}}"")]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Delete)}
     public async Task<IActionResult> Delete(Guid id)
@@ -218,6 +330,47 @@ public partial class {item.ClassName}Controller(
             return BadRequest(new {{ message = ex.Message }});
         }}
     }}
+
+    private static (object entity, PropertyInfo property) GetEntityProperty(object entity, string propertyName)
+    {{
+        if (entity is null || string.IsNullOrEmpty(propertyName)) throw new ArgumentNullException(nameof(entity));
+        if (!propertyName.Contains(""/""))
+        {{
+            var property = entity.GetType().GetProperty(propertyName);
+            return (entity, property);
+        }}
+        
+        var nestedProperties = propertyName.Split('/');
+        var nestedPropertyName = nestedProperties[0];
+        if (int.TryParse(nestedPropertyName, out int index))
+        {{
+            var entityInterfaces = entity.GetType().GetInterfaces();
+            var isEnumerable = entityInterfaces.Contains(typeof(IEnumerable));
+            if (entityInterfaces.Contains(typeof(ICollection)) || isEnumerable)
+            {{
+                dynamic array = entity;
+                if (entityInterfaces.Contains(typeof(IList)))
+                {{
+                    var arrayElement = array?[index];
+                    return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
+                }}
+                else if (isEnumerable)
+                {{
+                    var enumerableList = entity as IEnumerable<object>;
+                    var arrayElement = enumerableList.ElementAt(index);
+                    return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
+                }}
+            }}
+        }}
+        var nestedEntity = entity.GetType().GetProperty(nestedPropertyName)?.GetValue(entity);
+        return GetEntityProperty(nestedEntity, string.Join('/', nestedProperties.Skip(1)));
+    }}
+
+    private static void SetValueToProperty(object entity, PropertyInfo property, JsonElement? value)
+    {{
+        property.SetValue(entity, value?.Deserialize(property.PropertyType));
+    }}
+
 
     private dynamic GetDbSetForType(string typeName)
     {{
