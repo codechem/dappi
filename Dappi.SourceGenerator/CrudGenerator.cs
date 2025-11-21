@@ -344,11 +344,12 @@ public partial class {item.ClassName}Controller(
         var nestedPropertyName = nestedProperties[0];
         if (int.TryParse(nestedPropertyName, out int index))
         {{
-            var isEnumerable = entity.GetType().GetInterfaces().Contains(typeof(IEnumerable));
-            if (entity.GetType().GetInterfaces().Contains(typeof(ICollection)) || isEnumerable)
+            var entityInterfaces = entity.GetType().GetInterfaces();
+            var isEnumerable = entityInterfaces.Contains(typeof(IEnumerable));
+            if (entityInterfaces.Contains(typeof(ICollection)) || isEnumerable)
             {{
                 dynamic array = entity;
-                if (entity.GetType().GetInterfaces().Contains(typeof(IList)))
+                if (entityInterfaces.Contains(typeof(IList)))
                 {{
                     var arrayElement = array?[index];
                     return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
