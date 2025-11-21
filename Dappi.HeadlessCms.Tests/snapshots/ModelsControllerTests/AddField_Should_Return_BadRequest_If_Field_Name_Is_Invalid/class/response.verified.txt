@@ -1,0 +1,10 @@
+﻿{
+  Status: 400 Bad Request,
+  Content: {
+    Headers: {
+      Content-Length: 31,
+      Content-Type: text/plain; charset=utf-8
+    },
+    Value: Property name class is invalid.
+  }
+}

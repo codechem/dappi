@@ -1,0 +1,10 @@
+﻿{
+  Status: 400 Bad Request,
+  Content: {
+    Headers: {
+      Content-Length: 59,
+      Content-Type: text/plain; charset=utf-8
+    },
+    Value: Property name Product cannot be the same as the model name.
+  }
+}

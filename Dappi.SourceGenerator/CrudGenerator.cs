@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text;
+using Dappi.Core.Attributes;
 using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Generators;
 using Dappi.SourceGenerator.Models;
@@ -27,7 +28,6 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
             var collectionAddCode = GenerateCollectionAddCode(item);
             var collectionUpdateCode = GenerateCollectionUpdateCode(item);
             var includesCode = GetIncludesIfAny(item.PropertiesInfos, mediaInfoPropertyNames, item.ClassName);
-            var authorizationTags = PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET");
             var hasAuthorizationOnControllerLevel = item.AuthorizeAttributes.FirstOrDefault() is { OnControllerLevel: true };
             var authorizeTag = hasAuthorizationOnControllerLevel ? "[Authorize]" : null; 
             var mediaInfoUpdateCode = string.Empty;
@@ -72,7 +72,7 @@ public partial class {item.ClassName}Controller(
     IMediaUploadService uploadService) : ControllerBase
 {{
     [HttpGet]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GET")}
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
     public async Task<IActionResult> Get{item.ClassName.Pluralize()}([FromQuery] {item.ClassName}Filter? filter)
     {{
         var query = dbContext.{item.ClassName.Pluralize()}.AsNoTracking().AsQueryable();
@@ -107,7 +107,7 @@ public partial class {item.ClassName}Controller(
     }}
 
     [HttpGet(""{{id}}"")]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "GETBYID")}
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
     public async Task<IActionResult> Get{item.ClassName}(Guid id)
     {{
         if (id == Guid.Empty)
@@ -127,7 +127,7 @@ public partial class {item.ClassName}Controller(
     }}
 
     [HttpPost]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "POST")}
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Post)}
     public async Task<IActionResult> Create([FromBody] {item.ClassName} model)
     {{
         if (model is null)
@@ -145,7 +145,7 @@ public partial class {item.ClassName}Controller(
     }}
 
     [HttpPut(""{{id}}"")]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "PUT")}
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Put)}
     public async Task<IActionResult> Update(Guid id, [FromBody] {item.ClassName} model)
     {{
         if (model == null || id == Guid.Empty)
@@ -277,7 +277,7 @@ public partial class {item.ClassName}Controller(
     }}
 
     [HttpDelete(""{{id}}"")]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "DELETE")}
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Delete)}
     public async Task<IActionResult> Delete(Guid id)
     {{
         {includeCode}
@@ -294,7 +294,7 @@ public partial class {item.ClassName}Controller(
     }}
 
     [HttpPost(""upload-file/{{id}}"")]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, "POST")}
+    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Post)}
     public async Task<IActionResult> UploadFile(Guid id, IFormFile file, [FromForm] string fieldName)
     {{
         if (string.IsNullOrEmpty(fieldName))

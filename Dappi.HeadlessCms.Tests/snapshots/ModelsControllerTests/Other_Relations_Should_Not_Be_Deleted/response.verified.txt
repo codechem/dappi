@@ -1,0 +1,13 @@
+﻿{
+  Status: 200 OK,
+  Content: {
+    Headers: {
+      Content-Length: 147,
+      Content-Type: application/json; charset=utf-8
+    },
+    Value: {
+      Message: Model 'User' deleted successfully.,
+      FilePath: {CurrentDirectory}Entities/User.cs
+    }
+  }
+}

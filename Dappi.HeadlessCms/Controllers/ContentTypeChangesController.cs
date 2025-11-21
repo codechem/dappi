@@ -1,9 +1,11 @@
 using Dappi.Core.Utils;
+using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models.Mapping;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +15,7 @@ namespace Dappi.HeadlessCms.Controllers
 {
     [ApiController]
     [Route("api/content-type-changes")]
+    [Authorize(Policy = DappiAuthenticationSchemes.DappiAuthenticationScheme)]
     public class ContentTypeChangesController : ControllerBase
     {
         private readonly DappiDbContext _dbContext;

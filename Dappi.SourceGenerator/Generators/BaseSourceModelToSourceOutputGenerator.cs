@@ -29,21 +29,35 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
                         List<string> roles = [];
                         List<string> methods = [];
 
-                        if (attr.ConstructorArguments.Length >= 2)
+                        if (attr.NamedArguments.Length <= 0)
                         {
-                            var roleArg = attr.ConstructorArguments[0];
-                            if (roleArg.Kind == TypedConstantKind.Array)
+                            return new DappiAuthorizeInfo { Roles = roles, Methods = methods };
+                        }
+
+                        foreach (var namedArg in attr.NamedArguments)
+                        {
+                            if (namedArg is { Key: nameof(DappiAuthorizeAttribute.Roles), Value.Kind: TypedConstantKind.Array })
                             {
-                                roles = roleArg.Values
+                                roles = namedArg.Value.Values
                                     .Select(v => v.Value?.ToString() ?? string.Empty)
                                     .ToList();
                             }
-
-                            var methodArg = attr.ConstructorArguments[1];
-                            if (methodArg.Kind == TypedConstantKind.Array)
+        
+                            if (namedArg is { Key: nameof(DappiAuthorizeAttribute.Methods), Value.Kind: TypedConstantKind.Array })
                             {
-                                methods = methodArg.Values
-                                    .Select(v => v.Value?.ToString()?.ToUpperInvariant() ?? string.Empty)
+                                methods = namedArg.Value.Values
+                                    .Select(v => 
+                                    {
+                                        if (v is { Value: not null, Type: INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType })
+                                        {
+                                            var enumMember = enumType.GetMembers()
+                                                .OfType<IFieldSymbol>()
+                                                .FirstOrDefault(f => f.IsConst && Equals(f.ConstantValue, v.Value));
+
+                                            return enumMember?.Name.ToUpperInvariant() ?? string.Empty;
+                                        }
+                                        return v.Value?.ToString()?.ToUpperInvariant() ?? string.Empty;
+                                    })
                                     .ToList();
                             }
                         }

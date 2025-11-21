@@ -1,0 +1,22 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Dappi.HeadlessCms.Models;
+using Dappi.Core.Attributes;
+using Dappi.HeadlessCms.Core.Attributes;
+
+namespace Entities
+{
+    [CCController]
+    public class TestClassFour
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid Id { get; set; }
+
+        [DappiRelation(DappiRelationKind.ManyToOne, typeof(TestClassThree))]
+        public TestClassThree? TestClassThree { get; set; }
+
+        [DappiRelation(DappiRelationKind.ManyToOne, typeof(TestClassThree))]
+        public Guid? TestClassThreeId { get; set; }
+    }
+}

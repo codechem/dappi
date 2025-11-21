@@ -1,0 +1,13 @@
+﻿{
+  Status: 200 OK,
+  Content: {
+    Headers: {
+      Content-Length: 208,
+      Content-Type: application/json; charset=utf-8
+    },
+    Value: {
+      Message: Field 'TestDateTimeType' of type 'DateTime' added successfully to 'ProductThree' model.,
+      FilePath: {CurrentDirectory}Entities/ProductThree.cs
+    }
+  }
+}

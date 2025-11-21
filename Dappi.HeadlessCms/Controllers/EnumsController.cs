@@ -1,14 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Dappi.HeadlessCms.Controllers;
 
 [ApiController]
 [Route("api/enum-manager")]
+[Authorize(Policy = DappiAuthenticationSchemes.DappiAuthenticationScheme)]
 public class EnumsController : ControllerBase
 {
     private readonly IEnumService _enumService;
