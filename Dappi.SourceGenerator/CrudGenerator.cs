@@ -222,6 +222,7 @@ public partial class {item.ClassName}Controller(
                         case JsonPatchOperations.Replace:
                             if (!hasPath || !hasValue)
                                 return BadRequest(""Invalid data provided. Path and value are required properties for the replace operation."");
+                            
                             SetValueToProperty(propertyEntity, property, value);
                             break;
                         case JsonPatchOperations.Remove:
@@ -233,24 +234,11 @@ public partial class {item.ClassName}Controller(
                             {{
                                 var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
                                         StringComparison.InvariantCultureIgnoreCase) + 1, 1);
-                                if (isCollection)
+                                var enumerableList = propertyEntity as IEnumerable<object>;
+                                if (int.TryParse(itemIndex, out int index))
                                 {{
-                                    var propertyList = propertyEntity as IList;
-                                    if (int.TryParse(itemIndex, out int index))
-                                    {{
-                                        var arrayItem = propertyList[index];
-                                        propertyList?.RemoveAt(index);
-                                        dbContext.Remove(arrayItem);
-                                    }}
-                                }}
-                                else if (isEnumerable)
-                                {{
-                                    var enumerableList = propertyEntity as IEnumerable<object>;
-                                    if (int.TryParse(itemIndex, out int index))
-                                    {{
-                                        var arrayElement = enumerableList.ElementAt(index);
-                                        dbContext.Remove(arrayElement);
-                                    }}
+                                    var arrayElement = enumerableList.ElementAt(index);
+                                    dbContext.Remove(arrayElement);
                                 }}
                             }}
                             else
@@ -368,18 +356,9 @@ public partial class {item.ClassName}Controller(
         {{
             if (isCollection || isEnumerable)
             {{
-                dynamic array = entity;
-                if (entityInterfaces.Contains(typeof(IList)))
-                {{
-                    var arrayElement = array?[index];
-                    return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
-                }}
-                else if (isEnumerable)
-                {{
-                    var enumerableList = entity as IEnumerable<object>;
-                    var arrayElement = enumerableList.ElementAt(index);
-                    return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
-                }}
+                var array = entity as IEnumerable<object>;
+                var arrayElement = array.ElementAt(index);
+                return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
             }}
         }}
         var nestedEntity = entity.GetType().GetProperty(nestedPropertyName)?.GetValue(entity);
