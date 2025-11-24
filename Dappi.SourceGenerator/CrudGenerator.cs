@@ -178,32 +178,36 @@ public partial class {item.ClassName}Controller(
         
         if (entity is null)
         {{
-            return BadRequest(""{item.ClassName} with this id not found."");
+            return NotFound(""{item.ClassName} with this id not found."");
         }}
         
         if (patchOperations.RootElement.ValueKind == JsonValueKind.Array)
         {{
             foreach (var patchOperation in patchOperations.RootElement.EnumerateArray())
             {{
-                patchOperation.TryGetProperty(JsonPatchProperties.OPERATION, out var operation);
-                patchOperation.TryGetProperty(JsonPatchProperties.PATH, out var path);
-                patchOperation.TryGetProperty(JsonPatchProperties.VALUE, out var value);
+                var hasOperation = patchOperation.TryGetProperty(JsonPatchProperties.Operation, out var operation);
+                var hasPath = patchOperation.TryGetProperty(JsonPatchProperties.Path, out var path);
+                var hasValue = patchOperation.TryGetProperty(JsonPatchProperties.Value, out var value);
+                
+                if (!hasOperation)
+                    return BadRequest(""Invalid data provided. The operation is a required property."");
+
                 if (operation.ValueKind == JsonValueKind.String)
                 {{
                     var propertyPathValue = path.GetString();
                     TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
                     var propertyPath = propertyPathValue[0] == '/' ? propertyPathValue.Substring(1, propertyPathValue[propertyPathValue.Length - 1] == '/' ? propertyPathValue.Length - 2 : propertyPathValue.Length - 1) : propertyPathValue;
                     propertyPath = textInfo.ToTitleCase(propertyPath);
-                    var (propertyEntity, property) = GetEntityProperty(entity, propertyPath);
-                    var propertyEntityInterfaces = propertyEntity.GetType().GetInterfaces();
+                    var (propertyEntity, property, propertyEntityInterfaces, isEnumerable, isCollection) = GetEntityProperty(entity, propertyPath);
                     var propertyInterfaces = property?.PropertyType?.GetInterfaces();
-                    var isCollection = propertyEntityInterfaces.Contains(typeof(ICollection));
-                    var isEnumerable = propertyEntityInterfaces.Contains(typeof(IEnumerable));
                     switch (operation.GetString())
                     {{
-                        case JsonPatchOperations.ADD:
+                        case JsonPatchOperations.Add:
+                            if (!hasPath || !hasValue)
+                                return BadRequest(""Invalid data provided. Path and value are required properties for the add operation."");
+
                             if (property.PropertyType.IsGenericType &&
-                                propertyInterfaces.Contains(typeof(ICollection)) || propertyInterfaces.Contains(typeof(IEnumerable)))
+                                (propertyInterfaces.Contains(typeof(ICollection)) || propertyInterfaces.Contains(typeof(IEnumerable))))
                             {{
                                 dynamic propertyList = property.GetValue(propertyEntity);
                                 dynamic deserializedValue = value.Deserialize(property.PropertyType.GetGenericArguments()[0]);
@@ -215,12 +219,17 @@ public partial class {item.ClassName}Controller(
                                 SetValueToProperty(propertyEntity, property, value);
                             }}
                             break;
-                        case JsonPatchOperations.REPLACE:
+                        case JsonPatchOperations.Replace:
+                            if (!hasPath || !hasValue)
+                                return BadRequest(""Invalid data provided. Path and value are required properties for the replace operation."");
                             SetValueToProperty(propertyEntity, property, value);
                             break;
-                        case JsonPatchOperations.REMOVE:
+                        case JsonPatchOperations.Remove:
+                            if (!hasPath)
+                                return BadRequest(""Invalid data provided. The path is a required property for the remove operation."");
+
                             if (propertyEntity.GetType().IsGenericType &&
-                                isCollection || isEnumerable)
+                                (isCollection || isEnumerable))
                             {{
                                 var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
                                         StringComparison.InvariantCultureIgnoreCase) + 1, 1);
@@ -247,13 +256,19 @@ public partial class {item.ClassName}Controller(
                             else
                                 SetValueToProperty(propertyEntity, property, null);
                             break;
-                        case JsonPatchOperations.TEST:
+                        case JsonPatchOperations.Test:
+                            if (!hasPath || !hasValue)
+                                return BadRequest(""Invalid data provided. Path and value are required properties for the test operation."");
+
                             var result = property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType));
                             if (result)                            
                                 return Ok(result);
                             return BadRequest(result);
-                        case JsonPatchOperations.COPY:
-                            patchOperation.TryGetProperty(JsonPatchProperties.FROM, out var from);
+                        case JsonPatchOperations.Copy:
+                            var hasSource = patchOperation.TryGetProperty(JsonPatchProperties.From, out var from);
+                            if (!hasPath || !hasSource)
+                                return BadRequest(""Invalid data provided. Path and from are required properties for the copy operation."");
+
                             if (path.ValueKind == JsonValueKind.String && from.ValueKind == JsonValueKind.String)
                             {{
                                 var sourcePath = from.GetString();
@@ -264,13 +279,17 @@ public partial class {item.ClassName}Controller(
                                 }}
                                 var sourcePropertyPath = sourcePath[0] == '/' ? sourcePath.Substring(1, sourcePath[sourcePath.Length - 1] == '/' ? sourcePath.Length - 2 : sourcePath.Length - 1) : sourcePath;
                                 sourcePropertyPath = textInfo.ToTitleCase(sourcePropertyPath);
-                                var (sourceEntity, sourceProperty) = GetEntityProperty(entity, sourcePropertyPath);
+                                var (sourceEntity, sourceProperty, sourceEntityInterfaces, isSourceEnumerable, isSourceCollection) = GetEntityProperty(entity, sourcePropertyPath);
                                 property.SetValue(propertyEntity, sourceProperty.GetValue(sourceEntity));
                             }}
                             break;
                     }}
                 }}
             }}
+        }}
+        else
+        {{
+            return BadRequest(""Data is not in valid format."");
         }}
         await dbContext.SaveChangesAsync();
         return Ok(entity);
@@ -331,22 +350,23 @@ public partial class {item.ClassName}Controller(
         }}
     }}
 
-    private static (object entity, PropertyInfo property) GetEntityProperty(object entity, string propertyName)
+    private static (object entity, PropertyInfo property, Type[] entityInterfaces, bool isEnumerable, bool isCollection) GetEntityProperty(object entity, string propertyName)
     {{
         if (entity is null || string.IsNullOrEmpty(propertyName)) throw new ArgumentNullException(nameof(entity));
+        var entityInterfaces = entity.GetType().GetInterfaces();
+        var isEnumerable = entityInterfaces.Contains(typeof(IEnumerable));
+        var isCollection = entityInterfaces.Contains(typeof(ICollection));
         if (!propertyName.Contains(""/""))
         {{
             var property = entity.GetType().GetProperty(propertyName);
-            return (entity, property);
+            return (entity, property, entityInterfaces, isEnumerable, isCollection);
         }}
         
         var nestedProperties = propertyName.Split('/');
         var nestedPropertyName = nestedProperties[0];
         if (int.TryParse(nestedPropertyName, out int index))
         {{
-            var entityInterfaces = entity.GetType().GetInterfaces();
-            var isEnumerable = entityInterfaces.Contains(typeof(IEnumerable));
-            if (entityInterfaces.Contains(typeof(ICollection)) || isEnumerable)
+            if (isCollection || isEnumerable)
             {{
                 dynamic array = entity;
                 if (entityInterfaces.Contains(typeof(IList)))
