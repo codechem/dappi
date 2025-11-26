@@ -1,4 +1,5 @@
 using System.Linq.Dynamic.Core;
+using System.Reflection;
 using System.Text;
 using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Models;
@@ -7,6 +8,9 @@ namespace Dappi.HeadlessCms.Extensions
 {
     public static class QueryExtensions
     {
+        private const char Dollar = '$';
+        private const char Pipe = '|';
+
         public static IQueryable<T> ApplyFilter<T>(this IQueryable<T> query, List<Filter>? filters)
         {
             if (filters == null)
@@ -31,7 +35,13 @@ namespace Dappi.HeadlessCms.Extensions
                 {
                     try
                     {
-                        var prop = prev != null ? prev.GetProperty(field) : t.GetProperty(field);
+                        const BindingFlags bindingFlags = BindingFlags.IgnoreCase |
+                                                          BindingFlags.Public |
+                                                          BindingFlags.Instance;
+                        
+                        var prop = prev != null
+                            ? prev.GetProperty(field, bindingFlags)
+                            : t.GetProperty(field, bindingFlags);
                         var isCollection = prop != null && prop.PropertyType.IsGenericType && typeof(ICollection<>)
                             .IsAssignableFrom(prop.PropertyType.GetGenericTypeDefinition());
 
@@ -58,6 +68,7 @@ namespace Dappi.HeadlessCms.Extensions
                                     startQuery += string.IsNullOrEmpty(startQuery) ? field : $".{field}";
                                 }
                             }
+
                             prev = prop?.PropertyType;
                         }
                     }
@@ -68,26 +79,13 @@ namespace Dappi.HeadlessCms.Extensions
                 }
 
                 var queryString = BuildFilter(filter.Operation, filter.Value.ConvertValue(), startQuery, endQuery);
-                if (filters.Count == 1)
-                {
-                    sb.Append(queryString);
-                }
-                else
-                {
-                    if (filters.Count > 1 && filters.IndexOf(filter) == filters.Count - 1)
-                    {
-                        sb.Append($" {queryString} ");
-                    }
-                    else
-                    {
-                        sb.Append($" {queryString} {ConvertOperator(filter.Operator)} ");
-                    }
-                }
+
+                sb.Append($" {ConvertOperator(filter.Operator)} {queryString} ");
             }
 
-            var fullQuery = sb.ToString();
+            var fullQuery = sb.ToString().Trim().TrimStart(Dollar).TrimStart(Pipe);
             try
-            { 
+            {
                 return query.Where(fullQuery);
             }
             catch (Exception e)
@@ -100,7 +98,7 @@ namespace Dappi.HeadlessCms.Extensions
         {
             return @operator == Operator.Or ? "||" : "&&";
         }
-        
+
         private static string BuildFilter(Operation operation, object value, string startQuery, string endQuery = "")
         {
             switch (operation)
@@ -110,7 +108,7 @@ namespace Dappi.HeadlessCms.Extensions
                     return $"{startQuery} == {value.SurroundWithQuotes()}{endQuery}";
                 //Equals Ignore Case
                 case Operation.Eqic:
-                    return $"{startQuery}.ToLower() == {value.SurroundWithQuotes(ignoreCase:true)}{endQuery}";
+                    return $"{startQuery}.ToLower() == {value.SurroundWithQuotes(ignoreCase: true)}{endQuery}";
                 //Not Equals
                 case Operation.Ne:
                     return $"{startQuery} != {value.SurroundWithQuotes()}{endQuery}";
@@ -137,19 +135,12 @@ namespace Dappi.HeadlessCms.Extensions
                     return $"NOT {startQuery}.Contains({value.SurroundWithQuotes()}){endQuery}";
                 //Not Contains Ignore Case
                 case Operation.Ncic:
-                    return $"NOT {startQuery}.ToLower().Contains({value.SurroundWithQuotes(ignoreCase:true)}){endQuery}";
-                // Included in List
-                 // case Operation.In:
-                     // if (value is IEnumerable<object> values)
-                     // {
-                     //     return $"{startQuery} IN ({string.Join(" , ", values.Cast<Guid[]>().Select(g => $"\"{Guid.Parse(g.ToString())}"))}\"){endQuery}";
-                     // }
-                     // throw new ArgumentException($"Invalid value for operation{nameof(Operation.In)}: {value}");
-                // //Not included in the List
-                // case Operation.Notin:
-                    // if (value is IEnumerable<object> notInValues)
-                    //     return $"{startQuery} NOT IN ({notInValues.ToQuoteString()}){endQuery}";
-                    // throw new ArgumentException($"Invalid value for operation{nameof(Operation.In)}: {value}");
+                    return
+                        $"NOT {startQuery}.ToLower().Contains({value.SurroundWithQuotes(ignoreCase: true)}){endQuery}";
+
+                //Todo:
+                //Implement In,NotIn
+
                 //Starts With
                 case Operation.Sw:
                     return $"{startQuery}.StartsWith({value.SurroundWithQuotes()}){endQuery}";
