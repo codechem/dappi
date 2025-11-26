@@ -81,6 +81,13 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'int',
     },
     {
+      icon: '123',
+      label: 'Decimal Number',
+      description: 'For decimal numerical values and calculations',
+      value: 'float',
+      netType: 'float',
+    },
+    {
       icon: 'calendar_today',
       label: 'Date',
       description: 'For selecting dates',
@@ -299,6 +306,13 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
         description: 'For numerical values and calculations',
         value: 'number',
         netType: 'int',
+      },
+      {
+        icon: '1.75',
+        label: 'Decimal Number',
+        description: 'For decimal numerical values and calculations',
+        value: 'float',
+        netType: 'float',
       },
       {
         icon: 'calendar_today',
