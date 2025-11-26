@@ -15,6 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Folder Include="Controllers\" />
         <Folder Include="Entities\" />
         <Folder Include="Migrations\"/>
         <Folder Include="wwwroot\"/>

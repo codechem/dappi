@@ -1,5 +1,6 @@
 namespace Dappi.HeadlessCms.Enums
 {
+    //Todo: In, NotIn
     public enum Operation
     {
         Eq, 
@@ -13,8 +14,6 @@ namespace Dappi.HeadlessCms.Enums
         Cic,
         Nc,
         Ncic,
-        In,
-        Notin,
         Sw,
         Ew,
         Null,

@@ -69,32 +69,20 @@ public partial class {item.ClassName}Controller(
     {dbContextData.ClassName} dbContext, 
     IMediaUploadService uploadService) : ControllerBase
 {{
-    [HttpGet(""filter"")]
-    [CollectionFilter]
-    public async Task<IActionResult> FilterCollection()
-    {{
-        var query = dbContext.{item.ClassName.Pluralize()}.AsQueryable();
-            query = query{includesCode};
 
-        var filters = HttpContext.Items[CollectionFilter.FilterParamsKey] as List<Filter>;
-        if (filters is not null && filters.Count <= 0)
-        {{
-            return Ok(await query.ToListAsync());
-        }}
-        var res = await query.ApplyFilter(filters).ToListAsync();
-        return Ok(res);
-    }}
     [HttpGet]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
+    [CollectionFilter]
     public async Task<IActionResult> Get{item.ClassName.Pluralize()}([FromQuery] {item.ClassName}Filter? filter)
     {{
         var query = dbContext.{item.ClassName.Pluralize()}.AsNoTracking().AsQueryable();
        
         query = query{includesCode};
-
-        if (filter != null)
+        
+        var filters = HttpContext.Items[CollectionFilter.FilterParamsKey] as List<Filter>;
+        if (filters is not null && filters.Count > 0)
         {{
-            query = LinqExtensions.ApplyFiltering(query, filter);
+            query = query.ApplyFilter(filters);
         }}
 
         if (!string.IsNullOrEmpty(filter.SortBy))
@@ -329,7 +317,7 @@ public partial class {item.ClassName}Controller(
             }}
         }}");
         }
-
+        
         return sb.ToString().TrimEnd();
     }
 
