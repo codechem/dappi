@@ -43,6 +43,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Interfaces;
+using Dappi.HeadlessCms.Extensions;
 using {item.ModelNamespace};
 using {item.RootNamespace}.Filtering;
 using {item.RootNamespace}.HelperDtos;
@@ -50,6 +51,7 @@ using {item.RootNamespace}.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
+using System.Dynamic;
 
 /*
 ==== area for testing ====
@@ -69,7 +71,7 @@ public partial class {item.ClassName}Controller(
 {{
     [HttpGet]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
-    public async Task<IActionResult> Get{item.ClassName.Pluralize()}([FromQuery] {item.ClassName}Filter? filter)
+    public async Task<IActionResult> Get{item.ClassName.Pluralize()}([FromQuery] {item.ClassName}Filter? filter, [FromQuery] string? fields = null)
     {{
         var query = dbContext.{item.ClassName.Pluralize()}.AsNoTracking().AsQueryable();
        
@@ -91,9 +93,9 @@ public partial class {item.ClassName}Controller(
             .Take(filter.Limit)
             .ToListAsync();
 
-        var listDto = new ListResponseDTO<{item.ClassName}>
+        var listDto = new ListResponseDTO<ExpandoObject>
         {{
-            Data = data,
+            Data = data.ShapeData(fields),
             Limit = filter.Limit,
             Offset = filter.Offset,
             Total = total
@@ -104,7 +106,7 @@ public partial class {item.ClassName}Controller(
 
     [HttpGet(""{{id}}"")]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
-    public async Task<IActionResult> Get{item.ClassName}(Guid id)
+    public async Task<IActionResult> Get{item.ClassName}(Guid id, [FromQuery] string? fields = null)
     {{
         if (id == Guid.Empty)
             return BadRequest();
@@ -119,7 +121,7 @@ public partial class {item.ClassName}Controller(
         if (result is null)
             return NotFound();
 
-        return Ok(result);
+        return Ok(result.ShapeObject(fields));
     }}
 
     [HttpPost]
