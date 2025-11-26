@@ -43,6 +43,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Interfaces;
+using Dappi.HeadlessCms.ActionFilters;
+using Dappi.HeadlessCms.Extensions;
 using {item.ModelNamespace};
 using {item.RootNamespace}.Filtering;
 using {item.RootNamespace}.HelperDtos;
@@ -67,17 +69,20 @@ public partial class {item.ClassName}Controller(
     {dbContextData.ClassName} dbContext, 
     IMediaUploadService uploadService) : ControllerBase
 {{
+
     [HttpGet]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
+    [CollectionFilter]
     public async Task<IActionResult> Get{item.ClassName.Pluralize()}([FromQuery] {item.ClassName}Filter? filter)
     {{
         var query = dbContext.{item.ClassName.Pluralize()}.AsNoTracking().AsQueryable();
        
         query = query{includesCode};
-
-        if (filter != null)
+        
+        var filters = HttpContext.Items[CollectionFilter.FilterParamsKey] as List<Filter>;
+        if (filters is not null && filters.Count > 0)
         {{
-            query = LinqExtensions.ApplyFiltering(query, filter);
+            query = query.ApplyFilter(filters);
         }}
 
         if (!string.IsNullOrEmpty(filter.SortBy))
@@ -312,7 +317,7 @@ public partial class {item.ClassName}Controller(
             }}
         }}");
         }
-
+        
         return sb.ToString().TrimEnd();
     }
 
