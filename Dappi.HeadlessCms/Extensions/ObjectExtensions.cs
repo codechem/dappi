@@ -1,5 +1,6 @@
 using System.Dynamic;
 using System.Reflection;
+using Dappi.HeadlessCms.Exceptions;
 
 namespace Dappi.HeadlessCms.Extensions
 {
@@ -33,7 +34,7 @@ namespace Dappi.HeadlessCms.Extensions
                     | BindingFlags.Instance);
                 if (propertyInfo is null)
                 {
-                    throw new Exception($"Property {propName} not found in {typeof(TSource).FullName}");
+                    throw new PropertyNotFoundException($"Property {propName} not found in {typeof(TSource).FullName}");
                 }
 
                 var propertyValue = propertyInfo.GetValue(source);

@@ -1,9 +1,10 @@
 using System.Dynamic;
 using System.Reflection;
+using Dappi.HeadlessCms.Exceptions;
 
 namespace Dappi.HeadlessCms.Extensions
 {
-    public static class IEnumerableExtensions
+    public static class EnumerableExtensions
     {
         public static IEnumerable<ExpandoObject> ShapeData<TSource>(this IEnumerable<TSource> source, string? fields)
         {
@@ -27,7 +28,7 @@ namespace Dappi.HeadlessCms.Extensions
                         BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
                     if (propertyInfo is null)
                     {
-                        throw new Exception($"Property {propertyName} not found in {typeof(TSource).FullName}");
+                        throw new PropertyNotFoundException($"Property {propertyName} not found in {typeof(TSource).FullName}");
                     }
 
                     propertyInfoList.Add(propertyInfo);
