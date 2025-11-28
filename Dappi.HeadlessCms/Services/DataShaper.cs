@@ -5,13 +5,14 @@ using Dappi.HeadlessCms.Interfaces;
 
 namespace Dappi.HeadlessCms.Services
 {
-    public class DataShaper : IDataShaper , IDisposable
+    public class DataShaper : IDataShaper, IDisposable
     {
         private const BindingFlags BindingFlags = System.Reflection.BindingFlags.IgnoreCase |
                                                   System.Reflection.BindingFlags.Public |
                                                   System.Reflection.BindingFlags.Instance;
 
-        private readonly List<PropertyInfo> _propertyInfoCache = [];
+        private readonly IDictionary<string, List<PropertyInfo>> _propertyInfoCache =
+            new Dictionary<string, List<PropertyInfo>>();
 
         public ExpandoObject ShapeObject<TSource>(TSource source, string? fields)
         {
@@ -19,12 +20,12 @@ namespace Dappi.HeadlessCms.Services
 
             var dataShapedObject = new ExpandoObject();
 
-            if (_propertyInfoCache.Count == 0)
+            if (!_propertyInfoCache.TryGetValue(source.GetType().Name, out var value) || value.Count == 0)
             {
                 CacheProperties<TSource>(fields);
             }
 
-            foreach (var propertyInfo in _propertyInfoCache)
+            foreach (var propertyInfo in _propertyInfoCache[source.GetType().Name])
             {
                 var propertyValue = propertyInfo.GetValue(source);
                 ((IDictionary<string, object?>)dataShapedObject).Add(propertyInfo.Name, propertyValue);
@@ -38,7 +39,7 @@ namespace Dappi.HeadlessCms.Services
             if (string.IsNullOrEmpty(fields))
             {
                 var propertyInfos = typeof(TSource).GetProperties(BindingFlags);
-                _propertyInfoCache.AddRange(propertyInfos);
+                _propertyInfoCache.Add(typeof(TSource).Name, propertyInfos.ToList());
             }
             else
             {
@@ -52,7 +53,14 @@ namespace Dappi.HeadlessCms.Services
                             $"Property {propertyName} not found in {typeof(TSource).FullName}");
                     }
 
-                    _propertyInfoCache.Add(propertyInfo);
+                    if (_propertyInfoCache.ContainsKey(typeof(TSource).Name))
+                    {
+                        _propertyInfoCache[typeof(TSource).Name].Add(propertyInfo);
+                    }
+                    else
+                    {
+                        _propertyInfoCache.Add(typeof(TSource).Name, [propertyInfo]);
+                    }
                 }
             }
         }
