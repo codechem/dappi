@@ -28,35 +28,35 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Throw_If_Property_Does_Not_Exist()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(_dummyModels,"NonExistingProperty"));
         }
 
         [Fact]
         public void ShapeObject_Should_Throw_For_Private_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(_dummyModel,"PrivateField"));
         }
         
         [Fact]
         public void ShapeObject_Should_Throw_For_Protected_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(_dummyModel,"ProtectedField"));
         }
         
         [Fact]
         public void ShapeObject_Should_Throw_For_Internal_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(_dummyModel,"InternalField"));
         }
         
         [Fact]
         public void ShapeObject_Should_Return_All_Properties_If_Fields_Param_Is_Null()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             IDictionary<string,object?> expandoObject = shaper.ShapeObject( _dummyModel,null);
             
             Assert.Equal(4, expandoObject.Count);
@@ -69,7 +69,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Return_All_Properties_If_Fields_Param_Is_EmptyString()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             IDictionary<string,object?> expandoObject =  shaper.ShapeObject(_dummyModel,string.Empty);
             
             Assert.Equal(4, expandoObject.Count);
@@ -82,7 +82,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Return_Only_Selected_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             const string fields = "Id,Name";
             IDictionary<string,object?> expandoObject = shaper.ShapeObject(_dummyModel,fields);
             
@@ -94,7 +94,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Ignore_Case_Selected_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             const string fields = "Id,nAMe";
             IDictionary<string,object?> expandoObject = shaper.ShapeObject(_dummyModel,fields);
             
@@ -106,7 +106,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Return_Correct_Values_For_All_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             IDictionary<string,object?> expandoObject = shaper.ShapeObject(_dummyModel,null);
             
             Assert.Equal(4,expandoObject.Count);
@@ -119,7 +119,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Return_Correct_Values_For_Selected_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             const string fields = "Id,Name,IsDeleted";
             IDictionary<string,object?> expandoObject = shaper.ShapeObject(_dummyModel,"id,name,isDeleted");
             
@@ -132,7 +132,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact] 
         public void ShapeData_Should_Throw_If_Property_Does_Not_Exist()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             
             foreach (var dummyModel in _dummyModels)
             {
@@ -143,7 +143,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Throw_For_Private_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             foreach (var dummyModel in _dummyModels)
             {
                 Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(dummyModel,"PrivateField"));
@@ -153,7 +153,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Throw_For_Protected_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             
             foreach (var dummyModel in _dummyModels)
             {
@@ -164,7 +164,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Throw_For_Internal_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             foreach (var dummyModel in _dummyModels)
             {
                 Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(dummyModel,"InternalField"));
@@ -174,7 +174,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Return_All_Properties_If_Fields_Param_Is_Null()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             IEnumerable<IDictionary<string, object?>> expandoObjects =
                 _dummyModels.Select(x => shaper.ShapeObject(x, null)).ToList();
 
@@ -191,7 +191,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Return_All_Properties_If_Fields_Param_Is_EmptyString()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             IEnumerable<IDictionary<string, object?>> expandoObjects =
                 _dummyModels.Select(x => shaper.ShapeObject(x, string.Empty)).ToList();
 
@@ -208,7 +208,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Return_Selected_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             const string fields = "Id,Name";
             IEnumerable<IDictionary<string, object?>> expandoObjects =
                 _dummyModels.Select(x => shaper.ShapeObject(x, fields));
@@ -224,7 +224,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Ignore_Case()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             const string fields = "iD,nAMe";
             IEnumerable<IDictionary<string, object?>> expandoObjects =
                 _dummyModels.Select(x => shaper.ShapeObject(x, fields)).ToList();
@@ -240,7 +240,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Return_Correct_Values_For_All_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             IEnumerable<IDictionary<string, object?>> expandoObjects =
                 _dummyModels.Select(x => shaper.ShapeObject(x, null)).ToList();
             
@@ -259,7 +259,7 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Return_Correct_Values_For_Selected_Properties()
         {
-            var shaper = new DataShaper();
+            var shaper = new DataShaperService();
             const string fields = "Id,Name,IsDeleted";
             IEnumerable<IDictionary<string, object?>> expandoObjects =
                 _dummyModels.Select(x => shaper.ShapeObject(x, fields)).ToList();

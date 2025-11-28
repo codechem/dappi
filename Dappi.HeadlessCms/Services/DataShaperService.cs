@@ -5,7 +5,7 @@ using Dappi.HeadlessCms.Interfaces;
 
 namespace Dappi.HeadlessCms.Services
 {
-    public class DataShaper : IDataShaper, IDisposable
+    public class DataShaperService : IDataShaperService, IDisposable
     {
         private const BindingFlags BindingFlags = System.Reflection.BindingFlags.IgnoreCase |
                                                   System.Reflection.BindingFlags.Public |

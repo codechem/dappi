@@ -68,7 +68,7 @@ namespace {item.RootNamespace}.Controllers;
 [Route(""api/[controller]"")]
 public partial class {item.ClassName}Controller(
     {dbContextData.ClassName} dbContext,
-    IDataShaper shaper, 
+    IDataShaperService shaper, 
     IMediaUploadService uploadService) : ControllerBase
 {{
     [HttpGet]
