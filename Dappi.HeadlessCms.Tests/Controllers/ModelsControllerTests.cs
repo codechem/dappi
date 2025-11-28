@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Dappi.HeadlessCms.Models;
+using Dappi.HeadlessCms.Tests.Auth;
 using Dappi.HeadlessCms.Tests.TestData;
 
 namespace Dappi.HeadlessCms.Tests.Controllers
@@ -31,6 +32,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         public ModelsControllerTests(IntegrationWebAppFactory factory) : base(factory)
         {
             _client = factory.CreateClient();
+            
             _entitiesPath = "Entities";
             _dbContextPath = "Data";
             _verifySettings = new VerifySettings();
@@ -53,6 +55,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [Fact]
         public async Task CreateModel_Should_Return_BadRequest_If_Model_Name_Is_Empty()
         {
+            var auth = await _client.Authorize();
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+            
             var request = new ModelRequest { ModelName = string.Empty, IsAuditableEntity = false };
             var res = await _client.PostAsJsonAsync(_baseUrl, request);
 
@@ -66,6 +71,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [ClassData(typeof(InvalidPropertyTypesAndClassNames))]
         public async Task CreateModel_Should_Return_BadRequest_If_Model_Name_Is_Invalid(string modelName)
         {
+            var auth = await _client.Authorize();
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+            
             var request = new ModelRequest { ModelName = modelName, IsAuditableEntity = false };
             var res = await _client.PostAsJsonAsync(_baseUrl, request);
             
@@ -78,6 +86,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [Fact]
         public async Task CreateModel_Should_Create_Model_File()
         {
+            var auth = await _client.Authorize();
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+            
             var request = new ModelRequest { ModelName = "Product", IsAuditableEntity = false };
             var res = await _client.PostAsJsonAsync(_baseUrl, request);
             var filePath = Path.Combine(_entitiesPath, $"{request.ModelName}.cs");
@@ -95,6 +106,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [Fact]
         public async Task CreateModel_Should_Return_BadRequest_If_Model_Name_Is_Already_Taken()
         {
+            var auth = await _client.Authorize();
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+            
             var request = new ModelRequest { ModelName = "DuplicateModel", IsAuditableEntity = false };
             await _client.PostAsJsonAsync(_baseUrl, request);
             var res = await _client.PostAsJsonAsync(_baseUrl, request);
@@ -107,6 +121,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [Fact]
         public async Task CreateModel_Should_Create_Model_File_With_Auditable_Props()
         {
+            var auth = await _client.Authorize();
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+            
             var request = new ModelRequest { ModelName = "InventoryItem", IsAuditableEntity = true };
             var res = await _client.PostAsJsonAsync(_baseUrl, request);
             var filePath = Path.Combine(_entitiesPath, $"{request.ModelName}.cs");
@@ -124,6 +141,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [Fact]
         public async Task GetAllModels_Should_Return_All_Models()
         {
+            var auth = await _client.Authorize();
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+            
             await _client.PostAsJsonAsync(_baseUrl,
                 new ModelRequest { ModelName = "TestModel1", IsAuditableEntity = false });
             await _client.PostAsJsonAsync(_baseUrl,
@@ -141,6 +161,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [Fact]
         public async Task AddField_Should_Return_BadRequest_If_Field_Name_Is_Empty()
         {
+            var auth = await _client.Authorize();
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+            
             var request = new FieldRequest
             {
                 FieldName = string.Empty,
@@ -160,6 +183,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [ClassData(typeof(InvalidPropertyTypesAndClassNames))]
         public async Task AddField_Should_Return_BadRequest_If_Field_Name_Is_Invalid(string fieldName)
         {
+            var auth = await _client.Authorize();
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+            
             var request = new FieldRequest
             {
                 FieldName = fieldName,
@@ -179,6 +205,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [Fact]
         public async Task AddField_Should_Return_BadRequest_If_Field_Name_Is_Same_As_Model()
         {
+            var auth = await _client.Authorize();
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+            
             var request = new FieldRequest
             {
                 FieldName = "Product",
@@ -199,6 +228,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [Fact]
         public async Task AddField_Should_Return_NotFound_If_Model_Does_Not_Exist()
         {
+            var auth = await _client.Authorize();
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+            
             var request = new FieldRequest
             {
                 FieldName = "Product",
@@ -219,6 +251,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
         [Theory]
         public async Task AddField_Should_Add_Required_Field_To_Model(string fieldName, string fieldType)
         {
+            var auth = await _client.Authorize();
+            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+            
             var model = new ModelRequest { ModelName = "ProductTwo", IsAuditableEntity = false };
             var request = new FieldRequest
             {
@@ -245,6 +280,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
          [Theory]
          public async Task AddField_Should_Add_Optional_Field_To_Model(string fieldName, string fieldType)
          {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
              var model = new ModelRequest { ModelName = "ProductThree", IsAuditableEntity = false };
              var request = new FieldRequest
              {
@@ -270,6 +308,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
          [Fact]
          public async Task AddField_Should_Add_OneToOne_Relation_To_Models()
          {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
              var type1 = "TestClassOne";
              var type2 = "TestClassTwo";
              var request = new FieldRequest
@@ -299,6 +340,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
          [Fact]
          public async Task AddField_Should_Add_OneToMany_Relation_To_Models()
          {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
              var type1 = "TestClassThree";
              var type2 = "TestClassFour";
              var request = new FieldRequest
@@ -329,6 +373,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
          [Fact]
          public async Task AddField_Should_Add_ManyToOne_Relation_To_Models()
          {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
              var type1 = "TestClassFive";
              var type2 = "TestClassSix";
              var request = new FieldRequest
@@ -359,6 +406,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
          [Fact]
          public async Task AddField_Should_Add_ManyToMany_Relation_To_Models()
          {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
              var type1 = "TestClassSeven";
              var type2 = "TestClassEight";
              var request = new FieldRequest
@@ -389,6 +439,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
          [Fact]
          public async Task DeleteModel_Should_Return_NotFound_If_Model_Does_Not_Exist()
          {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
              var res = await _client.DeleteAsync($"{_baseUrl}/NotExistingClass");
              _verifySettings.UseDirectory($"{_snapshotPath}/{nameof(DeleteModel_Should_Return_NotFound_If_Model_Does_Not_Exist)}");
              await Verify(res, _verifySettings).UseFileName("response");
@@ -397,6 +450,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
          [Fact]
          public async Task DeleteModel_Should_Return_BadRequest_If_ModelName_Is_Empty()
          {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
              var res = await _client.DeleteAsync($"{_baseUrl}/{string.Empty}");
              _verifySettings.UseDirectory($"{_snapshotPath}/{nameof(DeleteModel_Should_Return_BadRequest_If_ModelName_Is_Empty)}");
              await Verify(res, _verifySettings).UseFileName("response");
@@ -405,6 +461,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
          [Fact]
          public async Task DeleteModel_Should_Delete_Model_File()
          {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
              var modelName = "TestDeleteModel";
              await _client.PostAsJsonAsync(_baseUrl, new ModelRequest { ModelName = modelName, IsAuditableEntity = false });
              var res = await _client.DeleteAsync($"{_baseUrl}/{modelName}");
@@ -421,6 +480,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
          [Fact]
          public async Task DeleteModel_Should_Delete_Relations_And_References()
          {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
              const string user = "User";
              const string post = "Post";
              var request = new FieldRequest
@@ -454,6 +516,9 @@ namespace Dappi.HeadlessCms.Tests.Controllers
          [Fact]
          public async Task Other_Relations_Should_Not_Be_Deleted()
          {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
              const string user = "User";
              const string post = "Post";
              const string comment = "Comment";

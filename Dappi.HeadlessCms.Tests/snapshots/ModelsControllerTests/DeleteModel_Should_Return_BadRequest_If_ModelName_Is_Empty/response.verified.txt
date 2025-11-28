@@ -4,6 +4,9 @@
   },
   Request: {
     Method: DELETE,
-    Uri: http://localhost/api/models/
+    Uri: http://localhost/api/models/,
+    Headers: {
+      Authorization: {Scrubbed}
+    }
   }
 }
