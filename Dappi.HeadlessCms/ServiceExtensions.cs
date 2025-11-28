@@ -56,7 +56,7 @@ public static class ServiceExtensions
         services.AddScoped<ICurrentExternalSessionProvider, CurrentExternalSessionProvider>();
 
         services.AddScoped<IContentTypeChangesService, ContentTypeChangesService>();
-        
+        services.AddScoped<IDataShaper, DataShaper>();
         services.AddDappiSwaggerGen();
 
         services.AddControllers()

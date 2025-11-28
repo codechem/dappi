@@ -67,7 +67,8 @@ namespace {item.RootNamespace}.Controllers;
 [ApiController]
 [Route(""api/[controller]"")]
 public partial class {item.ClassName}Controller(
-    {dbContextData.ClassName} dbContext, 
+    {dbContextData.ClassName} dbContext,
+    IDataShaper shaper, 
     IMediaUploadService uploadService) : ControllerBase
 {{
     [HttpGet]
@@ -98,7 +99,7 @@ public partial class {item.ClassName}Controller(
 
             var listDto = new ListResponseDTO<ExpandoObject>
             {{
-                Data = data.ShapeData(fields),
+                Data = data.Select(x => shaper.ShapeObject(x,fields)),
                 Limit = filter.Limit,
                 Offset = filter.Offset,
                 Total = total
@@ -131,7 +132,7 @@ public partial class {item.ClassName}Controller(
             if (result is null)
                 return NotFound();
 
-            return Ok(result.ShapeObject(fields));
+            return Ok(shaper.ShapeObject(result,fields));
         }} 
         catch(PropertyNotFoundException ex)
         {{

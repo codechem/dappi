@@ -30,7 +30,6 @@ namespace Dappi.HeadlessCms.Tests
                     options.UseNpgsql(_dbContainer.GetConnectionString(), b => b.MigrationsAssembly("Dappi.TestEnv"));
                 });
             });
-
             builder.ConfigureServices(services =>
             {
                 services.AddControllers();

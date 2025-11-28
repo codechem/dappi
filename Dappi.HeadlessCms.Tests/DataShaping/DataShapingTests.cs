@@ -1,6 +1,6 @@
 using Bogus;
 using Dappi.HeadlessCms.Exceptions;
-using Dappi.HeadlessCms.Extensions;
+using Dappi.HeadlessCms.Services;
 
 namespace Dappi.HeadlessCms.Tests.DataShaping
 {
@@ -13,7 +13,6 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         private string PrivateField { get; set; } = "Private";
         protected string ProtectedField { get; set; } = "Protected";
         internal string InternalField { get; set; } = "Internal";
-        
         public static Faker<DataShapingDummyModel> Faker { get; } = new Faker<DataShapingDummyModel>()
             .RuleFor(x => x.Id, f => Guid.NewGuid())
             .RuleFor(x => x.Name, f => f.Name.FirstName())
@@ -29,31 +28,36 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Throw_If_Property_Does_Not_Exist()
         {
-            Assert.Throws<PropertyNotFoundException>(() => _dummyModel.ShapeObject("NonExistingProperty"));
+            var shaper = new DataShaper();
+            Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(_dummyModels,"NonExistingProperty"));
         }
 
         [Fact]
         public void ShapeObject_Should_Throw_For_Private_Properties()
         {
-            Assert.Throws<PropertyNotFoundException>(() => _dummyModel.ShapeObject("PrivateField"));
+            var shaper = new DataShaper();
+            Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(_dummyModel,"PrivateField"));
         }
         
         [Fact]
         public void ShapeObject_Should_Throw_For_Protected_Properties()
         {
-            Assert.Throws<PropertyNotFoundException>(() => _dummyModel.ShapeObject("ProtectedField"));
+            var shaper = new DataShaper();
+            Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(_dummyModel,"ProtectedField"));
         }
         
         [Fact]
         public void ShapeObject_Should_Throw_For_Internal_Properties()
         {
-            Assert.Throws<PropertyNotFoundException>(() => _dummyModel.ShapeObject("InternalField"));
+            var shaper = new DataShaper();
+            Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(_dummyModel,"InternalField"));
         }
         
         [Fact]
         public void ShapeObject_Should_Return_All_Properties_If_Fields_Param_Is_Null()
         {
-            IDictionary<string,object?> expandoObject = _dummyModel.ShapeObject(null);
+            var shaper = new DataShaper();
+            IDictionary<string,object?> expandoObject = shaper.ShapeObject( _dummyModel,null);
             
             Assert.Equal(4, expandoObject.Count);
             Assert.Contains("Id",expandoObject.Keys);
@@ -65,7 +69,8 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Return_All_Properties_If_Fields_Param_Is_EmptyString()
         {
-            IDictionary<string,object?> expandoObject = _dummyModel.ShapeObject(string.Empty);
+            var shaper = new DataShaper();
+            IDictionary<string,object?> expandoObject =  shaper.ShapeObject(_dummyModel,string.Empty);
             
             Assert.Equal(4, expandoObject.Count);
             Assert.Contains("Id",expandoObject.Keys);
@@ -77,8 +82,9 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Return_Only_Selected_Properties()
         {
+            var shaper = new DataShaper();
             const string fields = "Id,Name";
-            IDictionary<string,object?> expandoObject = _dummyModel.ShapeObject(fields);
+            IDictionary<string,object?> expandoObject = shaper.ShapeObject(_dummyModel,fields);
             
             Assert.Equal(fields.Split(',').Length, expandoObject.Count);
             Assert.Contains("Id",expandoObject.Keys);
@@ -88,8 +94,9 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Ignore_Case_Selected_Properties()
         {
+            var shaper = new DataShaper();
             const string fields = "Id,nAMe";
-            IDictionary<string,object?> expandoObject = _dummyModel.ShapeObject(fields);
+            IDictionary<string,object?> expandoObject = shaper.ShapeObject(_dummyModel,fields);
             
             Assert.Equal(fields.Split(',').Length, expandoObject.Count);
             Assert.Contains("Id",expandoObject.Keys);
@@ -99,7 +106,8 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Return_Correct_Values_For_All_Properties()
         {
-            IDictionary<string,object?> expandoObject = _dummyModel.ShapeObject(null);
+            var shaper = new DataShaper();
+            IDictionary<string,object?> expandoObject = shaper.ShapeObject(_dummyModel,null);
             
             Assert.Equal(4,expandoObject.Count);
             Assert.Equal(_dummyModel.Id, expandoObject["Id"]);
@@ -111,8 +119,9 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeObject_Should_Return_Correct_Values_For_Selected_Properties()
         {
+            var shaper = new DataShaper();
             const string fields = "Id,Name,IsDeleted";
-            IDictionary<string,object?> expandoObject = _dummyModel.ShapeObject("id,name,isDeleted");
+            IDictionary<string,object?> expandoObject = shaper.ShapeObject(_dummyModel,"id,name,isDeleted");
             
             Assert.Equal(fields.Split(',').Length, expandoObject.Count);
             Assert.Equal(_dummyModel.Id, expandoObject["Id"]);
@@ -123,31 +132,51 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact] 
         public void ShapeData_Should_Throw_If_Property_Does_Not_Exist()
         {
-            Assert.Throws<PropertyNotFoundException>(() => _dummyModels.ShapeData("NonExistingProperty"));
+            var shaper = new DataShaper();
+            
+            foreach (var dummyModel in _dummyModels)
+            {
+                Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(dummyModel,"NonExistingProperty"));
+            }
         }
         
         [Fact]
         public void ShapeData_Should_Throw_For_Private_Properties()
         {
-            Assert.Throws<PropertyNotFoundException>(() => _dummyModels.ShapeData("PrivateField"));
+            var shaper = new DataShaper();
+            foreach (var dummyModel in _dummyModels)
+            {
+                Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(dummyModel,"PrivateField"));
+            }
         }
         
         [Fact]
         public void ShapeData_Should_Throw_For_Protected_Properties()
         {
-            Assert.Throws<PropertyNotFoundException>(() => _dummyModels.ShapeData("ProtectedField"));
+            var shaper = new DataShaper();
+            
+            foreach (var dummyModel in _dummyModels)
+            {
+                Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(dummyModel,"ProtectedField"));
+            }
         }
         
         [Fact]
         public void ShapeData_Should_Throw_For_Internal_Properties()
         {
-            Assert.Throws<PropertyNotFoundException>(() => _dummyModels.ShapeData("InternalField"));
+            var shaper = new DataShaper();
+            foreach (var dummyModel in _dummyModels)
+            {
+                Assert.Throws<PropertyNotFoundException>(() => shaper.ShapeObject(dummyModel,"InternalField"));
+            }
         }
         
         [Fact]
         public void ShapeData_Should_Return_All_Properties_If_Fields_Param_Is_Null()
         {
-            IEnumerable<IDictionary<string,object?>> expandoObjects = _dummyModels.ShapeData(null);
+            var shaper = new DataShaper();
+            IEnumerable<IDictionary<string, object?>> expandoObjects =
+                _dummyModels.Select(x => shaper.ShapeObject(x, null)).ToList();
 
             foreach (var expandoObject in expandoObjects)
             {
@@ -162,7 +191,9 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Return_All_Properties_If_Fields_Param_Is_EmptyString()
         {
-            IEnumerable<IDictionary<string,object?>> expandoObjects = _dummyModels.ShapeData(string.Empty);
+            var shaper = new DataShaper();
+            IEnumerable<IDictionary<string, object?>> expandoObjects =
+                _dummyModels.Select(x => shaper.ShapeObject(x, string.Empty)).ToList();
 
             foreach (var expandoObject in expandoObjects)
             {
@@ -177,8 +208,10 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Return_Selected_Properties()
         {
+            var shaper = new DataShaper();
             const string fields = "Id,Name";
-            IEnumerable<IDictionary<string,object?>> expandoObjects = _dummyModels.ShapeData(fields);
+            IEnumerable<IDictionary<string, object?>> expandoObjects =
+                _dummyModels.Select(x => shaper.ShapeObject(x, fields));
 
             foreach (var expandoObject in expandoObjects)
             {
@@ -191,9 +224,11 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Ignore_Case()
         {
+            var shaper = new DataShaper();
             const string fields = "iD,nAMe";
-            IEnumerable<IDictionary<string,object?>> expandoObjects = _dummyModels.ShapeData(fields);
-
+            IEnumerable<IDictionary<string, object?>> expandoObjects =
+                _dummyModels.Select(x => shaper.ShapeObject(x, fields)).ToList();
+            
             foreach (var expandoObject in expandoObjects)
             {
                 Assert.Equal(fields.Split(',').Length, expandoObject.Count);
@@ -205,31 +240,39 @@ namespace Dappi.HeadlessCms.Tests.DataShaping
         [Fact]
         public void ShapeData_Should_Return_Correct_Values_For_All_Properties()
         {
-            IEnumerable<IDictionary<string,object?>> expandoObjects = _dummyModels.ShapeData(null).ToList();
-            for (var i = 0; i < _dummyModels.Count; i++)
+            var shaper = new DataShaper();
+            IEnumerable<IDictionary<string, object?>> expandoObjects =
+                _dummyModels.Select(x => shaper.ShapeObject(x, null)).ToList();
+            
+            foreach (var expandoObject in expandoObjects)
             {
-                var expandoObject = expandoObjects.ElementAt(i);
+                var dummyModel = _dummyModels.FirstOrDefault(x => x.Id == Guid.Parse(expandoObject["Id"]?.ToString()!));
                 Assert.Equal(4,expandoObject.Count);
-                Assert.Equal(_dummyModels[i].Id, expandoObject["Id"]);
-                Assert.Equal(_dummyModels[i].Name, expandoObject["Name"]);
-                Assert.Equal(_dummyModels[i].IsDeleted, expandoObject["IsDeleted"]);
-                Assert.Equal(_dummyModels[i].CreatedAt, expandoObject["CreatedAt"]);
+                Assert.Equal(dummyModel!.Id, expandoObject["Id"]);
+                Assert.Equal(dummyModel.Name, expandoObject["Name"]);
+                Assert.Equal(dummyModel.IsDeleted, expandoObject["IsDeleted"]);
+                Assert.Equal(dummyModel.CreatedAt, expandoObject["CreatedAt"]);
             }
+            Assert.Equal(expandoObjects.Count(), _dummyModels.Count);
         }
         
         [Fact]
         public void ShapeData_Should_Return_Correct_Values_For_Selected_Properties()
         {
+            var shaper = new DataShaper();
             const string fields = "Id,Name,IsDeleted";
-            IEnumerable<IDictionary<string,object?>> expandoObjects = _dummyModels.ShapeData(fields).ToList();
-            for (var i = 0; i < _dummyModels.Count; i++)
+            IEnumerable<IDictionary<string, object?>> expandoObjects =
+                _dummyModels.Select(x => shaper.ShapeObject(x, fields)).ToList();
+            
+            foreach (var expandoObject in expandoObjects)
             {
-                var expandoObject = expandoObjects.ElementAt(i);
+                var dummyModel = _dummyModels.FirstOrDefault(x => x.Id == Guid.Parse(expandoObject["Id"]?.ToString()!));
                 Assert.Equal(fields.Split(',').Length,expandoObject.Count);
-                Assert.Equal(_dummyModels[i].Id, expandoObject["Id"]);
-                Assert.Equal(_dummyModels[i].Name, expandoObject["Name"]);
-                Assert.Equal(_dummyModels[i].IsDeleted, expandoObject["IsDeleted"]);
+                Assert.Equal(dummyModel!.Id, expandoObject["Id"]);
+                Assert.Equal(dummyModel.Name, expandoObject["Name"]);
+                Assert.Equal(dummyModel.IsDeleted, expandoObject["IsDeleted"]);
             }
+            Assert.Equal(expandoObjects.Count(), _dummyModels.Count);
         }
     }
 }
