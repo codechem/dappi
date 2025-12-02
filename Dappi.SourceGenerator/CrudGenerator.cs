@@ -1,12 +1,12 @@
 using System.Collections.Immutable;
 using System.Text;
-using Dappi.Core.Attributes;
 using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Generators;
 using Dappi.SourceGenerator.Models;
 using Dappi.Core.Utils;
 using Microsoft.CodeAnalysis;
 using static Dappi.SourceGenerator.Utilities.ClassPropertiesAnalyzer;
+using static Dappi.SourceGenerator.Generators.ActionsGenerator;
 
 namespace Dappi.SourceGenerator;
 
@@ -28,14 +28,17 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
             var collectionAddCode = GenerateCollectionAddCode(item);
             var collectionUpdateCode = GenerateCollectionUpdateCode(item);
             var includesCode = GetIncludesIfAny(item.PropertiesInfos, mediaInfoPropertyNames, item.ClassName);
-            var hasAuthorizationOnControllerLevel = item.AuthorizeAttributes.FirstOrDefault() is { OnControllerLevel: true };
-            var authorizeTag = hasAuthorizationOnControllerLevel ? "[Authorize]" : null; 
+            var hasAuthorizationOnControllerLevel = item.AuthorizeAttributes.FirstOrDefault() is
+                { OnControllerLevel: true };
+            var authorizeTag = hasAuthorizationOnControllerLevel ? "[Authorize]" : null;
             var mediaInfoUpdateCode = string.Empty;
             if (mediaInfoPropertyNames.ContainsKey(item.ClassName))
             {
-                mediaInfoUpdateCode = GenerateMediaInfoCreationCode("model", "existingModel", mediaInfoPropertyNames[item.ClassName]);
+                mediaInfoUpdateCode =
+                    GenerateMediaInfoCreationCode("model", "existingModel", mediaInfoPropertyNames[item.ClassName]);
             }
-            (string includeCode , string removeCode) = GenerateDeleteCodeForMediaInfo(item);
+
+            (string includeCode, string removeCode) = GenerateDeleteCodeForMediaInfo(item);
             var generatedCode = $@"using Microsoft.AspNetCore.Mvc;
 using {dbContextData.ResidingNamespace};
 using Microsoft.EntityFrameworkCore;
@@ -77,289 +80,19 @@ public partial class {item.ClassName}Controller(
     IMediaUploadService uploadService) : ControllerBase
 {{
 
-    [HttpGet]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
-    [CollectionFilter]
-    public async Task<IActionResult> Get{item.ClassName.Pluralize()}([FromQuery] {item.ClassName}Filter? filter, [FromQuery] string? fields = null)
-    {{
-        try
-        {{
-            var query = dbContext.{item.ClassName.Pluralize()}.AsNoTracking().AsQueryable();
-           
-            query = query{includesCode};
+    {GenerateGetByIdAction(item.CrudActions, item, includesCode)}
+    
+    {GenerateGetAction(item.CrudActions, item, includesCode)}
 
-            var filters = HttpContext.Items[CollectionFilter.FilterParamsKey] as List<Filter>;
-            if (filters is not null && filters.Count > 0)
-            {{
-                query = LinqExtensions.ApplyFiltering(query, filter);
-                query = query.ApplyFilter(filters);
-            }}
+    {GenerateGetAllAction(item.CrudActions, item, includesCode)}
 
-            if (!string.IsNullOrEmpty(filter.SortBy))
-            {{
-                query = LinqExtensions.ApplySorting(query, filter.SortBy, filter.SortDirection);
-            }}
+    {GeneratePostAction(item.CrudActions, item, collectionAddCode)}
 
-            var total = await query.CountAsync();
-            var data = await query
-                .Skip(filter.Offset)
-                .Take(filter.Limit)
-                .ToListAsync();
+    {GeneratePostActionForMediaInfo(item.CrudActions, item)}
 
-            var listDto = new ListResponseDTO<ExpandoObject>
-            {{
-                Data = data.Select(x => shaper.ShapeObject(x,fields)),
-                Limit = filter.Limit,
-                Offset = filter.Offset,
-                Total = total
-            }};
+    {GeneratePutAction(item.CrudActions, item, includesCode, collectionUpdateCode, mediaInfoUpdateCode)}
 
-            return Ok(listDto);
-        }}
-        catch(PropertyNotFoundException ex)
-        {{
-            return BadRequest(new {{message = ex.Message}});
-        }}
-    }}
-
-    [HttpGet(""{{id}}"")]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
-    public async Task<IActionResult> Get{item.ClassName}(Guid id, [FromQuery] string? fields = null)
-    {{
-        try
-        {{
-            if (id == Guid.Empty)
-                return BadRequest();
-
-            var query = dbContext.{item.ClassName.Pluralize()}.AsNoTracking().AsQueryable();
-           
-            query = query{includesCode};
-
-            var result = await query
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (result is null)
-                return NotFound();
-
-            return Ok(shaper.ShapeObject(result,fields));
-        }} 
-        catch(PropertyNotFoundException ex)
-        {{
-            return BadRequest(new {{message = ex.Message}});
-        }}
-    }}
-
-    [HttpPost]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Post)}
-    public async Task<IActionResult> Create([FromBody] {item.ClassName} model)
-    {{
-        if (model is null)
-            return BadRequest();
-
-        var modelToSave = new {item.ClassName}();
-        modelToSave = model;
-
-{collectionAddCode}
-
-        await dbContext.{item.ClassName.Pluralize()}.AddAsync(modelToSave);
-        await dbContext.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(Create), new {{ id = modelToSave.Id }}, modelToSave);
-    }}
-
-    [HttpPut(""{{id}}"")]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Put)}
-    public async Task<IActionResult> Update(Guid id, [FromBody] {item.ClassName} model)
-    {{
-        if (model == null || id == Guid.Empty)
-            return BadRequest(""Invalid data provided."");
-
-        var existingModel = await dbContext.{item.ClassName.Pluralize()}{includesCode}
-            .FirstOrDefaultAsync(p => p.Id == id);
-            
-        if (existingModel == null)
-            return NotFound($""{item.ClassName} with ID {{id}} not found."");
-
-        model.Id = id;
-
-{collectionUpdateCode}
-{mediaInfoUpdateCode}
-
-        dbContext.Entry(existingModel).CurrentValues.SetValues(model);
-
-        await dbContext.SaveChangesAsync();
-        return Ok(existingModel);
-    }}
-
-    [HttpPatch(""{{id}}"")]
-    public async Task<IActionResult> JsonPatch{item.ClassName}(Guid id, JsonDocument patchOperations)
-    {{
-        if (patchOperations is null || id == Guid.Empty)
-            return BadRequest(""Invalid data provided."");
-
-        var entity = await dbContext.{item.ClassName.Pluralize()}{includesCode}.FirstOrDefaultAsync(s => s.Id == id);
-        
-        if (entity is null)
-        {{
-            return NotFound(""{item.ClassName} with this id not found."");
-        }}
-        
-        if (patchOperations.RootElement.ValueKind == JsonValueKind.Array)
-        {{
-            foreach (var patchOperation in patchOperations.RootElement.EnumerateArray())
-            {{
-                var hasOperation = patchOperation.TryGetProperty(JsonPatchProperties.Operation, out var operation);
-                var hasPath = patchOperation.TryGetProperty(JsonPatchProperties.Path, out var path);
-                var hasValue = patchOperation.TryGetProperty(JsonPatchProperties.Value, out var value);
-                
-                if (!hasOperation)
-                    return BadRequest(""Invalid data provided. The operation is a required property."");
-
-                if (operation.ValueKind == JsonValueKind.String)
-                {{
-                    var propertyPathValue = path.GetString();
-                    TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
-                    var propertyPath = propertyPathValue[0] == '/' ? propertyPathValue.Substring(1, propertyPathValue[propertyPathValue.Length - 1] == '/' ? propertyPathValue.Length - 2 : propertyPathValue.Length - 1) : propertyPathValue;
-                    propertyPath = textInfo.ToTitleCase(propertyPath);
-                    var (propertyEntity, property, propertyEntityInterfaces, isEnumerable, isCollection) = GetEntityProperty(entity, propertyPath);
-                    var propertyInterfaces = property?.PropertyType?.GetInterfaces();
-                    switch (operation.GetString())
-                    {{
-                        case JsonPatchOperations.Add:
-                            if (!hasPath || !hasValue)
-                                return BadRequest(""Invalid data provided. Path and value are required properties for the add operation."");
-
-                            if (property.PropertyType.IsGenericType &&
-                                (propertyInterfaces.Contains(typeof(ICollection)) || propertyInterfaces.Contains(typeof(IEnumerable))))
-                            {{
-                                dynamic propertyList = property.GetValue(propertyEntity);
-                                dynamic deserializedValue = value.Deserialize(property.PropertyType.GetGenericArguments()[0]);
-                                propertyList?.Add(deserializedValue);
-                                property.SetValue(propertyEntity, propertyList);
-                            }}
-                            else
-                            {{
-                                SetValueToProperty(propertyEntity, property, value);
-                            }}
-                            break;
-                        case JsonPatchOperations.Replace:
-                            if (!hasPath || !hasValue)
-                                return BadRequest(""Invalid data provided. Path and value are required properties for the replace operation."");
-                            
-                            SetValueToProperty(propertyEntity, property, value);
-                            break;
-                        case JsonPatchOperations.Remove:
-                            if (!hasPath)
-                                return BadRequest(""Invalid data provided. The path is a required property for the remove operation."");
-
-                            if (propertyEntity.GetType().IsGenericType &&
-                                (isCollection || isEnumerable))
-                            {{
-                                var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
-                                        StringComparison.InvariantCultureIgnoreCase) + 1, 1);
-                                var enumerableList = propertyEntity as IEnumerable<object>;
-                                if (int.TryParse(itemIndex, out int index))
-                                {{
-                                    var arrayElement = enumerableList.ElementAt(index);
-                                    dbContext.Remove(arrayElement);
-                                }}
-                            }}
-                            else
-                                SetValueToProperty(propertyEntity, property, null);
-                            break;
-                        case JsonPatchOperations.Test:
-                            if (!hasPath || !hasValue)
-                                return BadRequest(""Invalid data provided. Path and value are required properties for the test operation."");
-
-                            var result = property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType));
-                            if (result)                            
-                                return Ok(result);
-                            return BadRequest(result);
-                        case JsonPatchOperations.Copy:
-                            var hasSource = patchOperation.TryGetProperty(JsonPatchProperties.From, out var from);
-                            if (!hasPath || !hasSource)
-                                return BadRequest(""Invalid data provided. Path and from are required properties for the copy operation."");
-
-                            if (path.ValueKind == JsonValueKind.String && from.ValueKind == JsonValueKind.String)
-                            {{
-                                var sourcePath = from.GetString();
-                                var destinationPath = propertyPath;
-                                if (string.IsNullOrEmpty(sourcePath) && string.IsNullOrEmpty(destinationPath))
-                                {{
-                                    return BadRequest(""Invalid data provided."");
-                                }}
-                                var sourcePropertyPath = sourcePath[0] == '/' ? sourcePath.Substring(1, sourcePath[sourcePath.Length - 1] == '/' ? sourcePath.Length - 2 : sourcePath.Length - 1) : sourcePath;
-                                sourcePropertyPath = textInfo.ToTitleCase(sourcePropertyPath);
-                                var (sourceEntity, sourceProperty, sourceEntityInterfaces, isSourceEnumerable, isSourceCollection) = GetEntityProperty(entity, sourcePropertyPath);
-                                property.SetValue(propertyEntity, sourceProperty.GetValue(sourceEntity));
-                            }}
-                            break;
-                    }}
-                }}
-            }}
-        }}
-        else
-        {{
-            return BadRequest(""Data is not in valid format."");
-        }}
-        await dbContext.SaveChangesAsync();
-        return Ok(entity);
-    }}
-
-    [HttpDelete(""{{id}}"")]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Delete)}
-    public async Task<IActionResult> Delete(Guid id)
-    {{
-        {includeCode}
-
-        if (model is null)
-            return NotFound();
-
-        dbContext.{item.ClassName.Pluralize()}.Remove(model);
-        {removeCode}
-
-        await dbContext.SaveChangesAsync();
-
-        return Ok();
-    }}
-
-    [HttpPost(""upload-file/{{id}}"")]
-    {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Post)}
-    public async Task<IActionResult> UploadFile(Guid id, IFormFile file, [FromForm] string fieldName)
-    {{
-        if (string.IsNullOrEmpty(fieldName))
-            return BadRequest(""Field name is required."");
-
-        try
-        {{
-            var entity = await dbContext.{item.ClassName.Pluralize()}.FindAsync(id);
-
-            if (entity == null)
-                return NotFound($""{item.ClassName} with ID {{id}} not found."");
-
-            var property = typeof({item.ClassName}).GetProperty(fieldName);
-            if (property == null)
-                return BadRequest($""Property {{fieldName}} does not exist."");
-
-            if (property.PropertyType != typeof(MediaInfo))
-                return BadRequest($""Property {{fieldName}} must be a MediaInfo type to store media information."");
-
-            var mediaInfo = await uploadService.UploadMediaAsync(id, file);
-            property.SetValue(entity, mediaInfo);
-
-            await dbContext.Set<MediaInfo>().AddAsync(mediaInfo);
-            await dbContext.SaveChangesAsync();
-
-            dbContext.Entry(entity).State = EntityState.Modified;
-            await dbContext.SaveChangesAsync();
-
-            return Ok(mediaInfo);
-        }}
-        catch (Exception ex)
-        {{
-            return BadRequest(new {{ message = ex.Message }});
-        }}
-    }}
+    {GenerateDeleteAction(item.CrudActions, item, includeCode, removeCode)}
 
     private static (object entity, PropertyInfo property, Type[] entityInterfaces, bool isEnumerable, bool isCollection) GetEntityProperty(object entity, string propertyName)
     {{
@@ -516,6 +249,7 @@ public partial class {item.ClassName}Controller(
         {
             return string.Empty;
         }
+
         var sb = new StringBuilder();
         foreach (var prop in mediaInfoPropertyNames)
         {
@@ -541,10 +275,9 @@ public partial class {item.ClassName}Controller(
 
         return sb.ToString().TrimEnd();
     }
-    
+
     private static (string include, string remove) GenerateDeleteCodeForMediaInfo(SourceModel model)
     {
-
         var includeCode = new StringBuilder($"var model = dbContext.{model.ClassName.Pluralize()} \n");
         var removeCode = new StringBuilder();
         removeCode.AppendLine("");

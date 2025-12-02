@@ -41,19 +41,19 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         return results.Where(r => r != null).ToArray()!;
     }
 
-    public void CreateEntityModel(string name, bool isAuditableEntity = false)
+    public void CreateEntityModel(ModelRequest request)
     {
         var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
         var assemblyName = assembly.GetName().Name;
 
-        var classDeclaration = SyntaxFactory.ClassDeclaration(name)
+        var classDeclaration = SyntaxFactory.ClassDeclaration(request.ModelName)
             .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-            .AddAttributeLists(RoslynHelpers.WithCcControllerAttribute())
+            .AddAttributeLists(RoslynHelpers.WithCcControllerAttribute(request.CrudActions))
             .AddMembers(RoslynHelpers.IdentityProperty()
                 .WithAccessorList(RoslynHelpers.WithGetAndSet())
             );
 
-        if (isAuditableEntity)
+        if (request.IsAuditableEntity)
         {
             classDeclaration = classDeclaration.AddBaseListTypes(
                 SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(nameof(IAuditableEntity)))
@@ -69,7 +69,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
             .AddMembers(namesSpaceDeclaration);
 
         var code = compilationUnit.NormalizeWhitespace().ToFullString();
-        _codeChanges[name] = code;
+        _codeChanges[request.ModelName] = code;
         HasChanges = true;
     }
 
@@ -353,6 +353,8 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations.Schema")),
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.HeadlessCms.Models")),
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.Core.Attributes")),
-        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.HeadlessCms.Core.Attributes"))
+        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.HeadlessCms.Core.Attributes")),
+        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.Core.Enums"))
+        
     ];
 }
