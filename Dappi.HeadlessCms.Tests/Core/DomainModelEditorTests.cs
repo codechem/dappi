@@ -29,7 +29,8 @@ namespace Dappi.HeadlessCms.Tests.Core
         [Fact]
         public async Task DomainModelEditor_Should_Add_Using_Statements()
         {
-            _domainModelEditor.CreateEntityModel(DomainModelName, true);
+            var modelRequest = new ModelRequest { ModelName = DomainModelName, IsAuditableEntity = false };
+            _domainModelEditor.CreateEntityModel(modelRequest);
             await _domainModelEditor.SaveAsync();
             
             var actual = await File.ReadAllTextAsync(_filePath);
@@ -42,13 +43,13 @@ namespace Dappi.HeadlessCms.Tests.Core
         [Fact]
         public async Task DomainModelEditor_Should_Generate_Class_With_CCController_Attribute()
         {
-           
             var expected = $$"""
                              using System.ComponentModel.DataAnnotations;
                              using System.ComponentModel.DataAnnotations.Schema;
                              using Dappi.HeadlessCms.Models;
                              using Dappi.Core.Attributes;
                              using Dappi.HeadlessCms.Core.Attributes;
+                             using Dappi.Core.Enums;
 
                              namespace {{_assemblyName}}.Entities
                              {
@@ -62,7 +63,8 @@ namespace Dappi.HeadlessCms.Tests.Core
                              }
                              """;
 
-            _domainModelEditor.CreateEntityModel(DomainModelName);
+            var modelRequest = new ModelRequest { ModelName = DomainModelName, IsAuditableEntity = false };
+            _domainModelEditor.CreateEntityModel(modelRequest);
             await _domainModelEditor.SaveAsync();
             var actual = await File.ReadAllTextAsync(_filePath);
             Assert.Equal(expected.ReplaceLineEndings(), actual.ReplaceLineEndings());
@@ -71,30 +73,31 @@ namespace Dappi.HeadlessCms.Tests.Core
         [Fact]
         public async Task DomainModelEditor_Should_Generate_Class_With_IAuditable_Props()
         {
-             string expected = $$"""
-                                      using System.ComponentModel.DataAnnotations;
-                                      using System.ComponentModel.DataAnnotations.Schema;
-                                      using Dappi.HeadlessCms.Models;
-                                      using Dappi.Core.Attributes;
-                                      using Dappi.HeadlessCms.Core.Attributes;
+             var expected = $$"""
+                              using System.ComponentModel.DataAnnotations;
+                              using System.ComponentModel.DataAnnotations.Schema;
+                              using Dappi.HeadlessCms.Models;
+                              using Dappi.Core.Attributes;
+                              using Dappi.HeadlessCms.Core.Attributes;
+                              using Dappi.Core.Enums;
 
-                                      namespace {{_assemblyName}}.Entities
-                                      {
-                                          [CCController]
-                                          public class {{DomainModelName}} : {{nameof(IAuditableEntity)}}
-                                          {
-                                              [Key]
-                                              [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-                                              public Guid Id { get; set; }
-                                              public DateTime? CreatedAtUtc { get; set; }
-                                              public DateTime? UpdatedAtUtc { get; set; }
-                                              public string? CreatedBy { get; set; }
-                                              public string? UpdatedBy { get; set; }
-                                          }
-                                      }
-                                      """;
-            
-            _domainModelEditor.CreateEntityModel(DomainModelName, true);
+                              namespace {{_assemblyName}}.Entities
+                              {
+                                  [CCController]
+                                  public class {{DomainModelName}} : {{nameof(IAuditableEntity)}}
+                                  {
+                                      [Key]
+                                      [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+                                      public Guid Id { get; set; }
+                                      public DateTime? CreatedAtUtc { get; set; }
+                                      public DateTime? UpdatedAtUtc { get; set; }
+                                      public string? CreatedBy { get; set; }
+                                      public string? UpdatedBy { get; set; }
+                                  }
+                              }
+                              """;
+             var modelRequest = new ModelRequest { ModelName = DomainModelName, IsAuditableEntity = true };
+            _domainModelEditor.CreateEntityModel(modelRequest);
             await _domainModelEditor.SaveAsync();
             var actual = await File.ReadAllTextAsync(_filePath);
             Assert.Equal(expected.ReplaceLineEndings(), actual.ReplaceLineEndings());
@@ -110,6 +113,7 @@ namespace Dappi.HeadlessCms.Tests.Core
                              using Dappi.HeadlessCms.Models;
                              using Dappi.Core.Attributes;
                              using Dappi.HeadlessCms.Core.Attributes;
+                             using Dappi.Core.Enums;
 
                              namespace {{_assemblyName}}.Entities
                              {
@@ -123,8 +127,8 @@ namespace Dappi.HeadlessCms.Tests.Core
                                  }
                              }
                              """;
-            
-            _domainModelEditor.CreateEntityModel(DomainModelName);
+            var modelRequest = new ModelRequest { ModelName = DomainModelName, IsAuditableEntity = false };
+            _domainModelEditor.CreateEntityModel(modelRequest);
             Property property = new Property
             {
                 DomainModel = DomainModelName,
@@ -150,6 +154,7 @@ namespace Dappi.HeadlessCms.Tests.Core
                               using Dappi.HeadlessCms.Models;
                               using Dappi.Core.Attributes;
                               using Dappi.HeadlessCms.Core.Attributes;
+                              using Dappi.Core.Enums;
 
                               namespace {{_assemblyName}}.Entities
                               {
@@ -167,7 +172,8 @@ namespace Dappi.HeadlessCms.Tests.Core
              {
                  DomainModel = DomainModelName, Name = TestPropertyName, Type = type, IsRequired = false,
              };
-            _domainModelEditor.CreateEntityModel(DomainModelName);
+             var modelRequest = new ModelRequest { ModelName = DomainModelName, IsAuditableEntity = false };
+            _domainModelEditor.CreateEntityModel(modelRequest);
             _domainModelEditor.AddProperty(property);
             await _domainModelEditor.SaveAsync();
             var actual = await File.ReadAllTextAsync(_filePath);

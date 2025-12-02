@@ -1,5 +1,6 @@
 using System.Reflection;
 using Dappi.Core.Attributes;
+using Dappi.Core.Enums;
 using Dappi.HeadlessCms.Core.Attributes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -20,11 +21,21 @@ namespace Dappi.HeadlessCms.Core.Extensions
             ]));
         }
 
-        public static AttributeListSyntax WithCcControllerAttribute()
+        public static AttributeListSyntax WithCcControllerAttribute(List<CrudActions>? crudActionsList)
         {
-            return SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
-                SyntaxFactory.Attribute(
-                    SyntaxFactory.ParseName(nameof(CCControllerAttribute).Replace("Attribute", "")))));
+            List<AttributeArgumentSyntax> arguments = [];
+            var attribute = SyntaxFactory.Attribute(SyntaxFactory.ParseName(CcControllerAttribute.ShortName));
+            if (crudActionsList is null || crudActionsList.Count <= 0)
+            {
+                return SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
+            }
+
+            arguments.AddRange(crudActionsList.Select(a =>
+                SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression($"{nameof(CrudActions)}.{a}"))));
+            attribute = attribute.AddArgumentListArguments(arguments.ToArray());
+
+            return SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
+
         }
 
         public static PropertyDeclarationSyntax IdentityProperty()

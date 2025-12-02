@@ -40,7 +40,7 @@ public class ModelsController : ControllerBase
             Directory.CreateDirectory(_entitiesFolderPath);
         }
     }
-
+    
     [HttpGet]
     public async Task<IActionResult> GetAllModels()
     {
@@ -55,7 +55,7 @@ public class ModelsController : ControllerBase
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
-
+    
     [HttpPost]
     public async Task<IActionResult> CreateModel([FromBody] ModelRequest request)
     {
@@ -77,7 +77,7 @@ public class ModelsController : ControllerBase
 
         try
         {
-            _domainModelEditor.CreateEntityModel(request.ModelName, request.IsAuditableEntity);
+            _domainModelEditor.CreateEntityModel(request);
 
             await _contentTypeChangesService.AddContentTypeChangeAsync(
                 request.ModelName,
