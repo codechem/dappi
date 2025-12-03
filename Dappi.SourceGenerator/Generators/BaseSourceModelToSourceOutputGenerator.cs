@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using Dappi.Core.Attributes;
-using Dappi.Core.Enums;
+using Dappi.Core.Extensions;
 using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
@@ -24,21 +24,7 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
                 var authorizeAttributeName =
                     typeof(DappiAuthorizeAttribute).FullName ?? throw new NullReferenceException();
 
-                var ccAttr = classDeclaration.AttributeLists
-                    .SelectMany(attrList => attrList.Attributes)
-                    .FirstOrDefault(x => x.Name.ToString() == CcControllerAttribute.ShortName);
-
-                var crudActions = new List<CrudActions>();
-                var arguments = ccAttr?.ArgumentList?.Arguments.ToList();
-                if (arguments != null && arguments.Count > 0)
-                {
-                    crudActions = arguments.Select(x =>
-                        (CrudActions)Enum.Parse(typeof(CrudActions), x.ToString().Split('.').Last(), true)).ToList();
-                }
-                else
-                {
-                    crudActions.AddRange(CcControllerAttribute.DefaultActions);
-                }
+                var crudActions = classDeclaration.ExtractAllowedCrudActions();
 
                 var authorizeAttributes = classSymbol.GetAttributes()
                     .Where(attr => attr.AttributeClass?.ToDisplayString() == authorizeAttributeName)

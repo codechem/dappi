@@ -1,21 +1,18 @@
 <div class="context-menu" role="menu">
-  <button
-    class="context-menu__item context-menu__item--edit"
-    (click)="onEdit()"
-    role="menuitem"
-    [attr.aria-label]="editText"
-  >
-    <mat-icon>edit</mat-icon>
-    <span class="context-menu__text">{{ editText }}</span>
-  </button>
+  @if(allowedCrudActions?.includes(crudActions.Update)){
+    <button class="context-menu__item context-menu__item--edit" (click)="onEdit()" role="menuitem"
+      [attr.aria-label]="editText">
+      <mat-icon>edit</mat-icon>
+      <span class="context-menu__text">{{ editText }}</span>
+    </button>
+  }
 
-  <button
-    class="context-menu__item context-menu__item--delete"
-    (click)="onDelete()"
-    role="menuitem"
-    [attr.aria-label]="deleteText"
-  >
+  @if(allowedCrudActions?.includes(crudActions.Delete)){
+  <button class="context-menu__item context-menu__item--delete" (click)="onDelete()" [attr.aria-label]="deleteText"
+    role="menuitem">
     <mat-icon>delete</mat-icon>
     <span class="context-menu__text">{{ deleteText }}</span>
   </button>
+  }
+
 </div>

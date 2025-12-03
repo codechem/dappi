@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { ChangeDetectorRef, Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { EMPTY, of } from 'rxjs';
 import {
@@ -17,7 +17,7 @@ import * as CollectionActions from './collection.actions';
 import { selectSelectedType } from '../content/content.selectors';
 import * as ContentActions from '../content/content.actions';
 import { BASE_API_URL } from '../../../Constants';
-import { ModelField, FieldType } from '../../models/content.model';
+import { ModelField, FieldType, ModelResponse, CrudActions } from '../../models/content.model';
 
 @Injectable()
 export class CollectionEffects {
@@ -26,7 +26,7 @@ export class CollectionEffects {
   private store = inject(Store);
   private snackBar = inject(MatSnackBar);
   private enumsData: any = null;
-
+  
   loadCollectionTypes$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.loadCollectionTypes),
@@ -131,18 +131,21 @@ export class CollectionEffects {
 
         return enumsRequest.pipe(
           mergeMap((enumsData) => {
-            return this.http.get<ModelField[]>(endpoint).pipe(
-              map((fields) => {
-                const processedFields = fields.map((field) => {
+            return this.http.get<ModelResponse>(endpoint).pipe(
+              map((res) => {
+                const processedFields = res.Fields.map((field) => {
                   const fieldType = this.mapFieldTypeToInputType(field.fieldType, enumsData);
                   return {
                     ...field,
                     isEnum: fieldType === FieldType.enum,
                   };
                 });
-
+              
                 return CollectionActions.loadFieldsSuccess({
-                  fields: [...processedFields],
+                  modelResponse: {
+                    Fields: [...processedFields],
+                    AllowedActions: res.AllowedActions
+                  }
                 });
               }),
               catchError((error) => {
@@ -199,7 +202,7 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.addCollectionType),
       switchMap((action) => {
-        const payload = { modelName: action.collectionType, isAuditableEntity: action.isAuditableEntity };
+        const payload = { modelName: action.collectionType, isAuditableEntity: action.isAuditableEntity , crudActions:action.crudActions };
         return this.http.post(`${BASE_API_URL}models`, payload).pipe(
           map(() =>
             CollectionActions.addCollectionTypeSuccess({
@@ -290,6 +293,27 @@ export class CollectionEffects {
           }
           )
         )
+      })
+    )
+  );
+
+  configureActions$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.configureActions),
+      switchMap((action) => {
+        const payload = {...action.request};
+        return this.http.put<{message:string}>(`${BASE_API_URL}models/configure-actions/${action.model}`, payload).pipe(
+          map((res) =>
+            CollectionActions.configureActionsSuccess({
+               message:res.message
+            })
+          ),
+          catchError((error) => {
+            console.error('Error creating model:', error);
+            this.showErrorPopup(`Failed to configure actions: ${error.error}`);
+            return of(CollectionActions.configureActionsFailure({ error }));
+          })
+        );
       })
     )
   );

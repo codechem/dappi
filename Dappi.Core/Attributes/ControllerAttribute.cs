@@ -8,8 +8,7 @@ namespace Dappi.Core.Attributes
     {
         public CrudActions[] AllowedCrudActions { get; } = [];
         public static string ShortName = nameof(CcControllerAttribute).Replace("Attribute", "");
-        
-        public static IEnumerable<CrudActions> DefaultActions = [CrudActions.Get,
+        public static readonly List<CrudActions> DefaultActions = [CrudActions.Get,
             CrudActions.GetOne,
             CrudActions.Create,
             CrudActions.Update,

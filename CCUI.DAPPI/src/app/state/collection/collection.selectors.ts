@@ -27,7 +27,11 @@ export const selectDraftCollectionTypes = createSelector(
   (state) => state.draftCollectionTypes
 );
 
-export const selectFields = createSelector(selectCollectionState, (state) => state.fields);
+export const selectFields = createSelector(selectCollectionState, (state) => state.modelResponse?.Fields);
+
+export const selectModelResponse = createSelector(selectCollectionState , (state) => state.modelResponse);
+
+export const selectAllowedCrudActions = createSelector(selectCollectionState , state => state.modelResponse?.AllowedActions)
 
 export const selectIsLoadingFields = createSelector(
   selectCollectionState,

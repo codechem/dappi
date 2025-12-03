@@ -70,9 +70,9 @@ export const collectionReducer = createReducer(
     errorFields: null,
   })),
 
-  on(CollectionActions.loadFieldsSuccess, (state, { fields }) => ({
+  on(CollectionActions.loadFieldsSuccess, (state, { modelResponse }) => ({
     ...state,
-    fields: [...fields],
+    modelResponse,
     loadingFields: false,
   })),
 
@@ -115,38 +115,50 @@ export const collectionReducer = createReducer(
     isSaving: false,
     saveError: error,
   })),
-  
-    on(CollectionActions.collectionHasRelatedProperties, (state) => ({
+
+  on(CollectionActions.collectionHasRelatedProperties, (state) => ({
     ...state,
-    loading:true
+    loading: true
   })),
 
   on(CollectionActions.collectionHasRelatedPropertiesSuccess, (state, { hasRelatedProperties }) => ({
     ...state,
     hasRelatedProperties,
-    loading:false,
-    error:null
+    loading: false,
+    error: null
   })),
 
   on(CollectionActions.collectionHasRelatedPropertiesFailure, (state, { error }) => ({
     ...state,
     error,
-    loading:false,
+    loading: false,
   })),
 
-   on(CollectionActions.deleteCollectionType, (state) => ({
+  on(CollectionActions.deleteCollectionType, (state) => ({
     ...state,
-    loading:true,
-    error:null
+    loading: true,
+    error: null
   })),
 
   on(CollectionActions.deleteCollectionTypeSuccess, (state, { message }) => ({
     ...state,
     message,
-    loading:false
+    loading: false
   })),
 
   on(CollectionActions.deleteCollectionTypeFailure, (state, { error }) => ({
+    ...state,
+    error,
+    loading: false
+  })),
+
+  on(CollectionActions.configureActionsSuccess, (state, { message }) => ({
+    ...state,
+    message,
+    loading: false
+  })),
+
+  on(CollectionActions.configureActionsFailure, (state, {error}) => ({
     ...state,
     error,
     loading:false

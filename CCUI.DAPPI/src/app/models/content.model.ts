@@ -25,6 +25,17 @@ export enum FieldType {
   'role',
   'enum',
 }
+
+export enum CrudActions {
+  Get = 0,
+  GetOne = 1,
+  GetAll = 2,
+  Create = 3,
+  Update = 4,
+  Patch = 5,
+  Delete = 6
+}
+
 export interface TableHeader {
   key: string;
   label: string;
@@ -47,4 +58,18 @@ export interface ModelField {
   relatedTo?: string;
   isRequired?: boolean;
   isEnum?: boolean;
+}
+
+export interface ModelResponse {
+  Fields: ModelField[],
+  AllowedActions: CrudActions[]
+}
+
+export interface EnumKvp {
+  value: number,
+  label:string
+}
+
+export interface ConfigureModelRequest {
+  crudActions: CrudActions[]
 }

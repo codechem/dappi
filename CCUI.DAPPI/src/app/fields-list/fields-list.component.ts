@@ -12,6 +12,7 @@ export interface FieldItem {
   type: string;
 }
 
+
 @Component({
   selector: 'app-fields-list',
   standalone: true,

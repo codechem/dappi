@@ -1,0 +1,35 @@
+<div class="configure-actions-dialog">
+    <div class="dialog-header">
+        <h1>Configure Actions</h1>
+    </div>
+    <div class="dialog-content">
+        <hr />
+        <form [formGroup]="configureActionsForm">
+            <p>Allowed Actions</p>
+            <div class="actions-container">
+                @for (action of crudActions; track $index) {
+                <div class="action">
+                    <mat-label>
+                        <mat-checkbox 
+                            type="checkbox" [value]="action.value.toString()"
+                            (change)="onCheckboxChange($event, action.value)"
+                            [checked]="allowedActions?.includes(action.value)" />
+                        {{ action.label }}
+                    </mat-label>
+                </div>
+                }
+            </div>
+            <div class="helper-text">
+                *If no actions are selected, resource will have default actions (Get,GetById,Post,Put,Update)
+            </div>
+        </form>
+    </div>
+    <div class="dialog-footer">
+        <button mat-flat-button class="cancel-button" (click)="onClose()" aria-label="Close dialog">
+            <Span>Close</Span>
+        </button>
+        <button mat-flat-button class="submit-button" (click)="onSubmit()">
+            <span>Submit</span>
+        </button>
+    </div>
+</div>

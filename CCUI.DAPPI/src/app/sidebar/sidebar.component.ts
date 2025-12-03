@@ -30,10 +30,12 @@ import { AddCollectionTypeDialogComponent } from '../add-collection-type-dialog/
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import * as ContentActions from '../state/content/content.actions';
+import * as CollectionActons from '../state/collection/collection.actions';
 import { selectSelectedType } from '../state/content/content.selectors';
 import {
   selectCollectionTypes,
   selectCollectionTypesError,
+  selectModelResponse,
   selectPublishedCollectionTypes,
 } from '../state/collection/collection.selectors';
 import {
@@ -41,6 +43,7 @@ import {
   loadPublishedCollectionTypes,
 } from '../state/collection/collection.actions';
 import { selectUser } from '../state/auth/auth.selectors';
+import { ModelResponse } from '../models/content.model';
 
 @Component({
   selector: 'app-sidebar',
@@ -76,6 +79,10 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   filteredCollectionTypes: string[] = [];
   searchText = '';
   selectedType = '';
+
+  responseModel$ = this.store.select(selectModelResponse);
+  responseModel: ModelResponse | null = null;
+
   private destroy$ = new Subject<void>();
   private searchTextChanged = new Subject<string>();
 
@@ -151,6 +158,12 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
       )
     )
 
+    this.subscriptions.add(
+      this.responseModel$.subscribe((modelResponse) => {
+        this.responseModel = modelResponse;
+      })
+    )
+
   }
 
   ngAfterViewInit(): void {
@@ -167,7 +180,8 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   selectCollectionType(type: string): void {
     this.store.dispatch(ContentActions.setContentType({ selectedType: type }));
-
+    this.store.dispatch(CollectionActons.loadFields({modelType:type}));
+    
     if (this.headerText === 'Builder') {
       this.router.navigate(['/builder']);
     } else {

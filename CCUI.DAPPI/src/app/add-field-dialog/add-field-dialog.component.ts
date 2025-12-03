@@ -27,7 +27,6 @@ import { ModelValidators } from '../validators/model-validators';
 import { forkJoin } from 'rxjs';
 import { Pluralizer } from '../utils/pluralizer'
 
-
 interface FieldType {
   icon: string;
   label: string;
@@ -58,6 +57,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   selectedType$ = this.store.select(selectSelectedType);
   selectedTypeFields$ = this.store.select(selectFields);
   selectedType = '';
+  
 
   availableModels: { label: string; value: string }[] = [];
   availableEnums: string[] = [];

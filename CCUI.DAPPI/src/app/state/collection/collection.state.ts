@@ -1,4 +1,4 @@
-import { ModelField } from '../../models/content.model';
+import { ModelField, ModelResponse } from '../../models/content.model';
 
 export interface CollectionState {
   collectionTypes: string[];
@@ -12,6 +12,7 @@ export interface CollectionState {
   publishedCollectionTypes: string[];
   draftCollectionTypes: string[];
   hasRelatedProperties:boolean;
+  modelResponse: ModelResponse | null
 }
 
 export const initialCollectionState: CollectionState = {
@@ -25,5 +26,6 @@ export const initialCollectionState: CollectionState = {
   saveError: null,
   serverRestarting: false,
   draftCollectionTypes: [],
-  hasRelatedProperties:false
+  hasRelatedProperties:false,
+  modelResponse: null
 };

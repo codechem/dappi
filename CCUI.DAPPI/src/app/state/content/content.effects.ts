@@ -7,7 +7,7 @@ import { Store } from '@ngrx/store';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import * as ContentActions from './content.actions';
 import { selectItemsPerPage, selectSelectedType } from './content.selectors';
-import { FieldType, ModelField, PaginatedResponse } from '../../models/content.model';
+import { FieldType, ModelField, ModelResponse, PaginatedResponse } from '../../models/content.model';
 import { BASE_API_URL } from '../../../Constants';
 import { MediaInfo } from '../../models/media-info.model';
 import { RecentContent } from '../../models/recent-content';
@@ -103,9 +103,9 @@ export class ContentEffects {
 
         return enumsRequest.pipe(
           mergeMap((enumsData) => {
-            return this.http.get<ModelField[]>(endpoint).pipe(
+            return this.http.get<ModelResponse>(endpoint).pipe(
               map((response) => {
-                const headers = response.map((field) => {
+                const headers = response.Fields.map((field) => {
                   const fieldType = this.mapFieldTypeToInputType(field.fieldType, enumsData);
                   const isRelation =
                     fieldType === FieldType.relation || fieldType === FieldType.enum;
