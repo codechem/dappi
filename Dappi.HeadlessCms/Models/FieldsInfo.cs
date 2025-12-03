@@ -13,5 +13,4 @@ namespace Dappi.HeadlessCms.Models
         [System.Text.Json.Serialization.JsonPropertyName("relatedTo")]
         public bool RelatedTo { get; set; }
     }
-
 }

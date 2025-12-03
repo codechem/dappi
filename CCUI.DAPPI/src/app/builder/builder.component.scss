@@ -169,3 +169,9 @@ app-sidebar {
 .menu-delete {
   color: #EE5251 !important;
 }
+
+.menu-info{
+  *{
+    color: rgba(vars.$text-primary, 1)
+  }
+}

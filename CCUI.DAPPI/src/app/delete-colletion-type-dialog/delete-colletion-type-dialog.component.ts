@@ -28,7 +28,6 @@ export class DeleteColletionTypeDialogComponent implements OnInit {
   selectedType:string = "";
   private subscription: Subscription = new Subscription();
 
-  
   constructor
   (
     private dialogRef: MatDialogRef<DeleteColletionTypeDialogComponent>,

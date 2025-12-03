@@ -110,16 +110,19 @@ public class ModelFieldsController : ControllerBase
     {
         try
         {
-            var fields = new List<object>
+            var fields = new List<FieldsInfo>
         {
-            new { fieldName = "Id", fieldType = "Guid", isRequired = false },
-            new { fieldName = "Email", fieldType = "string", isRequired = false },
-            new { fieldName = "Name", fieldType = "string", isRequired = false },
-            new { fieldName = "Roles", fieldType = "userRoles", isRequired = false }
+            new(){ FieldName = "Id", FieldType = "Guid", IsRequired = false },
+            new() { FieldName = "Email", FieldType = "string", IsRequired = false },
+            new() { FieldName = "Name", FieldType = "string", IsRequired = false },
+            new() { FieldName = "Roles", FieldType = "userRoles", IsRequired = false }
         };
 
             _logger.LogInformation("Retrieved user field names");
-            return Ok(fields);
+            return Ok(new ModelResponse()
+            {
+                Fields = fields
+            });
         }
         catch (Exception ex)
         {

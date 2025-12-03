@@ -5,7 +5,7 @@ namespace Dappi.HeadlessCms.Core.Attributes;
 [AttributeUsage(AttributeTargets.Property)]
 public class DappiRelationAttribute(DappiRelationKind relationKind, Type inverseSide) : Attribute
 {
-    public static readonly string ShortName = nameof(DappiRelationAttribute).Replace("Attribute","");
+    public static string ShortName = nameof(DappiRelationAttribute).Replace("Attribute", "");
     public DappiRelationKind RelationKind { get; set; } = relationKind;
     public Type? InverseSide { get; set; } = inverseSide;
 }

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   HostListener,
+  model,
   OnChanges,
   OnDestroy,
   OnInit,
@@ -26,9 +27,11 @@ import {
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
 import { Subscription } from 'rxjs';
-import { ContentItem, FieldType, TableHeader } from '../models/content.model';
+import { ContentItem, CrudActions, FieldType, ModelResponse, TableHeader } from '../models/content.model';
 import { DrawerComponent } from '../relation-drawer/drawer.component';
 import { ImageViewerComponent } from '../image-viewer/image-viewer.component';
+import { selectAllowedCrudActions, selectModelResponse } from '../state/collection/collection.selectors';
+import * as CollectionActions from '../state/collection/collection.actions';
 
 @Component({
   selector: 'app-content-table',
@@ -88,11 +91,16 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
   paginationArray: number[] = [];
   isLoading = true;
 
+  allowedCrudActions$ = this.store.select(selectAllowedCrudActions);
+  disabled:boolean = false;
+  crudActions = CrudActions;
+
   constructor(
     private router: Router,
     private sanitizer: DomSanitizer,
     private store: Store
-  ) {}
+  ) { 
+  }
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
@@ -103,7 +111,6 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
       this.drawerTitle = header.label;
       this.drawerData = item[header.key];
       this.drawerType = header.type;
-      this.isDrawerOpen = true;
     }
   }
 
@@ -142,7 +149,6 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnInit(): void {
     this.subscription.add(this.selectedType$.subscribe((type) => (this.selectedType = type)));
-
     this.subscription.add(
       this.isSearching$.subscribe((searching) => (this.isSearching = searching))
     );
@@ -155,6 +161,15 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
         this.calculatePagination();
       })
     );
+    this.subscription.add(this.allowedCrudActions$.subscribe((allowedActions) => {
+      if(allowedActions && allowedActions.includes(CrudActions.Create)){
+        this.disabled = false;
+      } else {
+        this.disabled = true;
+      }
+    }
+  ));
+
     this.subscription.add(this.loading$.subscribe((loading) => (this.isLoading = loading)));
   }
 

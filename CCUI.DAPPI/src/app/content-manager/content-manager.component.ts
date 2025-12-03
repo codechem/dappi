@@ -19,7 +19,8 @@ import {
   selectIsSearching,
 } from '../state/content/content.selectors';
 import * as ContentActions from '../state/content/content.actions';
-import { ContentItem, PaginatedResponse, TableHeader } from '../models/content.model';
+import { ContentItem, CrudActions, PaginatedResponse, TableHeader } from '../models/content.model';
+import { selectAllowedCrudActions } from '../state/collection/collection.selectors';
 
 @Component({
   selector: 'app-content-manager',
@@ -57,7 +58,7 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
     private router: Router,
     private store: Store
   ) {}
-
+  
   ngOnInit(): void {
     this.subscription.add(
       this.isSearching$.subscribe((searching) => (this.isSearching = searching))
@@ -79,11 +80,14 @@ export class ContentManagerComponent implements OnInit, OnDestroy {
         }
       })
     );
+
     this.subscription.add(
       this.items$.subscribe((items) => {
         this.items = items?.Data ?? [];
       })
     );
+
+    
   }
 
   ngOnDestroy(): void {
