@@ -24,13 +24,12 @@ namespace Dappi.HeadlessCms.Tests
                 var existingDbContext = services.SingleOrDefault(x => x.ServiceType == typeof(TestDbContext));
                 if (existingDbContext != null)
                     services.Remove(existingDbContext);
-
+                
                 services.AddDbContext<TestDbContext>(options =>
                 {
                     options.UseNpgsql(_dbContainer.GetConnectionString(), b => b.MigrationsAssembly("Dappi.TestEnv"));
                 });
             });
-
             builder.ConfigureServices(services =>
             {
                 services.AddControllers();

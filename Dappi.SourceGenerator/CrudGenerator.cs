@@ -43,6 +43,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Interfaces;
+using Dappi.HeadlessCms.Extensions;
+using Dappi.HeadlessCms.Exceptions;
 using {item.ModelNamespace};
 using {item.RootNamespace}.Filtering;
 using {item.RootNamespace}.HelperDtos;
@@ -50,6 +52,7 @@ using {item.RootNamespace}.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
+using System.Dynamic;
 
 /*
 ==== area for testing ====
@@ -64,62 +67,77 @@ namespace {item.RootNamespace}.Controllers;
 [ApiController]
 [Route(""api/[controller]"")]
 public partial class {item.ClassName}Controller(
-    {dbContextData.ClassName} dbContext, 
+    {dbContextData.ClassName} dbContext,
+    IDataShaperService shaper, 
     IMediaUploadService uploadService) : ControllerBase
 {{
     [HttpGet]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
-    public async Task<IActionResult> Get{item.ClassName.Pluralize()}([FromQuery] {item.ClassName}Filter? filter)
+    public async Task<IActionResult> Get{item.ClassName.Pluralize()}([FromQuery] {item.ClassName}Filter? filter, [FromQuery] string? fields = null)
     {{
-        var query = dbContext.{item.ClassName.Pluralize()}.AsNoTracking().AsQueryable();
-       
-        query = query{includesCode};
-
-        if (filter != null)
+        try
         {{
-            query = LinqExtensions.ApplyFiltering(query, filter);
+            var query = dbContext.{item.ClassName.Pluralize()}.AsNoTracking().AsQueryable();
+           
+            query = query{includesCode};
+
+            if (filter != null)
+            {{
+                query = LinqExtensions.ApplyFiltering(query, filter);
+            }}
+
+            if (!string.IsNullOrEmpty(filter.SortBy))
+            {{
+                query = LinqExtensions.ApplySorting(query, filter.SortBy, filter.SortDirection);
+            }}
+
+            var total = await query.CountAsync();
+            var data = await query
+                .Skip(filter.Offset)
+                .Take(filter.Limit)
+                .ToListAsync();
+
+            var listDto = new ListResponseDTO<ExpandoObject>
+            {{
+                Data = data.Select(x => shaper.ShapeObject(x,fields)),
+                Limit = filter.Limit,
+                Offset = filter.Offset,
+                Total = total
+            }};
+
+            return Ok(listDto);
         }}
-
-        if (!string.IsNullOrEmpty(filter.SortBy))
+        catch(PropertyNotFoundException ex)
         {{
-            query = LinqExtensions.ApplySorting(query, filter.SortBy, filter.SortDirection);
+            return BadRequest(new {{message = ex.Message}});
         }}
-
-        var total = await query.CountAsync();
-        var data = await query
-            .Skip(filter.Offset)
-            .Take(filter.Limit)
-            .ToListAsync();
-
-        var listDto = new ListResponseDTO<{item.ClassName}>
-        {{
-            Data = data,
-            Limit = filter.Limit,
-            Offset = filter.Offset,
-            Total = total
-        }};
-
-        return Ok(listDto);
     }}
 
     [HttpGet(""{{id}}"")]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
-    public async Task<IActionResult> Get{item.ClassName}(Guid id)
+    public async Task<IActionResult> Get{item.ClassName}(Guid id, [FromQuery] string? fields = null)
     {{
-        if (id == Guid.Empty)
-            return BadRequest();
+        try
+        {{
+            if (id == Guid.Empty)
+                return BadRequest();
 
-        var query = dbContext.{item.ClassName.Pluralize()}.AsNoTracking().AsQueryable();
-       
-        query = query{includesCode};
+            var query = dbContext.{item.ClassName.Pluralize()}.AsNoTracking().AsQueryable();
+           
+            query = query{includesCode};
 
-        var result = await query
-            .FirstOrDefaultAsync(p => p.Id == id);
+            var result = await query
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-        if (result is null)
-            return NotFound();
+            if (result is null)
+                return NotFound();
 
-        return Ok(result);
+            return Ok(shaper.ShapeObject(result,fields));
+        }} 
+        catch(PropertyNotFoundException ex)
+        {{
+            return BadRequest(new {{message = ex.Message}});
+        }}
     }}
 
     [HttpPost]
