@@ -27,7 +27,6 @@ public class ModelsController : ControllerBase
     private readonly string _entitiesFolderPath;
     private readonly string _controllersFolderPath;
     private readonly IContentTypeChangesService _contentTypeChangesService;
-
     public ModelsController(DomainModelEditor domainModelEditor,
         DbContextEditor dbContextEditor,
         IContentTypeChangesService contentTypeChangesService)
@@ -287,6 +286,14 @@ public class ModelsController : ControllerBase
             return NotFound($"Model '{modelName}' not found.");
         }
         _domainModelEditor.ConfigureActions(modelName, request.CrudActions.ToArray());
+        Dictionary<string,string> newActions = new()
+        {
+            {"Actions",$"[{string.Join(", ", request.CrudActions)}]"}
+        };
+        await _contentTypeChangesService.AddContentTypeChangeAsync(modelName, 
+            newActions,
+            ContentTypeState.PendingActionsChange);
+        
         await _domainModelEditor.SaveAsync();
         
         return Ok(new {message = "Actions configured successfully."});

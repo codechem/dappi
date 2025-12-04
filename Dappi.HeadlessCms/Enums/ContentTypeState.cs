@@ -5,6 +5,8 @@ namespace Dappi.HeadlessCms.Enums
         PendingPublish = 1,
         PendingDelete,
         Published,
-        Deleted
+        Deleted,
+        PendingActionsChange,
+        ActionsChanged
     }
 }
