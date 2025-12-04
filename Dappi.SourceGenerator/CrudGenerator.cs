@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text;
+using Dappi.Core.Enums;
 using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Generators;
 using Dappi.SourceGenerator.Models;
@@ -71,19 +72,7 @@ public partial class {item.ClassName}Controller(
     IMediaUploadService uploadService) : ControllerBase
 {{
 
-    {GenerateGetByIdAction(item.CrudActions, item, includesCode)}
-    
-    {GenerateGetAction(item.CrudActions, item, includesCode)}
-
-    {GenerateGetAllAction(item.CrudActions, item, includesCode)}
-
-    {GeneratePostAction(item.CrudActions, item, collectionAddCode)}
-
-    {GeneratePostActionForMediaInfo(item.CrudActions, item)}
-
-    {GeneratePutAction(item.CrudActions, item, includesCode, collectionUpdateCode, mediaInfoUpdateCode)}
-
-    {GenerateDeleteAction(item.CrudActions, item, includeCode, removeCode)}
+    {AggregateActions(item,includesCode,collectionAddCode,collectionUpdateCode,mediaInfoUpdateCode,includeCode,removeCode)}    
 
     private dynamic GetDbSetForType(string typeName)
     {{
@@ -257,5 +246,25 @@ public partial class {item.ClassName}Controller(
 
         includeCode.AppendLine("                  .FirstOrDefault(p => p.Id == id);");
         return (includeCode.ToString().TrimEnd(), removeCode.ToString().TrimEnd());
+    }
+
+    private static string AggregateActions(SourceModel item, string includesCode, string collectionAddCode , string collectionUpdateCode, string mediaInfoUpdateCode, string includeCode, string removeCode)
+    {
+        var actions = new List<string>()
+        {
+            GenerateGetByIdAction(item.CrudActions, item, includesCode),
+            GenerateGetAction(item.CrudActions, item, includesCode),
+            GenerateGetAllAction(item.CrudActions, item, includesCode),
+            GeneratePostAction(item.CrudActions, item, collectionAddCode),
+            GeneratePostActionForMediaInfo(item.CrudActions, item),
+            GeneratePutAction(item.CrudActions, item, includesCode, collectionUpdateCode, mediaInfoUpdateCode),
+            GenerateDeleteAction(item.CrudActions, item, includeCode, removeCode),
+        };
+      var sb = new StringBuilder();
+      foreach (var action in actions.Where(action => !string.IsNullOrEmpty(action)))
+      {
+          sb.Append(action);
+      }
+      return sb.ToString();
     }
 }

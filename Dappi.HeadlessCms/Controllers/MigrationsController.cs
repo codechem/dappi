@@ -1,9 +1,13 @@
 using System.Diagnostics;
 using System.Reflection;
 using Dappi.HeadlessCms.Authentication;
+using Dappi.HeadlessCms.Enums;
+using Dappi.HeadlessCms.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Org.BouncyCastle.Bcpg.OpenPgp;
 
 namespace Dappi.HeadlessCms.Controllers;
 
@@ -15,29 +19,40 @@ public class MigrationController : ControllerBase
 {
     private readonly IHostApplicationLifetime _appLifetime;
     private readonly string _projectDirectory;
+    private readonly IContentTypeChangesService _contentTypeChangesService;
 
     public MigrationController(
-        IHostApplicationLifetime appLifetime)
+        IHostApplicationLifetime appLifetime, IContentTypeChangesService contentTypeChangesService)
     {
         _appLifetime = appLifetime;
-        _projectDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly() is not null ? Assembly.GetEntryAssembly().Location : Directory.GetCurrentDirectory());
+        _contentTypeChangesService = contentTypeChangesService;
+        _projectDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly() is not null
+            ? Assembly.GetEntryAssembly().Location
+            : Directory.GetCurrentDirectory());
     }
 
     [HttpPost]
-    public IActionResult ApplyMigrationsAndRestart()
+    public async Task<IActionResult> ApplyMigrationsAndRestart()
     {
         try
         {
-            if (OperatingSystem.IsWindows())
+            var draftModels = await _contentTypeChangesService.GetDraftsAsync().ToListAsync();
+            if (draftModels.Any(x => x.State is ContentTypeState.PendingPublish or ContentTypeState.PendingDelete))
             {
-                RunDbMigrationScenarioForWindows();
-            }
-            else
-            {
-                RunDbMigrationScenario();
+                if (OperatingSystem.IsWindows())
+                {
+                    RunDbMigrationScenarioForWindows();
+                }
+                else
+                {
+                    RunDbMigrationScenario();
+                }
+
+                return Ok("Migrations applied. Application restarting...");
             }
 
-            return Ok("Migrations applied. Application restarting...");
+            RestartApplication();
+            return Ok("No migrations to apply. Application restarting...");
         }
         catch (Exception ex)
         {
@@ -59,16 +74,15 @@ public class MigrationController : ControllerBase
         var currentDir = Directory.GetCurrentDirectory();
         var csproj = Directory.GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
         var scriptPath = Path.Combine(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Scripts", "Start-DappiMigrationRunner.ps1");
+            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Scripts",
+            "Start-DappiMigrationRunner.ps1");
         var procId = Environment.ProcessId;
 
-        var args = $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -ProjectPath \"{_projectDirectory}\" -Csproj \"{csproj}\" -ProcessId \"{procId}\" -MigrationName \"{GetMigrationName()}\"";
+        var args =
+            $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -ProjectPath \"{_projectDirectory}\" -Csproj \"{csproj}\" -ProcessId \"{procId}\" -MigrationName \"{GetMigrationName()}\"";
         var psi = new ProcessStartInfo
         {
-            FileName = "powershell.exe",
-            Arguments = args,
-            UseShellExecute = true,
-            CreateNoWindow = true,
+            FileName = "powershell.exe", Arguments = args, UseShellExecute = true, CreateNoWindow = true,
         };
 
         Process.Start(psi);
@@ -76,7 +90,6 @@ public class MigrationController : ControllerBase
 
     private void GenerateMigrationsIfNeeded()
     {
-
         var migrationDirectory = Path.Combine(_projectDirectory, "Migrations");
         if (!Directory.Exists(migrationDirectory))
         {

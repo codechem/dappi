@@ -16,7 +16,8 @@ namespace Dappi.SourceGenerator.Generators
             }
 
             return $$"""
-                     [HttpGet("{id}")]
+                     
+                         [HttpGet("{id}")]
                          {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
                          public async Task<IActionResult> Get{{item.ClassName}}(Guid id)
                          {
@@ -35,6 +36,7 @@ namespace Dappi.SourceGenerator.Generators
 
                              return Ok(result);
                          }
+                         
                      """;
         }
 
@@ -46,7 +48,8 @@ namespace Dappi.SourceGenerator.Generators
             }
 
             return $$"""
-                     [HttpGet]
+                     
+                         [HttpGet]
                          {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
                          public async Task<IActionResult> Get{{item.ClassName.Pluralize()}}([FromQuery] {{item.ClassName}}Filter? filter)
                          {
@@ -80,6 +83,7 @@ namespace Dappi.SourceGenerator.Generators
 
                              return Ok(listDto);
                          }
+                         
                      """;
         }
 
@@ -91,7 +95,8 @@ namespace Dappi.SourceGenerator.Generators
             }
 
             return $$"""
-                     [HttpGet("get-all")]
+                     
+                         [HttpGet("get-all")]
                          {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
                          public async Task<IActionResult> GetAll{{item.ClassName.Pluralize()}}()
                          {
@@ -101,6 +106,7 @@ namespace Dappi.SourceGenerator.Generators
                              
                              return Ok(new {items = await query.ToListAsync()});
                          }
+                         
                      """;
         }
 
@@ -113,7 +119,8 @@ namespace Dappi.SourceGenerator.Generators
             }
 
             return $$"""
-                     [HttpPost]
+                     
+                         [HttpPost]
                          {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Post)}}
                          public async Task<IActionResult> Create([FromBody] {{item.ClassName}} model)
                          {
@@ -143,7 +150,8 @@ namespace Dappi.SourceGenerator.Generators
             }
 
             return $$"""
-                      [HttpPost("upload-file/{id}")]
+                     
+                         [HttpPost("upload-file/{id}")]
                          {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Post)}}
                          public async Task<IActionResult> UploadFile(Guid id, IFormFile file, [FromForm] string fieldName)
                          {
@@ -180,6 +188,7 @@ namespace Dappi.SourceGenerator.Generators
                                  return BadRequest(new { message = ex.Message });
                              }
                          }
+                         
                      """;
         }
 
@@ -192,7 +201,8 @@ namespace Dappi.SourceGenerator.Generators
             }
 
             return $$"""
-                     [HttpPut("{id}")]
+                     
+                         [HttpPut("{id}")]
                          {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Put)}}
                          public async Task<IActionResult> Update(Guid id, [FromBody] {{item.ClassName}} model)
                          {
@@ -215,6 +225,7 @@ namespace Dappi.SourceGenerator.Generators
                              await dbContext.SaveChangesAsync();
                              return Ok(existingModel);
                          }
+                         
                      """;
         }
 
@@ -227,7 +238,8 @@ namespace Dappi.SourceGenerator.Generators
             }
 
             return $$"""
-                     [HttpDelete("{id}")]
+                     
+                         [HttpDelete("{id}")]
                          {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Delete)}}
                          public async Task<IActionResult> Delete(Guid id)
                          {
@@ -243,6 +255,7 @@ namespace Dappi.SourceGenerator.Generators
 
                              return Ok();
                          }
+                         
                      """;
         }
     }
