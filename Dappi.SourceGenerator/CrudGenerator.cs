@@ -75,6 +75,7 @@ public partial class {item.ClassName}Controller(
 
     [HttpGet]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}
+    [CollectionFilter]
     public async Task<IActionResult> Get{item.ClassName.Pluralize()}([FromQuery] {item.ClassName}Filter? filter, [FromQuery] string? fields = null)
     {{
         try
@@ -83,9 +84,11 @@ public partial class {item.ClassName}Controller(
            
             query = query{includesCode};
 
-            if (filter != null)
+            var filters = HttpContext.Items[CollectionFilter.FilterParamsKey] as List<Filter>;
+            if (filters is not null && filters.Count > 0)
             {{
                 query = LinqExtensions.ApplyFiltering(query, filter);
+                query = query.ApplyFilter(filters);
             }}
 
             if (!string.IsNullOrEmpty(filter.SortBy))
