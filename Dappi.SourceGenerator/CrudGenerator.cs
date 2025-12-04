@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text;
+using Dappi.Core.Attributes;
 using Dappi.Core.Enums;
 using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Generators;
@@ -26,6 +27,8 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
 
         foreach (var item in collectedData)
         {
+            var arguments = string.Join("," ,item.CrudActions.Select(x => $"{nameof(CrudActions)}.{x}"));
+            var controllerAttribute = $"[{CcControllerAttribute.ShortName}({arguments})]";
             var collectionAddCode = GenerateCollectionAddCode(item);
             var collectionUpdateCode = GenerateCollectionUpdateCode(item);
             var includesCode = GetIncludesIfAny(item.PropertiesInfos, mediaInfoPropertyNames, item.ClassName);
@@ -50,6 +53,8 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Extensions;
 using Dappi.HeadlessCms.Exceptions;
 using Dappi.HeadlessCms.ActionFilters;
+using Dappi.Core.Attributes;
+using Dappi.Core.Enums;
 using {item.ModelNamespace};
 using {item.RootNamespace}.Filtering;
 using {item.RootNamespace}.HelperDtos;
@@ -75,6 +80,8 @@ namespace {item.RootNamespace}.Controllers;
 {authorizeTag}
 [ApiController]
 [Route(""api/[controller]"")]
+[AuthorizeActionsFilter]
+{controllerAttribute}
 public partial class {item.ClassName}Controller(
     {dbContextData.ClassName} dbContext,
     IDataShaperService shaper, 
