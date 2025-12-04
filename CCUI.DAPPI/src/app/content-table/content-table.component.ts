@@ -30,8 +30,7 @@ import { Subscription } from 'rxjs';
 import { ContentItem, CrudActions, FieldType, ModelResponse, TableHeader } from '../models/content.model';
 import { DrawerComponent } from '../relation-drawer/drawer.component';
 import { ImageViewerComponent } from '../image-viewer/image-viewer.component';
-import { selectAllowedCrudActions, selectModelResponse } from '../state/collection/collection.selectors';
-import * as CollectionActions from '../state/collection/collection.actions';
+import { selectAllowedCrudActions } from '../state/collection/collection.selectors';
 
 @Component({
   selector: 'app-content-table',

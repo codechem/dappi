@@ -22,16 +22,19 @@ export class MenuComponent implements OnInit {
   @Output() delete = new EventEmitter<any>();
 
   allowedCrudActions$ = this.store.select(selectAllowedCrudActions);
-  allowedCrudActions: CrudActions[] | undefined = []
-  crudActions = CrudActions;
+
+  updateDisabled:boolean= false;
+  deleteDisabled:boolean = false;
+
   private subscription: Subscription = new Subscription();
 
   constructor(private store: Store) { }
   ngOnInit(): void {
     this.subscription.add(
-      this.allowedCrudActions$.subscribe((allowedCrudActions) => (
-        this.allowedCrudActions = allowedCrudActions
-      ))
+      this.allowedCrudActions$.subscribe((allowedCrudActions) => {
+        this.updateDisabled = !allowedCrudActions?.includes(CrudActions.Update);
+        this.deleteDisabled = !allowedCrudActions?.includes(CrudActions.Delete);
+      })
     )
   }
 
