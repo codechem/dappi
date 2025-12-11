@@ -31,5 +31,41 @@ namespace Dappi.HeadlessCms.Extensions
             return !SyntaxFacts.IsKeywordKind(keywordKind);
         }
         
+        public static object ConvertValue(this string value)
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            var values = value.Split(',');
+            var convertedValues = new List<object>();
+            
+            foreach (var v in values)
+            {
+                if (int.TryParse(v, out var intValue))
+                {
+                    convertedValues.Add(intValue);
+                }
+                else if (DateOnly.TryParse(v, out var dateOnlyValue))
+                {
+                    convertedValues.Add(v);
+                }
+                else if (DateTime.TryParse(v, out var dateTimeValue))
+                {
+                    convertedValues.Add(v);
+                }
+                else if (bool.TryParse(v, out var boolValue))
+                {
+                    convertedValues.Add(boolValue);
+                }
+                else if (Guid.TryParse(v, out var guidValue))
+                {
+                    convertedValues.Add(guidValue);
+                }
+                else
+                {
+                    convertedValues.Add(v);
+                }
+            }
+            
+            return convertedValues.Count > 1 ? convertedValues : convertedValues.First();
+        }
     }
 }

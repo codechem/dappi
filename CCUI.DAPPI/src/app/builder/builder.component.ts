@@ -174,10 +174,14 @@ export class BuilderComponent implements OnInit, OnDestroy {
             }
             break;
           case 'int':
-          case 'double':
-          case 'decimal':
             type = 'Number';
             iconText = '123';
+            break;
+          case 'double':
+          case 'decimal':
+          case 'float':
+            type = 'Decimal';
+            iconText = '1.75';
             break;
           case 'DateOnly':
             type = 'Date';
