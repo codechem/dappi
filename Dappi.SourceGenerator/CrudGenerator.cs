@@ -53,6 +53,10 @@ using {item.RootNamespace}.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
+using System.Collections;
+using Dappi.Core.Constants;
+using System.Globalization;
+using System.Linq;
 using System.Dynamic;
 
 /*
@@ -187,6 +191,121 @@ public partial class {item.ClassName}Controller(
         return Ok(existingModel);
     }}
 
+    [HttpPatch(""{{id}}"")]
+    public async Task<IActionResult> JsonPatch{item.ClassName}(Guid id, JsonDocument patchOperations)
+    {{
+        if (patchOperations is null || id == Guid.Empty)
+            return BadRequest(""Invalid data provided."");
+
+        var entity = await dbContext.{item.ClassName.Pluralize()}{includesCode}.FirstOrDefaultAsync(s => s.Id == id);
+        
+        if (entity is null)
+        {{
+            return NotFound(""{item.ClassName} with this id not found."");
+        }}
+        
+        if (patchOperations.RootElement.ValueKind == JsonValueKind.Array)
+        {{
+            foreach (var patchOperation in patchOperations.RootElement.EnumerateArray())
+            {{
+                var hasOperation = patchOperation.TryGetProperty(JsonPatchProperties.Operation, out var operation);
+                var hasPath = patchOperation.TryGetProperty(JsonPatchProperties.Path, out var path);
+                var hasValue = patchOperation.TryGetProperty(JsonPatchProperties.Value, out var value);
+                
+                if (!hasOperation)
+                    return BadRequest(""Invalid data provided. The operation is a required property."");
+
+                if (operation.ValueKind == JsonValueKind.String)
+                {{
+                    var propertyPathValue = path.GetString();
+                    TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
+                    var propertyPath = propertyPathValue[0] == '/' ? propertyPathValue.Substring(1, propertyPathValue[propertyPathValue.Length - 1] == '/' ? propertyPathValue.Length - 2 : propertyPathValue.Length - 1) : propertyPathValue;
+                    propertyPath = textInfo.ToTitleCase(propertyPath);
+                    var (propertyEntity, property, propertyEntityInterfaces, isEnumerable, isCollection) = GetEntityProperty(entity, propertyPath);
+                    var propertyInterfaces = property?.PropertyType?.GetInterfaces();
+                    switch (operation.GetString())
+                    {{
+                        case JsonPatchOperations.Add:
+                            if (!hasPath || !hasValue)
+                                return BadRequest(""Invalid data provided. Path and value are required properties for the add operation."");
+
+                            if (property.PropertyType.IsGenericType &&
+                                (propertyInterfaces.Contains(typeof(ICollection)) || propertyInterfaces.Contains(typeof(IEnumerable))))
+                            {{
+                                dynamic propertyList = property.GetValue(propertyEntity);
+                                dynamic deserializedValue = value.Deserialize(property.PropertyType.GetGenericArguments()[0]);
+                                propertyList?.Add(deserializedValue);
+                                property.SetValue(propertyEntity, propertyList);
+                            }}
+                            else
+                            {{
+                                SetValueToProperty(propertyEntity, property, value);
+                            }}
+                            break;
+                        case JsonPatchOperations.Replace:
+                            if (!hasPath || !hasValue)
+                                return BadRequest(""Invalid data provided. Path and value are required properties for the replace operation."");
+                            
+                            SetValueToProperty(propertyEntity, property, value);
+                            break;
+                        case JsonPatchOperations.Remove:
+                            if (!hasPath)
+                                return BadRequest(""Invalid data provided. The path is a required property for the remove operation."");
+
+                            if (propertyEntity.GetType().IsGenericType &&
+                                (isCollection || isEnumerable))
+                            {{
+                                var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
+                                        StringComparison.InvariantCultureIgnoreCase) + 1, 1);
+                                var enumerableList = propertyEntity as IEnumerable<object>;
+                                if (int.TryParse(itemIndex, out int index))
+                                {{
+                                    var arrayElement = enumerableList.ElementAt(index);
+                                    dbContext.Remove(arrayElement);
+                                }}
+                            }}
+                            else
+                                SetValueToProperty(propertyEntity, property, null);
+                            break;
+                        case JsonPatchOperations.Test:
+                            if (!hasPath || !hasValue)
+                                return BadRequest(""Invalid data provided. Path and value are required properties for the test operation."");
+
+                            var result = property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType));
+                            if (result)                            
+                                return Ok(result);
+                            return BadRequest(result);
+                        case JsonPatchOperations.Copy:
+                            var hasSource = patchOperation.TryGetProperty(JsonPatchProperties.From, out var from);
+                            if (!hasPath || !hasSource)
+                                return BadRequest(""Invalid data provided. Path and from are required properties for the copy operation."");
+
+                            if (path.ValueKind == JsonValueKind.String && from.ValueKind == JsonValueKind.String)
+                            {{
+                                var sourcePath = from.GetString();
+                                var destinationPath = propertyPath;
+                                if (string.IsNullOrEmpty(sourcePath) && string.IsNullOrEmpty(destinationPath))
+                                {{
+                                    return BadRequest(""Invalid data provided."");
+                                }}
+                                var sourcePropertyPath = sourcePath[0] == '/' ? sourcePath.Substring(1, sourcePath[sourcePath.Length - 1] == '/' ? sourcePath.Length - 2 : sourcePath.Length - 1) : sourcePath;
+                                sourcePropertyPath = textInfo.ToTitleCase(sourcePropertyPath);
+                                var (sourceEntity, sourceProperty, sourceEntityInterfaces, isSourceEnumerable, isSourceCollection) = GetEntityProperty(entity, sourcePropertyPath);
+                                property.SetValue(propertyEntity, sourceProperty.GetValue(sourceEntity));
+                            }}
+                            break;
+                    }}
+                }}
+            }}
+        }}
+        else
+        {{
+            return BadRequest(""Data is not in valid format."");
+        }}
+        await dbContext.SaveChangesAsync();
+        return Ok(entity);
+    }}
+
     [HttpDelete(""{{id}}"")]
     {PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Delete)}
     public async Task<IActionResult> Delete(Guid id)
@@ -241,6 +360,39 @@ public partial class {item.ClassName}Controller(
             return BadRequest(new {{ message = ex.Message }});
         }}
     }}
+
+    private static (object entity, PropertyInfo property, Type[] entityInterfaces, bool isEnumerable, bool isCollection) GetEntityProperty(object entity, string propertyName)
+    {{
+        if (entity is null || string.IsNullOrEmpty(propertyName)) throw new ArgumentNullException(nameof(entity));
+        var entityInterfaces = entity.GetType().GetInterfaces();
+        var isEnumerable = entityInterfaces.Contains(typeof(IEnumerable));
+        var isCollection = entityInterfaces.Contains(typeof(ICollection));
+        if (!propertyName.Contains(""/""))
+        {{
+            var property = entity.GetType().GetProperty(propertyName);
+            return (entity, property, entityInterfaces, isEnumerable, isCollection);
+        }}
+        
+        var nestedProperties = propertyName.Split('/');
+        var nestedPropertyName = nestedProperties[0];
+        if (int.TryParse(nestedPropertyName, out int index))
+        {{
+            if (isCollection || isEnumerable)
+            {{
+                var array = entity as IEnumerable<object>;
+                var arrayElement = array.ElementAt(index);
+                return GetEntityProperty(arrayElement, string.Join('/', nestedProperties.Skip(1)));
+            }}
+        }}
+        var nestedEntity = entity.GetType().GetProperty(nestedPropertyName)?.GetValue(entity);
+        return GetEntityProperty(nestedEntity, string.Join('/', nestedProperties.Skip(1)));
+    }}
+
+    private static void SetValueToProperty(object entity, PropertyInfo property, JsonElement? value)
+    {{
+        property.SetValue(entity, value?.Deserialize(property.PropertyType));
+    }}
+
 
     private dynamic GetDbSetForType(string typeName)
     {{
