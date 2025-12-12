@@ -8,7 +8,7 @@ import { FieldItem, FieldsListComponent } from '../fields-list/fields-list.compo
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { filter, Subscription, take } from 'rxjs';
 import { MatSpinner } from '@angular/material/progress-spinner';
-import { ModelField } from '../models/content.model';
+import { ModelField, ModelResponse } from '../models/content.model';
 import { select, Store } from '@ngrx/store';
 import * as CollectionActions from '../state/collection/collection.actions';
 import * as ContentActions from '../state/content/content.actions';
@@ -17,6 +17,7 @@ import {
   selectCollectionTypes,
   selectDraftCollectionTypes,
   selectFields,
+  selectModelResponse,
   selectSaveError,
   selectServerRestarting,
 } from '../state/collection/collection.selectors';
@@ -24,6 +25,7 @@ import {MatMenuModule} from '@angular/material/menu';
 import { loadCollectionTypes } from '../state/collection/collection.actions';
 import { DeleteColletionTypeDialogComponent } from '../delete-colletion-type-dialog/delete-colletion-type-dialog.component';
 import { AddCollectionTypeDialogComponent } from '../add-collection-type-dialog/add-collection-type-dialog.component';
+import { ConfigureActionsDialogComponent } from '../configure-actions-dialog/configure-actions-dialog.component';
 @Component({
   selector: 'app-builder',
   standalone: true,
@@ -42,6 +44,7 @@ import { AddCollectionTypeDialogComponent } from '../add-collection-type-dialog/
 export class BuilderComponent implements OnInit, OnDestroy {
   disabled = false;
   fieldsData: FieldItem[] = [];
+  model: ModelResponse | null = null;
   selectedType = '';
   isSaving = false;
 
@@ -49,7 +52,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
 
   selectedType$ = this.store.select(selectSelectedType);
   fieldsData$ = this.store.select(selectFields);
-
+  model$ = this.store.select(selectModelResponse);
   draftCollectionTypes: string[] = [];
   draftCollectionTypes$ = this.store.select(selectDraftCollectionTypes);
 
@@ -85,11 +88,17 @@ export class BuilderComponent implements OnInit, OnDestroy {
         this.store.dispatch(CollectionActions.loadFields({ modelType: selectedType }));
       })
     );
+    
     this.subscription.add(
-      this.fieldsData$.subscribe((fields) => {
-        this.formatFields(fields);
+      this.model$.subscribe(model => this.model = model)
+    )
+    
+    this.subscription.add(
+      this.fieldsData$.subscribe((Fields) => {
+        this.formatFields(this.model?.Fields);
       })
     );
+
     this.subscription.add(
       this.store
         .pipe(
@@ -152,7 +161,8 @@ export class BuilderComponent implements OnInit, OnDestroy {
     this.disabled = this.draftCollectionTypes.length == 0;
   }
 
-  private formatFields(fields: ModelField[]): void {
+  private formatFields(fields: ModelField[] | undefined): void {
+    if(!fields) return;
     if (fields && fields.length > 0) {
       this.fieldsData = fields.map((field) => {
         let fieldType = field.isEnum ? 'enum' : field.fieldType;
@@ -239,6 +249,16 @@ export class BuilderComponent implements OnInit, OnDestroy {
         this.store.dispatch(CollectionActions.loadFields({modelType : newSelection}));
       })
     );
+  }
+
+  openConfigureActionsDialog():void{
+    if(!this.selectedType) return;
+    const dialogRef = this.dialog.open(ConfigureActionsDialogComponent, {
+      width: '600px',
+      panelClass: 'dark-theme-dialog',
+      disableClose: true,
+      data: { selectedType: this.selectedType },
+    });
   }
 
   private closeModal(): void {

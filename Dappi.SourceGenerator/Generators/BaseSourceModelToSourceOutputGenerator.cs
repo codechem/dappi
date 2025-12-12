@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Dappi.Core.Attributes;
+using Dappi.Core.Extensions;
 using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
@@ -13,7 +14,7 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var syntaxProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
-            typeof(CCControllerAttribute).FullName ?? throw new NullReferenceException(),
+            typeof(CcControllerAttribute).FullName ?? throw new NullReferenceException(),
             predicate: (node, _) => node is ClassDeclarationSyntax,
             transform: (ctx, _) =>
             {
@@ -22,6 +23,9 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
                 var namedClassTypeSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
                 var authorizeAttributeName =
                     typeof(DappiAuthorizeAttribute).FullName ?? throw new NullReferenceException();
+
+                var crudActions = classDeclaration.ExtractAllowedCrudActions();
+
                 var authorizeAttributes = classSymbol.GetAttributes()
                     .Where(attr => attr.AttributeClass?.ToDisplayString() == authorizeAttributeName)
                     .Select(attr =>
@@ -42,11 +46,11 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
                                     .Select(v => v.Value?.ToString() ?? string.Empty)
                                     .ToList();
                             }
-        
+
                             if (namedArg is { Key: nameof(DappiAuthorizeAttribute.Methods), Value.Kind: TypedConstantKind.Array })
                             {
                                 methods = namedArg.Value.Values
-                                    .Select(v => 
+                                    .Select(v =>
                                     {
                                         if (v is { Value: not null, Type: INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType })
                                         {
@@ -61,10 +65,10 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
                                     .ToList();
                             }
                         }
-
+                        
                         return new DappiAuthorizeInfo
                         {
-                            Roles = roles,
+                            Roles = roles, 
                             Methods = methods
                         };
                     })
@@ -76,7 +80,8 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
                     ModelNamespace = classSymbol.ContainingNamespace.ToString() ?? string.Empty,
                     RootNamespace = classSymbol.ContainingNamespace.GetRootNamespace(),
                     PropertiesInfos = GoThroughPropertiesAndGatherInfo(namedClassTypeSymbol),
-                    AuthorizeAttributes = authorizeAttributes
+                    AuthorizeAttributes = authorizeAttributes,
+                    CrudActions = crudActions.ToList()
                 };
             });
 

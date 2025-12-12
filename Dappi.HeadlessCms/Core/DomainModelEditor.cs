@@ -1,4 +1,6 @@
 using System.Reflection;
+using Dappi.Core.Attributes;
+using Dappi.Core.Enums;
 using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
@@ -41,19 +43,19 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         return results.Where(r => r != null).ToArray()!;
     }
 
-    public void CreateEntityModel(string name, bool isAuditableEntity = false)
+    public void CreateEntityModel(ModelRequest request)
     {
         var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
         var assemblyName = assembly.GetName().Name;
 
-        var classDeclaration = SyntaxFactory.ClassDeclaration(name)
+        var classDeclaration = SyntaxFactory.ClassDeclaration(request.ModelName)
             .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-            .AddAttributeLists(RoslynHelpers.WithCcControllerAttribute())
+            .AddAttributeLists(RoslynHelpers.WithCcControllerAttribute(request.CrudActions))
             .AddMembers(RoslynHelpers.IdentityProperty()
                 .WithAccessorList(RoslynHelpers.WithGetAndSet())
             );
 
-        if (isAuditableEntity)
+        if (request.IsAuditableEntity)
         {
             classDeclaration = classDeclaration.AddBaseListTypes(
                 SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(nameof(IAuditableEntity)))
@@ -69,7 +71,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
             .AddMembers(namesSpaceDeclaration);
 
         var code = compilationUnit.NormalizeWhitespace().ToFullString();
-        _codeChanges[name] = code;
+        _codeChanges[request.ModelName] = code;
         HasChanges = true;
     }
 
@@ -88,7 +90,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         {
             throw new Exception($"Class {modelName} not found.");
         }
-
+        
         var properties = GetRelatedPropertiesForDeletion
             (classNode, relatedModelName, DappiRelationAttribute.ShortName);
         var newRoot = root.RemoveNodes(properties, SyntaxRemoveOptions.KeepNoTrivia);
@@ -103,6 +105,35 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
             _codeChanges[modelName] = newCode;
         }
 
+        HasChanges = true;
+    }
+
+    public void ConfigureActions(string modelName, CrudActions[] actions)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        var syntaxTree = _codeChanges.TryGetValue(modelName, out var value)
+            ? CSharpSyntaxTree.ParseText(value)
+            : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = root.DescendantNodes().FindClassDeclarationByName(modelName);
+        if (classNode == null)
+        {
+            throw new Exception("Class not found");
+        }
+        
+        List<AttributeArgumentSyntax> arguments = [];
+        arguments.AddRange(actions.Select(a =>
+            SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression($"{nameof(CrudActions)}.{a}"))));
+        
+        var attribute = classNode.AttributeLists.First(x =>
+                x.Attributes.Any(a => a.Name.ToString() == CcControllerAttribute.ShortName))
+            .Attributes.First();
+        var newAttribute = attribute.WithArgumentList(SyntaxFactory.AttributeArgumentList(SyntaxFactory.SeparatedList(arguments)));
+        var newClassNode = classNode.ReplaceNode(attribute, newAttribute);
+        var newRoot = root.ReplaceNode(classNode, newClassNode);
+        var newCode = newRoot.NormalizeWhitespace().ToFullString();
+        _codeChanges[modelName] = newCode;
         HasChanges = true;
     }
 
@@ -353,6 +384,8 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations.Schema")),
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.HeadlessCms.Models")),
         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.Core.Attributes")),
-        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.HeadlessCms.Core.Attributes"))
+        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.HeadlessCms.Core.Attributes")),
+        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Dappi.Core.Enums"))
+        
     ];
 }

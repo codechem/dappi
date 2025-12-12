@@ -1,3 +1,4 @@
+using Dappi.Core.Enums;
 using Microsoft.CodeAnalysis;
 
 namespace Dappi.SourceGenerator.Models;
@@ -9,6 +10,7 @@ public class SourceModel
     public string RootNamespace { get; set; }  = string.Empty;
     public List<PropertyInfo> PropertiesInfos { get; set; } = [];
     public List<DappiAuthorizeInfo> AuthorizeAttributes { get; set; } = [];
+    public List<CrudActions> CrudActions { get; set; } = [];
 }
 
 public class PropertyInfo

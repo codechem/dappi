@@ -117,12 +117,16 @@ public static class AppExtensions
         {
             var dbContext = serviceProvider.GetRequiredService<TDbContext>();
             await dbContext.ContentTypeChanges
-                .Where(ctc => ctc.State == ContentTypeState.PendingPublish || ctc.State == ContentTypeState.PendingDelete)
+                .Where(ctc =>
+                    ctc.State == ContentTypeState.PendingPublish || ctc.State == ContentTypeState.PendingDelete ||
+                    ctc.State == ContentTypeState.PendingActionsChange)
                 .ExecuteUpdateAsync(setters => 
                     setters.SetProperty(e => e.State,
                         e => e.State == ContentTypeState.PendingPublish
                             ? ContentTypeState.Published
-                            : ContentTypeState.Deleted));
+                            : e.State == ContentTypeState.PendingDelete ? ContentTypeState.Deleted 
+                            : e.State == ContentTypeState.PendingActionsChange ? ContentTypeState.ActionsChanged 
+                                : e.State));
         }
         catch (Exception ex)
         {

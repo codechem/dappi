@@ -22,14 +22,18 @@
     width: 100%;
     transition: background-color 0.2s ease;
 
-    &:hover,
-    &:focus {
+    &:hover:not([disabled]),
+    &:focus:not([disabled]) {
       background-color: vars.$background-hover;
       outline: none;
     }
 
     &:active {
       background-color: vars.$background-hover;
+    }
+
+    &:disabled{
+      cursor: not-allowed;
     }
 
     mat-icon {
@@ -41,9 +45,15 @@
 
     &--edit {
       color: vars.$text-primary;
-
+      
       mat-icon {
         color: vars.$text-primary;
+      }
+
+      &:disabled{
+        *{
+          color: rgba(255, 255, 255, 0.38);
+        }
       }
     }
 
@@ -52,6 +62,12 @@
 
       mat-icon {
         color: vars.$error-light;
+      }
+
+      &:disabled{
+        *{
+          color : #9f2f22
+        }
       }
     }
   }

@@ -2,7 +2,7 @@ import { AbstractControl, ValidationErrors } from '@angular/forms';
 import { Observable, of, take } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ModelField } from '../models/content.model';
-
+import { ModelResponse } from '../models/content.model'; 
 const CSHARP_KEYWORDS = [
   'abstract',
   'as',
@@ -137,7 +137,7 @@ export class ModelValidators {
   }
 
   static fieldNameIsTaken(
-    collectionTypeFields: Observable<ModelField[]>
+    collectionTypeFields: Observable<ModelField[] | undefined>
   ): (control: AbstractControl) => Observable<ValidationErrors | null> {
     return (control: AbstractControl): Observable<ValidationErrors | null> => {
       if (!control.value) {
@@ -145,8 +145,8 @@ export class ModelValidators {
       }
       return collectionTypeFields.pipe(
         take(1),
-        map((collectionTypeFields) => {
-          return collectionTypeFields.some(
+        map((fields) => {
+          return fields?.some(
             (x) => x.fieldName.toLowerCase() === control.value.toLowerCase()
           )
             ? { fieldNameIsTaken: true }

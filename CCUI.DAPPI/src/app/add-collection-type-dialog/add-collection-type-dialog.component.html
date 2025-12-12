@@ -11,29 +11,24 @@
       <div class="form-field">
         <mat-form-field appearance="outline" class="input-field">
           <mat-label>Display name</mat-label>
-          <input
-            matInput
-            id="displayName"
-            formControlName="displayName"
-            placeholder="Enter display name"
-          />
+          <input matInput id="displayName" formControlName="displayName" placeholder="Enter display name" />
           @if (
-            collectionForm.get('displayName')?.hasError('required') &&
-            collectionForm.get('displayName')?.touched
+          collectionForm.get('displayName')?.hasError('required') &&
+          collectionForm.get('displayName')?.touched
           ) {
-            <mat-error>Display name is required</mat-error>
+          <mat-error>Display name is required</mat-error>
           }
           @if (collectionForm.get('displayName')?.hasError('maxlength')) {
-            <mat-error>Display name cannot exceed 50 characters</mat-error>
+          <mat-error>Display name cannot exceed 50 characters</mat-error>
           }
           @if (collectionForm.get('displayName')?.hasError('invalidPascalCase')) {
-            <mat-error> Collection name format is invalid </mat-error>
+          <mat-error> Collection name format is invalid </mat-error>
           }
           @if (collectionForm.get('displayName')?.hasError('reservedKeyword')) {
-            <mat-error> Collection name is a reserved C# keyword </mat-error>
+          <mat-error> Collection name is a reserved C# keyword </mat-error>
           }
           @if (collectionForm.get('displayName')?.hasError('collectionNameIsTaken')) {
-            <mat-error> Collection name is already used </mat-error>
+          <mat-error> Collection name is already used </mat-error>
           }
         </mat-form-field>
         <div class="helper-text">
@@ -42,10 +37,28 @@
         </div>
       </div>
       <div class="form-field">
-          <mat-checkbox formControlName="isAuditableEntity" id="isAuditableEntity">Auditable Entity</mat-checkbox>
-          <div>
-              <small class="description">Save audit trail for entity</small>
+        <mat-checkbox formControlName="isAuditableEntity" id="isAuditableEntity">Auditable Entity</mat-checkbox>
+        <div>
+          <small class="description">Save audit trail for entity</small>
+        </div>
+      </div>
+
+      <p>Allowed Actions</p>
+      <div class="actions-container">
+        @for (action of crudActions; track $index) {
+          <div class="action">
+            <mat-label>
+              <mat-checkbox type="checkbox" 
+                [value]="action.value.toString()" 
+                (change)="onCheckboxChange($event, action.value)" 
+                [checked]="selectedCrudActions.value.includes(action.value)" />
+              {{ action.label }}
+            </mat-label>
           </div>
+        }
+      </div>
+      <div class="helper-text">
+        *If no actions are selected, resource will have default actions (Get,GetById,Post,Put,Update)
       </div>
     </form>
     <hr />
@@ -54,10 +67,10 @@
   <div class="dialog-footer">
     <button mat-flat-button class="continue-button" [disabled]="!canSubmit" (click)="onContinue()">
       @if (!isSubmitting) {
-        <span>Continue</span>
+      <span>Continue</span>
       }
       @if (isSubmitting) {
-        <span>Processing...</span>
+      <span>Processing...</span>
       }
     </button>
   </div>

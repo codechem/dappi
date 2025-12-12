@@ -3,6 +3,7 @@ using Dappi.Core.Utils;
 using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Core.Attributes;
+using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
 using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Extensions;
@@ -10,6 +11,8 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp;
+using Dappi.Core.Extensions;
 
 namespace Dappi.HeadlessCms.Controllers;
 
@@ -77,7 +80,7 @@ public class ModelsController : ControllerBase
 
         try
         {
-            _domainModelEditor.CreateEntityModel(request.ModelName, request.IsAuditableEntity);
+            _domainModelEditor.CreateEntityModel(request);
 
             await _contentTypeChangesService.AddContentTypeChangeAsync(
                 request.ModelName,
@@ -120,13 +123,13 @@ public class ModelsController : ControllerBase
                 return NotFound("Model file not found.");
             }
 
-            var properties = _domainModelEditor.GetPropertiesContainingAttribute(modelName, DappiRelationAttribute.ShortName).ToList();
+            var properties = _domainModelEditor
+                .GetPropertiesContainingAttribute(modelName, DappiRelationAttribute.ShortName).ToList();
             var relatedEntities = _domainModelEditor.GetRelatedEntities(properties);
 
             _dbContextEditor.RemoveSetFromDbContext(new DomainModelEntityInfo
             {
-                Name = modelName,
-                Namespace = Directory.GetCurrentDirectory()
+                Name = modelName, Namespace = Directory.GetCurrentDirectory()
             });
 
             _dbContextEditor.DeleteRelations(modelName, relatedEntities);
@@ -147,13 +150,11 @@ public class ModelsController : ControllerBase
             {
                 System.IO.File.Delete(controllerFilePath);
             }
-            await _contentTypeChangesService.AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(), ContentTypeState.PendingDelete);
 
-            return Ok(new
-            {
-                Message = $"Model '{modelName}' deleted successfully.",
-                FilePath = modelFilePath
-            });
+            await _contentTypeChangesService.AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(),
+                ContentTypeState.PendingDelete);
+
+            return Ok(new { Message = $"Model '{modelName}' deleted successfully.", FilePath = modelFilePath });
         }
         catch (Exception ex)
         {
@@ -212,7 +213,8 @@ public class ModelsController : ControllerBase
 
                     case Constants.Relations.ManyToOne:
                         HandleManyToOneRelationship(request, modelName);
-                        relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}", Constants.Relations.OneToMany);
+                        relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
+                            Constants.Relations.OneToMany);
                         break;
 
                     case Constants.Relations.ManyToMany:
@@ -254,7 +256,8 @@ public class ModelsController : ControllerBase
 
             if (request.RelatedTo != null && relatedFieldDict.Count != 0)
             {
-                await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(request.RelatedTo, relatedFieldDict);
+                await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(request.RelatedTo,
+                    relatedFieldDict);
             }
 
             await _domainModelEditor.SaveAsync();
@@ -262,7 +265,8 @@ public class ModelsController : ControllerBase
 
             return Ok(new
             {
-                Message = $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
+                Message =
+                    $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
                 FilePath = modelFilePath
             });
         }
@@ -273,8 +277,30 @@ public class ModelsController : ControllerBase
         }
     }
 
+    [HttpPut("configure-actions/{modelName}")]
+    public async Task<IActionResult> ConfigureActions([FromRoute] string modelName , [FromBody] ConfigureModelActionsRequest request)
+    {
+        var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
+        if (!System.IO.File.Exists(modelFilePath))
+        {
+            return NotFound($"Model '{modelName}' not found.");
+        }
+        _domainModelEditor.ConfigureActions(modelName, request.CrudActions.ToArray());
+        Dictionary<string,string> newActions = new()
+        {
+            {"Actions",$"[{string.Join(", ", request.CrudActions)}]"}
+        };
+        await _contentTypeChangesService.AddContentTypeChangeAsync(modelName, 
+            newActions,
+            ContentTypeState.PendingActionsChange);
+        
+        await _domainModelEditor.SaveAsync();
+        
+        return Ok(new {message = "Actions configured successfully."});
+    }
+
     [HttpGet("fields/{modelName}")]
-    public IActionResult GetModelFields(string modelName)
+    public async Task<IActionResult> GetModelFields(string modelName)
     {
         var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
         if (!System.IO.File.Exists(modelFilePath))
@@ -282,9 +308,18 @@ public class ModelsController : ControllerBase
             return NotFound($"Model '{modelName}' not found.");
         }
 
-        var modelCode = System.IO.File.ReadAllText(modelFilePath);
-        var fieldData = ExtractFieldsFromModel(modelCode);
-        return Ok(fieldData);
+        var modelCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
+        var syntaxTree = CSharpSyntaxTree.ParseText(modelCode);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName) ?? 
+                               throw new Exception("Error extracting allowed actions.");
+        
+        var res = new ModelResponse
+        {
+            Fields = ExtractFieldsFromModel(modelCode),
+            AllowedActions = classDeclaration.ExtractAllowedCrudActions().ToList()
+        };
+        return Ok(res);
     }
 
     [HttpGet("hasRelatedProperties/{modelName}")]
@@ -301,7 +336,8 @@ public class ModelsController : ControllerBase
             return NotFound("Model class not found.");
         }
 
-        var properties = _domainModelEditor.GetPropertiesContainingAttribute(modelName, DappiRelationAttribute.ShortName).ToList();
+        var properties = _domainModelEditor
+            .GetPropertiesContainingAttribute(modelName, DappiRelationAttribute.ShortName).ToList();
         var hasRelatedProperties = _domainModelEditor.GetRelatedEntities(properties).Count > 0;
 
         return Ok(new { hasRelatedProperties });
@@ -334,7 +370,8 @@ public class ModelsController : ControllerBase
         _domainModelEditor.AddProperty(relatedModelProperty);
         _domainModelEditor.AddProperty(relatedModelProperty with { Name = foreignKeyRelatedName, Type = nameof(Guid) });
 
-        _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.OneToOne, request.FieldName, request.RelatedRelationName ?? modelName);
+        _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.OneToOne,
+            request.FieldName, request.RelatedRelationName ?? modelName);
     }
 
     private void HandleOneToManyRelationship(FieldRequest request, string modelName)
@@ -364,7 +401,8 @@ public class ModelsController : ControllerBase
         _domainModelEditor.AddProperty(relatedModelProperty);
         _domainModelEditor.AddProperty(relatedModelProperty with { Name = foreignKeyName, Type = nameof(Guid) });
 
-        _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.OneToMany, request.FieldName, request.RelatedRelationName ?? modelName);
+        _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.OneToMany,
+            request.FieldName, request.RelatedRelationName ?? modelName);
     }
 
     private void HandleManyToOneRelationship(FieldRequest request, string modelName)
@@ -394,7 +432,8 @@ public class ModelsController : ControllerBase
         };
         _domainModelEditor.AddProperty(relatedModelProperty);
 
-        _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToOne, request.FieldName, request.RelatedRelationName ?? $"{modelName.Pluralize()}");
+        _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToOne,
+            request.FieldName, request.RelatedRelationName ?? $"{modelName.Pluralize()}");
     }
 
     private void HandleManyToManyRelationship(FieldRequest request, string modelName)
@@ -421,7 +460,8 @@ public class ModelsController : ControllerBase
         };
         _domainModelEditor.AddProperty(relatedModelProperty);
 
-        _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToMany, request.FieldName, request.RelatedRelationName ?? $"{modelName.Pluralize()}");
+        _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToMany,
+            request.FieldName, request.RelatedRelationName ?? $"{modelName.Pluralize()}");
     }
 
     private static List<FieldsInfo> ExtractFieldsFromModel(string classCode)
@@ -454,9 +494,7 @@ public class ModelsController : ControllerBase
 
                 fieldList.Add(new FieldsInfo
                 {
-                    FieldName = fieldName,
-                    FieldType = fieldType.Replace("?", ""),
-                    IsRequired = isRequired
+                    FieldName = fieldName, FieldType = fieldType.Replace("?", ""), IsRequired = isRequired
                 });
             }
         }

@@ -72,5 +72,16 @@ namespace Dappi.HeadlessCms.Services
                 throw;
             }
         }
+
+        public IQueryable<ContentTypeChange> GetDraftsAsync()
+        {
+            var draftModels = _dbContext.ContentTypeChanges
+                .AsNoTracking()
+                .Where(ctc =>
+                    ctc.State == ContentTypeState.PendingPublish || ctc.State == ContentTypeState.PendingDelete ||
+                    ctc.State == ContentTypeState.PendingActionsChange);
+            
+            return draftModels;
+        }
     }
 }

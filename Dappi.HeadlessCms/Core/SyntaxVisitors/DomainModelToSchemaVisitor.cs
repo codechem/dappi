@@ -28,7 +28,7 @@ public class DomainModelToSchemaVisitor : CSharpSyntaxWalker
     
     public override void VisitClassDeclaration(ClassDeclarationSyntax node)
     {
-        var attributeShortName = nameof(CCControllerAttribute).Replace("Attribute", "");
+        var attributeShortName = nameof(CcControllerAttribute).Replace("Attribute", "");
 
         var hasCcAttribute = node.AttributeLists
             .SelectMany(al => al.Attributes)

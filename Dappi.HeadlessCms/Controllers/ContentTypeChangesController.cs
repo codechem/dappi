@@ -20,15 +20,17 @@ namespace Dappi.HeadlessCms.Controllers
         private readonly DappiDbContext _dbContext;
         private readonly ILogger<ContentTypeChangesController> _logger;
         private readonly DomainModelEditor _domainModelEditor;
+        private readonly IContentTypeChangesService _contentTypeChangesService;
         public ContentTypeChangesController(
             IDbContextAccessor dappiDbContextAccessor,
             ILogger<ContentTypeChangesController> logger,
             ICurrentDappiSessionProvider currentSessionProvider,
-            DomainModelEditor domainModelEditor)
+            DomainModelEditor domainModelEditor, IContentTypeChangesService contentTypeChangesService)
         {
             _dbContext = dappiDbContextAccessor.DbContext;
             _logger = logger;
             _domainModelEditor = domainModelEditor;
+            _contentTypeChangesService = contentTypeChangesService;
         }
 
         [HttpGet]
@@ -84,10 +86,7 @@ namespace Dappi.HeadlessCms.Controllers
         {
             try
             {
-                var draftModels = _dbContext.ContentTypeChanges
-                    .AsNoTracking()
-                    .Where(ctc =>
-                        ctc.State == ContentTypeState.PendingPublish || ctc.State == ContentTypeState.PendingDelete)
+                var draftModels = _contentTypeChangesService.GetDraftsAsync()
                     .Select(x => x.ModelName)
                     .Distinct();
 

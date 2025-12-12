@@ -10,6 +10,7 @@ import {
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
+  FormArray,
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -18,6 +19,8 @@ import * as CollectionActions from '../state/collection/collection.actions';
 import { ModelValidators } from '../validators/model-validators';
 import { selectCollectionTypes } from '../state/collection/collection.selectors';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { CrudActions, EnumKvp } from '../models/content.model';
+import { parseEnum } from '../utils/utilFunctions';
 
 @Component({
   selector: 'app-add-collection-type-dialog',
@@ -39,6 +42,12 @@ export class AddCollectionTypeDialogComponent {
   collectionForm: FormGroup;
   isSubmitting: boolean = false;
   collectionTypes$ = this.store.select(selectCollectionTypes);
+  crudActions: EnumKvp[] = parseEnum(CrudActions);
+  defaultCrudActions: CrudActions[] = [CrudActions.Get,
+    CrudActions.GetOne,
+    CrudActions.Create,
+    CrudActions.Update,
+    CrudActions.Delete];
 
   constructor(
     private dialogRef: MatDialogRef<AddCollectionTypeDialogComponent>,
@@ -47,7 +56,8 @@ export class AddCollectionTypeDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {
     this.collectionForm = this.fb.group({
-      isAuditableEntity : [false , {}],
+      isAuditableEntity: [false, {}],
+      crudActions: this.fb.array([]),
       displayName: [
         '',
         {
@@ -59,7 +69,28 @@ export class AddCollectionTypeDialogComponent {
           ],
           asyncValidators: [ModelValidators.collectionNameIsTaken(this.collectionTypes$)],
         },
-      ]
+      ],
+    });
+    this.setDefaultCrudActions();
+  }
+
+  get selectedCrudActions(): FormArray {
+    return this.collectionForm.get('crudActions') as FormArray;
+  }
+
+  onCheckboxChange(event: any, value: number) {
+    const checkArray: FormArray = this.selectedCrudActions;
+    if (event.source._checked) {
+      checkArray.push(this.fb.control(value));
+    } else {
+      const index = checkArray.controls.findIndex(control => control.value === value);
+      checkArray.removeAt(index);
+    }
+  }
+
+  setDefaultCrudActions() {
+    this.defaultCrudActions.forEach(action => {
+      this.selectedCrudActions.push(this.fb.control(action));
     });
   }
 
@@ -73,7 +104,8 @@ export class AddCollectionTypeDialogComponent {
     this.store.dispatch(
       CollectionActions.addCollectionType({
         collectionType: this.collectionForm.value.displayName,
-        isAuditableEntity : this.collectionForm.value.isAuditableEntity
+        isAuditableEntity: this.collectionForm.value.isAuditableEntity,
+        crudActions: this.collectionForm.value.crudActions
       })
     );
 

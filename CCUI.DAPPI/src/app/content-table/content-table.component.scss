@@ -78,13 +78,19 @@
   font-weight: 500;
   transition: background-color 0.2s ease;
 
-  &:hover {
+  &:hover:not([disabled]) {
     background-color: color.adjust(vars.$primary-main, $lightness: -10%);
   }
 
   &:focus-visible {
     outline: 2px solid vars.$primary-contrast-text;
     outline-offset: 2px;
+  }
+
+  &:disabled {
+    color: rgba(255, 255, 255, 0.38) !important;
+    background-color: rgba(255, 255, 255, 0.12);
+    cursor: not-allowed;
   }
 }
 
@@ -129,6 +135,7 @@
     }
   }
 }
+
 .scrollable-list {
   width: 100%;
   overflow: auto;
@@ -193,6 +200,7 @@
   width: 50px;
   text-align: right;
 }
+
 .floating-menu-container {
   position: fixed;
   top: 0;

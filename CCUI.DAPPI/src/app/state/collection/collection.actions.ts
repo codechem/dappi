@@ -1,5 +1,5 @@
 import { createAction, props } from '@ngrx/store';
-import { ModelField } from '../../models/content.model';
+import { ConfigureModelRequest, ModelField, ModelResponse } from '../../models/content.model';
 
 export const loadPublishedCollectionTypes = createAction(
   '[Collection] Load Published Collection Types'
@@ -43,7 +43,7 @@ export const loadFields = createAction('[Collection] Load Fields', props<{ model
 
 export const loadFieldsSuccess = createAction(
   '[Collection] Load Fields Success',
-  props<{ fields: ModelField[] }>()
+  props<{ modelResponse:ModelResponse }>()
 );
 
 export const loadFieldsFailure = createAction(
@@ -53,7 +53,7 @@ export const loadFieldsFailure = createAction(
 
 export const addCollectionType = createAction(
   '[Collection] Add Collection Type',
-  props<{ collectionType: string  , isAuditableEntity:boolean}>()
+  props<{ collectionType: string  , isAuditableEntity:boolean, crudActions:number[]}>()
 );
 
 export const addCollectionTypeSuccess = createAction(
@@ -112,3 +112,9 @@ export const collectionHasRelatedPropertiesSuccess = createAction('[Colleciton] 
 export const collectionHasRelatedPropertiesFailure = createAction('[Colleciton] Collection has related properties Failure',
   props<{error: any}>()
 )
+
+export const configureActions = createAction('[Collection] Configure actions' , props<{model:string, request:ConfigureModelRequest}>());
+
+export const configureActionsSuccess = createAction('[Collection] Configure actions Success' , props<{message:string}>());
+
+export const configureActionsFailure = createAction('[Collection] Configure actions Failure' , props<{error:any}>());
