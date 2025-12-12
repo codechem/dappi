@@ -12,6 +12,7 @@ namespace Dappi.Core.Attributes
             CrudActions.GetOne,
             CrudActions.Create,
             CrudActions.Update,
+            CrudActions.Patch,
             CrudActions.Delete];
         
         public string ExcludeOperation { get; set; } = string.Empty;

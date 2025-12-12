@@ -1,3 +1,4 @@
+using System.Net;
 using Dappi.Core.Attributes;
 using Dappi.Core.Enums;
 using Dappi.HeadlessCms.Exceptions;
@@ -16,16 +17,23 @@ namespace Dappi.HeadlessCms.ActionFilters
                 .FirstOrDefault() as CcControllerAttribute;
 
             var request = context.HttpContext.Request;
+            var allowedCrudAction = customAttribute?.AllowedCrudActions.Length is > 0
+                ? customAttribute.AllowedCrudActions
+                : CcControllerAttribute.DefaultActions.ToArray();
             if (customAttribute == null)
             {
                 return;
             }
-
-            if (request.Method == "POST" && !customAttribute.AllowedCrudActions.Contains(CrudActions.Create) ||
-                request.Method == "PUT" && !customAttribute.AllowedCrudActions.Contains(CrudActions.Update) ||
-                request.Method == "DELETE" && !customAttribute.AllowedCrudActions.Contains(CrudActions.Delete))
+            if (request.Method == "POST" && !allowedCrudAction.Contains(CrudActions.Create) ||
+                request.Method == "PUT" && !allowedCrudAction.Contains(CrudActions.Update) ||
+                request.Method == "DELETE" && !allowedCrudAction.Contains(CrudActions.Delete) ||
+                request.Method == "PUT" && !allowedCrudAction.Contains(CrudActions.Patch))
             {
-                throw new MethodNotAllowedException("Method not allowed" , request.Method);
+                context.Result =
+                    new JsonResult(new { Error = "Method not allowed" })
+                    {
+                        StatusCode = (int)HttpStatusCode.MethodNotAllowed
+                    };
             }
         }
     }

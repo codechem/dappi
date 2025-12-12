@@ -307,6 +307,7 @@ public partial class {item.ClassName}Controller(
             GeneratePostAction(item.CrudActions, item, collectionAddCode),
             GeneratePostActionForMediaInfo(item.CrudActions, item),
             GeneratePutAction(item.CrudActions, item, includesCode, collectionUpdateCode, mediaInfoUpdateCode),
+            GeneratePatchAction(item.CrudActions, item, includesCode),
             GenerateDeleteAction(item.CrudActions, item, includeCode, removeCode),
         };
       var sb = new StringBuilder();
