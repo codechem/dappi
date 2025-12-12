@@ -81,13 +81,6 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'int',
     },
     {
-      icon: '123',
-      label: 'Decimal Number',
-      description: 'For decimal numerical values and calculations',
-      value: 'float',
-      netType: 'float',
-    },
-    {
       icon: 'calendar_today',
       label: 'Date',
       description: 'For selecting dates',
@@ -135,6 +128,13 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       description: 'Create relation between models',
       value: 'relation',
       netType: 'OneToOne',
+    },
+    {
+      icon: '123',
+      label: 'Decimal Number',
+      description: 'For decimal numerical values and calculations',
+      value: 'float',
+      netType: 'float',
     },
   ];
   private subscription: Subscription = new Subscription();
@@ -308,13 +308,6 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
         netType: 'int',
       },
       {
-        icon: '1.75',
-        label: 'Decimal Number',
-        description: 'For decimal numerical values and calculations',
-        value: 'float',
-        netType: 'float',
-      },
-      {
         icon: 'calendar_today',
         label: 'Date',
         description: 'For selecting dates and times',
@@ -362,6 +355,13 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
         description: 'Create relation between models',
         value: 'relation',
         netType: netType,
+      },
+       {
+        icon: '1.75',
+        label: 'Decimal Number',
+        description: 'For decimal numerical values and calculations',
+        value: 'float',
+        netType: 'float',
       },
     ];
   }
