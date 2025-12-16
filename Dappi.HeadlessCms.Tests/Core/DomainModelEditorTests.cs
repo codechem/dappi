@@ -1,4 +1,5 @@
 using System.Reflection;
+using Dappi.Core.Attributes;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Tests.TestData;
@@ -53,7 +54,7 @@ namespace Dappi.HeadlessCms.Tests.Core
 
                              namespace {{_assemblyName}}.Entities
                              {
-                                 [CCController]
+                                 [CcController]
                                  public class {{DomainModelName}}
                                  {
                                      [Key]
@@ -83,7 +84,7 @@ namespace Dappi.HeadlessCms.Tests.Core
 
                               namespace {{_assemblyName}}.Entities
                               {
-                                  [CCController]
+                                  [{{CcControllerAttribute.ShortName}}]
                                   public class {{DomainModelName}} : {{nameof(IAuditableEntity)}}
                                   {
                                       [Key]
@@ -117,7 +118,7 @@ namespace Dappi.HeadlessCms.Tests.Core
 
                              namespace {{_assemblyName}}.Entities
                              {
-                                 [CCController]
+                                 [{{CcControllerAttribute.ShortName}}]
                                  public class {{DomainModelName}}
                                  {
                                      [Key]
@@ -158,7 +159,7 @@ namespace Dappi.HeadlessCms.Tests.Core
 
                               namespace {{_assemblyName}}.Entities
                               {
-                                  [CCController]
+                                  [{{CcControllerAttribute.ShortName}}]
                                   public class {{DomainModelName}}
                                   {
                                       [Key]

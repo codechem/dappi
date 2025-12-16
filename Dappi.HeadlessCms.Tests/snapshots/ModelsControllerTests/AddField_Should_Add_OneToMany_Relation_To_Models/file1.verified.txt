@@ -3,10 +3,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Dappi.HeadlessCms.Models;
 using Dappi.Core.Attributes;
 using Dappi.HeadlessCms.Core.Attributes;
+using Dappi.Core.Enums;
 
 namespace Entities
 {
-    [CCController]
+    [CcController]
     public class TestClassThree
     {
         [Key]
