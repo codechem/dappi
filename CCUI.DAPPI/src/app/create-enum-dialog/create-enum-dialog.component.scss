@@ -11,7 +11,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px 24px 0 24px;
+    padding: 24px;
     border-bottom: vars.$divider;
     margin-bottom: 24px;
 
@@ -60,8 +60,6 @@
 
       .close-btn {
         color: vars.$text-secondary;
-        width: 32px;
-        height: 32px;
         border-radius: 4px;
         transition: all 0.2s ease;
 
@@ -165,8 +163,7 @@
 
           .remove-btn {
             color: vars.$error-light;
-            width: 28px;
-            height: 28px;
+            height: max-content;
             border-radius: 4px;
             transition: all 0.2s ease;
 

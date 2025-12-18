@@ -209,8 +209,9 @@
 
             mat-icon {
               font-size: 16px;
-              width: 16px;
-              height: 16px;
+              width: min-content;
+              height: min-content;
+              margin-bottom: 8px;
             }
           }
         }
