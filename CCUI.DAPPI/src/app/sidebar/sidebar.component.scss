@@ -90,7 +90,7 @@
     color: white;
     flex: 1;
     font-size: 14px;
-
+    width: 30%;
     &::placeholder {
       color: rgba(255, 255, 255, 0.5);
     }
@@ -127,7 +127,6 @@
   font-size: 18px;
   height: 18px;
   width: 18px;
-  margin: 0 8px;
 }
 
 .add-button-container {
