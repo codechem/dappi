@@ -66,3 +66,6 @@ Migrations/
 # Verify
 *.received.*
 *.received/
+/templates/MyCompany.MyProject.WebApi/Entities/
+/templates/MyCompany.MyProject.WebApi/Enums/
+/templates/MyCompany.MyProject.WebApi/wwwroot/
