@@ -29,7 +29,7 @@ import { Pluralizer } from '../utils/pluralizer'
 import { FieldTypeEnum } from '../enums/fieldType';
 
 interface FieldType {
-  id: FieldTypeEnum;
+  type: FieldTypeEnum;
   icon: string;
   label: string;
   description: string;
@@ -69,7 +69,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
 
   fieldTypes: FieldType[] = [
     {
-      id: FieldTypeEnum.Text,
+      type: FieldTypeEnum.String,
       icon: 'Aa',
       label: 'Text',
       description: 'For single or multi-line text input',
@@ -77,7 +77,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'string',
     },
     {
-      id: FieldTypeEnum.Number,
+      type: FieldTypeEnum.Number,
       icon: '123',
       label: 'Number',
       description: 'For numerical values and calculations',
@@ -85,7 +85,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'int',
     },
     {
-      id: FieldTypeEnum.Date,
+      type: FieldTypeEnum.Date,
       icon: 'calendar_today',
       label: 'Date',
       description: 'For selecting dates',
@@ -93,7 +93,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'DateOnly',
     },
     {
-      id: FieldTypeEnum.Media,
+      type: FieldTypeEnum.Media,
       icon: 'perm_media',
       label: 'Media',
       description: 'For uploading images or videos',
@@ -101,7 +101,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'MediaInfo',
     },
     {
-      id: FieldTypeEnum.Link,
+      type: FieldTypeEnum.Link,
       icon: 'link',
       label: 'Link',
       description: 'For website URLs or references',
@@ -109,7 +109,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'string',
     },
     {
-      id: FieldTypeEnum.Dropdown,
+      type: FieldTypeEnum.Dropdown,
       icon: 'list',
       label: 'Dropdown',
       description: 'For selecting from predefined options(Enumerations)',
@@ -117,7 +117,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: this.selectedEnum ?? 'Enum',
     },
     {
-      id: FieldTypeEnum.Checkbox,
+      type: FieldTypeEnum.Checkbox,
       icon: 'check_box',
       label: 'Checkbox',
       description: 'For yes/no or true/false values',
@@ -125,7 +125,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'bool',
     },
     {
-      id: FieldTypeEnum.DateTime,
+      type: FieldTypeEnum.Date,
       icon: 'today',
       label: 'DateTime',
       description: 'For date and time values together',
@@ -133,7 +133,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'DateTime',
     },
     {
-      id: FieldTypeEnum.Relation,
+      type: FieldTypeEnum.Relation,
       icon: 'leak_remove',
       label: 'Relation',
       description: 'Create relation between models',
@@ -141,7 +141,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'OneToOne',
     },
     {
-      id: FieldTypeEnum.Float,
+      type: FieldTypeEnum.Number,
       icon: '123',
       label: 'Decimal Number',
       description: 'For decimal numerical values and calculations',
@@ -328,7 +328,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const selectedFieldType = this.fieldTypes.find(fieldType => fieldType.id.toString() === this.selectedFieldTypeId?.toString());
+    const selectedFieldType = this.fieldTypes.find(fieldType => fieldType.type.toString() === this.selectedFieldTypeId?.toString());
 
     if (!selectedFieldType) {
       return;

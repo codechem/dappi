@@ -1,13 +1,11 @@
 export enum FieldTypeEnum
 {
-    Text,
+    String,
     Number,
     Date,
     Dropdown,
     Relation,
     Media,
     Link,
-    Checkbox,
-    DateTime,
-    Float
+    Checkbox
 }

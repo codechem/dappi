@@ -11,15 +11,15 @@
       <h3 class="section-title">1. Select field type</h3>
       <div class="field-type-grid-wrapper">
         <div class="field-type-grid">
-          @for (ft of fieldTypes; track ft.id; let i = $index) {
+          @for (ft of fieldTypes; track ft; let i = $index) {
             <div
               class="box"
-              [class.selected]="selectedFieldTypeId === ft.id"
-              (click)="selectFieldType(ft.id)"
-              [attr.aria-selected]="selectedFieldTypeId === ft.id"
+              [class.selected]="selectedFieldTypeId === ft.type"
+              (click)="selectFieldType(ft.type)"
+              [attr.aria-selected]="selectedFieldTypeId === ft.type"
               role="option"
               tabindex="0"
-              (keydown.enter)="selectFieldType(ft.id)"
+              (keydown.enter)="selectFieldType(ft.type)"
             >
               <mat-icon class="field-type-box">
                 {{ ft.icon }}
