@@ -14,12 +14,12 @@
           @for (ft of fieldTypes; track ft; let i = $index) {
             <div
               class="box"
-              [class.selected]="selectedFieldTypeIndex === i"
-              (click)="selectFieldType(i)"
-              [attr.aria-selected]="selectedFieldTypeIndex === i"
+              [class.selected]="selectedFieldTypeId === ft.type"
+              (click)="selectFieldType(ft.type)"
+              [attr.aria-selected]="selectedFieldTypeId === ft.type"
               role="option"
               tabindex="0"
-              (keydown.enter)="selectFieldType(i)"
+              (keydown.enter)="selectFieldType(ft.type)"
             >
               <mat-icon class="field-type-box">
                 {{ ft.icon }}
@@ -31,9 +31,9 @@
         </div>
       </div>
       @if (
-        selectedFieldTypeIndex !== null &&
-        selectedFieldTypeIndex !== 8 &&
-        selectedFieldTypeIndex !== 5
+        selectedFieldTypeId !== null &&
+        selectedFieldTypeId !== fieldTypeEnum.Relation &&
+        selectedFieldTypeId !== fieldTypeEnum.Dropdown
       ) {
         <h3 class="section-title">2. Field settings</h3>
         <mat-form-field appearance="outline" class="input-field">
@@ -69,7 +69,7 @@
         </div>
       }
 
-      @if (selectedFieldTypeIndex === 5) {
+      @if (selectedFieldTypeId === fieldTypeEnum.Dropdown) {
         <h3 class="section-title">2. Dropdown settings</h3>
         <div class="model-box">
           <mat-form-field appearance="outline" class="model-select">
@@ -99,7 +99,7 @@
         </div>
       }
 
-      @if (selectedFieldTypeIndex === 8) {
+      @if (selectedFieldTypeId === fieldTypeEnum.Relation) {
         <h3 class="section-title">2. Configure Relationship with {{ selectedType }}</h3>
         <div class="relationship-config">
           <div class="model-box">

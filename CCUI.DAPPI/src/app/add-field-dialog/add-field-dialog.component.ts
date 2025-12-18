@@ -26,8 +26,10 @@ import { EnumManagementService } from '../services/common/enum-management.servic
 import { ModelValidators } from '../validators/model-validators';
 import { forkJoin } from 'rxjs';
 import { Pluralizer } from '../utils/pluralizer'
+import { FieldTypeEnum } from '../enums/fieldType';
 
 interface FieldType {
+  type: FieldTypeEnum;
   icon: string;
   label: string;
   description: string;
@@ -67,6 +69,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
 
   fieldTypes: FieldType[] = [
     {
+      type: FieldTypeEnum.String,
       icon: 'Aa',
       label: 'Text',
       description: 'For single or multi-line text input',
@@ -74,6 +77,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'string',
     },
     {
+      type: FieldTypeEnum.Number,
       icon: '123',
       label: 'Number',
       description: 'For numerical values and calculations',
@@ -81,6 +85,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'int',
     },
     {
+      type: FieldTypeEnum.Date,
       icon: 'calendar_today',
       label: 'Date',
       description: 'For selecting dates',
@@ -88,6 +93,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'DateOnly',
     },
     {
+      type: FieldTypeEnum.Media,
       icon: 'perm_media',
       label: 'Media',
       description: 'For uploading images or videos',
@@ -95,6 +101,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'MediaInfo',
     },
     {
+      type: FieldTypeEnum.Link,
       icon: 'link',
       label: 'Link',
       description: 'For website URLs or references',
@@ -102,6 +109,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'string',
     },
     {
+      type: FieldTypeEnum.Dropdown,
       icon: 'list',
       label: 'Dropdown',
       description: 'For selecting from predefined options(Enumerations)',
@@ -109,6 +117,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: this.selectedEnum ?? 'Enum',
     },
     {
+      type: FieldTypeEnum.Checkbox,
       icon: 'check_box',
       label: 'Checkbox',
       description: 'For yes/no or true/false values',
@@ -116,6 +125,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'bool',
     },
     {
+      type: FieldTypeEnum.Date,
       icon: 'today',
       label: 'DateTime',
       description: 'For date and time values together',
@@ -123,6 +133,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'DateTime',
     },
     {
+      type: FieldTypeEnum.Relation,
       icon: 'leak_remove',
       label: 'Relation',
       description: 'Create relation between models',
@@ -130,6 +141,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'OneToOne',
     },
     {
+      type: FieldTypeEnum.Number,
       icon: '123',
       label: 'Decimal Number',
       description: 'For decimal numerical values and calculations',
@@ -147,7 +159,9 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     relatedModel: [''],
     relatedRelationName: [''],
   });
-  selectedFieldTypeIndex: number | null = null;
+
+  selectedFieldTypeId: FieldTypeEnum | null = null;
+  fieldTypeEnum = FieldTypeEnum;
 
   collectionTypes$ = this.store.select(selectCollectionTypes);
 
@@ -291,85 +305,11 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     };
 
     const netType = relationTypeMap[index] || '';
-
-    this.fieldTypes = [
-      {
-        icon: 'Aa',
-        label: 'Text',
-        description: 'For single or multi-line text input',
-        value: 'text',
-        netType: 'string',
-      },
-      {
-        icon: '123',
-        label: 'Number',
-        description: 'For numerical values and calculations',
-        value: 'number',
-        netType: 'int',
-      },
-      {
-        icon: 'calendar_today',
-        label: 'Date',
-        description: 'For selecting dates and times',
-        value: 'date',
-        netType: 'DateOnly',
-      },
-      {
-        icon: 'perm_media',
-        label: 'Media',
-        description: 'For uploading images or videos',
-        value: 'media',
-        netType: 'MediaInfo',
-      },
-      {
-        icon: 'link',
-        label: 'Link',
-        description: 'For website URLs or references',
-        value: 'link',
-        netType: 'string',
-      },
-      {
-        icon: 'list',
-        label: 'Dropdown',
-        description: 'For selecting from predefined options',
-        value: 'dropdown',
-        netType: netType,
-      },
-      {
-        icon: 'check_box',
-        label: 'Checkbox',
-        description: 'For yes/no or true/false values',
-        value: 'checkbox',
-        netType: 'bool',
-      },
-      {
-        icon: 'today',
-        label: 'DateTime',
-        description: 'For date and time values together',
-        value: 'datetime',
-        netType: 'DateTime',
-      },
-      {
-        icon: 'leak_remove',
-        label: 'Relation',
-        description: 'Create relation between models',
-        value: 'relation',
-        netType: netType,
-      },
-       {
-        icon: '1.75',
-        label: 'Decimal Number',
-        description: 'For decimal numerical values and calculations',
-        value: 'float',
-        netType: 'float',
-      },
-    ];
   }
+  selectFieldType(id: FieldTypeEnum): void {
+    this.selectedFieldTypeId = id;
 
-  selectFieldType(index: number): void {
-    this.selectedFieldTypeIndex = index;
-
-    if (index === 8) {
+    if (id === this.fieldTypeEnum.Relation) {
       this.fieldForm.get('relatedModel')?.setValidators([Validators.required]);
       this.fieldForm.get('relatedRelationName')?.setValidators([Validators.required]);
     } else {
@@ -383,12 +323,17 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   }
 
   onAddField(): void {
-    if (!this.fieldForm.valid || this.selectedFieldTypeIndex === null) {
+    if (!this.fieldForm.valid || this.selectedFieldTypeId === null) {
       this.fieldForm.markAllAsTouched();
       return;
     }
 
-    const selectedFieldType = this.fieldTypes[this.selectedFieldTypeIndex];
+    const selectedFieldType = this.fieldTypes.find(fieldType => fieldType.type.toString() === this.selectedFieldTypeId?.toString());
+
+    if (!selectedFieldType) {
+      return;
+    }
+
     const payload = {
       fieldName: this.fieldForm.value.fieldName,
       fieldType: selectedFieldType.netType,
@@ -397,7 +342,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       relatedRelationName: this.fieldForm.value.relatedRelationName,
     };
 
-    if (this.selectedFieldTypeIndex === 5) {
+    if (this.selectedFieldTypeId === this.fieldTypeEnum.Dropdown) {
       payload.fieldType = this.selectedEnum;
     }
 
@@ -410,7 +355,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   }
 
   get canSubmit(): boolean | undefined {
-    if (this.selectedFieldTypeIndex === 8) {
+    if (this.selectedFieldTypeId === this.fieldTypeEnum.Relation) {
       return this.selectedRelationTypeIndex !== null;
     } else {
       return this.fieldForm.get('fieldName')?.valid;
