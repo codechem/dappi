@@ -133,6 +133,68 @@ public class DbContextEditor(
         }
     }
 
+    public void UpdateOnModelCreatingWithIndexedColumn(string modelName, string propertyName)
+    {
+        var syntaxTree = GetSyntaxTreeFromDbContextSource();
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = FindDbContextClassDeclaration(root);
+
+        var onModelCreating = classNode.Members.OfType<MethodDeclarationSyntax>()
+            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
+
+        if (onModelCreating is null)
+        {
+            onModelCreating = SyntaxFactory
+                .MethodDeclaration(
+                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword))
+                        .WithLeadingTrivia(SyntaxFactory.Space).WithTrailingTrivia(SyntaxFactory.Space),
+                    OnModelCreatingMethodName)
+                .AddModifiers(
+                    SyntaxFactory.Token(SyntaxKind.ProtectedKeyword).WithLeadingTrivia(SyntaxFactory.Space)
+                        .WithTrailingTrivia(SyntaxFactory.Space),
+                    SyntaxFactory.Token(SyntaxKind.OverrideKeyword).WithLeadingTrivia(SyntaxFactory.Space)
+                        .WithTrailingTrivia(SyntaxFactory.Space)
+                )
+                .WithParameterList(
+                    SyntaxFactory.ParameterList(SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("modelBuilder"))
+                            .WithType(SyntaxFactory.IdentifierName("ModelBuilder")
+                                .WithTrailingTrivia(SyntaxFactory.Space))
+                    ))
+                )
+                .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+        }
+
+        var addIndexedColumn = $@"modelBuilder.Entity<{modelName}>().HasIndex(e => e.{propertyName});";
+        
+        var body = onModelCreating.Body ?? SyntaxFactory.Block();
+        var newBody = body.AddStatements(SyntaxFactory.ParseStatement(addIndexedColumn));
+        var newMethod = onModelCreating.WithBody(newBody);
+
+        var baseOnModelCreating =
+            newMethod.Body?.Statements.FirstOrDefault(s => s.ToString().Contains(BaseOnModelCreating));
+        if (baseOnModelCreating is not null)
+        {
+            newMethod = newMethod.RemoveNode(baseOnModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
+        }
+
+        newMethod = newMethod?.AddBodyStatements(SyntaxFactory.ParseStatement(BaseOnModelCreating));
+        var newClassNode = classNode.RemoveNode(onModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
+        if (newMethod != null)
+        {
+            newClassNode = newClassNode?.AddMembers(newMethod);
+        }
+
+        if (newClassNode != null)
+        {
+            var newRoot = root.ReplaceNode(classNode, newClassNode);
+
+            _currentCode = newRoot.NormalizeWhitespace().ToFullString();
+        }
+
+        HasChanges = true;
+    }
+
     public void UpdateOnModelCreating(string modelName, string relatedTo, string relationshipType,
         string propertyName,
         string? relatedPropertyName = null)

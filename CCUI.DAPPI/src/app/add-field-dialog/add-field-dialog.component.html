@@ -67,6 +67,10 @@
           <mat-checkbox formControlName="requiredField">Required field</mat-checkbox>
           <small>You will not be able to create an entry if this field is empty</small>
         </div>
+        <div class="index-field">
+          <mat-checkbox formControlName="hasIndex">Indexed field</mat-checkbox>
+          <small>This field will be indexed for faster searches</small>
+        </div>
       }
 
       @if (selectedFieldTypeId === fieldTypeEnum.Dropdown) {
