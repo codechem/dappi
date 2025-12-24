@@ -167,18 +167,18 @@ namespace Dappi.SourceGenerator.Generators
 
             return $$"""
                         
-                     [HttpPatch(""{id}"")]
+                     [HttpPatch("{id}")]
                      {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Patch)}}
                      public async Task<IActionResult> JsonPatch{{item.ClassName}}(Guid id, JsonDocument patchOperations)
                      {
                          if (patchOperations is null || id == Guid.Empty)
-                             return BadRequest(""Invalid data provided."");
+                             return BadRequest("Invalid data provided.");
 
                          var entity = await dbContext.{{item.ClassName.Pluralize()}}{{includesCode}}.FirstOrDefaultAsync(s => s.Id == id);
                          
                          if (entity is null)
                          {
-                             return NotFound(""{{item.ClassName}} with this id not found."");
+                             return NotFound("{{item.ClassName}} with this id not found.");
                          }
                          
                          if (patchOperations.RootElement.ValueKind == JsonValueKind.Array)
@@ -190,7 +190,7 @@ namespace Dappi.SourceGenerator.Generators
                                  var hasValue = patchOperation.TryGetProperty(JsonPatchProperties.Value, out var value);
                                  
                                  if (!hasOperation)
-                                     return BadRequest(""Invalid data provided. The operation is a required property."");
+                                     return BadRequest("Invalid data provided. The operation is a required property.");
 
                                  if (operation.ValueKind == JsonValueKind.String)
                                  {
@@ -204,7 +204,7 @@ namespace Dappi.SourceGenerator.Generators
                                      {
                                          case JsonPatchOperations.Add:
                                              if (!hasPath || !hasValue)
-                                                 return BadRequest(""Invalid data provided. Path and value are required properties for the add operation."");
+                                                 return BadRequest("Invalid data provided. Path and value are required properties for the add operation.");
 
                                              if (property.PropertyType.IsGenericType &&
                                                  (propertyInterfaces.Contains(typeof(ICollection)) || propertyInterfaces.Contains(typeof(IEnumerable))))
@@ -221,18 +221,18 @@ namespace Dappi.SourceGenerator.Generators
                                              break;
                                          case JsonPatchOperations.Replace:
                                              if (!hasPath || !hasValue)
-                                                 return BadRequest(""Invalid data provided. Path and value are required properties for the replace operation."");
+                                                 return BadRequest("Invalid data provided. Path and value are required properties for the replace operation.");
                                              
                                              SetValueToProperty(propertyEntity, property, value);
                                              break;
                                          case JsonPatchOperations.Remove:
                                              if (!hasPath)
-                                                 return BadRequest(""Invalid data provided. The path is a required property for the remove operation."");
+                                                 return BadRequest("Invalid data provided. The path is a required property for the remove operation.");
 
                                              if (propertyEntity.GetType().IsGenericType &&
                                                  (isCollection || isEnumerable))
                                              {
-                                                 var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf(""/"",
+                                                 var itemIndex = propertyPath.Substring(propertyPath.LastIndexOf("/",
                                                          StringComparison.InvariantCultureIgnoreCase) + 1, 1);
                                                  var enumerableList = propertyEntity as IEnumerable<object>;
                                                  if (int.TryParse(itemIndex, out int index))
@@ -246,7 +246,7 @@ namespace Dappi.SourceGenerator.Generators
                                              break;
                                          case JsonPatchOperations.Test:
                                              if (!hasPath || !hasValue)
-                                                 return BadRequest(""Invalid data provided. Path and value are required properties for the test operation."");
+                                                 return BadRequest("Invalid data provided. Path and value are required properties for the test operation.");
 
                                              var result = property.GetValue(propertyEntity).Equals(value.Deserialize(property.PropertyType));
                                              if (result)                            
@@ -255,7 +255,7 @@ namespace Dappi.SourceGenerator.Generators
                                          case JsonPatchOperations.Copy:
                                              var hasSource = patchOperation.TryGetProperty(JsonPatchProperties.From, out var from);
                                              if (!hasPath || !hasSource)
-                                                 return BadRequest(""Invalid data provided. Path and from are required properties for the copy operation."");
+                                                 return BadRequest("Invalid data provided. Path and from are required properties for the copy operation.");
 
                                              if (path.ValueKind == JsonValueKind.String && from.ValueKind == JsonValueKind.String)
                                              {
@@ -263,7 +263,7 @@ namespace Dappi.SourceGenerator.Generators
                                                  var destinationPath = propertyPath;
                                                  if (string.IsNullOrEmpty(sourcePath) && string.IsNullOrEmpty(destinationPath))
                                                  {
-                                                     return BadRequest(""Invalid data provided."");
+                                                     return BadRequest("Invalid data provided.");
                                                  }
                                                  var sourcePropertyPath = sourcePath[0] == '/' ? sourcePath.Substring(1, sourcePath[sourcePath.Length - 1] == '/' ? sourcePath.Length - 2 : sourcePath.Length - 1) : sourcePath;
                                                  sourcePropertyPath = textInfo.ToTitleCase(sourcePropertyPath);
@@ -277,7 +277,7 @@ namespace Dappi.SourceGenerator.Generators
                          }
                          else
                          {
-                             return BadRequest(""Data is not in valid format."");
+                             return BadRequest("Data is not in valid format.");
                          }
                          await dbContext.SaveChangesAsync();
                          return Ok(entity);

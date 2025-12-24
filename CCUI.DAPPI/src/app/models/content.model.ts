@@ -58,6 +58,7 @@ export interface ModelField {
   relatedTo?: string;
   isRequired?: boolean;
   isEnum?: boolean;
+  regex?: string;
   hasIndex?: boolean;
 }
 

@@ -159,6 +159,10 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         {
             newProperty = newProperty.WithRelationAttribute(property.RelationKind, property.RelatedDomainModel);
         }
+        if (property.Type == "string" && !string.IsNullOrEmpty(property.Regex))
+        {
+            newProperty = newProperty.WithRegularExpressionAttribute(property.Regex);
+        }
 
         var newNode = classNode.AddMembers(newProperty);
         var newRoot = root.ReplaceNode(classNode, newNode);
@@ -297,7 +301,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
             : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
         var root = syntaxTree.GetCompilationUnitRoot();
         var usings = root.Usings.Where(u => u.Name != null && !u.Name.ToString().Contains("Enums"));
-        var newRoot = root?.WithUsings(SyntaxFactory.List(usings));
+        var newRoot = root.WithUsings(SyntaxFactory.List(usings));
         var newCode = newRoot.NormalizeWhitespace().ToFullString();
         _codeChanges[model.Name] = newCode;
         HasChanges = true;
@@ -311,11 +315,11 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
         var enumsAssemblyName = $"{assembly.GetName().Name}.Enums";
         var root = syntaxTree.GetCompilationUnitRoot();
-        var newRoot = root?.AddUsings(
+        var newRoot = root.AddUsings(
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(enumsAssemblyName))
             );
-        var newCode = newRoot?.NormalizeWhitespace().ToFullString();
-        _codeChanges[modelName] = newCode!;
+        var newCode = newRoot.NormalizeWhitespace().ToFullString();
+        _codeChanges[modelName] = newCode;
         HasChanges = true;
     }
     public string GenerateEnumCode(string enumName, Dictionary<string, int> enumValues)

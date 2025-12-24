@@ -37,7 +37,7 @@ namespace Dappi.HeadlessCms.Core.Extensions
             return SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
 
         }
-
+        
         public static PropertyDeclarationSyntax IdentityProperty()
         {
             return SyntaxFactory.PropertyDeclaration(SyntaxFactory.IdentifierName("Guid"), "Id")
@@ -69,6 +69,23 @@ namespace Dappi.HeadlessCms.Core.Extensions
             );
 
             return property.AddAttributeLists(attributeList);
+        }
+
+        private static PropertyDeclarationSyntax WithRegexAttribute(this PropertyDeclarationSyntax property, string attributeName, params AttributeArgumentSyntax[] arguments)
+        {
+            var attribute = SyntaxFactory.Attribute(SyntaxFactory.ParseName(attributeName));
+            if (arguments.Length > 0)
+            {
+                attribute = attribute.AddArgumentListArguments(arguments);
+            }
+            var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
+            return property.AddAttributeLists(attributeList);
+        }
+
+        public static PropertyDeclarationSyntax WithRegularExpressionAttribute(this PropertyDeclarationSyntax property,
+            string regex)
+        {
+            return property.WithRegexAttribute("RegularExpression", SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression($"@\"{regex}\"")));
         }
 
         public static MemberDeclarationSyntax[] GeneratePropertiesFromType(Type type)

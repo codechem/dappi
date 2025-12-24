@@ -237,6 +237,7 @@ public class ModelsController : ControllerBase
                                 Name = request.FieldName,
                                 Type = request.FieldType,
                                 IsRequired = request.IsRequired,
+                                Regex = request.Regex
                             };
                             _domainModelEditor.AddProperty(property);
                             _domainModelEditor.AddEnumNamespaceIfMissing(property.DomainModel);
@@ -252,7 +253,8 @@ public class ModelsController : ControllerBase
                     DomainModel = modelName,
                     Name = request.FieldName,
                     Type = request.FieldType,
-                    IsRequired = request.IsRequired
+                    IsRequired = request.IsRequired,
+                    Regex = request.Regex
                 };
                 _domainModelEditor.AddProperty(property);
             }
