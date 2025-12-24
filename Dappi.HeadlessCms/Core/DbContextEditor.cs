@@ -27,7 +27,6 @@ public class DbContextEditor(
         var modelName = modelType.Name;
         var propertyName = modelName.Pluralize();
 
-        // Check if DbSet property already exists
         var existing = classNode.Members
             .OfType<PropertyDeclarationSyntax>()
             .Any(p =>
@@ -92,7 +91,7 @@ public class DbContextEditor(
             : CSharpSyntaxTree.ParseText(_currentCode);
         var root = syntaxTree.GetCompilationUnitRoot();
         var classNode = FindDbContextClassDeclaration(root);
-        
+
         var hasDbSet = classNode.Members
             .OfType<PropertyDeclarationSyntax>()
             .Any(p =>
@@ -135,100 +134,19 @@ public class DbContextEditor(
 
     public void UpdateOnModelCreatingWithIndexedColumn(string modelName, string propertyName)
     {
-        var syntaxTree = GetSyntaxTreeFromDbContextSource();
-        var root = syntaxTree.GetCompilationUnitRoot();
-        var classNode = FindDbContextClassDeclaration(root);
+        var indexStatement =
+            $@"modelBuilder.Entity<{modelName}>().HasIndex(e => e.{propertyName});";
 
-        var onModelCreating = classNode.Members.OfType<MethodDeclarationSyntax>()
-            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
-
-        if (onModelCreating is null)
-        {
-            onModelCreating = SyntaxFactory
-                .MethodDeclaration(
-                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword))
-                        .WithLeadingTrivia(SyntaxFactory.Space).WithTrailingTrivia(SyntaxFactory.Space),
-                    OnModelCreatingMethodName)
-                .AddModifiers(
-                    SyntaxFactory.Token(SyntaxKind.ProtectedKeyword).WithLeadingTrivia(SyntaxFactory.Space)
-                        .WithTrailingTrivia(SyntaxFactory.Space),
-                    SyntaxFactory.Token(SyntaxKind.OverrideKeyword).WithLeadingTrivia(SyntaxFactory.Space)
-                        .WithTrailingTrivia(SyntaxFactory.Space)
-                )
-                .WithParameterList(
-                    SyntaxFactory.ParameterList(SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("modelBuilder"))
-                            .WithType(SyntaxFactory.IdentifierName("ModelBuilder")
-                                .WithTrailingTrivia(SyntaxFactory.Space))
-                    ))
-                )
-                .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
-        }
-
-        var addIndexedColumn = $@"modelBuilder.Entity<{modelName}>().HasIndex(e => e.{propertyName});";
-        
-        var body = onModelCreating.Body ?? SyntaxFactory.Block();
-        var newBody = body.AddStatements(SyntaxFactory.ParseStatement(addIndexedColumn));
-        var newMethod = onModelCreating.WithBody(newBody);
-
-        var baseOnModelCreating =
-            newMethod.Body?.Statements.FirstOrDefault(s => s.ToString().Contains(BaseOnModelCreating));
-        if (baseOnModelCreating is not null)
-        {
-            newMethod = newMethod.RemoveNode(baseOnModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
-        }
-
-        newMethod = newMethod?.AddBodyStatements(SyntaxFactory.ParseStatement(BaseOnModelCreating));
-        var newClassNode = classNode.RemoveNode(onModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
-        if (newMethod != null)
-        {
-            newClassNode = newClassNode?.AddMembers(newMethod);
-        }
-
-        if (newClassNode != null)
-        {
-            var newRoot = root.ReplaceNode(classNode, newClassNode);
-
-            _currentCode = newRoot.NormalizeWhitespace().ToFullString();
-        }
-
-        HasChanges = true;
+        UpdateOnModelCreatingInternal(indexStatement);
     }
 
-    public void UpdateOnModelCreating(string modelName, string relatedTo, string relationshipType,
+    public void UpdateOnModelCreating(
+        string modelName,
+        string relatedTo,
+        string relationshipType,
         string propertyName,
         string? relatedPropertyName = null)
     {
-        var syntaxTree = GetSyntaxTreeFromDbContextSource();
-        var root = syntaxTree.GetCompilationUnitRoot();
-        var classNode = FindDbContextClassDeclaration(root);
-
-        var onModelCreating = classNode.Members.OfType<MethodDeclarationSyntax>()
-            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
-
-        if (onModelCreating is null)
-        {
-            onModelCreating = SyntaxFactory
-                .MethodDeclaration(
-                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword))
-                        .WithLeadingTrivia(SyntaxFactory.Space).WithTrailingTrivia(SyntaxFactory.Space),
-                    OnModelCreatingMethodName)
-                .AddModifiers(
-                    SyntaxFactory.Token(SyntaxKind.ProtectedKeyword).WithLeadingTrivia(SyntaxFactory.Space)
-                        .WithTrailingTrivia(SyntaxFactory.Space),
-                    SyntaxFactory.Token(SyntaxKind.OverrideKeyword).WithLeadingTrivia(SyntaxFactory.Space)
-                        .WithTrailingTrivia(SyntaxFactory.Space)
-                )
-                .WithParameterList(
-                    SyntaxFactory.ParameterList(SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("modelBuilder"))
-                            .WithType(SyntaxFactory.IdentifierName("ModelBuilder")
-                                .WithTrailingTrivia(SyntaxFactory.Space))
-                    ))
-                )
-                .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
-        }
-
         var relationCode = relationshipType switch
         {
             Constants.Relations.OneToOne => $@"modelBuilder.Entity<{modelName}>()
@@ -254,32 +172,68 @@ public class DbContextEditor(
             _ => throw new ArgumentException("Invalid relationship type")
         };
 
+        UpdateOnModelCreatingInternal(relationCode);
+    }
+
+    private void UpdateOnModelCreatingInternal(string statementCode)
+    {
+        var syntaxTree = GetSyntaxTreeFromDbContextSource();
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = FindDbContextClassDeclaration(root);
+
+        var onModelCreating = GetOrCreateOnModelCreatingMethod(classNode);
+
         var body = onModelCreating.Body ?? SyntaxFactory.Block();
-        var newBody = body.AddStatements(SyntaxFactory.ParseStatement(relationCode));
-        var newMethod = onModelCreating.WithBody(newBody);
+        body = body.AddStatements(SyntaxFactory.ParseStatement(statementCode));
 
-        var baseOnModelCreating =
-            newMethod.Body?.Statements.FirstOrDefault(s => s.ToString().Contains(BaseOnModelCreating));
-        if (baseOnModelCreating is not null)
+        var baseCall = body.Statements
+            .FirstOrDefault(s => s.ToString().Contains(BaseOnModelCreating));
+
+        if (baseCall is not null)
         {
-            newMethod = newMethod.RemoveNode(baseOnModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
+            body = body.RemoveNode(baseCall, SyntaxRemoveOptions.KeepNoTrivia);
         }
 
-        newMethod = newMethod?.AddBodyStatements(SyntaxFactory.ParseStatement(BaseOnModelCreating));
-        var newClassNode = classNode.RemoveNode(onModelCreating, SyntaxRemoveOptions.KeepNoTrivia);
-        if (newMethod != null)
-        {
-            newClassNode = newClassNode?.AddMembers(newMethod);
-        }
+        body = body.AddStatements(SyntaxFactory.ParseStatement(BaseOnModelCreating));
 
-        if (newClassNode != null)
-        {
-            var newRoot = root.ReplaceNode(classNode, newClassNode);
+        var updatedMethod = onModelCreating.WithBody(body);
 
+        var updatedClass = classNode
+            .RemoveNode(onModelCreating, SyntaxRemoveOptions.KeepNoTrivia)
+            ?.AddMembers(updatedMethod);
+
+        if (updatedClass is not null)
+        {
+            var newRoot = root.ReplaceNode(classNode, updatedClass);
             _currentCode = newRoot.NormalizeWhitespace().ToFullString();
         }
 
         HasChanges = true;
+    }
+
+    private MethodDeclarationSyntax GetOrCreateOnModelCreatingMethod(ClassDeclarationSyntax classNode)
+    {
+        var existingMethod = classNode.Members
+            .OfType<MethodDeclarationSyntax>()
+            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
+
+        if (existingMethod is not null)
+        {
+            return existingMethod;
+        }
+
+        return SyntaxFactory.MethodDeclaration(
+                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                OnModelCreatingMethodName)
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.ProtectedKeyword),
+                SyntaxFactory.Token(SyntaxKind.OverrideKeyword))
+            .WithParameterList(
+                SyntaxFactory.ParameterList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("modelBuilder"))
+                            .WithType(SyntaxFactory.IdentifierName("ModelBuilder")))))
+            .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
     }
 
     public void DeleteRelations(string entity, List<string> relatedEntities)
@@ -301,7 +255,6 @@ public class DbContextEditor(
         var block = onModelCreating.Body;
         var statementsToRemove = new List<StatementSyntax>();
 
-        // Search for relation configurations to remove (e.g., HasMany, HasOne)
         foreach (var relation in relatedEntities)
         {
             var relationStatements = block?.Statements
@@ -315,11 +268,9 @@ public class DbContextEditor(
             }
         }
 
-        // Remove the relation statements
         var modifiedStatements = block.Statements.Except(statementsToRemove).ToList();
         var modifiedBlock = block.WithStatements(SyntaxFactory.List(modifiedStatements));
 
-        // Rebuild the method with the updated block
         var modifiedMethod = onModelCreating.WithBody(modifiedBlock);
         var modifiedRoot = root.ReplaceNode(onModelCreating, modifiedMethod);
         _currentCode = modifiedRoot.NormalizeWhitespace().ToFullString();
