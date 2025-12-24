@@ -15,4 +15,6 @@ public class FieldRequest
     public bool IsRequired { get; set; } = false;
     
     public string? RelatedRelationName { get; set; }
+    
+    public string? Regex { get; set; }
 }
