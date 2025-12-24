@@ -59,13 +59,20 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   selectedType$ = this.store.select(selectSelectedType);
   selectedTypeFields$ = this.store.select(selectFields);
   selectedType = '';
-  
+
+  selectedRelationTypeIndex: number | null = null;
+  selectedRelationType = 'ManyToMany';
+  relationTypeMap: Record<number, string> = {
+    0: 'ManyToMany',
+    1: 'OneToMany',
+    2: 'ManyToOne',
+    3: 'OneToOne'
+  };
 
   availableModels: { label: string; value: string }[] = [];
   availableEnums: string[] = [];
   selectedEnum: string = '';
 
-  selectedRelationTypeIndex: number | null = null;
 
   fieldTypes: FieldType[] = [
     {
@@ -138,7 +145,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       label: 'Relation',
       description: 'Create relation between models',
       value: 'relation',
-      netType: 'OneToOne',
+      netType: this.selectedRelationType,
     },
     {
       type: FieldTypeEnum.Number,
@@ -297,16 +304,9 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
 
   selectRelationType(index: number): void {
     this.selectedRelationTypeIndex = index;
-
-    const relationTypeMap: { [key: number]: string } = {
-      0: 'ManyToMany',
-      1: 'OneToMany',
-      2: 'ManyToOne',
-      3: 'OneToOne'
-    };
-
-    const netType = relationTypeMap[index] || '';
+    this.selectedRelationType = this.relationTypeMap[index];
   }
+
   selectFieldType(id: FieldTypeEnum): void {
     this.selectedFieldTypeId = id;
 
@@ -333,6 +333,11 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
 
     if (!selectedFieldType) {
       return;
+    }
+
+    if (selectedFieldType.type === this.fieldTypeEnum.Relation && this.selectedRelationTypeIndex !== null) 
+    {
+      selectedFieldType.netType = this.relationTypeMap[this.selectedRelationTypeIndex];
     }
 
     const payload = {
