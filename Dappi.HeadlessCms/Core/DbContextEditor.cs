@@ -91,7 +91,6 @@ public class DbContextEditor(
             : CSharpSyntaxTree.ParseText(_currentCode);
         var root = syntaxTree.GetCompilationUnitRoot();
         var classNode = FindDbContextClassDeclaration(root);
-
         var hasDbSet = classNode.Members
             .OfType<PropertyDeclarationSyntax>()
             .Any(p =>
@@ -137,7 +136,7 @@ public class DbContextEditor(
         var indexStatement =
             $@"modelBuilder.Entity<{modelName}>().HasIndex(e => e.{propertyName});";
 
-        UpdateOnModelCreatingInternal(indexStatement);
+        UpdateOnModelCreatingPrivate(indexStatement);
     }
 
     public void UpdateOnModelCreating(
@@ -172,10 +171,10 @@ public class DbContextEditor(
             _ => throw new ArgumentException("Invalid relationship type")
         };
 
-        UpdateOnModelCreatingInternal(relationCode);
+        UpdateOnModelCreatingPrivate(relationCode);
     }
 
-    private void UpdateOnModelCreatingInternal(string statementCode)
+    private void UpdateOnModelCreatingPrivate(string statementCode)
     {
         var syntaxTree = GetSyntaxTreeFromDbContextSource();
         var root = syntaxTree.GetCompilationUnitRoot();
@@ -210,32 +209,7 @@ public class DbContextEditor(
 
         HasChanges = true;
     }
-
-    private MethodDeclarationSyntax GetOrCreateOnModelCreatingMethod(ClassDeclarationSyntax classNode)
-    {
-        var existingMethod = classNode.Members
-            .OfType<MethodDeclarationSyntax>()
-            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
-
-        if (existingMethod is not null)
-        {
-            return existingMethod;
-        }
-
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
-                OnModelCreatingMethodName)
-            .AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.ProtectedKeyword),
-                SyntaxFactory.Token(SyntaxKind.OverrideKeyword))
-            .WithParameterList(
-                SyntaxFactory.ParameterList(
-                    SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("modelBuilder"))
-                            .WithType(SyntaxFactory.IdentifierName("ModelBuilder")))))
-            .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
-    }
-
+    
     public void DeleteRelations(string entity, List<string> relatedEntities)
     {
         var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
@@ -277,6 +251,31 @@ public class DbContextEditor(
         HasChanges = true;
     }
 
+    private MethodDeclarationSyntax GetOrCreateOnModelCreatingMethod(ClassDeclarationSyntax classNode)
+    {
+        var existingMethod = classNode.Members
+            .OfType<MethodDeclarationSyntax>()
+            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
+
+        if (existingMethod is not null)
+        {
+            return existingMethod;
+        }
+
+        return SyntaxFactory.MethodDeclaration(
+                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                OnModelCreatingMethodName)
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.ProtectedKeyword),
+                SyntaxFactory.Token(SyntaxKind.OverrideKeyword))
+            .WithParameterList(
+                SyntaxFactory.ParameterList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("modelBuilder"))
+                            .WithType(SyntaxFactory.IdentifierName("ModelBuilder")))))
+            .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+    }
+    
     private ClassDeclarationSyntax FindDbContextClassDeclaration(CompilationUnitSyntax root)
     {
         var classNode = root.DescendantNodes()
