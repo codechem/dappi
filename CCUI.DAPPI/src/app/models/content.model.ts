@@ -58,7 +58,7 @@ export interface ModelField {
   relatedTo?: string;
   isRequired?: boolean;
   isEnum?: boolean;
-  Regex?: string;
+  regex?: string;
 }
 
 export interface ModelResponse {

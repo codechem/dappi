@@ -71,7 +71,7 @@ namespace Dappi.HeadlessCms.Core.Extensions
             return property.AddAttributeLists(attributeList);
         }
 
-        public static PropertyDeclarationSyntax WithAttribute(this PropertyDeclarationSyntax property, string attributeName, params AttributeArgumentSyntax[] arguments)
+        private static PropertyDeclarationSyntax WithRegexAttribute(this PropertyDeclarationSyntax property, string attributeName, params AttributeArgumentSyntax[] arguments)
         {
             var attribute = SyntaxFactory.Attribute(SyntaxFactory.ParseName(attributeName));
             if (arguments.Length > 0)
@@ -85,7 +85,7 @@ namespace Dappi.HeadlessCms.Core.Extensions
         public static PropertyDeclarationSyntax WithRegularExpressionAttribute(this PropertyDeclarationSyntax property,
             string regex)
         {
-            return property.WithAttribute("RegularExpression", SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression($"@\"{regex}\"")));
+            return property.WithRegexAttribute("RegularExpression", SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression($"@\"{regex}\"")));
         }
 
         public static MemberDeclarationSyntax[] GeneratePropertiesFromType(Type type)

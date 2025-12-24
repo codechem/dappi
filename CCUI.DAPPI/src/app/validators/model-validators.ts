@@ -171,4 +171,31 @@ export class ModelValidators {
       return null;
       }
   }
+
+  static validRegex(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (!value) {
+      return null;
+    }
+
+    if (typeof value !== 'string') {
+      return { invalidRegex: true };
+    }
+
+    try {
+      const trimmed = value.trim();
+      if (trimmed.startsWith('/') && trimmed.lastIndexOf('/') > 0) {
+        const lastSlash = trimmed.lastIndexOf('/');
+        const pattern = trimmed.substring(1, lastSlash);
+        const flags = trimmed.substring(lastSlash + 1);
+        new RegExp(pattern, flags);
+      } else {
+        new RegExp(trimmed);
+      }
+      return null;
+    } catch (e) {
+      return { invalidRegex: true };
+    }
+  }
 }
