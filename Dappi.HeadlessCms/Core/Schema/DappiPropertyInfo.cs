@@ -14,6 +14,7 @@ public class StringProperty : DappiPropertyInfo
 {
     public int? MaxLength { get; set; }
     public int? MinLength { get; set; }
+    public string? Regex { get; set; }
 }
 
 public class EnumProperty : DappiPropertyInfo

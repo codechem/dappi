@@ -312,3 +312,10 @@
     stroke: #{vars.$primary-main};
   }
 }
+
+.field-settings-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}

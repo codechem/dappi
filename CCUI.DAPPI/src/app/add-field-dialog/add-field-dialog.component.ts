@@ -189,7 +189,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       ],
       requiredField: [false],
       relatedModel: [''],
-      relatedRelationName: ['']
+      relatedRelationName: [''],
+      regex: ['']
     });
   }
 
@@ -340,6 +341,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       relatedTo: this.relatedTo,
       isRequired: this.fieldForm.value.requiredField,
       relatedRelationName: this.fieldForm.value.relatedRelationName,
+      regex: this.fieldForm.value.regex
     };
 
     if (this.selectedFieldTypeId === this.fieldTypeEnum.Dropdown) {

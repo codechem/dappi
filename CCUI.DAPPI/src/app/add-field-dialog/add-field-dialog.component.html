@@ -36,33 +36,43 @@
         selectedFieldTypeId !== fieldTypeEnum.Dropdown
       ) {
         <h3 class="section-title">2. Field settings</h3>
-        <mat-form-field appearance="outline" class="input-field">
-          <mat-label>Field name</mat-label>
-          <input matInput formControlName="fieldName" placeholder="Enter field name" />
-          @if (
-            fieldForm.get('fieldName')?.hasError('required') && fieldForm.get('fieldName')?.touched
-          ) {
-            <mat-error> Field name is required</mat-error>
+        <div class="field-settings-row">
+          <mat-form-field appearance="outline" class="input-field">
+            <mat-label>Field name</mat-label>
+            <input matInput formControlName="fieldName" placeholder="Enter field name" />
+            @if (
+              fieldForm.get('fieldName')?.hasError('required') && fieldForm.get('fieldName')?.touched
+            ) {
+              <mat-error> Field name is required</mat-error>
+            }
+            @if (fieldForm.get('fieldName')?.hasError('maxlength')) {
+              <mat-error> Field name cannot exceed 50 characters</mat-error>
+            }
+            @if (fieldForm.get('fieldName')?.hasError('invalidPascalCase')) {
+              <mat-error> Field name format is invalid</mat-error>
+            }
+            @if (fieldForm.get('fieldName')?.hasError('reservedKeyword')) {
+              <mat-error> Field name is a reserved C# keyword</mat-error>
+            }
+            @if (fieldForm.get('fieldName')?.hasError('fieldNameIsTaken')) {
+              <mat-error>
+                The current collection already has a field with the name
+                {{ fieldForm.get('fieldName')?.value }}</mat-error
+              >
+            }
+            @if (fieldForm.get('fieldName')?.hasError('fieldNameSameAsModel')) {
+              <mat-error> Field name must be different than the model</mat-error>
+            }
+          </mat-form-field>
+
+          @if(selectedFieldTypeId === fieldTypeEnum.String) {
+            <mat-form-field appearance="outline" class="input-field">
+              <mat-label>Regex Pattern*</mat-label>
+              <input matInput formControlName="regex" placeholder="Enter regex pattern" />
+            </mat-form-field>
           }
-          @if (fieldForm.get('fieldName')?.hasError('maxlength')) {
-            <mat-error> Field name cannot exceed 50 characters</mat-error>
-          }
-          @if (fieldForm.get('fieldName')?.hasError('invalidPascalCase')) {
-            <mat-error> Field name format is invalid</mat-error>
-          }
-          @if (fieldForm.get('fieldName')?.hasError('reservedKeyword')) {
-            <mat-error> Field name is a reserved C# keyword</mat-error>
-          }
-          @if (fieldForm.get('fieldName')?.hasError('fieldNameIsTaken')) {
-            <mat-error>
-              The current collection already has a field with the name
-              {{ fieldForm.get('fieldName')?.value }}</mat-error
-            >
-          }
-          @if (fieldForm.get('fieldName')?.hasError('fieldNameSameAsModel')) {
-            <mat-error> Field name must be different than the model</mat-error>
-          }
-        </mat-form-field>
+        </div>
+
         <div class="required-field">
           <mat-checkbox formControlName="requiredField">Required field</mat-checkbox>
           <small>You will not be able to create an entry if this field is empty</small>
