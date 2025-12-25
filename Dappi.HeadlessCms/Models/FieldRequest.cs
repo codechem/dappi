@@ -17,4 +17,8 @@ public class FieldRequest
     public string? RelatedRelationName { get; set; }
     
     public string? Regex { get; set; }
+    
+    public int? MaxLength { get; set; }
+    
+    public int? MinLength { get; set; }
 }

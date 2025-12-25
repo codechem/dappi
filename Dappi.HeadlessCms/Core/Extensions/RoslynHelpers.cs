@@ -88,6 +88,21 @@ namespace Dappi.HeadlessCms.Core.Extensions
             return property.WithRegexAttribute("RegularExpression", SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression($"@\"{regex}\"")));
         }
 
+        public static PropertyDeclarationSyntax WithMaxLengthAttribute(this PropertyDeclarationSyntax property,
+            string attributeName, int minLength = 0, int maxLength = 0)
+        {
+            var attribute = SyntaxFactory.Attribute(SyntaxFactory.ParseName("MaxLength"));
+
+            var arguments = SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression(maxLength.ToString()));
+            
+            // if (arguments.Length > 0)
+            // {
+            //     attribute = attribute.AddArgumentListArguments(arguments);
+            // }
+            var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
+            return property.AddAttributeLists(attributeList);
+        }
+
         public static MemberDeclarationSyntax[] GeneratePropertiesFromType(Type type)
         {
             var memberList = new List<MemberDeclarationSyntax>();

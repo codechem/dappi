@@ -59,6 +59,8 @@ export interface ModelField {
   isRequired?: boolean;
   isEnum?: boolean;
   regex?: string;
+  minLength?: number;
+  maxLength?: number;
 }
 
 export interface ModelResponse {

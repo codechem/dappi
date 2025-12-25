@@ -163,6 +163,10 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         {
             newProperty = newProperty.WithRegularExpressionAttribute(property.Regex);
         }
+        if (property.Type == "string" && !string.IsNullOrEmpty(property.MaxLength))
+        {
+            newProperty = newProperty.WithMaxLengthAttribute(property.MaxLength);
+        }
 
         var newNode = classNode.AddMembers(newProperty);
         var newRoot = root.ReplaceNode(classNode, newNode);
