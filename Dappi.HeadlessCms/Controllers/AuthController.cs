@@ -84,12 +84,7 @@ public class AuthController : ControllerBase
 
         _logger.LogInformation("User {Username} logged in successfully", dto.Username);
 
-        return Ok(new
-        {
-            token,
-            username = user.UserName,
-            roles
-        });
+        return Ok(new { token, username = user.UserName, roles });
     }
 }
 
@@ -108,27 +103,15 @@ public class ModelFieldsController : ControllerBase
     [HttpGet("Users")]
     public IActionResult GetUserFields()
     {
-        try
+        var fields = new List<FieldsInfo>
         {
-            var fields = new List<FieldsInfo>
-        {
-            new(){ FieldName = "Id", FieldType = "Guid", IsRequired = false },
+            new() { FieldName = "Id", FieldType = "Guid", IsRequired = false },
             new() { FieldName = "Email", FieldType = "string", IsRequired = false },
             new() { FieldName = "Name", FieldType = "string", IsRequired = false },
             new() { FieldName = "Roles", FieldType = "userRoles", IsRequired = false }
         };
 
-            _logger.LogInformation("Retrieved user field names");
-            return Ok(new ModelResponse()
-            {
-                Fields = fields
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving user field names: {Message}", ex.Message);
-            return StatusCode(500, new { message = "An error occurred while retrieving user field names" });
-        }
+        _logger.LogInformation("Retrieved user field names");
+        return Ok(new ModelResponse() { Fields = fields });
     }
-
 }

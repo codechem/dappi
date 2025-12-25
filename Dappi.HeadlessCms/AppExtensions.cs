@@ -1,5 +1,6 @@
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Enums;
+using Dappi.HeadlessCms.Middleware;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -17,6 +18,8 @@ public static class AppExtensions
         Action<SwaggerUIOptions>? configureSwagger = null)
         where TDbContext : DappiDbContext
     {
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
         {
             app.UseSwagger();
@@ -58,7 +61,7 @@ public static class AppExtensions
 
             await PublishContentTypeChangesAsync<TDbContext>(scope.ServiceProvider);
         }
-        // we can't migrate the schema changes, but we need to continue and just not publish un-published content-type changes.
+
         catch (InvalidOperationException e) when (e.Message.Contains("PendingModelChangesWarning"))
         {
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<TDbContext>>();

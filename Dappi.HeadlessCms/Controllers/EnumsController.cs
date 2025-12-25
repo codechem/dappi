@@ -18,7 +18,9 @@ public class EnumsController : ControllerBase
     private readonly DomainModelEditor _domainModelEditor;
     private readonly string _enumsFolderPath;
     private readonly IContentTypeChangesService _contentTypeChangesService;
-    public EnumsController(IEnumService enumService, DomainModelEditor domainModelEditor, IContentTypeChangesService contentTypeChangesService)
+
+    public EnumsController(IEnumService enumService, DomainModelEditor domainModelEditor,
+        IContentTypeChangesService contentTypeChangesService)
     {
         _enumService = enumService;
         _domainModelEditor = domainModelEditor;
@@ -29,33 +31,20 @@ public class EnumsController : ControllerBase
     [HttpGet("getAll")]
     public async Task<IActionResult> GetAllEnums()
     {
-        try
-        {
-            var enums = await _enumService.GetAllEnumsAsync();
-            return Ok(enums);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Failed to retrieve enums", error = ex.Message });
-        }
+        var enums = await _enumService.GetAllEnumsAsync();
+        return Ok(enums);
     }
 
     [HttpGet("{enumName}")]
     public async Task<IActionResult> GetEnum(string enumName)
     {
-        try
+        var enumData = await _enumService.GetEnumAsync(enumName);
+        if (enumData == null)
         {
-            var enumData = await _enumService.GetEnumAsync(enumName);
-            if (enumData == null)
-            {
-                return NotFound(new { message = $"Enum '{enumName}' not found" });
-            }
-            return Ok(enumData);
+            return NotFound(new { message = $"Enum '{enumName}' not found" });
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Failed to retrieve enum", error = ex.Message });
-        }
+
+        return Ok(enumData);
     }
 
     [HttpPost]
@@ -66,20 +55,13 @@ public class EnumsController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        try
+        var result = await _enumService.CreateEnumAsync(request.Name, request.Values);
+        if (!result.Success)
         {
-            var result = await _enumService.CreateEnumAsync(request.Name, request.Values);
-            if (!result.Success)
-            {
-                return BadRequest(new { message = result.ErrorMessage });
-            }
+            return BadRequest(new { message = result.ErrorMessage });
+        }
 
-            return CreatedAtAction(nameof(GetEnum), new { enumName = request.Name }, result.Data);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Failed to create enum", error = ex.Message });
-        }
+        return CreatedAtAction(nameof(GetEnum), new { enumName = request.Name }, result.Data);
     }
 
     [HttpPut("{enumName}")]
@@ -90,69 +72,51 @@ public class EnumsController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        try
-        {
-            var result = await _enumService.UpdateEnumAsync(enumName, request.Values);
-            if (!result.Success)
-            {
-                return BadRequest(new { message = result.ErrorMessage });
-            }
 
-            return Ok(result.Data);
-        }
-        catch (Exception ex)
+        var result = await _enumService.UpdateEnumAsync(enumName, request.Values);
+        if (!result.Success)
         {
-            return StatusCode(500, new { message = "Failed to update enum", error = ex.Message });
+            return BadRequest(new { message = result.ErrorMessage });
         }
+
+        return Ok(result.Data);
     }
 
     [HttpDelete("{enumName}")]
     public async Task<IActionResult> DeleteEnum(string enumName)
     {
-        try
+        var result = await _enumService.DeleteEnumAsync(enumName);
+        if (!result.Success)
         {
-            var result = await _enumService.DeleteEnumAsync(enumName);
-            if (!result.Success)
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        var filePath = Path.Combine(_enumsFolderPath, $"{enumName}.cs");
+        var models = await _domainModelEditor.GetDomainModelEntityInfosAsync();
+        System.IO.File.Delete(filePath);
+        foreach (var model in models)
+        {
+            _domainModelEditor.RemoveEnumProperty(model.Name, enumName);
+            if (!Directory.EnumerateFiles(_enumsFolderPath, "*.cs", SearchOption.AllDirectories).Any())
             {
-                return BadRequest(new { message = result.ErrorMessage });
+                _domainModelEditor.UpdateUsings(model);
             }
 
-            var filePath = Path.Combine(_enumsFolderPath, $"{enumName}.cs");
-            var models = await _domainModelEditor.GetDomainModelEntityInfosAsync();
-            System.IO.File.Delete(filePath);
-            foreach (var model in models)
-            {
-                _domainModelEditor.RemoveEnumProperty(model.Name, enumName);
-                if (!Directory.EnumerateFiles(_enumsFolderPath, "*.cs", SearchOption.AllDirectories).Any())
-                {
-                    _domainModelEditor.UpdateUsings(model);
-                }
-                //TODO: Add changedFields
-                await _contentTypeChangesService.AddContentTypeChangeAsync(model.Name,
-                    new Dictionary<string, string>(),
-                    ContentTypeState.PendingPublish);
-            }
-            await _domainModelEditor.SaveAsync();
+            //TODO: Add changedFields
+            await _contentTypeChangesService.AddContentTypeChangeAsync(model.Name,
+                new Dictionary<string, string>(),
+                ContentTypeState.PendingPublish);
+        }
 
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Failed to delete enum", error = ex.Message });
-        }
+        await _domainModelEditor.SaveAsync();
+
+        return NoContent();
     }
 
     [HttpPost("regenerate")]
     public async Task<IActionResult> RegenerateEnumFiles()
     {
-        try
-        {
-            await _enumService.RegenerateAllEnumFilesAsync();
-            return Ok(new { message = "Enum files regenerated successfully" });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Failed to regenerate enum files", error = ex.Message });
-        }
+        await _enumService.RegenerateAllEnumFilesAsync();
+        return Ok(new { message = "Enum files regenerated successfully" });
     }
 }

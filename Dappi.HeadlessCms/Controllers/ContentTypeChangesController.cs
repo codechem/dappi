@@ -21,6 +21,7 @@ namespace Dappi.HeadlessCms.Controllers
         private readonly ILogger<ContentTypeChangesController> _logger;
         private readonly DomainModelEditor _domainModelEditor;
         private readonly IContentTypeChangesService _contentTypeChangesService;
+
         public ContentTypeChangesController(
             IDbContextAccessor dappiDbContextAccessor,
             ILogger<ContentTypeChangesController> logger,
@@ -36,67 +37,43 @@ namespace Dappi.HeadlessCms.Controllers
         [HttpGet]
         public async Task<IActionResult> GetContentTypeChanges()
         {
-            try
-            {
-                var dto = _dbContext.ContentTypeChanges
-                    .AsNoTracking()
-                    .Where(ctc => ctc.ModifiedAt >= DateTimeOffset.UtcNow.AddDays(-1))
-                    .OrderByDescending(ctc => ctc.ModifiedAt)
-                    .ToDtos();
+            var dto = _dbContext.ContentTypeChanges
+                .AsNoTracking()
+                .Where(ctc => ctc.ModifiedAt >= DateTimeOffset.UtcNow.AddDays(-1))
+                .OrderByDescending(ctc => ctc.ModifiedAt)
+                .ToDtos();
 
-                return Ok(await dto.ToListAsync());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving ContentTypeChanges");
-                return StatusCode(500, new { message = "Internal server error" });
-            }
+            return Ok(await dto.ToListAsync());
         }
 
         [HttpGet("published-models")]
         public async Task<IActionResult> GetPublishedModels()
         {
-            try
-            { 
-                var models = (await _domainModelEditor.GetDomainModelEntityInfosAsync())
-                    .Select(x => x.Name).ToList();
-                var existingTables = _dbContext.Model.GetEntityTypes().Select(x => x.GetTableName()).ToList();
-                
-                var publishedOnlyModels = await _dbContext.ContentTypeChanges
-                    .Where(ctc =>
-                        ctc.State == ContentTypeState.Published &&
-                        models.Contains(ctc.ModelName))
-                    .Select(x => x.ModelName)
-                    .Distinct()
-                    .ToListAsync();
-                
-                var filteredPublishedModels =
-                    publishedOnlyModels.Where(x => existingTables.Any(e => e == x.Pluralize())).ToList();
-                return Ok(filteredPublishedModels);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while retrieving published models");
-                return StatusCode(500, new { message = "An error occurred while retrieving published models" });
-            }
+            var models = (await _domainModelEditor.GetDomainModelEntityInfosAsync())
+                .Select(x => x.Name).ToList();
+            var existingTables = _dbContext.Model.GetEntityTypes().Select(x => x.GetTableName()).ToList();
+
+            var publishedOnlyModels = await _dbContext.ContentTypeChanges
+                .Where(ctc =>
+                    ctc.State == ContentTypeState.Published &&
+                    models.Contains(ctc.ModelName))
+                .Select(x => x.ModelName)
+                .Distinct()
+                .ToListAsync();
+
+            var filteredPublishedModels =
+                publishedOnlyModels.Where(x => existingTables.Any(e => e == x.Pluralize())).ToList();
+            return Ok(filteredPublishedModels);
         }
 
         [HttpGet("draft-models")]
         public async Task<IActionResult> GetDraftModels()
         {
-            try
-            {
-                var draftModels = _contentTypeChangesService.GetDraftsAsync()
-                    .Select(x => x.ModelName)
-                    .Distinct();
+            var draftModels = _contentTypeChangesService.GetDraftsAsync()
+                .Select(x => x.ModelName)
+                .Distinct();
 
-                return Ok(await draftModels.ToListAsync());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while retrieving draft models");
-                return StatusCode(500, new { message = "An error occurred while retrieving draft models" });
-            }
+            return Ok(await draftModels.ToListAsync());
         }
     }
 }
