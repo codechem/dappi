@@ -11,7 +11,7 @@ namespace Dappi.HeadlessCms.Models
         public DappiRelationKind? RelationKind { get; set; } = null;
         public string? RelatedDomainModel { get; set; } = null;
         public string? Regex { get; set; } = null;
-        
+        public string? MinLength { get; set; }
         public string? MaxLength { get; set; }
     }
 }

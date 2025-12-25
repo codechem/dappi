@@ -167,6 +167,10 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         {
             newProperty = newProperty.WithMaxLengthAttribute(property.MaxLength);
         }
+        if (property.Type == "string" && !string.IsNullOrEmpty(property.MinLength))
+        {
+            newProperty = newProperty.WithMaxLengthAttribute(property.MinLength);
+        }
 
         var newNode = classNode.AddMembers(newProperty);
         var newRoot = root.ReplaceNode(classNode, newNode);

@@ -80,6 +80,16 @@
           <mat-checkbox formControlName="requiredField">Required field</mat-checkbox>
           <small>You will not be able to create an entry if this field is empty</small>
         </div>
+
+        @if (selectedType === "string") {
+          <div>
+            <input matInput formControlName="minLength" placeholder="Enter min length" />
+          </div>
+
+          <div>
+            <input matInput formControlName="maxLength" placeholder="Enter max length" />
+          </div>
+        }
       }
 
       @if (selectedFieldTypeId === fieldTypeEnum.Dropdown) {
