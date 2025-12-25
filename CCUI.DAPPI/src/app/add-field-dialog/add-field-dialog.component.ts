@@ -132,7 +132,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: 'bool',
     },
     {
-      type: FieldTypeEnum.Date,
+      type: FieldTypeEnum.DateTime,
       icon: 'today',
       label: 'DateTime',
       description: 'For date and time values together',
