@@ -61,6 +61,7 @@ export interface ModelField {
   regex?: string;
   minLength?: number;
   maxLength?: number;
+  range?: number[];
 }
 
 export interface ModelResponse {

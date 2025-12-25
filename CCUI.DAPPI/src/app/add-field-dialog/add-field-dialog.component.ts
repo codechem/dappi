@@ -167,6 +167,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     relatedRelationName: [''],
     minLength: [null, [Validators.min(0)]],
     maxLength: [null, [Validators.min(0)]],
+    range: [[null, null]],
   });
 
   selectedFieldTypeId: FieldTypeEnum | null = null;

@@ -83,6 +83,8 @@ const CSHARP_KEYWORDS = [
   'while',
 ];
 
+const INT32_MAX = 2147483647;
+
 export class ModelValidators {
   static pascalCase(control: AbstractControl): ValidationErrors | null {
     const value = control.value;
@@ -157,7 +159,7 @@ export class ModelValidators {
     };
   }
 
-   static fieldNameSameAsModel(modelName:string) {
+  static fieldNameSameAsModel(modelName:string) {
     return (control: AbstractControl) : ValidationErrors | null => {
       const value = control.value;
 
@@ -197,5 +199,45 @@ export class ModelValidators {
     } catch (e) {
       return { invalidRegex: true };
     }
+  }
+
+  static validMinField(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const intValue = Number(value);
+
+    if (
+      !Number.isInteger(intValue) ||
+      intValue < 1 ||
+      intValue > 2147483647
+    ) {
+      return { invalidMinField: true };
+    }
+
+    return null;
+  }
+
+  static validMaxField(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const intValue = Number(value);
+
+    if (
+      !Number.isInteger(intValue) ||
+      intValue < 1 ||
+      intValue > 2147483647
+    ) {
+      return { invalidMaxField: true };
+    }
+
+    return null;
   }
 }

@@ -74,22 +74,56 @@
               }
             </mat-form-field>
           }
+
+          @if (selectedFieldTypeId === fieldTypeEnum.String) {
+            <mat-form-field appearance="outline" class="input-field">
+              <mat-label>Min Length</mat-label>
+              <input
+                matInput
+                type="number"
+                min="1"
+                max="2147483647"
+                step="1"
+                formControlName="minLength"
+              />
+
+              @if (fieldForm.get('minLength')?.hasError('invalidMinField') &&
+                  fieldForm.get('minLength')?.touched) {
+                <mat-error>Min length must be a whole number between 0 and 2,147,483,647</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="input-field">
+              <mat-label>Max Length</mat-label>
+              <input
+                matInput
+                type="number"
+                formControlName="maxLength"
+                placeholder="Enter max length"
+                min="1"
+                max="2147483647"
+                step="1"
+              />
+
+              @if (fieldForm.get('maxLength')?.hasError('invalidMaxField') &&
+                  fieldForm.get('maxLength')?.touched) {
+                <mat-error>Max length must be a whole number between 0 and 2,147,483,647</mat-error>
+              }
+            </mat-form-field>
+
+            @if (fieldForm.hasError('minGreaterThanMax') &&
+                (fieldForm.get('minLength')?.touched || fieldForm.get('maxLength')?.touched)) {
+              <mat-error class="cross-field-error">
+                Min length cannot be greater than max length
+              </mat-error>
+            }
+          }
         </div>
 
         <div class="required-field">
           <mat-checkbox formControlName="requiredField">Required field</mat-checkbox>
           <small>You will not be able to create an entry if this field is empty</small>
         </div>
-
-        @if (selectedType === "string") {
-          <div>
-            <input matInput formControlName="minLength" placeholder="Enter min length" />
-          </div>
-
-          <div>
-            <input matInput formControlName="maxLength" placeholder="Enter max length" />
-          </div>
-        }
       }
 
       @if (selectedFieldTypeId === fieldTypeEnum.Dropdown) {
