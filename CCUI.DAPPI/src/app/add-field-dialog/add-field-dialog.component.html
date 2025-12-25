@@ -80,7 +80,10 @@
           <mat-checkbox formControlName="requiredField">Required field</mat-checkbox>
           <small>You will not be able to create an entry if this field is empty</small>
         </div>
-        <div class="index-field">
+        <div class="index-field" 
+          *ngIf="!(selectedFieldTypeId === fieldTypeEnum.Media || 
+                    selectedFieldTypeId === fieldTypeEnum.Link || 
+                    selectedFieldTypeId === fieldTypeEnum.Checkbox)">
           <mat-checkbox formControlName="hasIndex">Indexed field</mat-checkbox>
           <small>This field will be indexed for faster searches</small>
         </div>
