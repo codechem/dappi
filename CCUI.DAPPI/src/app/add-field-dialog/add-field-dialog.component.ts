@@ -165,6 +165,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     requiredField: [false],
     relatedModel: [''],
     relatedRelationName: [''],
+    hasIndex: [false],
   });
 
   selectedFieldTypeId: FieldTypeEnum | null = null;
@@ -197,7 +198,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       requiredField: [false],
       relatedModel: [''],
       relatedRelationName: [''],
-      regex: ['', [ModelValidators.validRegex]]
+      regex: ['', [ModelValidators.validRegex]],
+      hasIndex: [false]
     });
   }
 
@@ -346,7 +348,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       relatedTo: this.relatedTo,
       isRequired: this.fieldForm.value.requiredField,
       relatedRelationName: this.fieldForm.value.relatedRelationName,
-      regex: this.fieldForm.value.regex
+      regex: this.fieldForm.value.regex,
+      hasIndex: this.fieldForm.value.hasIndex,
     };
 
     if (this.selectedFieldTypeId === this.fieldTypeEnum.Dropdown) {
