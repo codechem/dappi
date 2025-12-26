@@ -1,5 +1,6 @@
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Enums;
+using Dappi.HeadlessCms.Middleware;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -13,10 +14,13 @@ namespace Dappi.HeadlessCms;
 
 public static class AppExtensions
 {
-    public static async Task<IApplicationBuilder> UseDappi<TDbContext>(this WebApplication app,
+    public static async Task<IApplicationBuilder> UseDappi<TDbContext>(
+        this WebApplication app,
         Action<SwaggerUIOptions>? configureSwagger = null)
         where TDbContext : DappiDbContext
     {
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
         {
             app.UseSwagger();
@@ -32,7 +36,7 @@ public static class AppExtensions
         {
             await next();
 
-            if (!context.Request.Path.Value.StartsWith("/api/") &&
+            if (!context.Request.Path.Value!.StartsWith("/api/") &&
                 !Path.HasExtension(context.Request.Path) ||
                 context.Response.StatusCode == 404)
             {
@@ -45,41 +49,48 @@ public static class AppExtensions
         });
 
         app.UseHttpsRedirection();
-        app.MapControllers();
         app.UseStaticFiles();
+        app.MapControllers();
 
-        var scope = app.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<TDbContext>();
-        try
-        {
-            await db.Database.MigrateAsync();
-
-            await app.Services.SeedRolesAndUsersAsync<DappiUser, DappiRole>();
-
-            await PublishContentTypeChangesAsync<TDbContext>(scope.ServiceProvider);
-        }
-        // we can't migrate the schema changes, but we need to continue and just not publish un-published content-type changes.
-        catch (InvalidOperationException e) when (e.Message.Contains("PendingModelChangesWarning"))
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<TDbContext>>();
-            logger.LogWarning(
-                "Unable to migrate schema changes due to pending model changes. Most probably you have models in draft state. {Message}",
-                e.Message);
-        }
+        using var scope = app.Services.CreateScope();
+        await app.Services.SeedRolesAndUsersAsync<DappiUser, DappiRole>();
+        await MigrateIfNoModelsAreInDraftStateAsync<TDbContext>(scope.ServiceProvider);
 
         return app;
     }
 
-    private static async Task SeedRolesAndUsersAsync<TUser, TRole>(this IServiceProvider serviceProvider)
+    private static async Task MigrateIfNoModelsAreInDraftStateAsync<TDbContext>(
+        IServiceProvider serviceProvider)
+        where TDbContext : DappiDbContext
+    {
+        var logger = serviceProvider.GetRequiredService<ILogger<TDbContext>>();
+        var dbContext = serviceProvider.GetRequiredService<TDbContext>();
+
+        try
+        {
+            await dbContext.Database.MigrateAsync();
+            await PublishContentTypeChangesAsync<TDbContext>(serviceProvider);
+        }
+        catch (InvalidOperationException ex)
+            when (ex.Message.Contains("PendingModelChangesWarning"))
+        {
+            logger.LogWarning(
+                "Unable to migrate schema changes due to pending model changes. Most probably you have models in draft state. {Message}",
+                ex.Message);
+        }
+    }
+
+    private static async Task SeedRolesAndUsersAsync<TUser, TRole>(
+        this IServiceProvider serviceProvider)
         where TUser : IdentityUser, new()
         where TRole : IdentityRole, new()
     {
         using var scope = serviceProvider.CreateScope();
+
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<TRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<TUser>>();
 
-        var roles = Constants.UserRoles.All;
-        foreach (var roleName in roles)
+        foreach (var roleName in Constants.UserRoles.All)
         {
             if (!await roleManager.RoleExistsAsync(roleName))
             {
@@ -95,6 +106,7 @@ public static class AppExtensions
         const string adminPassword = "Dappi@123";
 
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
+
         if (adminUser == null)
         {
             var user = new TUser();
@@ -103,6 +115,7 @@ public static class AppExtensions
             typeof(TUser).GetProperty("EmailConfirmed")?.SetValue(user, true);
 
             var result = await userManager.CreateAsync(user, adminPassword);
+
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(user, "Admin");
@@ -110,28 +123,36 @@ public static class AppExtensions
         }
     }
 
-    private static async Task PublishContentTypeChangesAsync<TDbContext>(IServiceProvider serviceProvider)
+    private static async Task PublishContentTypeChangesAsync<TDbContext>(
+        IServiceProvider serviceProvider)
         where TDbContext : DappiDbContext
     {
         try
         {
             var dbContext = serviceProvider.GetRequiredService<TDbContext>();
+
             await dbContext.ContentTypeChanges
                 .Where(ctc =>
-                    ctc.State == ContentTypeState.PendingPublish || ctc.State == ContentTypeState.PendingDelete ||
+                    ctc.State == ContentTypeState.PendingPublish ||
+                    ctc.State == ContentTypeState.PendingDelete ||
                     ctc.State == ContentTypeState.PendingActionsChange)
-                .ExecuteUpdateAsync(setters => 
-                    setters.SetProperty(e => e.State,
+                .ExecuteUpdateAsync(setters =>
+                    setters.SetProperty(
+                        e => e.State,
                         e => e.State == ContentTypeState.PendingPublish
                             ? ContentTypeState.Published
-                            : e.State == ContentTypeState.PendingDelete ? ContentTypeState.Deleted 
-                            : e.State == ContentTypeState.PendingActionsChange ? ContentTypeState.ActionsChanged 
-                                : e.State));
+                            : e.State == ContentTypeState.PendingDelete
+                                ? ContentTypeState.Deleted
+                                : e.State == ContentTypeState.PendingActionsChange
+                                    ? ContentTypeState.ActionsChanged
+                                    : e.State));
         }
         catch (Exception ex)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<TDbContext>>();
-            logger.LogError("Error publishing content type changes: {PublishContentChangesError}", ex);
+            logger.LogError(
+                "Error publishing content-type changes: {PublishContentChangesError}",
+                ex);
             throw;
         }
     }

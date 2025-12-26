@@ -34,30 +34,23 @@ public class MigrationController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> ApplyMigrationsAndRestart()
     {
-        try
+        var draftModels = await _contentTypeChangesService.GetDraftsAsync().ToListAsync();
+        if (draftModels.Any(x => x.State is ContentTypeState.PendingPublish or ContentTypeState.PendingDelete))
         {
-            var draftModels = await _contentTypeChangesService.GetDraftsAsync().ToListAsync();
-            if (draftModels.Any(x => x.State is ContentTypeState.PendingPublish or ContentTypeState.PendingDelete))
+            if (OperatingSystem.IsWindows())
             {
-                if (OperatingSystem.IsWindows())
-                {
-                    RunDbMigrationScenarioForWindows();
-                }
-                else
-                {
-                    RunDbMigrationScenario();
-                }
-
-                return Ok("Migrations applied. Application restarting...");
+                RunDbMigrationScenarioForWindows();
+            }
+            else
+            {
+                RunDbMigrationScenario();
             }
 
-            RestartApplication();
-            return Ok("No migrations to apply. Application restarting...");
+            return Ok("Migrations applied. Application restarting...");
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"Error: {ex.Message}");
-        }
+
+        RestartApplication();
+        return Ok("No migrations to apply. Application restarting...");
     }
 
     private void RunDbMigrationScenario()
@@ -109,51 +102,37 @@ public class MigrationController : ControllerBase
 
     private void RestartApplication()
     {
-        try
-        {
-            var exePath = Assembly.GetEntryAssembly()!.Location;
-            var directory = Path.GetDirectoryName(exePath);
-            var processId = Environment.ProcessId;
-            var scriptPath = Path.Combine(directory, "Scripts", "restart-app.sh");
-            Process.Start("chmod", new[] { "+x", scriptPath })?.WaitForExit();
+        var exePath = Assembly.GetEntryAssembly()!.Location;
+        var directory = Path.GetDirectoryName(exePath);
+        var processId = Environment.ProcessId;
+        var scriptPath = Path.Combine(directory, "Scripts", "restart-app.sh");
+        Process.Start("chmod", new[] { "+x", scriptPath })?.WaitForExit();
 
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "/bin/bash",
-                Arguments = $"-c \"{scriptPath}\" {processId} {exePath}",
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            Process.Start(startInfo);
-            _appLifetime.StopApplication();
-        }
-        catch (Exception ex)
+        var startInfo = new ProcessStartInfo
         {
-            Console.WriteLine($"Failed to restart application: {ex.Message}");
-        }
+            FileName = "/bin/bash",
+            Arguments = $"-c \"{scriptPath}\" {processId} {exePath}",
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        Process.Start(startInfo);
+        _appLifetime.StopApplication();
     }
 
     private void ApplyMigrationsAfterRestart(string directory)
     {
-        try
-        {
-            var currentDir = Directory.GetCurrentDirectory();
-            var csproj = Directory.GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
+        var currentDir = Directory.GetCurrentDirectory();
+        var csproj = Directory.GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
 
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "dotnet",
-                Arguments = $"ef database update --project {csproj}",
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            Process.Start(startInfo)?.WaitForExit();
-        }
-        catch (Exception ex)
+        var startInfo = new ProcessStartInfo
         {
-            Console.WriteLine($"Failed to apply migrations after restart: {ex.Message}");
-        }
+            FileName = "dotnet",
+            Arguments = $"ef database update --project {csproj}",
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        Process.Start(startInfo)?.WaitForExit();
     }
 
     private string GetMigrationName()

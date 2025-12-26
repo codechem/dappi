@@ -27,6 +27,7 @@ public class ModelsController : ControllerBase
     private readonly string _entitiesFolderPath;
     private readonly string _controllersFolderPath;
     private readonly IContentTypeChangesService _contentTypeChangesService;
+
     public ModelsController(DomainModelEditor domainModelEditor,
         DbContextEditor dbContextEditor,
         IContentTypeChangesService contentTypeChangesService)
@@ -43,20 +44,13 @@ public class ModelsController : ControllerBase
             Directory.CreateDirectory(_entitiesFolderPath);
         }
     }
-
+    
     [HttpGet]
     public async Task<IActionResult> GetAllModels()
     {
-        try
-        {
-            var domainModelEntities = await _domainModelEditor.GetDomainModelEntityInfosAsync();
-            var res = domainModelEntities.Select(x => x.Name).ToList();
-            return Ok(res);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
-        }
+        var domainModelEntities = await _domainModelEditor.GetDomainModelEntityInfosAsync();
+        var res = domainModelEntities.Select(x => x.Name).ToList();
+        return Ok(res);
     }
 
     [HttpPost]
@@ -78,32 +72,26 @@ public class ModelsController : ControllerBase
             return BadRequest($"A model with the name '{request.ModelName}' already exists.");
         }
 
-        try
+
+        _domainModelEditor.CreateEntityModel(request);
+
+        await _contentTypeChangesService.AddContentTypeChangeAsync(
+            request.ModelName,
+            new Dictionary<string, string> { { "Id", "Guid" } },
+            ContentTypeState.PendingPublish
+        );
+
+        await _domainModelEditor.SaveAsync();
+
+        var entitiesToBeRegistered = (await _domainModelEditor.GetDomainModelEntityInfosAsync()).ToList();
+        foreach (var newModel in entitiesToBeRegistered)
         {
-            _domainModelEditor.CreateEntityModel(request);
-
-            await _contentTypeChangesService.AddContentTypeChangeAsync(
-                request.ModelName,
-                new Dictionary<string, string> { { "Id", "Guid" } },
-                ContentTypeState.PendingPublish
-            );
-
-            await _domainModelEditor.SaveAsync();
-
-            var entitiesToBeRegistered = (await _domainModelEditor.GetDomainModelEntityInfosAsync()).ToList();
-            foreach (var newModel in entitiesToBeRegistered)
-            {
-                _dbContextEditor.AddDbSetToDbContext(newModel);
-            }
-
-            await _dbContextEditor.SaveAsync();
-
-            return Ok(new { Message = $"Model class '{request.ModelName}' created successfully." });
+            _dbContextEditor.AddDbSetToDbContext(newModel);
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
-        }
+
+        await _dbContextEditor.SaveAsync();
+
+        return Ok(new { Message = $"Model class '{request.ModelName}' created successfully." });
     }
 
     [HttpDelete("{modelName}")]
@@ -116,50 +104,44 @@ public class ModelsController : ControllerBase
 
         var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
 
-        try
+
+        if (!System.IO.File.Exists(modelFilePath))
         {
-            if (!System.IO.File.Exists(modelFilePath))
-            {
-                return NotFound("Model file not found.");
-            }
-
-            var properties = _domainModelEditor
-                .GetPropertiesContainingAttribute(modelName, DappiRelationAttribute.ShortName).ToList();
-            var relatedEntities = _domainModelEditor.GetRelatedEntities(properties);
-
-            _dbContextEditor.RemoveSetFromDbContext(new DomainModelEntityInfo
-            {
-                Name = modelName, Namespace = Directory.GetCurrentDirectory()
-            });
-
-            _dbContextEditor.DeleteRelations(modelName, relatedEntities);
-            _dbContextEditor.UpdateUsings();
-            await _dbContextEditor.SaveAsync();
-
-            foreach (var relatedEntity in relatedEntities)
-            {
-                _domainModelEditor.DeleteRelatedProperties(relatedEntity, modelName);
-            }
-
-            await _domainModelEditor.SaveAsync();
-
-            System.IO.File.Delete(modelFilePath);
-
-            var controllerFilePath = Path.Combine(_controllersFolderPath, $"{modelName}Controller.cs");
-            if (System.IO.File.Exists(controllerFilePath))
-            {
-                System.IO.File.Delete(controllerFilePath);
-            }
-
-            await _contentTypeChangesService.AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(),
-                ContentTypeState.PendingDelete);
-
-            return Ok(new { Message = $"Model '{modelName}' deleted successfully.", FilePath = modelFilePath });
+            return NotFound("Model file not found.");
         }
-        catch (Exception ex)
+
+        var properties = _domainModelEditor
+            .GetPropertiesContainingAttribute(modelName, DappiRelationAttribute.ShortName).ToList();
+        var relatedEntities = _domainModelEditor.GetRelatedEntities(properties);
+
+        _dbContextEditor.RemoveSetFromDbContext(new DomainModelEntityInfo
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            Name = modelName, Namespace = Directory.GetCurrentDirectory()
+        });
+
+        _dbContextEditor.DeleteRelations(modelName, relatedEntities);
+        _dbContextEditor.UpdateUsings();
+        await _dbContextEditor.SaveAsync();
+
+        foreach (var relatedEntity in relatedEntities)
+        {
+            _domainModelEditor.DeleteRelatedProperties(relatedEntity, modelName);
         }
+
+        await _domainModelEditor.SaveAsync();
+
+        System.IO.File.Delete(modelFilePath);
+
+        var controllerFilePath = Path.Combine(_controllersFolderPath, $"{modelName}Controller.cs");
+        if (System.IO.File.Exists(controllerFilePath))
+        {
+            System.IO.File.Delete(controllerFilePath);
+        }
+
+        await _contentTypeChangesService.AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(),
+            ContentTypeState.PendingDelete);
+
+        return Ok(new { Message = $"Model '{modelName}' deleted successfully.", FilePath = modelFilePath });
     }
 
     [HttpPut("{modelName}")]
@@ -180,130 +162,117 @@ public class ModelsController : ControllerBase
             return BadRequest($"Property name {request.FieldName} cannot be the same as the model name.");
         }
 
-        try
+
+        var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
+        if (!System.IO.File.Exists(modelFilePath))
         {
-            var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
-            if (!System.IO.File.Exists(modelFilePath))
+            return NotFound("Model class not found.");
+        }
+
+        var fieldDict = new Dictionary<string, string> { { request.FieldName, request.FieldType } };
+        var relatedFieldDict = new Dictionary<string, string>();
+
+        var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
+        if (PropertyCheckUtils.PropertyNameExists(existingCode, request.FieldName))
+        {
+            return BadRequest($"Property {request.FieldName} name already exists in {modelFilePath}.");
+        }
+
+        if (!string.IsNullOrEmpty(request.RelatedTo))
+        {
+            switch (request.FieldType)
             {
-                return NotFound("Model class not found.");
-            }
+                case Constants.Relations.OneToOne:
+                    HandleOneToOneRelationship(request, modelName);
+                    relatedFieldDict.Add(request.RelatedRelationName ?? modelName, request.FieldType);
+                    break;
 
-            var fieldDict = new Dictionary<string, string> { { request.FieldName, request.FieldType } };
-            var relatedFieldDict = new Dictionary<string, string>();
+                case Constants.Relations.OneToMany:
+                    HandleOneToManyRelationship(request, modelName);
+                    relatedFieldDict.Add(request.RelatedRelationName ?? modelName, Constants.Relations.ManyToOne);
+                    break;
 
-            var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
-            if (PropertyCheckUtils.PropertyNameExists(existingCode, request.FieldName))
-            {
-                return BadRequest($"Property {request.FieldName} name already exists in {modelFilePath}.");
-            }
+                case Constants.Relations.ManyToOne:
+                    HandleManyToOneRelationship(request, modelName);
+                    relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
+                        Constants.Relations.OneToMany);
+                    break;
 
-            if (request.HasIndex)
-            {
-                _dbContextEditor.UpdateOnModelCreatingWithIndexedColumn(modelName, request.FieldName);
-            }
-
-            if (!string.IsNullOrEmpty(request.RelatedTo))
-            {
-                switch (request.FieldType)
-                {
-                    case Constants.Relations.OneToOne:
-                        HandleOneToOneRelationship(request, modelName);
-                        relatedFieldDict.Add(request.RelatedRelationName ?? modelName, request.FieldType);
-                        break;
-
-                    case Constants.Relations.OneToMany:
-                        HandleOneToManyRelationship(request, modelName);
-                        relatedFieldDict.Add(request.RelatedRelationName ?? modelName, Constants.Relations.ManyToOne);
-                        break;
-
-                    case Constants.Relations.ManyToOne:
-                        HandleManyToOneRelationship(request, modelName);
+                case Constants.Relations.ManyToMany:
+                    {
+                        HandleManyToManyRelationship(request, modelName);
                         relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
-                            Constants.Relations.OneToMany);
+                            Constants.Relations.ManyToMany);
                         break;
-
-                    case Constants.Relations.ManyToMany:
+                    }
+                default:
+                    {
+                        Property property = new()
                         {
-                            HandleManyToManyRelationship(request, modelName);
-                            relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
-                                Constants.Relations.ManyToMany);
-                            break;
-                        }
-                    default:
-                        {
-                            Property property = new()
-                            {
-                                DomainModel = modelName,
-                                Name = request.FieldName,
-                                Type = request.FieldType,
-                                IsRequired = request.IsRequired,
-                                Regex = request.Regex
-                            };
-                            _domainModelEditor.AddProperty(property);
-                            _domainModelEditor.AddEnumNamespaceIfMissing(property.DomainModel);
-                            await _domainModelEditor.SaveAsync();
-                            break;
-                        }
-                }
+                            DomainModel = modelName,
+                            Name = request.FieldName,
+                            Type = request.FieldType,
+                            IsRequired = request.IsRequired,
+                            Regex = request.Regex
+                        };
+                        _domainModelEditor.AddProperty(property);
+                        _domainModelEditor.AddEnumNamespaceIfMissing(property.DomainModel);
+                        await _domainModelEditor.SaveAsync();
+                        break;
+                    }
             }
-            else
-            {
-                var property = new Property
-                {
-                    DomainModel = modelName,
-                    Name = request.FieldName,
-                    Type = request.FieldType,
-                    IsRequired = request.IsRequired,
-                    Regex = request.Regex
-                };
-                _domainModelEditor.AddProperty(property);
-            }
-
-            await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(modelName, fieldDict);
-
-            if (request.RelatedTo != null && relatedFieldDict.Count != 0)
-            {
-                await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(request.RelatedTo,
-                    relatedFieldDict);
-            }
-
-            await _domainModelEditor.SaveAsync();
-            await _dbContextEditor.SaveAsync();
-
-            return Ok(new
-            {
-                Message =
-                    $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
-                FilePath = modelFilePath
-            });
         }
-        catch (Exception ex)
+        else
         {
-            Console.WriteLine($"Error adding field: {ex.Message}");
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            var property = new Property
+            {
+                DomainModel = modelName,
+                Name = request.FieldName,
+                Type = request.FieldType,
+                IsRequired = request.IsRequired,
+                Regex = request.Regex
+            };
+            _domainModelEditor.AddProperty(property);
         }
+
+        await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(modelName, fieldDict);
+
+        if (request.RelatedTo != null && relatedFieldDict.Count != 0)
+        {
+            await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(request.RelatedTo,
+                relatedFieldDict);
+        }
+
+        await _domainModelEditor.SaveAsync();
+        await _dbContextEditor.SaveAsync();
+
+        return Ok(new
+        {
+            Message =
+                $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
+            FilePath = modelFilePath
+        });
     }
 
     [HttpPut("configure-actions/{modelName}")]
-    public async Task<IActionResult> ConfigureActions([FromRoute] string modelName , [FromBody] ConfigureModelActionsRequest request)
+    public async Task<IActionResult> ConfigureActions([FromRoute] string modelName,
+        [FromBody] ConfigureModelActionsRequest request)
     {
         var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
         if (!System.IO.File.Exists(modelFilePath))
         {
             return NotFound($"Model '{modelName}' not found.");
         }
+
         _domainModelEditor.ConfigureActions(modelName, request.CrudActions.ToArray());
-        Dictionary<string,string> newActions = new()
-        {
-            {"Actions",$"[{string.Join(", ", request.CrudActions)}]"}
-        };
-        await _contentTypeChangesService.AddContentTypeChangeAsync(modelName, 
+        Dictionary<string, string> newActions = new() { { "Actions", $"[{string.Join(", ", request.CrudActions)}]" } };
+        await _contentTypeChangesService.AddContentTypeChangeAsync(modelName,
             newActions,
             ContentTypeState.PendingActionsChange);
-        
+
         await _domainModelEditor.SaveAsync();
-        
-        return Ok(new {message = "Actions configured successfully."});
+
+        return Ok(new { message = "Actions configured successfully." });
     }
 
     [HttpGet("fields/{modelName}")]
@@ -318,9 +287,9 @@ public class ModelsController : ControllerBase
         var modelCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
         var syntaxTree = CSharpSyntaxTree.ParseText(modelCode);
         var root = syntaxTree.GetCompilationUnitRoot();
-        var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName) ?? 
+        var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName) ??
                                throw new Exception("Error extracting allowed actions.");
-        
+
         var res = new ModelResponse
         {
             Fields = ExtractFieldsFromModel(modelCode),
