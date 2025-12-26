@@ -59,6 +59,7 @@ export interface ModelField {
   isRequired?: boolean;
   isEnum?: boolean;
   regex?: string;
+  hasIndex?: boolean;
 }
 
 export interface ModelResponse {

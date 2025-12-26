@@ -197,6 +197,11 @@ public class ModelsController : ControllerBase
                 return BadRequest($"Property {request.FieldName} name already exists in {modelFilePath}.");
             }
 
+            if (request.HasIndex)
+            {
+                _dbContextEditor.UpdateOnModelCreatingWithIndexedColumn(modelName, request.FieldName);
+            }
+
             if (!string.IsNullOrEmpty(request.RelatedTo))
             {
                 switch (request.FieldType)
