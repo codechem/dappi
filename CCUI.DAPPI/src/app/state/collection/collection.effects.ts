@@ -109,12 +109,21 @@ export class CollectionEffects {
     )
   );
 
+  /**
+   * Clears the selected collection type when it's no longer valid.
+   * This effect triggers when collection types are reloaded (e.g., after deletion)
+   * and ensures the UI shows the empty state if the currently selected type
+   * doesn't exist in the new list of collection types.
+   */
   clearInvalidSelectedType$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.loadCollectionTypesSuccess),
       withLatestFrom(this.store.pipe(select(selectSelectedType))),
       filter(
-        ([action, selectedType]) => !!selectedType && !action.collectionTypes.includes(selectedType)
+        ([action, selectedType]) =>
+          selectedType !== null &&
+          selectedType !== '' &&
+          !action.collectionTypes.includes(selectedType)
       ),
       map(() =>
         ContentActions.setContentType({
