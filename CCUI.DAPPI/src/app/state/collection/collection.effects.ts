@@ -26,7 +26,7 @@ export class CollectionEffects {
   private store = inject(Store);
   private snackBar = inject(MatSnackBar);
   private enumsData: any = null;
-  
+
   loadCollectionTypes$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.loadCollectionTypes),
@@ -109,6 +109,21 @@ export class CollectionEffects {
     )
   );
 
+  clearInvalidSelectedType$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.loadCollectionTypesSuccess),
+      withLatestFrom(this.store.pipe(select(selectSelectedType))),
+      filter(
+        ([action, selectedType]) => !!selectedType && !action.collectionTypes.includes(selectedType)
+      ),
+      map(() =>
+        ContentActions.setContentType({
+          selectedType: '',
+        })
+      )
+    )
+  );
+
   loadFields$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.loadFields),
@@ -123,11 +138,11 @@ export class CollectionEffects {
         const enumsRequest = this.enumsData
           ? of(this.enumsData)
           : this.http.get<any>(enumsEndpoint).pipe(
-            map((data) => {
-              this.enumsData = data;
-              return data;
-            })
-          );
+              map((data) => {
+                this.enumsData = data;
+                return data;
+              })
+            );
 
         return enumsRequest.pipe(
           mergeMap((enumsData) => {
@@ -140,12 +155,12 @@ export class CollectionEffects {
                     isEnum: fieldType === FieldType.enum,
                   };
                 });
-              
+
                 return CollectionActions.loadFieldsSuccess({
                   modelResponse: {
                     Fields: [...processedFields],
-                    AllowedActions: res.AllowedActions
-                  }
+                    AllowedActions: res.AllowedActions,
+                  },
                 });
               }),
               catchError((error) => {
@@ -202,7 +217,11 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.addCollectionType),
       switchMap((action) => {
-        const payload = { modelName: action.collectionType, isAuditableEntity: action.isAuditableEntity , crudActions:action.crudActions };
+        const payload = {
+          modelName: action.collectionType,
+          isAuditableEntity: action.isAuditableEntity,
+          crudActions: action.crudActions,
+        };
         return this.http.post(`${BASE_API_URL}models`, payload).pipe(
           map(() =>
             CollectionActions.addCollectionTypeSuccess({
@@ -286,16 +305,23 @@ export class CollectionEffects {
   collectionHasRelatedProperties$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.collectionHasRelatedProperties),
-      switchMap(action => {
-        return this.http.get<{ hasRelatedProperties: boolean }>(`${BASE_API_URL}models/hasRelatedProperties/${action.modelName}`).pipe(
-          map(res =>
-            CollectionActions.collectionHasRelatedPropertiesSuccess({ hasRelatedProperties : res.hasRelatedProperties})
-          ),
-          catchError(error => {
-            return of(CollectionActions.collectionHasRelatedPropertiesFailure({ error: error.message }))
-          }
-          )
-        )
+      switchMap((action) => {
+        return this.http
+          .get<{
+            hasRelatedProperties: boolean;
+          }>(`${BASE_API_URL}models/hasRelatedProperties/${action.modelName}`)
+          .pipe(
+            map((res) =>
+              CollectionActions.collectionHasRelatedPropertiesSuccess({
+                hasRelatedProperties: res.hasRelatedProperties,
+              })
+            ),
+            catchError((error) => {
+              return of(
+                CollectionActions.collectionHasRelatedPropertiesFailure({ error: error.message })
+              );
+            })
+          );
       })
     )
   );
@@ -304,19 +330,23 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.configureActions),
       switchMap((action) => {
-        const payload = {...action.request};
-        return this.http.put<{message:string}>(`${BASE_API_URL}models/configure-actions/${action.model}`, payload).pipe(
-          map((res) =>
-            CollectionActions.configureActionsSuccess({
-               message:res.message
+        const payload = { ...action.request };
+        return this.http
+          .put<{
+            message: string;
+          }>(`${BASE_API_URL}models/configure-actions/${action.model}`, payload)
+          .pipe(
+            map((res) =>
+              CollectionActions.configureActionsSuccess({
+                message: res.message,
+              })
+            ),
+            catchError((error) => {
+              console.error('Error creating model:', error);
+              this.showErrorPopup(`Failed to configure actions: ${error.error}`);
+              return of(CollectionActions.configureActionsFailure({ error }));
             })
-          ),
-          catchError((error) => {
-            console.error('Error creating model:', error);
-            this.showErrorPopup(`Failed to configure actions: ${error.error}`);
-            return of(CollectionActions.configureActionsFailure({ error }));
-          })
-        );
+          );
       })
     )
   );
@@ -324,16 +354,15 @@ export class CollectionEffects {
   deleteCollectionType$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.deleteCollectionType),
-      switchMap(action => {
-        return this.http.delete<{ message: string }>(`${BASE_API_URL}models/${action.modelName}`).pipe(
-          map(res =>
-            CollectionActions.deleteCollectionTypeSuccess({ message: res.message })
-          ),
-          catchError(error => {
-            return of(CollectionActions.deleteCollectionTypeFailure({ error: error.message }))
-          }
-          )
-        )
+      switchMap((action) => {
+        return this.http
+          .delete<{ message: string }>(`${BASE_API_URL}models/${action.modelName}`)
+          .pipe(
+            map((res) => CollectionActions.deleteCollectionTypeSuccess({ message: res.message })),
+            catchError((error) => {
+              return of(CollectionActions.deleteCollectionTypeFailure({ error: error.message }));
+            })
+          );
       })
     )
   );
