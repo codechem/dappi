@@ -88,6 +88,13 @@ namespace Dappi.HeadlessCms.Core.Extensions
             return property.WithRegexAttribute("RegularExpression", SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression($"@\"{regex}\"")));
         }
 
+        public static PropertyDeclarationSyntax WithFutureDateAttribute(this PropertyDeclarationSyntax property)
+        {
+            var attribute = SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("FutureDate"));
+            var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
+            return property.AddAttributeLists(attributeList);
+        }
+
         public static MemberDeclarationSyntax[] GeneratePropertiesFromType(Type type)
         {
             var memberList = new List<MemberDeclarationSyntax>();

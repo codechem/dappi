@@ -134,6 +134,24 @@
       margin-left: 24px;
     }
   }
+
+  .no-past-dates-field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 24px;
+    margin-top: 16px;
+
+    mat-checkbox {
+      color: vars.$primary-main;
+      margin-bottom: 4px;
+    }
+
+    small {
+      font-size: 12px;
+      color: vars.$text-secondary;
+      margin-left: 24px;
+    }
+  }
 }
 
 .dialog-footer {

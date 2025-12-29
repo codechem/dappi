@@ -213,7 +213,8 @@ public class ModelsController : ControllerBase
                             Name = request.FieldName,
                             Type = request.FieldType,
                             IsRequired = request.IsRequired,
-                            Regex = request.Regex
+                            Regex = request.Regex,
+                            NoPastDates = request.NoPastDates
                         };
                         _domainModelEditor.AddProperty(property);
                         _domainModelEditor.AddEnumNamespaceIfMissing(property.DomainModel);
@@ -230,7 +231,8 @@ public class ModelsController : ControllerBase
                 Name = request.FieldName,
                 Type = request.FieldType,
                 IsRequired = request.IsRequired,
-                Regex = request.Regex
+                Regex = request.Regex,
+                NoPastDates = request.NoPastDates
             };
             _domainModelEditor.AddProperty(property);
         }
