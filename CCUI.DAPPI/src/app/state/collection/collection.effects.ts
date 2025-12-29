@@ -274,6 +274,7 @@ export class CollectionEffects {
     this.actions$.pipe(
       ofType(CollectionActions.addFieldSuccess),
       withLatestFrom(this.store.pipe(select(selectSelectedType))),
+      filter(([_, selectedType]) => !!selectedType),
       concatMap(([_, selectedType]) => [
         CollectionActions.loadPublishedCollectionTypes(),
         CollectionActions.loadDraftCollectionTypes(),
