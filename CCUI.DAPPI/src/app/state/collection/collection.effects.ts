@@ -273,9 +273,12 @@ export class CollectionEffects {
   reloadCollectionTypesAfterField$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.addFieldSuccess),
-      concatMap(() => [
+      withLatestFrom(this.store.pipe(select(selectSelectedType))),
+      filter(([_, selectedType]) => !!selectedType),
+      concatMap(([_, selectedType]) => [
         CollectionActions.loadPublishedCollectionTypes(),
         CollectionActions.loadDraftCollectionTypes(),
+        CollectionActions.loadFields({ modelType: selectedType }),
       ])
     )
   );
