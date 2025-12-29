@@ -90,6 +90,15 @@
             <small>This field will be indexed for faster searches</small>
           </div>
         }
+        @if (
+          selectedFieldTypeId === fieldTypeEnum.Date || 
+          selectedFieldTypeId === fieldTypeEnum.DateTime
+        ) {
+          <div class="no-past-dates-field">
+            <mat-checkbox formControlName="noPastDates">No past dates</mat-checkbox>
+            <small>Prevents selection of dates before today</small>
+          </div>
+        }
       }
 
       @if (selectedFieldTypeId === fieldTypeEnum.Dropdown) {

@@ -11,5 +11,6 @@ namespace Dappi.HeadlessCms.Models
         public DappiRelationKind? RelationKind { get; set; } = null;
         public string? RelatedDomainModel { get; set; } = null;
         public string? Regex { get; set; } = null;
+        public bool NoPastDates { get; set; } = false;
     }
 }

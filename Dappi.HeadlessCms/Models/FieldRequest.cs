@@ -19,4 +19,6 @@ public class FieldRequest
     public string? Regex { get; set; }
 
     public bool HasIndex { get; set; } = false;
+
+    public bool NoPastDates { get; set; } = false;
 }

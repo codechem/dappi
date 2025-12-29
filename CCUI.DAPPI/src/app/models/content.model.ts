@@ -60,6 +60,7 @@ export interface ModelField {
   isEnum?: boolean;
   regex?: string;
   hasIndex?: boolean;
+  noPastDates?: boolean;
 }
 
 export interface ModelResponse {

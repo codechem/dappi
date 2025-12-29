@@ -163,6 +163,10 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         {
             newProperty = newProperty.WithRegularExpressionAttribute(property.Regex);
         }
+        if (property.NoPastDates && IsDateType(property.Type))
+        {
+            newProperty = newProperty.WithFutureDateAttribute();
+        }
 
         var newNode = classNode.AddMembers(newProperty);
         var newRoot = root.ReplaceNode(classNode, newNode);
@@ -170,6 +174,12 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
 
         _codeChanges[property.DomainModel] = newCode;
         HasChanges = true;
+    }
+
+    private static bool IsDateType(string type)
+    {
+        var normalizedType = type.TrimEnd('?');
+        return normalizedType is "DateTime" or "DateTimeOffset" or "DateOnly";
     }
 
     public async Task SaveAsync()
