@@ -1,11 +1,14 @@
 import { mergeApplicationConfig, ApplicationConfig } from '@angular/core';
 import { provideServerRendering } from '@angular/platform-server';
-import { provideServerRouting } from '@angular/ssr';
 import { appConfig } from './app.config';
-import { serverRoutes } from './app.routes.server';
 
+/**
+ * Server-side rendering configuration for Angular 20+.
+ * Note: provideServerRouting was deprecated in Angular 20 and removed.
+ * Server routes configuration is now handled differently in Angular 20+.
+ */
 const serverConfig: ApplicationConfig = {
-  providers: [provideServerRendering(), provideServerRouting(serverRoutes)],
+  providers: [provideServerRendering()],
 };
 
 export const config = mergeApplicationConfig(appConfig, serverConfig);
