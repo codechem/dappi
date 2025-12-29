@@ -168,17 +168,30 @@ public static class ServiceExtensions
             var dappiPolicy = new AuthorizationPolicyBuilder(DappiAuthenticationSchemes.DappiAuthenticationScheme)
                 .RequireAuthenticatedUser()
                 .Build();
-            
-            var externalPolicy = new AuthorizationPolicyBuilder(DappiAuthenticationSchemes.ExternalAuthenticationScheme)
-                .RequireAuthenticatedUser()
-                .Build();
-            
-            var defaultPolicy = new AuthorizationPolicyBuilder(dappiPolicy).Combine(externalPolicy)
-                .Build();  
-            
+
             opts.AddPolicy(DappiAuthenticationSchemes.DappiAuthenticationScheme, dappiPolicy);
-            opts.AddPolicy(DappiAuthenticationSchemes.ExternalAuthenticationScheme,  externalPolicy);
-            opts.DefaultPolicy = defaultPolicy;
+
+            if (externalJwtBearerOptions is not null)
+            {
+                var externalPolicy = new AuthorizationPolicyBuilder(DappiAuthenticationSchemes.ExternalAuthenticationScheme)
+                    .RequireAuthenticatedUser()
+                    .Build();
+
+                opts.AddPolicy(DappiAuthenticationSchemes.ExternalAuthenticationScheme, externalPolicy);
+
+                var defaultPolicy = new AuthorizationPolicyBuilder(
+                        DappiAuthenticationSchemes.DappiAuthenticationScheme,
+                        DappiAuthenticationSchemes.ExternalAuthenticationScheme)
+                    .RequireAuthenticatedUser()
+                    .Build();
+
+                opts.DefaultPolicy = defaultPolicy;
+            }
+            else
+            {
+                // If no external auth, default to Dappi only
+                opts.DefaultPolicy = dappiPolicy;
+            }
         });
 
         return services;
