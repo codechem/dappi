@@ -272,7 +272,7 @@ export class CollectionEffects {
 
   reloadCollectionTypesAfterField$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(CollectionActions.addFieldSuccess),
+      ofType(CollectionActions.addFieldSuccess, CollectionActions.updateFieldSuccess),
       withLatestFrom(this.store.pipe(select(selectSelectedType))),
       filter(([_, selectedType]) => !!selectedType),
       concatMap(([_, selectedType]) => [
@@ -280,6 +280,35 @@ export class CollectionEffects {
         CollectionActions.loadDraftCollectionTypes(),
         CollectionActions.loadFields({ modelType: selectedType }),
       ])
+    )
+  );
+
+  updateField$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.updateField),
+      withLatestFrom(this.store.pipe(select(selectSelectedType))),
+      filter(([_, selectedType]) => !!selectedType),
+      switchMap(([action, selectedType]) => {
+        const payload = {
+          oldFieldName: action.oldFieldName,
+          newFieldName: action.newFieldName,
+          isRequired: action.isRequired,
+          hasIndex: action.hasIndex,
+          regex: action.regex,
+        };
+        return this.http.patch(`${BASE_API_URL}models/${selectedType}/fields`, payload).pipe(
+          map(() =>
+            CollectionActions.updateFieldSuccess({
+              oldFieldName: action.oldFieldName,
+              newFieldName: action.newFieldName,
+            })
+          ),
+          catchError((error) => {
+            this.showErrorPopup(`Failed to update field: ${error.error}`);
+            return of(CollectionActions.updateFieldFailure({ error: error.message }));
+          })
+        );
+      })
     )
   );
 

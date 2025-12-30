@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Dappi.Core.Utils;
 using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Core;
@@ -300,6 +299,87 @@ public class ModelsController : ControllerBase
         return Ok(res);
     }
 
+    [HttpPatch("{modelName}/fields")]
+    public async Task<IActionResult> UpdateField(string modelName, [FromBody] UpdateFieldRequest request)
+    {
+        if (string.IsNullOrEmpty(modelName))
+        {
+            return BadRequest("Model name must be provided.");
+        }
+
+        if (request.OldFieldName.Equals("Id", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("The 'Id' field cannot be edited.");
+        }
+
+        if (!request.NewFieldName.IsValidClassNameOrPropertyName())
+        {
+            return BadRequest($"Property name {request.NewFieldName} is invalid.");
+        }
+
+        var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
+        if (!System.IO.File.Exists(modelFilePath))
+        {
+            return NotFound("Model class not found.");
+        }
+
+        var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
+        
+        if (!PropertyCheckUtils.PropertyNameExists(existingCode, request.OldFieldName))
+        {
+            return BadRequest($"Property {request.OldFieldName} does not exist in {modelName}.");
+        }
+
+        if (request.OldFieldName != request.NewFieldName && 
+            PropertyCheckUtils.PropertyNameExists(existingCode, request.NewFieldName))
+        {
+            return BadRequest($"Property {request.NewFieldName} already exists in {modelName}.");
+        }
+
+        var propertyToUpdate = _domainModelEditor.GetProperty(modelName, request.OldFieldName);
+        if (propertyToUpdate == null)
+        {
+            return BadRequest($"Could not find property {request.OldFieldName} in model {modelName}.");
+        }
+
+        _domainModelEditor.UpdateProperty(modelName, request.OldFieldName, new Property
+        {
+            DomainModel = modelName,
+            Name = request.NewFieldName,
+            Type = propertyToUpdate.Type,
+            IsRequired = request.IsRequired,
+            Regex = request.Regex,
+            RelationKind = propertyToUpdate.RelationKind,
+            RelatedDomainModel = propertyToUpdate.RelatedDomainModel
+        });
+
+        if (request.OldFieldName != request.NewFieldName)
+        {
+            _dbContextEditor.UpdatePropertyNameInOnModelCreating(modelName, request.OldFieldName, request.NewFieldName);
+        }
+
+        if (request.HasIndex && !propertyToUpdate.HasIndex)
+        {
+            _dbContextEditor.UpdateOnModelCreatingWithIndexedColumn(modelName, request.NewFieldName);
+        }
+
+        var fieldUpdateDict = new Dictionary<string, string>
+        {
+            { request.NewFieldName, $"{propertyToUpdate.Type}_UPDATED" }
+        };
+        
+        await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(modelName, fieldUpdateDict);
+
+        await _domainModelEditor.SaveAsync();
+        await _dbContextEditor.SaveAsync();
+
+        return Ok(new
+        {
+            Message = $"Field '{request.OldFieldName}' updated successfully to '{request.NewFieldName}' in '{modelName}' model.",
+            FilePath = modelFilePath
+        });
+    }
+
     [HttpGet("hasRelatedProperties/{modelName}")]
     public IActionResult HasRelatedProperties(string modelName)
     {
@@ -447,34 +527,56 @@ public class ModelsController : ControllerBase
         var auditableProps = new List<string> { "CreatedAtUtc", "UpdatedAtUtc", "CreatedBy", "UpdatedBy" };
         var fieldList = new List<FieldsInfo>();
 
-        var propertyPattern = new Regex(
-            @"public\s+(required\s+)?([\w<>\[\]?]+)\s+(\w+)\s*\{\s*get;\s*set;\s*\}",
-            RegexOptions.Multiline
-        );
+        var syntaxTree = CSharpSyntaxTree.ParseText(classCode);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classDeclaration = root.DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>()
+            .FirstOrDefault();
+
+        if (classDeclaration == null)
+        {
+            return fieldList;
+        }
 
         var isAuditableEntity = classCode.Contains("IAuditableEntity");
-        var matches = propertyPattern.Matches(classCode);
 
-        foreach (Match match in matches)
+        var properties = classDeclaration.Members
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.PropertyDeclarationSyntax>()
+            .Where(p => p.AccessorList != null);
+
+        foreach (var property in properties)
         {
-            if (match.Groups.Count >= 4)
+            var fieldName = property.Identifier.Text;
+            
+            if (isAuditableEntity && auditableProps.Contains(fieldName))
             {
-                if (isAuditableEntity && auditableProps.Contains(match.Groups[3].Value))
-                {
-                    continue;
-                }
-
-                var hasRequiredKeyword = !string.IsNullOrEmpty(match.Groups[1].Value);
-                var fieldType = match.Groups[2].Value;
-                var fieldName = match.Groups[3].Value;
-                var isNullable = fieldType.Contains("?");
-                var isRequired = hasRequiredKeyword || !isNullable;
-
-                fieldList.Add(new FieldsInfo
-                {
-                    FieldName = fieldName, FieldType = fieldType.Replace("?", ""), IsRequired = isRequired
-                });
+                continue;
             }
+
+            var fieldType = property.Type.ToString().Replace("?", "");
+            var hasRequiredKeyword = property.Modifiers.Any(m => m.ValueText == "required");
+            var isNullable = property.Type.ToString().Contains("?");
+            var isRequired = hasRequiredKeyword || !isNullable;
+
+            string? regex = null;
+            var regexAttribute = property.AttributeLists
+                .SelectMany(al => al.Attributes)
+                .FirstOrDefault(a => a.Name.ToString() == "RegularExpression");
+
+            if (regexAttribute?.ArgumentList?.Arguments.Count >= 1)
+            {
+                var regexArg = regexAttribute.ArgumentList.Arguments[0].Expression.ToString();
+                regex = regexArg.Trim('@', '"');
+            }
+
+            fieldList.Add(new FieldsInfo
+            {
+                FieldName = fieldName,
+                FieldType = fieldType,
+                IsRequired = isRequired,
+                Regex = regex,
+                HasIndex = false
+            });
         }
 
         return fieldList;

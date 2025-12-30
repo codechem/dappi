@@ -12,5 +12,6 @@ namespace Dappi.HeadlessCms.Models
         public string? RelatedDomainModel { get; set; } = null;
         public string? Regex { get; set; } = null;
         public bool NoPastDates { get; set; } = false;
+        public bool HasIndex { get; set; } = false;
     }
 }

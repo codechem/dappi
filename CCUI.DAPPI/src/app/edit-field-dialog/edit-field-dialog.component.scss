@@ -1,0 +1,174 @@
+@use '../../variables' as vars;
+@use 'sass:color';
+
+:host {
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+.edit-field-dialog-container {
+  background-color: vars.$background-paper-elevation-1;
+  color: vars.$text-primary;
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 500px;
+  max-width: 90vw;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: vars.$background-paper-elevation-1;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: vars.$text-primary;
+  }
+
+  button {
+    color: vars.$text-secondary;
+
+    &:hover {
+      background-color: color.adjust(vars.$background-paper-elevation-1, $lightness: 5%);
+    }
+  }
+}
+
+.dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+
+.field-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background-color: color.adjust(vars.$background-paper-elevation-1, $lightness: 3%);
+  border-radius: 8px;
+  border: 1px solid color.adjust(vars.$background-paper-elevation-1, $lightness: 10%);
+
+  .field-type-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    mat-icon {
+      color: vars.$primary-main;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    span {
+      font-weight: 600;
+      color: vars.$text-primary;
+      font-size: 1rem;
+    }
+  }
+
+  .info-text {
+    margin: 0;
+    font-size: 0.875rem;
+    color: vars.$text-secondary;
+  }
+}
+
+.input-field {
+  width: 100%;
+
+  ::ng-deep {
+    .mat-mdc-text-field-wrapper {
+      background-color: color.adjust(vars.$background-paper-elevation-1, $lightness: 2%);
+    }
+
+    .mat-mdc-form-field-focus-overlay {
+      background-color: transparent;
+    }
+
+    input {
+      color: vars.$text-primary;
+    }
+
+    .mat-mdc-form-field-error {
+      color: vars.$error-light;
+    }
+  }
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  mat-checkbox {
+    ::ng-deep {
+      .mdc-label {
+        color: vars.$text-primary;
+      }
+
+      .mdc-checkbox__background {
+        border-color: vars.$text-secondary;
+      }
+
+      .mdc-checkbox--selected .mdc-checkbox__background {
+        background-color: vars.$primary-main;
+        border-color: vars.$primary-main;
+      }
+    }
+  }
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid color.adjust(vars.$background-paper-elevation-1, $lightness: 10%);
+  position: sticky;
+  bottom: 0;
+  background-color: vars.$background-paper-elevation-1;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+
+  button {
+    padding: 8px 24px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .save-button {
+    background-color: vars.$primary-main;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background-color: color.adjust(vars.$primary-main, $lightness: -10%);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}

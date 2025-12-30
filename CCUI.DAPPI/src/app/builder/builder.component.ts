@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { ButtonComponent } from '../button/button.component';
 import { MatDialog } from '@angular/material/dialog';
 import { AddFieldDialogComponent } from '../add-field-dialog/add-field-dialog.component';
+import { EditFieldDialogComponent } from '../edit-field-dialog/edit-field-dialog.component';
 import { FieldItem, FieldsListComponent } from '../fields-list/fields-list.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { filter, Subscription, take } from 'rxjs';
@@ -224,12 +225,46 @@ export class BuilderComponent implements OnInit, OnDestroy {
 
         return {
           name: field.fieldName,
-          type: type,
+          type: fieldType,
           iconText: iconText,
           iconName: iconName,
+          isRequired: field.isRequired,
+          hasIndex: field.hasIndex,
+          regex: field.regex,
         };
       });
     }
+  }
+
+  onEditField(field: FieldItem): void {
+    const dialogRef = this.dialog.open(EditFieldDialogComponent, {
+      panelClass: 'edit-field-dialog-container',
+      disableClose: true,
+      width: '50vw',
+      data: {
+        fieldName: field.name,
+        fieldType: field.type,
+        isRequired: field.isRequired || false,
+        hasIndex: field.hasIndex || false,
+        regex: field.regex,
+      },
+    });
+
+    this.subscription.add(
+      dialogRef.afterClosed().subscribe((result) => {
+        if (result) {
+          this.store.dispatch(
+            CollectionActions.updateField({
+              oldFieldName: result.oldFieldName,
+              newFieldName: result.newFieldName,
+              isRequired: result.isRequired,
+              hasIndex: result.hasIndex,
+              regex: result.regex,
+            })
+          );
+        }
+      })
+    );
   }
 
   openDeleteCollectionTypeDialog(): void {

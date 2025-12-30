@@ -1,0 +1,67 @@
+<div class="edit-field-dialog-container">
+  <div class="dialog-header">
+    <h2>Edit Field</h2>
+    <button mat-icon-button (click)="onClose()" aria-label="Close dialog">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-content">
+    <form [formGroup]="editForm">
+      <div class="field-info">
+        <div class="field-type-badge">
+          <mat-icon>category</mat-icon>
+          <span>{{ data.fieldType }}</span>
+        </div>
+        <p class="info-text">Field type cannot be changed</p>
+      </div>
+
+      <mat-form-field appearance="outline" class="input-field">
+        <mat-label>Field name</mat-label>
+        <input matInput formControlName="fieldName" placeholder="Enter field name" />
+        @if (
+          editForm.get('fieldName')?.hasError('required') && editForm.get('fieldName')?.touched
+        ) {
+          <mat-error>Field name is required</mat-error>
+        }
+        @if (editForm.get('fieldName')?.hasError('maxlength')) {
+          <mat-error>Field name cannot exceed 50 characters</mat-error>
+        }
+        @if (editForm.get('fieldName')?.hasError('invalidPascalCase')) {
+          <mat-error>Field name must be in PascalCase format</mat-error>
+        }
+        @if (editForm.get('fieldName')?.hasError('reservedKeyword')) {
+          <mat-error>This field name is a reserved keyword</mat-error>
+        }
+        @if (editForm.get('fieldName')?.hasError('collectionNameIsTaken')) {
+          <mat-error>This field name matches a collection name</mat-error>
+        }
+        @if (editForm.get('fieldName')?.hasError('fieldNameTaken')) {
+          <mat-error>Field name already exists</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="checkbox-group">
+        <mat-checkbox formControlName="isRequired">Required field</mat-checkbox>
+        <mat-checkbox formControlName="hasIndex">Add database index</mat-checkbox>
+      </div>
+
+      @if (isTextType) {
+        <mat-form-field appearance="outline" class="input-field">
+          <mat-label>Regex pattern (optional)</mat-label>
+          <input matInput formControlName="regex" placeholder="e.g., ^[A-Za-z]+$" />
+          @if (editForm.get('regex')?.hasError('invalidRegex')) {
+            <mat-error>Invalid regex pattern</mat-error>
+          }
+        </mat-form-field>
+      }
+    </form>
+  </div>
+
+  <div class="dialog-footer">
+    <button mat-stroked-button (click)="onClose()">Cancel</button>
+    <button mat-flat-button class="save-button" [disabled]="!canSubmit" (click)="onSave()">
+      Save Changes
+    </button>
+  </div>
+</div>

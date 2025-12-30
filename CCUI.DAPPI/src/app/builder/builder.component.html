@@ -45,7 +45,10 @@
           class="add-field-button"
           aria-label="Add another field"
         ></app-button>
-        <app-fields-list [fields]="fieldsData"></app-fields-list>
+        <app-fields-list 
+          [fields]="fieldsData" 
+          (editField)="onEditField($event)"
+        ></app-fields-list>
       </div>
     }
 

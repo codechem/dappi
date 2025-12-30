@@ -78,6 +78,30 @@ export const addFieldFailure = createAction(
   props<{ error: string }>()
 );
 
+export const updateField = createAction(
+  '[Collection] Update Field',
+  props<{
+    oldFieldName: string;
+    newFieldName: string;
+    isRequired: boolean;
+    hasIndex: boolean;
+    regex?: string;
+  }>()
+);
+
+export const updateFieldSuccess = createAction(
+  '[Collection] Update Field Success',
+  props<{
+    oldFieldName: string;
+    newFieldName: string;
+  }>()
+);
+
+export const updateFieldFailure = createAction(
+  '[Collection] Update Field Failure',
+  props<{ error: string }>()
+);
+
 export const saveContent = createAction('[Collection] Save Content');
 
 export const saveContentSuccess = createAction(

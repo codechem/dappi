@@ -176,6 +176,117 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         HasChanges = true;
     }
 
+    public Property? GetProperty(string modelName, string propertyName)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        var syntaxTree = _codeChanges.TryGetValue(modelName, out var value)
+            ? CSharpSyntaxTree.ParseText(value)
+            : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classNode is null) return null;
+        
+        var propertyNode = classNode.DescendantNodes()
+            .OfType<PropertyDeclarationSyntax>()
+            .FirstOrDefault(p => p.Identifier.Text == propertyName);
+
+        if (propertyNode is null) return null;
+
+        var propertyType = propertyNode.Type.ToString().Replace("?", "");
+        var isRequired = propertyNode.Modifiers.Any(m => m.IsKind(SyntaxKind.RequiredKeyword)) ||
+                        !propertyNode.Type.ToString().Contains("?");
+
+        DappiRelationKind? relationKind = null;
+        string? relatedModel = null;
+        string? regex = null;
+
+        var relationAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .FirstOrDefault(a => a.Name.ToString() == DappiRelationAttribute.ShortName);
+
+        if (relationAttribute?.ArgumentList?.Arguments.Count >= 2)
+        {
+            var relationKindArg = relationAttribute.ArgumentList.Arguments[0].Expression.ToString();
+            if (Enum.TryParse<DappiRelationKind>(relationKindArg.Split('.').Last(), out var parsedKind))
+            {
+                relationKind = parsedKind;
+            }
+            relatedModel = relationAttribute.ArgumentList.Arguments[1].Expression.ToString().Trim('"');
+        }
+
+        var regexAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .FirstOrDefault(a => a.Name.ToString() == "RegularExpression");
+
+        if (regexAttribute?.ArgumentList?.Arguments.Count >= 1)
+        {
+            regex = regexAttribute.ArgumentList.Arguments[0].Expression.ToString().Trim('"');
+        }
+
+        return new Property
+        {
+            DomainModel = modelName,
+            Name = propertyName,
+            Type = propertyType,
+            IsRequired = isRequired,
+            RelationKind = relationKind,
+            RelatedDomainModel = relatedModel,
+            Regex = regex,
+            HasIndex = false
+        };
+    }
+
+    public void UpdateProperty(string modelName, string oldPropertyName, Property newProperty)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        var syntaxTree = _codeChanges.TryGetValue(modelName, out var value)
+            ? CSharpSyntaxTree.ParseText(value)
+            : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classNode is null)
+        {
+            throw new Exception("Class not found");
+        }
+
+        var oldPropertyNode = classNode.DescendantNodes()
+            .OfType<PropertyDeclarationSyntax>()
+            .FirstOrDefault(p => p.Identifier.Text == oldPropertyName);
+
+        if (oldPropertyNode is null)
+        {
+            throw new Exception($"Property {oldPropertyName} not found");
+        }
+
+        var updatedProperty = RoslynHelpers.GenerateDynamicProperty(newProperty.Type, newProperty.Name, newProperty.IsRequired)
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .WithAccessorList(RoslynHelpers.WithGetAndSet());
+
+        if (newProperty.RelationKind is not null)
+        {
+            updatedProperty = updatedProperty.WithRelationAttribute(newProperty.RelationKind, newProperty.RelatedDomainModel);
+        }
+        if (newProperty.Type == "string" && !string.IsNullOrEmpty(newProperty.Regex))
+        {
+            updatedProperty = updatedProperty.WithRegularExpressionAttribute(newProperty.Regex);
+        }
+        if (newProperty.NoPastDates && IsDateType(newProperty.Type))
+        {
+            updatedProperty = updatedProperty.WithFutureDateAttribute();
+        }
+
+        var newClassNode = classNode.ReplaceNode(oldPropertyNode, updatedProperty);
+        var newRoot = root.ReplaceNode(classNode, newClassNode);
+        var newCode = newRoot.NormalizeWhitespace().ToFullString();
+
+        _codeChanges[modelName] = newCode;
+        HasChanges = true;
+    }
+
     private static bool IsDateType(string type)
     {
         var normalizedType = type.TrimEnd('?');

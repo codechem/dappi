@@ -251,6 +251,36 @@ public class DbContextEditor(
         HasChanges = true;
     }
 
+    public void UpdatePropertyNameInOnModelCreating(string modelName, string oldPropertyName, string newPropertyName)
+    {
+        var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
+            ? GetSyntaxTreeFromDbContextSource()
+            : CSharpSyntaxTree.ParseText(_currentCode);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = FindDbContextClassDeclaration(root);
+
+        var onModelCreating = classNode.Members.OfType<MethodDeclarationSyntax>()
+            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
+
+        if (onModelCreating?.Body == null) return;
+
+        var oldCode = onModelCreating.Body.ToFullString();
+        var pattern = $@"(modelBuilder\.Entity<{modelName}>\(\)[^\)]*e\s*=>\s*e\.)({oldPropertyName})(\s*\))";
+        var newCode = System.Text.RegularExpressions.Regex.Replace(oldCode, pattern, $"$1{newPropertyName}$3");
+
+        if (oldCode != newCode)
+        {
+            var newBody = SyntaxFactory.ParseStatement($"{{{newCode}}}") as BlockSyntax;
+            if (newBody != null)
+            {
+                var modifiedMethod = onModelCreating.WithBody(newBody);
+                var modifiedRoot = root.ReplaceNode(onModelCreating, modifiedMethod);
+                _currentCode = modifiedRoot.NormalizeWhitespace().ToFullString();
+                HasChanges = true;
+            }
+        }
+    }
+
     private MethodDeclarationSyntax GetOrCreateOnModelCreatingMethod(ClassDeclarationSyntax classNode)
     {
         var existingMethod = classNode.Members
