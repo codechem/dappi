@@ -13,6 +13,7 @@ export interface FieldItem {
   isRequired?: boolean;
   hasIndex?: boolean;
   regex?: string;
+  noPastDates?: boolean;
 }
 
 

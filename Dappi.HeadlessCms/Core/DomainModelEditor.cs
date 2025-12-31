@@ -225,6 +225,10 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
             regex = regexAttribute.ArgumentList.Arguments[0].Expression.ToString().Trim('"');
         }
 
+        var hasFutureDateAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .Any(a => a.Name.ToString() == "FutureDate");
+
         return new Property
         {
             DomainModel = modelName,
@@ -234,6 +238,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
             RelationKind = relationKind,
             RelatedDomainModel = relatedModel,
             Regex = regex,
+            NoPastDates = hasFutureDateAttribute,
             HasIndex = false
         };
     }

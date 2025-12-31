@@ -295,6 +295,7 @@ export class CollectionEffects {
           isRequired: action.isRequired,
           hasIndex: action.hasIndex,
           regex: action.regex,
+          noPastDates: action.noPastDates,
         };
         return this.http.patch(`${BASE_API_URL}models/${selectedType}/fields`, payload).pipe(
           map(() =>

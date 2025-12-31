@@ -19,5 +19,8 @@ namespace Dappi.HeadlessCms.Models
         
         [System.Text.Json.Serialization.JsonPropertyName("hasIndex")]
         public bool HasIndex { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("noPastDates")]
+        public bool NoPastDates { get; set; }
     }
 }

@@ -86,6 +86,7 @@ export const updateField = createAction(
     isRequired: boolean;
     hasIndex: boolean;
     regex?: string;
+    noPastDates?: boolean;
   }>()
 );
 

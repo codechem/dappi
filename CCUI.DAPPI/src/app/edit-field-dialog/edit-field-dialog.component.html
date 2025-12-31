@@ -44,6 +44,9 @@
       <div class="checkbox-group">
         <mat-checkbox formControlName="isRequired">Required field</mat-checkbox>
         <mat-checkbox formControlName="hasIndex">Add database index</mat-checkbox>
+        @if (isDateType) {
+          <mat-checkbox formControlName="noPastDates">No past dates</mat-checkbox>
+        }
       </div>
 
       @if (isTextType) {

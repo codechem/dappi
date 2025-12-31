@@ -231,6 +231,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
           isRequired: field.isRequired,
           hasIndex: field.hasIndex,
           regex: field.regex,
+          noPastDates: field.noPastDates,
         };
       });
     }
@@ -247,6 +248,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
         isRequired: field.isRequired || false,
         hasIndex: field.hasIndex || false,
         regex: field.regex,
+        noPastDates: field.noPastDates || false,
       },
     });
 
@@ -260,6 +262,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
               isRequired: result.isRequired,
               hasIndex: result.hasIndex,
               regex: result.regex,
+              noPastDates: result.noPastDates,
             })
           );
         }

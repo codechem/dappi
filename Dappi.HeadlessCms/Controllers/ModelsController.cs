@@ -349,6 +349,7 @@ public class ModelsController : ControllerBase
             Type = propertyToUpdate.Type,
             IsRequired = request.IsRequired,
             Regex = request.Regex,
+            NoPastDates = request.NoPastDates,
             RelationKind = propertyToUpdate.RelationKind,
             RelatedDomainModel = propertyToUpdate.RelatedDomainModel
         });
@@ -569,13 +570,18 @@ public class ModelsController : ControllerBase
                 regex = regexArg.Trim('@', '"');
             }
 
+            var hasFutureDateAttribute = property.AttributeLists
+                .SelectMany(al => al.Attributes)
+                .Any(a => a.Name.ToString() == "FutureDate");
+
             fieldList.Add(new FieldsInfo
             {
                 FieldName = fieldName,
                 FieldType = fieldType,
                 IsRequired = isRequired,
                 Regex = regex,
-                HasIndex = false
+                HasIndex = false,
+                NoPastDates = hasFutureDateAttribute
             });
         }
 

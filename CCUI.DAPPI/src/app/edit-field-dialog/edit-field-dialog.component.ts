@@ -18,6 +18,7 @@ export interface EditFieldDialogData {
   isRequired: boolean;
   hasIndex: boolean;
   regex?: string;
+  noPastDates?: boolean;
 }
 
 @Component({
@@ -40,6 +41,7 @@ export class EditFieldDialogComponent implements OnInit {
   editForm: FormGroup;
   selectedTypeFields$ = this.store.select(selectFields);
   isTextType = false;
+  isDateType = false;
 
   constructor(
     private dialogRef: MatDialogRef<EditFieldDialogComponent>,
@@ -64,9 +66,13 @@ export class EditFieldDialogComponent implements OnInit {
       isRequired: [data.isRequired],
       hasIndex: [data.hasIndex],
       regex: [data.regex || '', [ModelValidators.validRegex]],
+      noPastDates: [data.noPastDates || false],
     });
 
     this.isTextType = data.fieldType.toLowerCase() === 'string';
+    this.isDateType = data.fieldType === 'DateTime' || data.fieldType === 'DateOnly';
+    
+    console.log('Edit Dialog - Field Type:', data.fieldType, 'isDateType:', this.isDateType, 'noPastDates:', data.noPastDates);
   }
 
   ngOnInit(): void {}
@@ -83,6 +89,7 @@ export class EditFieldDialogComponent implements OnInit {
       isRequired: this.editForm.value.isRequired,
       hasIndex: this.editForm.value.hasIndex,
       regex: this.isTextType ? this.editForm.value.regex : undefined,
+      noPastDates: this.isDateType ? this.editForm.value.noPastDates : undefined,
     };
 
     this.dialogRef.close(result);
@@ -98,7 +105,8 @@ export class EditFieldDialogComponent implements OnInit {
       formValue.fieldName !== this.data.fieldName ||
       formValue.isRequired !== this.data.isRequired ||
       formValue.hasIndex !== this.data.hasIndex ||
-      (this.isTextType && formValue.regex !== (this.data.regex || ''))
+      (this.isTextType && formValue.regex !== (this.data.regex || '')) ||
+      (this.isDateType && formValue.noPastDates !== (this.data.noPastDates || false))
     );
   }
 
