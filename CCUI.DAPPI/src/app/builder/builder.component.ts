@@ -4,7 +4,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { ButtonComponent } from '../button/button.component';
 import { MatDialog } from '@angular/material/dialog';
 import { AddFieldDialogComponent } from '../add-field-dialog/add-field-dialog.component';
-import { EditFieldDialogComponent } from '../edit-field-dialog/edit-field-dialog.component';
 import { FieldItem, FieldsListComponent } from '../fields-list/fields-list.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { filter, Subscription, take } from 'rxjs';
@@ -238,11 +237,13 @@ export class BuilderComponent implements OnInit, OnDestroy {
   }
 
   onEditField(field: FieldItem): void {
-    const dialogRef = this.dialog.open(EditFieldDialogComponent, {
+    const dialogRef = this.dialog.open(AddFieldDialogComponent, {
       panelClass: 'edit-field-dialog-container',
       disableClose: true,
       width: '50vw',
       data: {
+        selectedType: this.selectedType,
+        editMode: true,
         fieldName: field.name,
         fieldType: field.type,
         isRequired: field.isRequired || false,
@@ -257,12 +258,14 @@ export class BuilderComponent implements OnInit, OnDestroy {
         if (result) {
           this.store.dispatch(
             CollectionActions.updateField({
-              oldFieldName: result.oldFieldName,
-              newFieldName: result.newFieldName,
-              isRequired: result.isRequired,
-              hasIndex: result.hasIndex,
-              regex: result.regex,
-              noPastDates: result.noPastDates,
+              payload: {
+                oldFieldName: result.oldFieldName,
+                newFieldName: result.newFieldName,
+                isRequired: result.isRequired,
+                hasIndex: result.hasIndex,
+                regex: result.regex,
+                noPastDates: result.noPastDates,
+              }
             })
           );
         }

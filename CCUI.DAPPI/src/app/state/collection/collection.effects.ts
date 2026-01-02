@@ -289,19 +289,11 @@ export class CollectionEffects {
       withLatestFrom(this.store.pipe(select(selectSelectedType))),
       filter(([_, selectedType]) => !!selectedType),
       switchMap(([action, selectedType]) => {
-        const payload = {
-          oldFieldName: action.oldFieldName,
-          newFieldName: action.newFieldName,
-          isRequired: action.isRequired,
-          hasIndex: action.hasIndex,
-          regex: action.regex,
-          noPastDates: action.noPastDates,
-        };
-        return this.http.patch(`${BASE_API_URL}models/${selectedType}/fields`, payload).pipe(
+        return this.http.patch(`${BASE_API_URL}models/${selectedType}/fields`, action.payload).pipe(
           map(() =>
             CollectionActions.updateFieldSuccess({
-              oldFieldName: action.oldFieldName,
-              newFieldName: action.newFieldName,
+              oldFieldName: action.payload.oldFieldName,
+              newFieldName: action.payload.newFieldName,
             })
           ),
           catchError((error) => {
