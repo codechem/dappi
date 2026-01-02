@@ -226,8 +226,6 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     
     if (this.isEditMode && data.fieldType) {
       this.preselectFieldType(data.fieldType);
-      // In edit mode, clear validators for field type-related controls
-      // since field type cannot be changed
       this.fieldForm.get('relatedModel')?.clearValidators();
       this.fieldForm.get('relatedRelationName')?.clearValidators();
       this.fieldForm.get('relatedModel')?.updateValueAndValidity();
