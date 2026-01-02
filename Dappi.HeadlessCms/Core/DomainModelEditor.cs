@@ -5,6 +5,7 @@ using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
 using Dappi.HeadlessCms.Core.SyntaxVisitors;
+using Dappi.HeadlessCms.Exceptions;
 using Dappi.HeadlessCms.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -88,7 +89,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
 
         if (classNode == null)
         {
-            throw new Exception($"Class {modelName} not found.");
+            throw new ModelNotFoundException($"Class {modelName} not found.", modelName);
         }
         
         var properties = GetRelatedPropertiesForDeletion
@@ -96,7 +97,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         var newRoot = root.RemoveNodes(properties, SyntaxRemoveOptions.KeepNoTrivia);
         if (newRoot == null)
         {
-            throw new Exception("Failed to remove properties.");
+            throw new InvalidOperationException("Failed to remove properties.");
         }
 
         var newCode = newRoot.NormalizeWhitespace().ToFullString();
@@ -119,7 +120,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         var classNode = root.DescendantNodes().FindClassDeclarationByName(modelName);
         if (classNode == null)
         {
-            throw new Exception("Class not found");
+            throw new ModelNotFoundException($"Class {modelName} not found.", modelName);
         }
         
         List<AttributeArgumentSyntax> arguments = [];
@@ -149,7 +150,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
 
         if (classNode is null)
         {
-            throw new Exception("Class not found");
+            throw new ModelNotFoundException($"Class {property.DomainModel} not found.", property.DomainModel);
         }
 
         var newProperty = RoslynHelpers.GenerateDynamicProperty(property.Type, property.Name, property.IsRequired)
@@ -255,7 +256,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
 
         if (classNode is null)
         {
-            throw new Exception("Class not found");
+            throw new ModelNotFoundException($"Class {modelName} not found.", modelName);
         }
 
         var oldPropertyNode = classNode.DescendantNodes()
@@ -264,7 +265,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
 
         if (oldPropertyNode is null)
         {
-            throw new Exception($"Property {oldPropertyName} not found");
+            throw new PropertyNotFoundException($"Property {oldPropertyName} not found in model {modelName}.", typeof(object), oldPropertyName);
         }
 
         var updatedProperty = RoslynHelpers.GenerateDynamicProperty(newProperty.Type, newProperty.Name, newProperty.IsRequired)
@@ -400,7 +401,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
 
         if (classNode is null)
         {
-            throw new Exception("Class not found");
+            throw new ModelNotFoundException($"Class {modelName} not found.", modelName);
         }
 
         var properties = classNode.DescendantNodes().OfType<PropertyDeclarationSyntax>()

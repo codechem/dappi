@@ -26,7 +26,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
         var statusCode = exception switch
         {
             ArgumentNullException or ArgumentException => StatusCodes.Status400BadRequest,
-            KeyNotFoundException or PropertyNotFoundException => StatusCodes.Status404NotFound,
+            KeyNotFoundException or PropertyNotFoundException or ModelNotFoundException => StatusCodes.Status404NotFound,
             UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
             MethodNotAllowedException => StatusCodes.Status405MethodNotAllowed,
             InvalidOperationException => StatusCodes.Status409Conflict,
