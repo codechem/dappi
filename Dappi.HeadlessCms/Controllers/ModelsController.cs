@@ -293,7 +293,7 @@ public class ModelsController : ControllerBase
 
         var res = new ModelResponse
         {
-            Fields = ExtractFieldsFromModel(modelCode),
+            Fields = ExtractFieldsFromModel(modelName, modelCode),
             AllowedActions = classDeclaration.ExtractAllowedCrudActions().ToList()
         };
         return Ok(res);
@@ -523,12 +523,12 @@ public class ModelsController : ControllerBase
             request.FieldName, request.RelatedRelationName ?? $"{modelName.Pluralize()}");
     }
 
-    private static List<FieldsInfo> ExtractFieldsFromModel(string classCode)
+    private List<FieldsInfo> ExtractFieldsFromModel(string modelName, string modelCode)
     {
         var auditableProps = new List<string> { "CreatedAtUtc", "UpdatedAtUtc", "CreatedBy", "UpdatedBy" };
         var fieldList = new List<FieldsInfo>();
 
-        var syntaxTree = CSharpSyntaxTree.ParseText(classCode);
+        var syntaxTree = CSharpSyntaxTree.ParseText(modelCode);
         var root = syntaxTree.GetCompilationUnitRoot();
         var classDeclaration = root.DescendantNodes()
             .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>()
@@ -539,7 +539,7 @@ public class ModelsController : ControllerBase
             return fieldList;
         }
 
-        var isAuditableEntity = classCode.Contains("IAuditableEntity");
+        var isAuditableEntity = modelCode.Contains("IAuditableEntity");
 
         var properties = classDeclaration.Members
             .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.PropertyDeclarationSyntax>()
@@ -547,41 +547,28 @@ public class ModelsController : ControllerBase
 
         foreach (var property in properties)
         {
-            var fieldName = property.Identifier.Text;
-            
-            if (isAuditableEntity && auditableProps.Contains(fieldName))
+            var propertyName = property.Identifier.Text;
+
+            if (isAuditableEntity && auditableProps.Contains(propertyName))
             {
                 continue;
             }
 
-            var fieldType = property.Type.ToString().Replace("?", "");
-            var hasRequiredKeyword = property.Modifiers.Any(m => m.ValueText == "required");
-            var isNullable = property.Type.ToString().Contains("?");
-            var isRequired = hasRequiredKeyword || !isNullable;
-
-            string? regex = null;
-            var regexAttribute = property.AttributeLists
-                .SelectMany(al => al.Attributes)
-                .FirstOrDefault(a => a.Name.ToString() == "RegularExpression");
-
-            if (regexAttribute?.ArgumentList?.Arguments.Count >= 1)
+            var propertyData = _domainModelEditor.GetProperty(modelName, propertyName);
+            
+            if (propertyData == null)
             {
-                var regexArg = regexAttribute.ArgumentList.Arguments[0].Expression.ToString();
-                regex = regexArg.Trim('@', '"');
+                continue;
             }
-
-            var hasFutureDateAttribute = property.AttributeLists
-                .SelectMany(al => al.Attributes)
-                .Any(a => a.Name.ToString() == "FutureDate");
 
             fieldList.Add(new FieldsInfo
             {
-                FieldName = fieldName,
-                FieldType = fieldType,
-                IsRequired = isRequired,
-                Regex = regex,
-                HasIndex = false,
-                NoPastDates = hasFutureDateAttribute
+                FieldName = propertyData.Name,
+                FieldType = propertyData.Type,
+                IsRequired = propertyData.IsRequired,
+                Regex = propertyData.Regex,
+                HasIndex = propertyData.HasIndex,
+                NoPastDates = propertyData.NoPastDates
             });
         }
 

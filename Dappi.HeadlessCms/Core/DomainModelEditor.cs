@@ -223,7 +223,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
 
         if (regexAttribute?.ArgumentList?.Arguments.Count >= 1)
         {
-            regex = regexAttribute.ArgumentList.Arguments[0].Expression.ToString().Trim('"');
+            regex = regexAttribute.ArgumentList.Arguments[0].Expression.GetFirstToken().ValueText.Trim();
         }
 
         var hasFutureDateAttribute = propertyNode.AttributeLists
