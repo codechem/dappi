@@ -293,7 +293,7 @@ public class ModelsController : ControllerBase
 
         var res = new ModelResponse
         {
-            Fields = ExtractFieldsFromModel(modelName, modelCode),
+            Fields = await _domainModelEditor.GetFieldsInfoAsync(modelName),
             AllowedActions = classDeclaration.ExtractAllowedCrudActions().ToList()
         };
         return Ok(res);

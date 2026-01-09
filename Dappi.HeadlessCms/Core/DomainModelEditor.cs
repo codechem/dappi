@@ -244,6 +244,67 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         };
     }
 
+    public async Task<List<FieldsInfo>> GetFieldsInfoAsync(string modelName)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        if (!File.Exists(filePath))
+        {
+            return [];
+        }
+
+        var auditableProps = new HashSet<string> { "CreatedAtUtc", "UpdatedAtUtc", "CreatedBy", "UpdatedBy" };
+        var code = _codeChanges.TryGetValue(modelName, out var cachedCode)
+            ? cachedCode
+            : await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+
+        var syntaxTree = CSharpSyntaxTree.ParseText(code);
+        var root = await syntaxTree.GetRootAsync().ConfigureAwait(false);
+        var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classDeclaration is null)
+        {
+            return [];
+        }
+
+        var isAuditableEntity = classDeclaration.BaseList?.Types
+            .Any(t => t.Type.ToString() == nameof(IAuditableEntity)) == true;
+
+        var properties = classDeclaration.Members
+            .OfType<PropertyDeclarationSyntax>()
+            .Where(p => p.AccessorList != null);
+
+        List<FieldsInfo> fieldList = [];
+
+        foreach (var property in properties)
+        {
+            var propertyName = property.Identifier.Text;
+
+            if (isAuditableEntity && auditableProps.Contains(propertyName))
+            {
+                continue;
+            }
+
+            var propertyData = GetProperty(modelName, propertyName);
+
+            if (propertyData is null)
+            {
+                continue;
+            }
+
+            fieldList.Add(new FieldsInfo
+            {
+                FieldName = propertyData.Name,
+                FieldType = propertyData.Type,
+                IsRequired = propertyData.IsRequired,
+                Regex = propertyData.Regex,
+                HasIndex = propertyData.HasIndex,
+                NoPastDates = propertyData.NoPastDates
+            });
+        }
+
+        return fieldList;
+    }
+
     public void UpdateProperty(string modelName, string oldPropertyName, Property newProperty)
     {
         var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
