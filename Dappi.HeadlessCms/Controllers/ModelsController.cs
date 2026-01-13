@@ -279,22 +279,10 @@ public class ModelsController : ControllerBase
     [HttpGet("fields/{modelName}")]
     public async Task<IActionResult> GetModelFields(string modelName)
     {
-        var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
-        if (!System.IO.File.Exists(modelFilePath))
-        {
-            return NotFound($"Model '{modelName}' not found.");
-        }
-
-        var modelCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
-        var syntaxTree = CSharpSyntaxTree.ParseText(modelCode);
-        var root = syntaxTree.GetCompilationUnitRoot();
-        var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName) ??
-                               throw new Exception("Error extracting allowed actions.");
-
         var res = new ModelResponse
         {
             Fields = await _domainModelEditor.GetFieldsInfoAsync(modelName),
-            AllowedActions = classDeclaration.ExtractAllowedCrudActions().ToList()
+            AllowedActions = await _domainModelEditor.GetAllowedActionsAsync(modelName)
         };
         return Ok(res);
     }
@@ -377,6 +365,62 @@ public class ModelsController : ControllerBase
         return Ok(new
         {
             Message = $"Field '{request.OldFieldName}' updated successfully to '{request.NewFieldName}' in '{modelName}' model.",
+            FilePath = modelFilePath
+        });
+    }
+
+    [HttpDelete("{modelName}/fields/{fieldName}")]
+    public async Task<IActionResult> DeleteField(string modelName, string fieldName)
+    {
+        if (string.IsNullOrEmpty(modelName))
+        {
+            return BadRequest("Model name must be provided.");
+        }
+
+        if (string.IsNullOrEmpty(fieldName))
+        {
+            return BadRequest("Field name must be provided.");
+        }
+
+        if (fieldName.Equals("Id", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("The 'Id' field cannot be deleted.");
+        }
+
+        var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
+        if (!System.IO.File.Exists(modelFilePath))
+        {
+            return NotFound("Model class not found.");
+        }
+
+        var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
+        
+        if (!PropertyCheckUtils.PropertyNameExists(existingCode, fieldName))
+        {
+            return BadRequest($"Property {fieldName} does not exist in {modelName}.");
+        }
+
+        var propertyToDelete = _domainModelEditor.GetProperty(modelName, fieldName);
+        if (propertyToDelete == null)
+        {
+            return BadRequest($"Could not find property {fieldName} in model {modelName}.");
+        }
+
+        await _domainModelEditor.DeleteProperty(modelName, fieldName);
+        _dbContextEditor.RemovePropertyFromOnModelCreating(modelName, fieldName);
+
+        var fieldDeleteDict = new Dictionary<string, string>
+        {
+            { fieldName, "DELETED" }
+        };
+        await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(modelName, fieldDeleteDict);
+
+        await _domainModelEditor.SaveAsync();
+        await _dbContextEditor.SaveAsync();
+
+        return Ok(new
+        {
+            Message = $"Field '{fieldName}' deleted successfully from '{modelName}' model.",
             FilePath = modelFilePath
         });
     }

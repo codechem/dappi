@@ -301,7 +301,6 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     );
     this.fieldForm.get('fieldName')?.addValidators(ModelValidators.fieldNameSameAsModel(this.selectedType));
     
-    // Only set relatedModel validator in add mode (not edit mode)
     if (!this.isEditMode) {
       this.fieldForm.get('relatedModel')?.setValidators([Validators.required]);
     }
@@ -367,7 +366,6 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     }
 
     if (this.isEditMode) {
-      // Edit mode: return updated data
       if (!this.hasChanges()) {
         return;
       }
@@ -385,7 +383,6 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Add mode: dispatch action
     const selectedFieldType = this.fieldTypes.find(fieldType => fieldType.type.toString() === this.selectedFieldTypeId?.toString());
 
     if (!selectedFieldType) {
@@ -451,11 +448,9 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     if (mappedType !== undefined) {
       this.selectedFieldTypeId = mappedType;
     } else {
-      // Check if it's a relation or enum type
       if (['ManyToMany', 'OneToMany', 'ManyToOne', 'OneToOne'].includes(fieldType)) {
         this.selectedFieldTypeId = FieldTypeEnum.Relation;
       } else {
-        // Assume it's an enum
         this.selectedFieldTypeId = FieldTypeEnum.Dropdown;
         this.selectedEnum = fieldType;
       }

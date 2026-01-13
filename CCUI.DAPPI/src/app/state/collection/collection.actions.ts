@@ -105,6 +105,21 @@ export const updateFieldFailure = createAction(
   props<{ error: string }>()
 );
 
+export const deleteField = createAction(
+  '[Collection] Delete Field',
+  props<{ modelName: string; fieldName: string }>()
+);
+
+export const deleteFieldSuccess = createAction(
+  '[Collection] Delete Field Success',
+  props<{ fieldName: string }>()
+);
+
+export const deleteFieldFailure = createAction(
+  '[Collection] Delete Field Failure',
+  props<{ error: string }>()
+);
+
 export const saveContent = createAction('[Collection] Save Content');
 
 export const saveContentSuccess = createAction(

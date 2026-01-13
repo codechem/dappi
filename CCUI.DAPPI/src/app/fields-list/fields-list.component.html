@@ -37,15 +37,15 @@
               >
                 <mat-icon>edit</mat-icon>
               </button>
+              <button
+                mat-icon-button
+                class="fields-container__action-button"
+                (click)="onDelete(field)"
+                aria-label="Delete field"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
             }
-            <!-- <button
-              mat-icon-button
-              class="fields-container__action-button"
-              (click)="onDelete(field)"
-              aria-label="Delete field"
-            >
-              <mat-icon>delete</mat-icon>
-            </button> -->
           </div>
         </div>
       }

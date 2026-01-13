@@ -273,6 +273,17 @@ export class BuilderComponent implements OnInit, OnDestroy {
     );
   }
 
+  onDeleteField(field: FieldItem): void {
+    if (confirm(`Are you sure you want to delete the field "${field.name}"?`)) {
+      this.store.dispatch(
+        CollectionActions.deleteField({
+          modelName: this.selectedType,
+          fieldName: field.name
+        })
+      );
+    }
+  }
+
   openDeleteCollectionTypeDialog(): void {
     if(!this.selectedType) return;
     const dialogRef = this.dialog.open(DeleteColletionTypeDialogComponent, {
