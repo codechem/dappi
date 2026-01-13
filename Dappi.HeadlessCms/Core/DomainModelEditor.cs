@@ -1,6 +1,7 @@
 using System.Reflection;
 using Dappi.Core.Attributes;
 using Dappi.Core.Enums;
+using Dappi.Core.Extensions;
 using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
@@ -253,12 +254,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         }
 
         var auditableProps = new HashSet<string> { "CreatedAtUtc", "UpdatedAtUtc", "CreatedBy", "UpdatedBy" };
-        var code = _codeChanges.TryGetValue(modelName, out var cachedCode)
-            ? cachedCode
-            : await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
-
-        var syntaxTree = CSharpSyntaxTree.ParseText(code);
-        var root = await syntaxTree.GetRootAsync().ConfigureAwait(false);
+        var root = await GetRoot(filePath, modelName);
         var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName);
 
         if (classDeclaration is null)
@@ -305,6 +301,21 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         return fieldList;
     }
 
+    public async Task<List<CrudActions>> GetAllowedActionsAsync(string modelName)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        if (!File.Exists(filePath))
+            return [];
+
+        var root = await GetRoot(filePath, modelName);
+        var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classDeclaration is null)
+            return [];
+
+        return classDeclaration.ExtractAllowedCrudActions().ToList();
+    }
+
     public void UpdateProperty(string modelName, string oldPropertyName, Property newProperty)
     {
         var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
@@ -348,6 +359,46 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
 
         var newClassNode = classNode.ReplaceNode(oldPropertyNode, updatedProperty);
         var newRoot = root.ReplaceNode(classNode, newClassNode);
+        var newCode = newRoot.NormalizeWhitespace().ToFullString();
+
+        _codeChanges[modelName] = newCode;
+        HasChanges = true;
+    }
+
+    private async Task<SyntaxNode> GetRoot(string filePath, string modelName)
+    {
+        var code = _codeChanges.TryGetValue(modelName, out var cachedCode)
+            ? cachedCode
+            : await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+
+        var syntaxTree = CSharpSyntaxTree.ParseText(code);
+        return await syntaxTree.GetRootAsync().ConfigureAwait(false);
+    }
+
+    public async Task DeleteProperty(string modelName, string propertyName)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        var root = await GetRoot(filePath, modelName);
+        var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classDeclaration is null)
+        {
+            throw new ModelNotFoundException($"Class {modelName} not found.", modelName);
+        }
+
+        var propertyNode = classDeclaration.DescendantNodes()
+            .OfType<PropertyDeclarationSyntax>()
+            .FirstOrDefault(p => p.Identifier.Text == propertyName);
+
+        if (propertyNode is null)
+        {
+            throw new PropertyNotFoundException($"Property {propertyName} not found in model {modelName}.", typeof(object), propertyName);
+        }
+
+        var newClassDeclaration = classDeclaration.RemoveNode(propertyNode, SyntaxRemoveOptions.KeepNoTrivia)
+            ?? throw new InvalidOperationException($"Failed to remove property {propertyName} from model {modelName}.");
+
+        var newRoot = root.ReplaceNode(classDeclaration, newClassDeclaration);
         var newCode = newRoot.NormalizeWhitespace().ToFullString();
 
         _codeChanges[modelName] = newCode;

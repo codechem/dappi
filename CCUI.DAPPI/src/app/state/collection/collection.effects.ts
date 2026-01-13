@@ -305,6 +305,38 @@ export class CollectionEffects {
     )
   );
 
+  deleteField$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.deleteField),
+      switchMap((action) => {
+        return this.http.delete(`${BASE_API_URL}models/${action.modelName}/fields/${action.fieldName}`).pipe(
+          map(() => {
+            this.snackBar.open(`Field "${action.fieldName}" deleted successfully`, 'Close', {
+              duration: 3000,
+            });
+            return CollectionActions.deleteFieldSuccess({ fieldName: action.fieldName });
+          }),
+          catchError((error) => {
+            this.showErrorPopup(`Failed to delete field: ${error.error}`);
+            return of(CollectionActions.deleteFieldFailure({ error: error.message }));
+          })
+        );
+      })
+    )
+  );
+
+  reloadFieldsAfterDelete$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CollectionActions.deleteFieldSuccess),
+      withLatestFrom(this.store.pipe(select(selectSelectedType))),
+      filter(([_, selectedType]) => !!selectedType),
+      concatMap(([_, selectedType]) => [
+        CollectionActions.loadDraftCollectionTypes(),
+        CollectionActions.loadFields({ modelType: selectedType }),
+      ])
+    )
+  );
+
   collectionHasRelatedProperties$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CollectionActions.collectionHasRelatedProperties),
