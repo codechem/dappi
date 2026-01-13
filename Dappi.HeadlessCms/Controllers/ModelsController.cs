@@ -172,7 +172,18 @@ public class ModelsController : ControllerBase
         var relatedFieldDict = new Dictionary<string, string>();
 
         var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
-        if (PropertyCheckUtils.PropertyNameExists(existingCode, request.FieldName))
+        var syntaxTree = CSharpSyntaxTree.ParseText(existingCode);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classDeclaration = root.DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>()
+            .FirstOrDefault();
+
+        if (classDeclaration == null)
+        {
+            return BadRequest("Could not parse model class.");
+        }
+
+        if (PropertyCheckUtils.PropertyNameExists(classDeclaration, request.FieldName))
         {
             return BadRequest($"Property {request.FieldName} name already exists in {modelFilePath}.");
         }
@@ -312,14 +323,24 @@ public class ModelsController : ControllerBase
         }
 
         var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
+        var syntaxTree = CSharpSyntaxTree.ParseText(existingCode);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classDeclaration = root.DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>()
+            .FirstOrDefault();
+
+        if (classDeclaration == null)
+        {
+            return BadRequest("Could not parse model class.");
+        }
         
-        if (!PropertyCheckUtils.PropertyNameExists(existingCode, request.OldFieldName))
+        if (!PropertyCheckUtils.PropertyNameExists(classDeclaration, request.OldFieldName))
         {
             return BadRequest($"Property {request.OldFieldName} does not exist in {modelName}.");
         }
 
         if (request.OldFieldName != request.NewFieldName && 
-            PropertyCheckUtils.PropertyNameExists(existingCode, request.NewFieldName))
+            PropertyCheckUtils.PropertyNameExists(classDeclaration, request.NewFieldName))
         {
             return BadRequest($"Property {request.NewFieldName} already exists in {modelName}.");
         }
@@ -394,8 +415,18 @@ public class ModelsController : ControllerBase
         }
 
         var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
+        var syntaxTree = CSharpSyntaxTree.ParseText(existingCode);
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classDeclaration = root.DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>()
+            .FirstOrDefault();
+
+        if (classDeclaration == null)
+        {
+            return BadRequest("Could not parse model class.");
+        }
         
-        if (!PropertyCheckUtils.PropertyNameExists(existingCode, fieldName))
+        if (!PropertyCheckUtils.PropertyNameExists(classDeclaration, fieldName))
         {
             return BadRequest($"Property {fieldName} does not exist in {modelName}.");
         }
