@@ -319,7 +319,7 @@ public class ModelsController : ControllerBase
         var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
         if (!System.IO.File.Exists(modelFilePath))
         {
-            return NotFound("Model class not found.");
+            return NotFound($"Model '{modelName}' not found.");
         }
 
         var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
