@@ -348,7 +348,7 @@ public class ModelsController : ControllerBase
         var propertyToUpdate = _domainModelEditor.GetProperty(modelName, request.OldFieldName);
         if (propertyToUpdate == null)
         {
-            return BadRequest($"Could not find property {request.OldFieldName} in model {modelName}.");
+            return NotFound($"Could not find property {request.OldFieldName} in model {modelName}.");
         }
 
         _domainModelEditor.UpdateProperty(modelName, request.OldFieldName, new Property
@@ -428,14 +428,8 @@ public class ModelsController : ControllerBase
         
         if (!PropertyCheckUtils.PropertyNameExists(classDeclaration, fieldName))
         {
-            return BadRequest($"Property {fieldName} does not exist in {modelName}.");
-        }
-
-        var propertyToDelete = _domainModelEditor.GetProperty(modelName, fieldName);
-        if (propertyToDelete == null)
-        {
-            return BadRequest($"Could not find property {fieldName} in model {modelName}.");
-        }
+            return NotFound($"Property {fieldName} does not exist in {modelName}.");
+        }        
 
         await _domainModelEditor.DeleteProperty(modelName, fieldName);
         _dbContextEditor.RemovePropertyFromOnModelCreating(modelName, fieldName);
