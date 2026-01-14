@@ -9,8 +9,6 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.CSharp;
-using Dappi.Core.Extensions;
 
 namespace Dappi.HeadlessCms.Controllers;
 
@@ -170,19 +168,8 @@ public class ModelsController : ControllerBase
         var fieldDict = new Dictionary<string, string> { { request.FieldName, request.FieldType } };
         var relatedFieldDict = new Dictionary<string, string>();
 
-        var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
-        var syntaxTree = CSharpSyntaxTree.ParseText(existingCode);
-        var root = syntaxTree.GetCompilationUnitRoot();
-        var classDeclaration = root.DescendantNodes()
-            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>()
-            .FirstOrDefault();
-
-        if (classDeclaration == null)
-        {
-            return BadRequest("Could not parse model class.");
-        }
-
-        if (classDeclaration.PropertyNameExists(request.FieldName))
+        var existingProperty = _domainModelEditor.GetProperty(modelName, request.FieldName);
+        if (existingProperty != null)
         {
             return BadRequest($"Property {request.FieldName} name already exists in {modelFilePath}.");
         }
@@ -321,27 +308,19 @@ public class ModelsController : ControllerBase
             return NotFound($"Model '{modelName}' not found.");
         }
 
-        var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
-        var syntaxTree = CSharpSyntaxTree.ParseText(existingCode);
-        var root = syntaxTree.GetCompilationUnitRoot();
-        var classDeclaration = root.DescendantNodes()
-            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>()
-            .FirstOrDefault();
-
-        if (classDeclaration == null)
-        {
-            return BadRequest("Could not parse model class.");
-        }
-        
-        if (!classDeclaration.PropertyNameExists(request.OldFieldName))
+        var oldProperty = _domainModelEditor.GetProperty(modelName, request.OldFieldName);
+        if (oldProperty == null)
         {
             return BadRequest($"Property {request.OldFieldName} does not exist in {modelName}.");
         }
 
-        if (request.OldFieldName != request.NewFieldName && 
-            classDeclaration.PropertyNameExists(request.NewFieldName))
+        if (request.OldFieldName != request.NewFieldName)
         {
-            return BadRequest($"Property {request.NewFieldName} already exists in {modelName}.");
+            var newProperty = _domainModelEditor.GetProperty(modelName, request.NewFieldName);
+            if (newProperty != null)
+            {
+                return BadRequest($"Property {request.NewFieldName} already exists in {modelName}.");
+            }
         }
 
         var propertyToUpdate = _domainModelEditor.GetProperty(modelName, request.OldFieldName);
@@ -413,19 +392,8 @@ public class ModelsController : ControllerBase
             return NotFound("Model class not found.");
         }
 
-        var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
-        var syntaxTree = CSharpSyntaxTree.ParseText(existingCode);
-        var root = syntaxTree.GetCompilationUnitRoot();
-        var classDeclaration = root.DescendantNodes()
-            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>()
-            .FirstOrDefault();
-
-        if (classDeclaration == null)
-        {
-            return BadRequest("Could not parse model class.");
-        }
-        
-        if (!classDeclaration.PropertyNameExists(fieldName))
+        var property = _domainModelEditor.GetProperty(modelName, fieldName);
+        if (property == null)
         {
             return NotFound($"Property {fieldName} does not exist in {modelName}.");
         }        
@@ -589,57 +557,5 @@ public class ModelsController : ControllerBase
 
         _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToMany,
             request.FieldName, request.RelatedRelationName ?? $"{modelName.Pluralize()}");
-    }
-
-    private List<FieldsInfo> ExtractFieldsFromModel(string modelName, string modelCode)
-    {
-        var auditableProps = new List<string> { "CreatedAtUtc", "UpdatedAtUtc", "CreatedBy", "UpdatedBy" };
-        var fieldList = new List<FieldsInfo>();
-
-        var syntaxTree = CSharpSyntaxTree.ParseText(modelCode);
-        var root = syntaxTree.GetCompilationUnitRoot();
-        var classDeclaration = root.DescendantNodes()
-            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>()
-            .FirstOrDefault();
-
-        if (classDeclaration == null)
-        {
-            return fieldList;
-        }
-
-        var isAuditableEntity = modelCode.Contains("IAuditableEntity");
-
-        var properties = classDeclaration.Members
-            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.PropertyDeclarationSyntax>()
-            .Where(p => p.AccessorList != null);
-
-        foreach (var property in properties)
-        {
-            var propertyName = property.Identifier.Text;
-
-            if (isAuditableEntity && auditableProps.Contains(propertyName))
-            {
-                continue;
-            }
-
-            var propertyData = _domainModelEditor.GetProperty(modelName, propertyName);
-            
-            if (propertyData == null)
-            {
-                continue;
-            }
-
-            fieldList.Add(new FieldsInfo
-            {
-                FieldName = propertyData.Name,
-                FieldType = propertyData.Type,
-                IsRequired = propertyData.IsRequired,
-                Regex = propertyData.Regex,
-                HasIndex = propertyData.HasIndex,
-                NoPastDates = propertyData.NoPastDates
-            });
-        }
-
-        return fieldList;
     }
 }
