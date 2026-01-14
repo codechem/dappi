@@ -5,7 +5,6 @@ using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
 using Dappi.HeadlessCms.Enums;
-using Dappi.HeadlessCms.Extensions;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -183,7 +182,7 @@ public class ModelsController : ControllerBase
             return BadRequest("Could not parse model class.");
         }
 
-        if (PropertyCheckUtils.PropertyNameExists(classDeclaration, request.FieldName))
+        if (classDeclaration.PropertyNameExists(request.FieldName))
         {
             return BadRequest($"Property {request.FieldName} name already exists in {modelFilePath}.");
         }
@@ -334,13 +333,13 @@ public class ModelsController : ControllerBase
             return BadRequest("Could not parse model class.");
         }
         
-        if (!PropertyCheckUtils.PropertyNameExists(classDeclaration, request.OldFieldName))
+        if (!classDeclaration.PropertyNameExists(request.OldFieldName))
         {
             return BadRequest($"Property {request.OldFieldName} does not exist in {modelName}.");
         }
 
         if (request.OldFieldName != request.NewFieldName && 
-            PropertyCheckUtils.PropertyNameExists(classDeclaration, request.NewFieldName))
+            classDeclaration.PropertyNameExists(request.NewFieldName))
         {
             return BadRequest($"Property {request.NewFieldName} already exists in {modelName}.");
         }
@@ -426,7 +425,7 @@ public class ModelsController : ControllerBase
             return BadRequest("Could not parse model class.");
         }
         
-        if (!PropertyCheckUtils.PropertyNameExists(classDeclaration, fieldName))
+        if (!classDeclaration.PropertyNameExists(fieldName))
         {
             return NotFound($"Property {fieldName} does not exist in {modelName}.");
         }        
