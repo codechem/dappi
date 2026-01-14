@@ -203,18 +203,24 @@ public class DbContextEditor(
         HasChanges = true;
     }
 
+    private MethodDeclarationSyntax? GetOnModelCreatingMethod(CompilationUnitSyntax root)
+    {
+        var classNode = FindDbContextClassDeclaration(root);
+
+        var onModelCreating = classNode.Members
+            .OfType<MethodDeclarationSyntax>()
+            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
+
+        return onModelCreating;
+    }
+
     public void DeleteRelations(string entity, List<string> relatedEntities)
     {
         var root = GetRoot();
-        var classNode = FindDbContextClassDeclaration(root);
-
-        var onModelCreating = classNode.Members.OfType<MethodDeclarationSyntax>()
-            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
+        var onModelCreating = GetOnModelCreatingMethod(root);
 
         if (onModelCreating is null)
-        {
             return;
-        }
 
         var block = onModelCreating.Body;
         var statementsToRemove = new List<StatementSyntax>();
@@ -252,12 +258,8 @@ public class DbContextEditor(
     public void UpdatePropertyNameInOnModelCreating(string modelName, string oldPropertyName, string newPropertyName)
     {
         var root = GetRoot();
-        var classNode = FindDbContextClassDeclaration(root);
-
-        var onModelCreating = classNode.Members
-            .OfType<MethodDeclarationSyntax>()
-            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
-
+        var onModelCreating = GetOnModelCreatingMethod(root);
+        
         if (onModelCreating?.Body == null) return;
 
         var nodesToReplace = new Dictionary<SyntaxNode, SyntaxNode>();
