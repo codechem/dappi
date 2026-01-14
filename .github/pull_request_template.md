@@ -6,7 +6,7 @@
 
 <!-- Explain why these changes were needed. What problem does this solve? Link any related issues. -->
 
-Fixes #(issue number)
+Closes #(issue number)
 
 ## Type of Change
 
