@@ -213,7 +213,7 @@ export class ModelValidators {
     if (
       !Number.isInteger(intValue) ||
       intValue < 1 ||
-      intValue > 2147483647
+      intValue > 1000
     ) {
       return { invalidMinField: true };
     }
@@ -233,11 +233,21 @@ export class ModelValidators {
     if (
       !Number.isInteger(intValue) ||
       intValue < 1 ||
-      intValue > 2147483647
+      intValue > 1000
     ) {
       return { invalidMaxField: true };
     }
 
     return null;
   }
-}
+
+  static minMaxValidator(control: AbstractControl): ValidationErrors | null {
+    const minLength = control.get('minLength')?.value;
+    const maxLength = control.get('maxLength')?.value;
+
+    if (minLength && maxLength && Number(minLength) > Number(maxLength)) {
+      return { minGreaterThanMax: true };
+    }
+
+    return null;
+  }}

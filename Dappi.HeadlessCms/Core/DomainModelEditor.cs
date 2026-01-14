@@ -163,13 +163,9 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         {
             newProperty = newProperty.WithRegularExpressionAttribute(property.Regex);
         }
-        if (property.Type == "string" && !string.IsNullOrEmpty(property.MaxLength))
+        if (property.Type == "string" && (!string.IsNullOrEmpty(property.MinLength) || !string.IsNullOrEmpty(property.MaxLength)))
         {
-            newProperty = newProperty.WithMaxLengthAttribute(property.MaxLength);
-        }
-        if (property.Type == "string" && !string.IsNullOrEmpty(property.MinLength))
-        {
-            newProperty = newProperty.WithMaxLengthAttribute(property.MinLength);
+            newProperty = newProperty.WithLengthAttribute(property.MinLength, property.MaxLength);
         }
 
         var newNode = classNode.AddMembers(newProperty);

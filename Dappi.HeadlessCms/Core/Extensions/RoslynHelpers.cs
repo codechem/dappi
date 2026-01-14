@@ -88,17 +88,25 @@ namespace Dappi.HeadlessCms.Core.Extensions
             return property.WithRegexAttribute("RegularExpression", SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression($"@\"{regex}\"")));
         }
 
-        public static PropertyDeclarationSyntax WithMaxLengthAttribute(this PropertyDeclarationSyntax property,
-            string attributeName, int minLength = 0, int maxLength = 0)
+        public static PropertyDeclarationSyntax WithLengthAttribute(this PropertyDeclarationSyntax property,
+            string? minLength, string? maxLength)
         {
-            var attribute = SyntaxFactory.Attribute(SyntaxFactory.ParseName("MaxLength"));
-
-            var arguments = SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression(maxLength.ToString()));
+            const int DefaultMaxLength = 1000;
             
-            // if (arguments.Length > 0)
-            // {
-            //     attribute = attribute.AddArgumentListArguments(arguments);
-            // }
+            var min = string.IsNullOrEmpty(minLength) ? "0" : minLength;
+            var max = string.IsNullOrEmpty(maxLength) ? DefaultMaxLength.ToString() : maxLength;
+            
+            var attribute = SyntaxFactory.Attribute(SyntaxFactory.ParseName("Length"));
+            var arguments = new[]
+            {
+                SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression(min)),
+                SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression(max))
+            };
+            
+            attribute = attribute.WithArgumentList(
+                SyntaxFactory.AttributeArgumentList(SyntaxFactory.SeparatedList(arguments))
+            );
+            
             var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
             return property.AddAttributeLists(attributeList);
         }

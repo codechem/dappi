@@ -200,8 +200,10 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       requiredField: [false],
       relatedModel: [''],
       relatedRelationName: [''],
-      regex: ['', [ModelValidators.validRegex]]
-    });
+      regex: ['', [ModelValidators.validRegex]],
+      minLength: [null, [ModelValidators.validMinField]],
+      maxLength: [null, [ModelValidators.validMaxField]]
+    }, { validators: ModelValidators.minMaxValidator });
   }
 
   relationTypes: {
@@ -349,7 +351,9 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       relatedTo: this.relatedTo,
       isRequired: this.fieldForm.value.requiredField,
       relatedRelationName: this.fieldForm.value.relatedRelationName,
-      regex: this.fieldForm.value.regex
+      regex: this.fieldForm.value.regex,
+      ...(this.selectedFieldTypeId === this.fieldTypeEnum.String && this.fieldForm.value.minLength && { minLength: this.fieldForm.value.minLength }),
+      ...(this.selectedFieldTypeId === this.fieldTypeEnum.String && this.fieldForm.value.maxLength && { maxLength: this.fieldForm.value.maxLength })
     };
 
     if (this.selectedFieldTypeId === this.fieldTypeEnum.Dropdown) {

@@ -82,14 +82,14 @@
                 matInput
                 type="number"
                 min="1"
-                max="2147483647"
+                max="1000"
                 step="1"
                 formControlName="minLength"
               />
 
               @if (fieldForm.get('minLength')?.hasError('invalidMinField') &&
                   fieldForm.get('minLength')?.touched) {
-                <mat-error>Min length must be a whole number between 0 and 2,147,483,647</mat-error>
+                <mat-error>Min length must be a whole number between 1 and 1000</mat-error>
               }
             </mat-form-field>
 
@@ -101,13 +101,13 @@
                 formControlName="maxLength"
                 placeholder="Enter max length"
                 min="1"
-                max="2147483647"
+                max="1000"
                 step="1"
               />
 
               @if (fieldForm.get('maxLength')?.hasError('invalidMaxField') &&
                   fieldForm.get('maxLength')?.touched) {
-                <mat-error>Max length must be a whole number between 0 and 2,147,483,647</mat-error>
+                <mat-error>Max length must be a whole number between 1 and 1000</mat-error>
               }
             </mat-form-field>
 

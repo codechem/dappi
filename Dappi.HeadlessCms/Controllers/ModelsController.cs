@@ -232,7 +232,9 @@ public class ModelsController : ControllerBase
                                 Name = request.FieldName,
                                 Type = request.FieldType,
                                 IsRequired = request.IsRequired,
-                                Regex = request.Regex
+                                Regex = request.Regex,
+                                MinLength = request.MinLength?.ToString(),
+                                MaxLength = request.MaxLength?.ToString()
                             };
                             _domainModelEditor.AddProperty(property);
                             _domainModelEditor.AddEnumNamespaceIfMissing(property.DomainModel);
@@ -249,7 +251,9 @@ public class ModelsController : ControllerBase
                     Name = request.FieldName,
                     Type = request.FieldType,
                     IsRequired = request.IsRequired,
-                    Regex = request.Regex
+                    Regex = request.Regex,
+                    MinLength = request.MinLength?.ToString(),
+                    MaxLength = request.MaxLength?.ToString()
                 };
                 _domainModelEditor.AddProperty(property);
             }
