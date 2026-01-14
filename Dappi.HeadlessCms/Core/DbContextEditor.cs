@@ -254,27 +254,55 @@ public class DbContextEditor(
         var root = GetRoot();
         var classNode = FindDbContextClassDeclaration(root);
 
-        var onModelCreating = classNode.Members.OfType<MethodDeclarationSyntax>()
+        var onModelCreating = classNode.Members
+            .OfType<MethodDeclarationSyntax>()
             .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
 
         if (onModelCreating?.Body == null) return;
 
-        var oldCode = onModelCreating.Body.ToFullString();
-        var pattern = $@"(modelBuilder\.Entity<{modelName}>\(\)[^\)]*e\s*=>\s*e\.)({oldPropertyName})(\s*\))";
-        var newCode = System.Text.RegularExpressions.Regex.Replace(oldCode, pattern, $"$1{newPropertyName}$3");
+        var nodesToReplace = new Dictionary<SyntaxNode, SyntaxNode>();
 
-        if (oldCode != newCode)
+        var invocations = onModelCreating
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>();
+
+        foreach (var invocation in invocations)
         {
-            var newBody = SyntaxFactory.ParseStatement($"{{{newCode}}}") as BlockSyntax;
-            if (newBody != null)
+            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
+                memberAccess.Name is GenericNameSyntax genericName &&
+                genericName.Identifier.Text == "Entity")
             {
-                var modifiedMethod = onModelCreating.WithBody(newBody);
-                var modifiedRoot = root.ReplaceNode(onModelCreating, modifiedMethod);
-                _currentCode = modifiedRoot.NormalizeWhitespace().ToFullString();
-                HasChanges = true;
+                var typeArg = genericName.TypeArgumentList.Arguments.FirstOrDefault();
+                if (typeArg?.ToString() != modelName)
+                    continue;
+
+                var propertyAccesses = invocation
+                    .Ancestors()
+                    .TakeWhile(n => n is not ExpressionStatementSyntax)
+                    .SelectMany(n => n.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
+                    .Where(ma => ma.Name.Identifier.Text == oldPropertyName);
+
+                foreach (var propertyAccess in propertyAccesses)
+                {
+                    var newPropertyAccess = propertyAccess.WithName(
+                        SyntaxFactory.IdentifierName(newPropertyName));
+
+                    nodesToReplace[propertyAccess] = newPropertyAccess;
+                }
             }
         }
+
+        if (!nodesToReplace.Any())
+            return;
+        
+        var modifiedRoot = root.ReplaceNodes(
+            nodesToReplace.Keys,
+            (oldNode, _) => nodesToReplace[oldNode]);
+
+        _currentCode = modifiedRoot.NormalizeWhitespace().ToFullString();
+        HasChanges = true;
     }
+
 
     public void RemovePropertyFromOnModelCreating(string modelName, string propertyName)
     {
