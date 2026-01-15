@@ -148,13 +148,21 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: this.selectedRelationType,
     },
     {
-      type: FieldTypeEnum.Number,
+      type: FieldTypeEnum.Float,
       icon: '123',
-      label: 'Decimal Number',
-      description: 'For decimal numerical values and calculations',
+      label: 'Float Number',
+      description: 'For float numerical values and calculations',
       value: 'float',
       netType: 'float',
     },
+    {
+      type: FieldTypeEnum.Double,
+      icon: '123',
+      label: 'Double Number',
+      description: 'For double numerical values and calculations',
+      value: 'double',
+      netType: 'double',
+    }
   ];
   private subscription: Subscription = new Subscription();
 
@@ -202,8 +210,10 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       relatedRelationName: [''],
       regex: ['', [ModelValidators.validRegex]],
       minLength: [null, [ModelValidators.validMinField]],
-      maxLength: [null, [ModelValidators.validMaxField]]
-    }, { validators: ModelValidators.minMaxValidator });
+      maxLength: [null, [ModelValidators.validMaxField]],
+      minValue: [null, [ModelValidators.validMinValue]],
+      maxValue: [null, [ModelValidators.validMaxValue]]
+    }, { validators: [ModelValidators.minMaxValidator, ModelValidators.minMaxValueValidator] });
   }
 
   relationTypes: {
@@ -353,7 +363,9 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       relatedRelationName: this.fieldForm.value.relatedRelationName,
       regex: this.fieldForm.value.regex,
       ...(this.selectedFieldTypeId === this.fieldTypeEnum.String && this.fieldForm.value.minLength && { minLength: this.fieldForm.value.minLength }),
-      ...(this.selectedFieldTypeId === this.fieldTypeEnum.String && this.fieldForm.value.maxLength && { maxLength: this.fieldForm.value.maxLength })
+      ...(this.selectedFieldTypeId === this.fieldTypeEnum.String && this.fieldForm.value.maxLength && { maxLength: this.fieldForm.value.maxLength }),
+      ...((this.selectedFieldTypeId === this.fieldTypeEnum.Number || this.selectedFieldTypeId === this.fieldTypeEnum.Float || this.selectedFieldTypeId === this.fieldTypeEnum.Double) && this.fieldForm.value.minValue !== null && this.fieldForm.value.minValue !== undefined && this.fieldForm.value.minValue !== '' && { minValue: this.fieldForm.value.minValue }),
+      ...((this.selectedFieldTypeId === this.fieldTypeEnum.Number || this.selectedFieldTypeId === this.fieldTypeEnum.Float || this.selectedFieldTypeId === this.fieldTypeEnum.Double) && this.fieldForm.value.maxValue !== null && this.fieldForm.value.maxValue !== undefined && this.fieldForm.value.maxValue !== '' && { maxValue: this.fieldForm.value.maxValue })
     };
 
     if (this.selectedFieldTypeId === this.fieldTypeEnum.Dropdown) {

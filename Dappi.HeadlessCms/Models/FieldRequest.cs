@@ -21,4 +21,8 @@ public class FieldRequest
     public int? MaxLength { get; set; }
     
     public int? MinLength { get; set; }
+    
+    public double? MinValue { get; set; }
+    
+    public double? MaxValue { get; set; }
 }

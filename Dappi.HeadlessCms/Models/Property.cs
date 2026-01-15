@@ -13,5 +13,7 @@ namespace Dappi.HeadlessCms.Models
         public string? Regex { get; set; } = null;
         public string? MinLength { get; set; }
         public string? MaxLength { get; set; }
+        public string? MinValue { get; set; }
+        public string? MaxValue { get; set; }
     }
 }

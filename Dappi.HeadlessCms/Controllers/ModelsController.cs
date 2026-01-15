@@ -234,7 +234,9 @@ public class ModelsController : ControllerBase
                                 IsRequired = request.IsRequired,
                                 Regex = request.Regex,
                                 MinLength = request.MinLength?.ToString(),
-                                MaxLength = request.MaxLength?.ToString()
+                                MaxLength = request.MaxLength?.ToString(),
+                                MinValue = request.MinValue?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                MaxValue = request.MaxValue?.ToString(System.Globalization.CultureInfo.InvariantCulture)
                             };
                             _domainModelEditor.AddProperty(property);
                             _domainModelEditor.AddEnumNamespaceIfMissing(property.DomainModel);
@@ -253,7 +255,9 @@ public class ModelsController : ControllerBase
                     IsRequired = request.IsRequired,
                     Regex = request.Regex,
                     MinLength = request.MinLength?.ToString(),
-                    MaxLength = request.MaxLength?.ToString()
+                    MaxLength = request.MaxLength?.ToString(),
+                    MinValue = request.MinValue?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    MaxValue = request.MaxValue?.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 };
                 _domainModelEditor.AddProperty(property);
             }

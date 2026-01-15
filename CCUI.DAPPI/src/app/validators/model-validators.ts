@@ -250,4 +250,50 @@ export class ModelValidators {
     }
 
     return null;
-  }}
+  }
+
+  static validMinValue(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const numValue = Number(value);
+
+    if (isNaN(numValue)) {
+      return { invalidMinValue: true };
+    }
+
+    return null;
+  }
+
+  static validMaxValue(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const numValue = Number(value);
+
+    if (isNaN(numValue)) {
+      return { invalidMaxValue: true };
+    }
+
+    return null;
+  }
+
+  static minMaxValueValidator(control: AbstractControl): ValidationErrors | null {
+    const minValue = control.get('minValue')?.value;
+    const maxValue = control.get('maxValue')?.value;
+
+    if (minValue !== null && minValue !== undefined && minValue !== '' &&
+        maxValue !== null && maxValue !== undefined && maxValue !== '' &&
+        Number(minValue) > Number(maxValue)) {
+      return { minValueGreaterThanMaxValue: true };
+    }
+
+    return null;
+  }
+}
