@@ -22,5 +22,14 @@ namespace Dappi.Core.Extensions
             }
             return CcControllerAttribute.DefaultActions.ToList();
         }
+
+        public static bool PropertyNameExists(this ClassDeclarationSyntax classDeclaration, string fieldName)
+        {
+            var properties = classDeclaration.Members
+                .OfType<PropertyDeclarationSyntax>()
+                .Select(p => p.Identifier.Text);
+
+            return properties.Any(p => p.Equals(fieldName, StringComparison.Ordinal));
+        }
     }
 }

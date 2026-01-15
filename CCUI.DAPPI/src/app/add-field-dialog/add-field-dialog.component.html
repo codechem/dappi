@@ -1,6 +1,6 @@
 <div class="add-field-dialog-container">
   <div class="dialog-header">
-    <h2>Add new field</h2>
+    <h2>{{ isEditMode ? 'Edit Field' : 'Add new field' }}</h2>
     <button mat-icon-button (click)="onClose()" aria-label="Close dialog">
       <mat-icon>close</mat-icon>
     </button>
@@ -8,34 +8,45 @@
 
   <div class="dialog-content">
     <form [formGroup]="fieldForm">
-      <h3 class="section-title">1. Select field type</h3>
-      <div class="field-type-grid-wrapper">
-        <div class="field-type-grid">
-          @for (ft of fieldTypes; track ft; let i = $index) {
-            <div
-              class="box"
-              [class.selected]="selectedFieldTypeId === ft.type"
-              (click)="selectFieldType(ft.type)"
-              [attr.aria-selected]="selectedFieldTypeId === ft.type"
-              role="option"
-              tabindex="0"
-              (keydown.enter)="selectFieldType(ft.type)"
-            >
-              <mat-icon class="field-type-box">
-                {{ ft.icon }}
-              </mat-icon>
-              <div class="label">{{ ft.label }}</div>
-              <div class="description">{{ ft.description }}</div>
-            </div>
-          }
+      @if (isEditMode) {
+        <div class="field-info">
+          <div class="field-type-badge">
+            <mat-icon>category</mat-icon>
+            <span>{{ data.fieldType }}</span>
+          </div>
+          <p class="info-text">Field type cannot be changed</p>
         </div>
-      </div>
+      }
+      @if (!isEditMode) {
+        <h3 class="section-title">1. Select field type</h3>
+        <div class="field-type-grid-wrapper">
+          <div class="field-type-grid">
+            @for (ft of fieldTypes; track ft; let i = $index) {
+              <div
+                class="box"
+                [class.selected]="selectedFieldTypeId === ft.type"
+                (click)="selectFieldType(ft.type)"
+                [attr.aria-selected]="selectedFieldTypeId === ft.type"
+                role="option"
+                tabindex="0"
+                (keydown.enter)="selectFieldType(ft.type)"
+              >
+                <mat-icon class="field-type-box">
+                  {{ ft.icon }}
+                </mat-icon>
+                <div class="label">{{ ft.label }}</div>
+                <div class="description">{{ ft.description }}</div>
+              </div>
+            }
+          </div>
+        </div>
+      }
       @if (
         selectedFieldTypeId !== null &&
         selectedFieldTypeId !== fieldTypeEnum.Relation &&
         selectedFieldTypeId !== fieldTypeEnum.Dropdown
       ) {
-        <h3 class="section-title">2. Field settings</h3>
+        <h3 class="section-title">{{ isEditMode ? 'Field settings' : '2. Field settings' }}</h3>
         <div class="field-settings-row">
           <mat-form-field appearance="outline" class="input-field">
             <mat-label>Field name</mat-label>
@@ -237,8 +248,9 @@
   </div>
 
   <div class="dialog-footer">
+    <button mat-stroked-button (click)="onClose()">Cancel</button>
     <button mat-flat-button class="add-field-button" [disabled]="!canSubmit" (click)="onAddField()">
-      Add new field
+      {{ isEditMode ? 'Save Changes' : 'Add new field' }}
     </button>
   </div>
 </div>

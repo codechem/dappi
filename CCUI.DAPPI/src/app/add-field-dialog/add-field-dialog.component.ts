@@ -37,6 +37,17 @@ interface FieldType {
   netType: string;
 }
 
+export interface AddFieldDialogData {
+  selectedType: string;
+  editMode?: boolean;
+  fieldName?: string;
+  fieldType?: string;
+  isRequired?: boolean;
+  hasIndex?: boolean;
+  regex?: string;
+  noPastDates?: boolean;
+}
+
 @Component({
   selector: 'app-add-field-dialog',
   standalone: true,
@@ -59,6 +70,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   selectedType$ = this.store.select(selectSelectedType);
   selectedTypeFields$ = this.store.select(selectFields);
   selectedType = '';
+  isEditMode = false;
+  originalFieldName = '';
 
   selectedRelationTypeIndex: number | null = null;
   selectedRelationType = 'ManyToMany';
@@ -179,12 +192,19 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private enumsService: EnumsService,
     private enumManagementService: EnumManagementService,
-    @Inject(MAT_DIALOG_DATA) public data: { selectedType: string },
+    @Inject(MAT_DIALOG_DATA) public data: AddFieldDialogData,
     private store: Store
   ) {
+    this.isEditMode = data.editMode || false;
+    this.originalFieldName = data.fieldName || '';
+    
+    const asyncValidators = this.isEditMode
+      ? [ModelValidators.fieldNameIsTaken(this.selectedTypeFields$, data.fieldName)]
+      : [ModelValidators.fieldNameIsTaken(this.selectedTypeFields$)];
+    
     this.fieldForm = this.fb.group({
       fieldName: [
-        '',
+        data.fieldName || '',
         {
           validators: [
             Validators.required,
@@ -193,16 +213,24 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
             ModelValidators.reservedKeyword,
             ModelValidators.collectionNameIsTaken
           ],
-          asyncValidators: [ModelValidators.fieldNameIsTaken(this.selectedTypeFields$)],
+          asyncValidators: asyncValidators,
         },
       ],
-      requiredField: [false],
+      requiredField: [data.isRequired || false],
       relatedModel: [''],
       relatedRelationName: [''],
-      regex: ['', [ModelValidators.validRegex]],
-      hasIndex: [false],
-      noPastDates: [false]
+      regex: [data.regex || '', [ModelValidators.validRegex]],
+      hasIndex: [data.hasIndex || false],
+      noPastDates: [data.noPastDates || false]
     });
+    
+    if (this.isEditMode && data.fieldType) {
+      this.preselectFieldType(data.fieldType);
+      this.fieldForm.get('relatedModel')?.clearValidators();
+      this.fieldForm.get('relatedRelationName')?.clearValidators();
+      this.fieldForm.get('relatedModel')?.updateValueAndValidity();
+      this.fieldForm.get('relatedRelationName')?.updateValueAndValidity();
+    }
   }
 
   relationTypes: {
@@ -272,7 +300,11 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       })
     );
     this.fieldForm.get('fieldName')?.addValidators(ModelValidators.fieldNameSameAsModel(this.selectedType));
-    this.fieldForm.get('relatedModel')?.setValidators([Validators.required]);
+    
+    if (!this.isEditMode) {
+      this.fieldForm.get('relatedModel')?.setValidators([Validators.required]);
+    }
+    
     this.updateRelationTypes();
   }
 
@@ -333,6 +365,24 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.isEditMode) {
+      if (!this.hasChanges()) {
+        return;
+      }
+      
+      const result = {
+        oldFieldName: this.originalFieldName,
+        newFieldName: this.fieldForm.value.fieldName,
+        isRequired: this.fieldForm.value.requiredField,
+        hasIndex: this.fieldForm.value.hasIndex,
+        regex: this.isTextType() ? this.fieldForm.value.regex : undefined,
+        noPastDates: this.isDateType() ? this.fieldForm.value.noPastDates : undefined,
+      };
+      
+      this.dialogRef.close(result);
+      return;
+    }
+
     const selectedFieldType = this.fieldTypes.find(fieldType => fieldType.type.toString() === this.selectedFieldTypeId?.toString());
 
     if (!selectedFieldType) {
@@ -368,10 +418,63 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   }
 
   get canSubmit(): boolean | undefined {
+    if (this.isEditMode) {
+      return this.fieldForm.valid && this.hasChanges();
+    }
+    
+    if (this.selectedFieldTypeId === null) {
+      return false;
+    }
+    
     if (this.selectedFieldTypeId === this.fieldTypeEnum.Relation) {
-      return this.selectedRelationTypeIndex !== null;
+      return this.selectedRelationTypeIndex !== null && this.fieldForm.get('fieldName')?.valid;
     } else {
       return this.fieldForm.get('fieldName')?.valid;
     }
+  }
+
+  private preselectFieldType(fieldType: string): void {
+    const typeMapping: Record<string, FieldTypeEnum> = {
+      'string': FieldTypeEnum.String,
+      'int': FieldTypeEnum.Number,
+      'float': FieldTypeEnum.Number,
+      'DateOnly': FieldTypeEnum.Date,
+      'DateTime': FieldTypeEnum.DateTime,
+      'bool': FieldTypeEnum.Checkbox,
+      'MediaInfo': FieldTypeEnum.Media,
+    };
+
+    const mappedType = typeMapping[fieldType];
+    if (mappedType !== undefined) {
+      this.selectedFieldTypeId = mappedType;
+    } else {
+      if (['ManyToMany', 'OneToMany', 'ManyToOne', 'OneToOne'].includes(fieldType)) {
+        this.selectedFieldTypeId = FieldTypeEnum.Relation;
+      } else {
+        this.selectedFieldTypeId = FieldTypeEnum.Dropdown;
+        this.selectedEnum = fieldType;
+      }
+    }
+  }
+
+  private hasChanges(): boolean {
+    if (!this.isEditMode) return true;
+    
+    const formValue = this.fieldForm.value;
+    return (
+      formValue.fieldName !== this.originalFieldName ||
+      formValue.requiredField !== this.data.isRequired ||
+      formValue.hasIndex !== this.data.hasIndex ||
+      (this.isTextType() && formValue.regex !== (this.data.regex || '')) ||
+      (this.isDateType() && formValue.noPastDates !== (this.data.noPastDates || false))
+    );
+  }
+
+  private isTextType(): boolean {
+    return this.selectedFieldTypeId === FieldTypeEnum.String;
+  }
+
+  private isDateType(): boolean {
+    return this.selectedFieldTypeId === FieldTypeEnum.Date || this.selectedFieldTypeId === FieldTypeEnum.DateTime;
   }
 }

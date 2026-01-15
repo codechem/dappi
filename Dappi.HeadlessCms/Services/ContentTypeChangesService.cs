@@ -45,9 +45,13 @@ namespace Dappi.HeadlessCms.Services
                 {
                     var oldFields =
                         JsonSerializer.Deserialize<Dictionary<string, string>>(contentTypeChangeForModel.Fields);
-                    foreach (var kvp in newFields)
+
+                    if (oldFields != null)
                     {
-                        oldFields?.Add(kvp.Key, kvp.Value);
+                        foreach (var kvp in newFields)
+                        {
+                            oldFields[kvp.Key] = kvp.Value;
+                        }
                     }
 
                     contentTypeChangeForModel.ModifiedAt = DateTimeOffset.UtcNow;

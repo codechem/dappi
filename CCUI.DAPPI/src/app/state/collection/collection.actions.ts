@@ -1,6 +1,15 @@
 import { createAction, props } from '@ngrx/store';
 import { ConfigureModelRequest, ModelField, ModelResponse } from '../../models/content.model';
 
+export interface UpdateFieldPayload {
+  oldFieldName: string;
+  newFieldName: string;
+  isRequired: boolean;
+  hasIndex: boolean;
+  regex?: string;
+  noPastDates?: boolean;
+}
+
 export const loadPublishedCollectionTypes = createAction(
   '[Collection] Load Published Collection Types'
 );
@@ -75,6 +84,39 @@ export const addFieldSuccess = createAction(
 
 export const addFieldFailure = createAction(
   '[Collection] Add Field Failure',
+  props<{ error: string }>()
+);
+
+export const updateField = createAction(
+  '[Collection] Update Field',
+  props<{ payload: UpdateFieldPayload }>()
+);
+
+export const updateFieldSuccess = createAction(
+  '[Collection] Update Field Success',
+  props<{
+    oldFieldName: string;
+    newFieldName: string;
+  }>()
+);
+
+export const updateFieldFailure = createAction(
+  '[Collection] Update Field Failure',
+  props<{ error: string }>()
+);
+
+export const deleteField = createAction(
+  '[Collection] Delete Field',
+  props<{ modelName: string; fieldName: string }>()
+);
+
+export const deleteFieldSuccess = createAction(
+  '[Collection] Delete Field Success',
+  props<{ fieldName: string }>()
+);
+
+export const deleteFieldFailure = createAction(
+  '[Collection] Delete Field Failure',
   props<{ error: string }>()
 );
 

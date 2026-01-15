@@ -224,11 +224,63 @@ export class BuilderComponent implements OnInit, OnDestroy {
 
         return {
           name: field.fieldName,
-          type: type,
+          type: fieldType,
           iconText: iconText,
           iconName: iconName,
+          isRequired: field.isRequired,
+          hasIndex: field.hasIndex,
+          regex: field.regex,
+          noPastDates: field.noPastDates,
         };
       });
+    }
+  }
+
+  onEditField(field: FieldItem): void {
+    const dialogRef = this.dialog.open(AddFieldDialogComponent, {
+      panelClass: 'edit-field-dialog-container',
+      disableClose: true,
+      width: '50vw',
+      data: {
+        selectedType: this.selectedType,
+        editMode: true,
+        fieldName: field.name,
+        fieldType: field.type,
+        isRequired: field.isRequired || false,
+        hasIndex: field.hasIndex || false,
+        regex: field.regex,
+        noPastDates: field.noPastDates || false,
+      },
+    });
+
+    this.subscription.add(
+      dialogRef.afterClosed().subscribe((result) => {
+        if (result) {
+          this.store.dispatch(
+            CollectionActions.updateField({
+              payload: {
+                oldFieldName: result.oldFieldName,
+                newFieldName: result.newFieldName,
+                isRequired: result.isRequired,
+                hasIndex: result.hasIndex,
+                regex: result.regex,
+                noPastDates: result.noPastDates,
+              }
+            })
+          );
+        }
+      })
+    );
+  }
+
+  onDeleteField(field: FieldItem): void {
+    if (confirm(`Are you sure you want to delete the field "${field.name}"?`)) {
+      this.store.dispatch(
+        CollectionActions.deleteField({
+          modelName: this.selectedType,
+          fieldName: field.name
+        })
+      );
     }
   }
 

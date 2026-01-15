@@ -10,6 +10,10 @@ export interface FieldItem {
   iconText?: string;
   iconName?: string;
   type: string;
+  isRequired?: boolean;
+  hasIndex?: boolean;
+  regex?: string;
+  noPastDates?: boolean;
 }
 
 

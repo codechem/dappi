@@ -1,9 +1,7 @@
-using System.Text.RegularExpressions;
 using Dappi.Core.Utils;
 using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Core.Attributes;
-using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
 using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Extensions;
@@ -11,8 +9,6 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.CSharp;
-using Dappi.Core.Extensions;
 
 namespace Dappi.HeadlessCms.Controllers;
 
@@ -172,8 +168,8 @@ public class ModelsController : ControllerBase
         var fieldDict = new Dictionary<string, string> { { request.FieldName, request.FieldType } };
         var relatedFieldDict = new Dictionary<string, string>();
 
-        var existingCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
-        if (PropertyCheckUtils.PropertyNameExists(existingCode, request.FieldName))
+        var existingProperty = _domainModelEditor.GetProperty(modelName, request.FieldName);
+        if (existingProperty != null)
         {
             return BadRequest($"Property {request.FieldName} name already exists in {modelFilePath}.");
         }
@@ -280,24 +276,145 @@ public class ModelsController : ControllerBase
     [HttpGet("fields/{modelName}")]
     public async Task<IActionResult> GetModelFields(string modelName)
     {
+        var res = new ModelResponse
+        {
+            Fields = await _domainModelEditor.GetFieldsInfoAsync(modelName),
+            AllowedActions = await _domainModelEditor.GetAllowedActionsAsync(modelName)
+        };
+        return Ok(res);
+    }
+
+    [HttpPatch("{modelName}/fields")]
+    public async Task<IActionResult> UpdateField(string modelName, [FromBody] UpdateFieldRequest request)
+    {
+        if (string.IsNullOrEmpty(modelName))
+        {
+            return BadRequest("Model name must be provided.");
+        }
+
+        if (request.OldFieldName.Equals("Id", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("The 'Id' field cannot be edited.");
+        }
+
+        if (!request.NewFieldName.IsValidClassNameOrPropertyName())
+        {
+            return BadRequest($"Property name {request.NewFieldName} is invalid.");
+        }
+
         var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
         if (!System.IO.File.Exists(modelFilePath))
         {
             return NotFound($"Model '{modelName}' not found.");
         }
 
-        var modelCode = await System.IO.File.ReadAllTextAsync(modelFilePath);
-        var syntaxTree = CSharpSyntaxTree.ParseText(modelCode);
-        var root = syntaxTree.GetCompilationUnitRoot();
-        var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName) ??
-                               throw new Exception("Error extracting allowed actions.");
-
-        var res = new ModelResponse
+        var oldProperty = _domainModelEditor.GetProperty(modelName, request.OldFieldName);
+        if (oldProperty == null)
         {
-            Fields = ExtractFieldsFromModel(modelCode),
-            AllowedActions = classDeclaration.ExtractAllowedCrudActions().ToList()
+            return BadRequest($"Property {request.OldFieldName} does not exist in {modelName}.");
+        }
+
+        if (request.OldFieldName != request.NewFieldName)
+        {
+            var newProperty = _domainModelEditor.GetProperty(modelName, request.NewFieldName);
+            if (newProperty != null)
+            {
+                return BadRequest($"Property {request.NewFieldName} already exists in {modelName}.");
+            }
+        }
+
+        var propertyToUpdate = _domainModelEditor.GetProperty(modelName, request.OldFieldName);
+        if (propertyToUpdate == null)
+        {
+            return NotFound($"Could not find property {request.OldFieldName} in model {modelName}.");
+        }
+
+        _domainModelEditor.UpdateProperty(modelName, request.OldFieldName, new Property
+        {
+            DomainModel = modelName,
+            Name = request.NewFieldName,
+            Type = propertyToUpdate.Type,
+            IsRequired = request.IsRequired,
+            Regex = request.Regex,
+            NoPastDates = request.NoPastDates,
+            RelationKind = propertyToUpdate.RelationKind,
+            RelatedDomainModel = propertyToUpdate.RelatedDomainModel
+        });
+
+        if (request.OldFieldName != request.NewFieldName)
+        {
+            _dbContextEditor.UpdatePropertyNameInOnModelCreating(modelName, request.OldFieldName, request.NewFieldName);
+        }
+
+        if (request.HasIndex && !propertyToUpdate.HasIndex)
+        {
+            _dbContextEditor.UpdateOnModelCreatingWithIndexedColumn(modelName, request.NewFieldName);
+        }
+
+        var fieldUpdateDict = new Dictionary<string, string>
+        {
+            { request.NewFieldName, $"{propertyToUpdate.Type}_UPDATED" }
         };
-        return Ok(res);
+        
+        await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(modelName, fieldUpdateDict);
+
+        await _domainModelEditor.SaveAsync();
+        await _dbContextEditor.SaveAsync();
+
+        return Ok(new
+        {
+            Message = $"Field '{request.OldFieldName}' updated successfully to '{request.NewFieldName}' in '{modelName}' model.",
+            FilePath = modelFilePath
+        });
+    }
+
+    [HttpDelete("{modelName}/fields/{fieldName}")]
+    public async Task<IActionResult> DeleteField(string modelName, string fieldName)
+    {
+        if (string.IsNullOrEmpty(modelName))
+        {
+            return BadRequest("Model name must be provided.");
+        }
+
+        if (string.IsNullOrEmpty(fieldName))
+        {
+            return BadRequest("Field name must be provided.");
+        }
+
+        if (fieldName.Equals("Id", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("The 'Id' field cannot be deleted.");
+        }
+
+        var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
+        if (!System.IO.File.Exists(modelFilePath))
+        {
+            return NotFound("Model class not found.");
+        }
+
+        var property = _domainModelEditor.GetProperty(modelName, fieldName);
+        if (property == null)
+        {
+            return NotFound($"Property {fieldName} does not exist in {modelName}.");
+        }        
+
+        await _domainModelEditor.DeleteProperty(modelName, fieldName);
+        _dbContextEditor.RemovePropertyFromOnModelCreating(modelName, fieldName);
+
+        var fieldDeleteDict = new Dictionary<string, string>
+        {
+            { fieldName, "DELETED" }
+        };
+        await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(modelName, fieldDeleteDict);
+
+        await _domainModelEditor.SaveAsync();
+        await _dbContextEditor.SaveAsync();
+
+        return Ok(new
+        {
+            Message = $"Field '{fieldName}' deleted successfully from '{modelName}' model.",
+            FilePath = modelFilePath
+        });
     }
 
     [HttpGet("hasRelatedProperties/{modelName}")]
@@ -440,43 +557,5 @@ public class ModelsController : ControllerBase
 
         _dbContextEditor.UpdateOnModelCreating(modelName, request.RelatedTo!, Constants.Relations.ManyToMany,
             request.FieldName, request.RelatedRelationName ?? $"{modelName.Pluralize()}");
-    }
-
-    private static List<FieldsInfo> ExtractFieldsFromModel(string classCode)
-    {
-        var auditableProps = new List<string> { "CreatedAtUtc", "UpdatedAtUtc", "CreatedBy", "UpdatedBy" };
-        var fieldList = new List<FieldsInfo>();
-
-        var propertyPattern = new Regex(
-            @"public\s+(required\s+)?([\w<>\[\]?]+)\s+(\w+)\s*\{\s*get;\s*set;\s*\}",
-            RegexOptions.Multiline
-        );
-
-        var isAuditableEntity = classCode.Contains("IAuditableEntity");
-        var matches = propertyPattern.Matches(classCode);
-
-        foreach (Match match in matches)
-        {
-            if (match.Groups.Count >= 4)
-            {
-                if (isAuditableEntity && auditableProps.Contains(match.Groups[3].Value))
-                {
-                    continue;
-                }
-
-                var hasRequiredKeyword = !string.IsNullOrEmpty(match.Groups[1].Value);
-                var fieldType = match.Groups[2].Value;
-                var fieldName = match.Groups[3].Value;
-                var isNullable = fieldType.Contains("?");
-                var isRequired = hasRequiredKeyword || !isNullable;
-
-                fieldList.Add(new FieldsInfo
-                {
-                    FieldName = fieldName, FieldType = fieldType.Replace("?", ""), IsRequired = isRequired
-                });
-            }
-        }
-
-        return fieldList;
     }
 }

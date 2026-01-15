@@ -137,7 +137,8 @@ export class ModelValidators {
   }
 
   static fieldNameIsTaken(
-    collectionTypeFields: Observable<ModelField[] | undefined>
+    collectionTypeFields: Observable<ModelField[] | undefined>,
+    excludeFieldName?: string
   ): (control: AbstractControl) => Observable<ValidationErrors | null> {
     return (control: AbstractControl): Observable<ValidationErrors | null> => {
       if (!control.value) {
@@ -147,7 +148,8 @@ export class ModelValidators {
         take(1),
         map((fields) => {
           return fields?.some(
-            (x) => x.fieldName.toLowerCase() === control.value.toLowerCase()
+            (x) => x.fieldName.toLowerCase() === control.value.toLowerCase() &&
+                   x.fieldName.toLowerCase() !== excludeFieldName?.toLowerCase()
           )
             ? { fieldNameIsTaken: true }
             : null;

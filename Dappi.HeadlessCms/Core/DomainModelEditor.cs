@@ -1,10 +1,12 @@
 using System.Reflection;
 using Dappi.Core.Attributes;
 using Dappi.Core.Enums;
+using Dappi.Core.Extensions;
 using Dappi.HeadlessCms.Core.Attributes;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
 using Dappi.HeadlessCms.Core.SyntaxVisitors;
+using Dappi.HeadlessCms.Exceptions;
 using Dappi.HeadlessCms.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -88,7 +90,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
 
         if (classNode == null)
         {
-            throw new Exception($"Class {modelName} not found.");
+            throw new ModelNotFoundException($"Class {modelName} not found.", modelName);
         }
         
         var properties = GetRelatedPropertiesForDeletion
@@ -96,7 +98,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         var newRoot = root.RemoveNodes(properties, SyntaxRemoveOptions.KeepNoTrivia);
         if (newRoot == null)
         {
-            throw new Exception("Failed to remove properties.");
+            throw new InvalidOperationException("Failed to remove properties.");
         }
 
         var newCode = newRoot.NormalizeWhitespace().ToFullString();
@@ -119,7 +121,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         var classNode = root.DescendantNodes().FindClassDeclarationByName(modelName);
         if (classNode == null)
         {
-            throw new Exception("Class not found");
+            throw new ModelNotFoundException($"Class {modelName} not found.", modelName);
         }
         
         List<AttributeArgumentSyntax> arguments = [];
@@ -149,7 +151,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
 
         if (classNode is null)
         {
-            throw new Exception("Class not found");
+            throw new ModelNotFoundException($"Class {property.DomainModel} not found.", property.DomainModel);
         }
 
         var newProperty = RoslynHelpers.GenerateDynamicProperty(property.Type, property.Name, property.IsRequired)
@@ -173,6 +175,233 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         var newCode = newRoot.NormalizeWhitespace().ToFullString();
 
         _codeChanges[property.DomainModel] = newCode;
+        HasChanges = true;
+    }
+
+    public Property? GetProperty(string modelName, string propertyName)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        var syntaxTree = _codeChanges.TryGetValue(modelName, out var value)
+            ? CSharpSyntaxTree.ParseText(value)
+            : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classNode is null) return null;
+        
+        var propertyNode = classNode.DescendantNodes()
+            .OfType<PropertyDeclarationSyntax>()
+            .FirstOrDefault(p => p.Identifier.Text == propertyName);
+
+        if (propertyNode is null) return null;
+
+        var propertyType = propertyNode.Type.ToString().Replace("?", "");
+        var isRequired = propertyNode.Modifiers.Any(m => m.IsKind(SyntaxKind.RequiredKeyword)) ||
+                        !propertyNode.Type.ToString().Contains("?");
+
+        DappiRelationKind? relationKind = null;
+        string? relatedModel = null;
+        string? regex = null;
+
+        var relationAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .FirstOrDefault(a => a.Name.ToString() == DappiRelationAttribute.ShortName);
+
+        if (relationAttribute?.ArgumentList?.Arguments.Count >= 2)
+        {
+            var relationKindArg = relationAttribute.ArgumentList.Arguments[0].Expression.ToString();
+            if (Enum.TryParse<DappiRelationKind>(relationKindArg.Split('.').Last(), out var parsedKind))
+            {
+                relationKind = parsedKind;
+            }
+            relatedModel = relationAttribute.ArgumentList.Arguments[1].Expression.ToString().Trim('"');
+        }
+
+        var regexAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .FirstOrDefault(a => a.Name.ToString() == "RegularExpression");
+
+        if (regexAttribute?.ArgumentList?.Arguments.Count >= 1)
+        {
+            regex = regexAttribute.ArgumentList.Arguments[0].Expression.GetFirstToken().ValueText.Trim();
+        }
+
+        var hasFutureDateAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .Any(a => a.Name.ToString() == "FutureDate");
+
+        return new Property
+        {
+            DomainModel = modelName,
+            Name = propertyName,
+            Type = propertyType,
+            IsRequired = isRequired,
+            RelationKind = relationKind,
+            RelatedDomainModel = relatedModel,
+            Regex = regex,
+            NoPastDates = hasFutureDateAttribute,
+            HasIndex = false
+        };
+    }
+
+    public async Task<List<FieldsInfo>> GetFieldsInfoAsync(string modelName)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        if (!File.Exists(filePath))
+        {
+            return [];
+        }
+
+        var auditableProps = new HashSet<string> { "CreatedAtUtc", "UpdatedAtUtc", "CreatedBy", "UpdatedBy" };
+        var root = await GetRoot(filePath, modelName);
+        var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classDeclaration is null)
+        {
+            return [];
+        }
+
+        var isAuditableEntity = classDeclaration.BaseList?.Types
+            .Any(t => t.Type.ToString() == nameof(IAuditableEntity)) == true;
+
+        var properties = classDeclaration.Members
+            .OfType<PropertyDeclarationSyntax>()
+            .Where(p => p.AccessorList != null);
+
+        List<FieldsInfo> fieldList = [];
+
+        foreach (var property in properties)
+        {
+            var propertyName = property.Identifier.Text;
+
+            if (isAuditableEntity && auditableProps.Contains(propertyName))
+            {
+                continue;
+            }
+
+            var propertyData = GetProperty(modelName, propertyName);
+
+            if (propertyData is null)
+            {
+                continue;
+            }
+
+            fieldList.Add(new FieldsInfo
+            {
+                FieldName = propertyData.Name,
+                FieldType = propertyData.Type,
+                IsRequired = propertyData.IsRequired,
+                Regex = propertyData.Regex,
+                HasIndex = propertyData.HasIndex,
+                NoPastDates = propertyData.NoPastDates
+            });
+        }
+
+        return fieldList;
+    }
+
+    public async Task<List<CrudActions>> GetAllowedActionsAsync(string modelName)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        if (!File.Exists(filePath))
+            return [];
+
+        var root = await GetRoot(filePath, modelName);
+        var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classDeclaration is null)
+            return [];
+
+        return classDeclaration.ExtractAllowedCrudActions().ToList();
+    }
+
+    public void UpdateProperty(string modelName, string oldPropertyName, Property newProperty)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        var syntaxTree = _codeChanges.TryGetValue(modelName, out var value)
+            ? CSharpSyntaxTree.ParseText(value)
+            : RoslynHelpers.GetSyntaxTreeFromSource(filePath);
+
+        var root = syntaxTree.GetCompilationUnitRoot();
+        var classNode = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classNode is null)
+        {
+            throw new ModelNotFoundException($"Class {modelName} not found.", modelName);
+        }
+
+        var oldPropertyNode = classNode.DescendantNodes()
+            .OfType<PropertyDeclarationSyntax>()
+            .FirstOrDefault(p => p.Identifier.Text == oldPropertyName);
+
+        if (oldPropertyNode is null)
+        {
+            throw new PropertyNotFoundException($"Property {oldPropertyName} not found in model {modelName}.", typeof(object), oldPropertyName);
+        }
+
+        var updatedProperty = RoslynHelpers.GenerateDynamicProperty(newProperty.Type, newProperty.Name, newProperty.IsRequired)
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .WithAccessorList(RoslynHelpers.WithGetAndSet());
+
+        if (newProperty.RelationKind is not null)
+        {
+            updatedProperty = updatedProperty.WithRelationAttribute(newProperty.RelationKind, newProperty.RelatedDomainModel);
+        }
+        if (newProperty.Type == "string" && !string.IsNullOrEmpty(newProperty.Regex))
+        {
+            updatedProperty = updatedProperty.WithRegularExpressionAttribute(newProperty.Regex);
+        }
+        if (newProperty.NoPastDates && IsDateType(newProperty.Type))
+        {
+            updatedProperty = updatedProperty.WithFutureDateAttribute();
+        }
+
+        var newClassNode = classNode.ReplaceNode(oldPropertyNode, updatedProperty);
+        var newRoot = root.ReplaceNode(classNode, newClassNode);
+        var newCode = newRoot.NormalizeWhitespace().ToFullString();
+
+        _codeChanges[modelName] = newCode;
+        HasChanges = true;
+    }
+
+    private async Task<SyntaxNode> GetRoot(string filePath, string modelName)
+    {
+        var code = _codeChanges.TryGetValue(modelName, out var cachedCode)
+            ? cachedCode
+            : await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+
+        var syntaxTree = CSharpSyntaxTree.ParseText(code);
+        return await syntaxTree.GetRootAsync().ConfigureAwait(false);
+    }
+
+    public async Task DeleteProperty(string modelName, string propertyName)
+    {
+        var filePath = Path.Combine(domainModelFolderPath, $"{modelName}.cs");
+        var root = await GetRoot(filePath, modelName);
+        var classDeclaration = root.DescendantNodes().FindClassDeclarationByName(modelName);
+
+        if (classDeclaration is null)
+        {
+            throw new ModelNotFoundException($"Class {modelName} not found.", modelName);
+        }
+
+        var propertyNode = classDeclaration.DescendantNodes()
+            .OfType<PropertyDeclarationSyntax>()
+            .FirstOrDefault(p => p.Identifier.Text == propertyName);
+
+        if (propertyNode is null)
+        {
+            throw new PropertyNotFoundException($"Property {propertyName} not found in model {modelName}.", typeof(object), propertyName);
+        }
+
+        var newClassDeclaration = classDeclaration.RemoveNode(propertyNode, SyntaxRemoveOptions.KeepNoTrivia)
+            ?? throw new InvalidOperationException($"Failed to remove property {propertyName} from model {modelName}.");
+
+        var newRoot = root.ReplaceNode(classDeclaration, newClassDeclaration);
+        var newCode = newRoot.NormalizeWhitespace().ToFullString();
+
+        _codeChanges[modelName] = newCode;
         HasChanges = true;
     }
 
@@ -284,7 +513,7 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
 
         if (classNode is null)
         {
-            throw new Exception("Class not found");
+            throw new ModelNotFoundException($"Class {modelName} not found.", modelName);
         }
 
         var properties = classNode.DescendantNodes().OfType<PropertyDeclarationSyntax>()

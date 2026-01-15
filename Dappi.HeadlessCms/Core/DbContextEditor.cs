@@ -1,8 +1,6 @@
-using System.Reflection;
 using Dappi.HeadlessCms.Core.Extensions;
 using Dappi.HeadlessCms.Core.Schema;
 using Dappi.Core.Utils;
-using Dappi.HeadlessCms.Extensions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -57,10 +55,7 @@ public class DbContextEditor(
 
     public void RemoveSetFromDbContext(DomainModelEntityInfo modelType)
     {
-        var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
-            ? GetSyntaxTreeFromDbContextSource()
-            : CSharpSyntaxTree.ParseText(_currentCode);
-        var root = syntaxTree.GetCompilationUnitRoot();
+        var root = GetRoot();
         var classNode = FindDbContextClassDeclaration(root);
 
         var modelName = modelType.Name;
@@ -86,11 +81,9 @@ public class DbContextEditor(
 
     public void UpdateUsings()
     {
-        var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
-            ? GetSyntaxTreeFromDbContextSource()
-            : CSharpSyntaxTree.ParseText(_currentCode);
-        var root = syntaxTree.GetCompilationUnitRoot();
+        var root = GetRoot();
         var classNode = FindDbContextClassDeclaration(root);
+
         var hasDbSet = classNode.Members
             .OfType<PropertyDeclarationSyntax>()
             .Any(p =>
@@ -209,22 +202,25 @@ public class DbContextEditor(
 
         HasChanges = true;
     }
-    
-    public void DeleteRelations(string entity, List<string> relatedEntities)
+
+    private MethodDeclarationSyntax? GetOnModelCreatingMethod(CompilationUnitSyntax root)
     {
-        var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
-            ? GetSyntaxTreeFromDbContextSource()
-            : CSharpSyntaxTree.ParseText(_currentCode);
-        var root = syntaxTree.GetCompilationUnitRoot();
         var classNode = FindDbContextClassDeclaration(root);
 
-        var onModelCreating = classNode.Members.OfType<MethodDeclarationSyntax>()
+        var onModelCreating = classNode.Members
+            .OfType<MethodDeclarationSyntax>()
             .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
 
+        return onModelCreating;
+    }
+
+    public void DeleteRelations(string entity, List<string> relatedEntities)
+    {
+        var root = GetRoot();
+        var onModelCreating = GetOnModelCreatingMethod(root);
+
         if (onModelCreating is null)
-        {
             return;
-        }
 
         var block = onModelCreating.Body;
         var statementsToRemove = new List<StatementSyntax>();
@@ -249,6 +245,138 @@ public class DbContextEditor(
         var modifiedRoot = root.ReplaceNode(onModelCreating, modifiedMethod);
         _currentCode = modifiedRoot.NormalizeWhitespace().ToFullString();
         HasChanges = true;
+    }
+
+    private CompilationUnitSyntax GetRoot()
+    {
+        var syntaxTree = string.IsNullOrWhiteSpace(_currentCode)
+            ? GetSyntaxTreeFromDbContextSource()
+            : CSharpSyntaxTree.ParseText(_currentCode);
+        return syntaxTree.GetCompilationUnitRoot();
+    }
+
+    public void UpdatePropertyNameInOnModelCreating(string modelName, string oldPropertyName, string newPropertyName)
+    {
+        var root = GetRoot();
+        var onModelCreating = GetOnModelCreatingMethod(root);
+        
+        if (onModelCreating?.Body == null) return;
+
+        var nodesToReplace = new Dictionary<SyntaxNode, SyntaxNode>();
+
+        var invocations = onModelCreating
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>();
+
+        foreach (var invocation in invocations)
+        {
+            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
+                memberAccess.Name is GenericNameSyntax genericName &&
+                genericName.Identifier.Text == "Entity")
+            {
+                var typeArg = genericName.TypeArgumentList.Arguments.FirstOrDefault();
+                if (typeArg?.ToString() != modelName)
+                    continue;
+
+                var propertyAccesses = invocation
+                    .Ancestors()
+                    .TakeWhile(n => n is not ExpressionStatementSyntax)
+                    .SelectMany(n => n.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
+                    .Where(ma => ma.Name.Identifier.Text == oldPropertyName);
+
+                foreach (var propertyAccess in propertyAccesses)
+                {
+                    var newPropertyAccess = propertyAccess.WithName(
+                        SyntaxFactory.IdentifierName(newPropertyName));
+
+                    nodesToReplace[propertyAccess] = newPropertyAccess;
+                }
+            }
+        }
+
+        if (!nodesToReplace.Any())
+            return;
+        
+        var modifiedRoot = root.ReplaceNodes(
+            nodesToReplace.Keys,
+            (oldNode, _) => nodesToReplace[oldNode]);
+
+        _currentCode = modifiedRoot.NormalizeWhitespace().ToFullString();
+        HasChanges = true;
+    }
+
+
+    public void RemovePropertyFromOnModelCreating(string modelName, string propertyName)
+    {
+        var root = GetRoot();
+        var classNode = FindDbContextClassDeclaration(root);
+
+        var onModelCreating = classNode.Members.OfType<MethodDeclarationSyntax>()
+            .FirstOrDefault(m => m.Identifier.Text == OnModelCreatingMethodName);
+
+        if (onModelCreating?.Body == null) return;
+
+        var block = onModelCreating.Body;
+        var statementsToRemove = new List<StatementSyntax>();
+
+        foreach (var statement in block.Statements.OfType<ExpressionStatementSyntax>())
+        {
+            if (StatementReferencesProperty(statement, modelName, propertyName))
+            {
+                statementsToRemove.Add(statement);
+            }
+        }
+
+        if (statementsToRemove.Any())
+        {
+            var modifiedStatements = block.Statements.Except(statementsToRemove).ToList();
+            var modifiedBlock = block.WithStatements(SyntaxFactory.List(modifiedStatements));
+            var modifiedMethod = onModelCreating.WithBody(modifiedBlock);
+            var modifiedRoot = root.ReplaceNode(onModelCreating, modifiedMethod);
+            _currentCode = modifiedRoot.NormalizeWhitespace().ToFullString();
+            HasChanges = true;
+        }
+    }
+
+    private bool StatementReferencesProperty(ExpressionStatementSyntax statement, string modelName, string propertyName)
+    {
+        var invocations = statement.DescendantNodes().OfType<InvocationExpressionSyntax>();
+        
+        bool hasEntityOfModel = false;
+        bool referencesProperty = false;
+
+        foreach (var invocation in invocations)
+        {
+            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
+                memberAccess.Name is GenericNameSyntax genericName &&
+                genericName.Identifier.Text == "Entity")
+            {
+                var typeArg = genericName.TypeArgumentList.Arguments.FirstOrDefault();
+                if (typeArg?.ToString() == modelName)
+                {
+                    hasEntityOfModel = true;
+                }
+            }
+        }
+
+        if (!hasEntityOfModel) return false;
+
+        var lambdas = statement.DescendantNodes().OfType<SimpleLambdaExpressionSyntax>();
+        foreach (var lambda in lambdas)
+        {
+            var memberAccesses = lambda.DescendantNodes().OfType<MemberAccessExpressionSyntax>();
+            foreach (var memberAccess in memberAccesses)
+            {
+                if (memberAccess.Name.Identifier.Text == propertyName)
+                {
+                    referencesProperty = true;
+                    break;
+                }
+            }
+            if (referencesProperty) break;
+        }
+
+        return hasEntityOfModel && referencesProperty;
     }
 
     private MethodDeclarationSyntax GetOrCreateOnModelCreatingMethod(ClassDeclarationSyntax classNode)
