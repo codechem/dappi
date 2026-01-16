@@ -94,6 +94,106 @@ namespace Dappi.HeadlessCms.Core.Extensions
             var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
             return property.AddAttributeLists(attributeList);
         }
+        public static PropertyDeclarationSyntax WithLengthAttribute(this PropertyDeclarationSyntax property,
+            string? minLength, string? maxLength)
+        {
+            const int DefaultMaxLength = 1000;
+            
+            var min = string.IsNullOrEmpty(minLength) ? "0" : minLength;
+            var max = string.IsNullOrEmpty(maxLength) ? DefaultMaxLength.ToString() : maxLength;
+            
+            var attribute = SyntaxFactory.Attribute(SyntaxFactory.ParseName("Length"));
+            var arguments = new[]
+            {
+                SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression(min)),
+                SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression(max))
+            };
+            
+            attribute = attribute.WithArgumentList(
+                SyntaxFactory.AttributeArgumentList(SyntaxFactory.SeparatedList(arguments))
+            );
+            
+            var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
+            return property.AddAttributeLists(attributeList);
+        }
+
+        public static PropertyDeclarationSyntax WithRangeAttribute(this PropertyDeclarationSyntax property,
+            string? minValue, string? maxValue, string propertyType)
+        {
+            var attribute = SyntaxFactory.Attribute(SyntaxFactory.ParseName("Range"));
+            var arguments = new List<AttributeArgumentSyntax>();
+            
+            if (string.IsNullOrEmpty(minValue) && string.IsNullOrEmpty(maxValue))
+            {
+                return property;
+            }
+            
+            double? minDouble = null;
+            double? maxDouble = null;
+            
+            if (!string.IsNullOrEmpty(minValue))
+            {
+                if (double.TryParse(minValue, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedMin))
+                {
+                    minDouble = parsedMin;
+                }
+            }
+            
+            if (!string.IsNullOrEmpty(maxValue))
+            {
+                if (double.TryParse(maxValue, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedMax))
+                {
+                    maxDouble = parsedMax;
+                }
+            }
+            
+            if (minDouble == null)
+            {
+                minDouble = propertyType.ToLower() switch
+                {
+                    "int" => int.MinValue,
+                    "float" => float.MinValue,
+                    "double" => double.MinValue,
+                    "decimal" => (double)decimal.MinValue,
+                    "long" => long.MinValue,
+                    "short" => short.MinValue,
+                    "byte" => byte.MinValue,
+                    _ => double.MinValue
+                };
+            }
+            
+            if (maxDouble == null)
+            {
+                maxDouble = propertyType.ToLower() switch
+                {
+                    "int" => int.MaxValue,
+                    "float" => float.MaxValue,
+                    "double" => double.MaxValue,
+                    "decimal" => (double)decimal.MaxValue,
+                    "long" => long.MaxValue,
+                    "short" => short.MaxValue,
+                    "byte" => byte.MaxValue,
+                    _ => double.MaxValue
+                };
+            }
+            
+            var minLiteral = SyntaxFactory.LiteralExpression(
+                SyntaxKind.NumericLiteralExpression,
+                SyntaxFactory.Literal(minDouble.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), minDouble.Value));
+            var maxLiteral = SyntaxFactory.LiteralExpression(
+                SyntaxKind.NumericLiteralExpression,
+                SyntaxFactory.Literal(maxDouble.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), maxDouble.Value));
+            
+            arguments.Add(SyntaxFactory.AttributeArgument(minLiteral));
+            arguments.Add(SyntaxFactory.AttributeArgument(maxLiteral));
+            
+            attribute = attribute.WithArgumentList(
+                SyntaxFactory.AttributeArgumentList(SyntaxFactory.SeparatedList(arguments))
+            );
+            
+            var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
+            return property.AddAttributeLists(attributeList);
+        }
 
         public static MemberDeclarationSyntax[] GeneratePropertiesFromType(Type type)
         {

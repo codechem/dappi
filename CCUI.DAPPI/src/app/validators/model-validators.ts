@@ -83,6 +83,8 @@ const CSHARP_KEYWORDS = [
   'while',
 ];
 
+const INT32_MAX = 2147483647;
+
 export class ModelValidators {
   static pascalCase(control: AbstractControl): ValidationErrors | null {
     const value = control.value;
@@ -159,7 +161,7 @@ export class ModelValidators {
     };
   }
 
-   static fieldNameSameAsModel(modelName:string) {
+  static fieldNameSameAsModel(modelName:string) {
     return (control: AbstractControl) : ValidationErrors | null => {
       const value = control.value;
 
@@ -199,5 +201,101 @@ export class ModelValidators {
     } catch (e) {
       return { invalidRegex: true };
     }
+  }
+
+  static validMinField(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const intValue = Number(value);
+
+    if (
+      !Number.isInteger(intValue) ||
+      intValue < 1 ||
+      intValue > 1000
+    ) {
+      return { invalidMinField: true };
+    }
+
+    return null;
+  }
+
+  static validMaxField(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const intValue = Number(value);
+
+    if (
+      !Number.isInteger(intValue) ||
+      intValue < 1 ||
+      intValue > 1000
+    ) {
+      return { invalidMaxField: true };
+    }
+
+    return null;
+  }
+
+  static minMaxValidator(control: AbstractControl): ValidationErrors | null {
+    const minLength = control.get('minLength')?.value;
+    const maxLength = control.get('maxLength')?.value;
+
+    if (minLength && maxLength && Number(minLength) > Number(maxLength)) {
+      return { minGreaterThanMax: true };
+    }
+
+    return null;
+  }
+
+  static validMinValue(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const numValue = Number(value);
+
+    if (isNaN(numValue)) {
+      return { invalidMinValue: true };
+    }
+
+    return null;
+  }
+
+  static validMaxValue(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const numValue = Number(value);
+
+    if (isNaN(numValue)) {
+      return { invalidMaxValue: true };
+    }
+
+    return null;
+  }
+
+  static minMaxValueValidator(control: AbstractControl): ValidationErrors | null {
+    const minValue = control.get('minValue')?.value;
+    const maxValue = control.get('maxValue')?.value;
+
+    if (minValue !== null && minValue !== undefined && minValue !== '' &&
+        maxValue !== null && maxValue !== undefined && maxValue !== '' &&
+        Number(minValue) > Number(maxValue)) {
+      return { minValueGreaterThanMaxValue: true };
+    }
+
+    return null;
   }
 }

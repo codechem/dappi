@@ -210,7 +210,11 @@ public class ModelsController : ControllerBase
                             Type = request.FieldType,
                             IsRequired = request.IsRequired,
                             Regex = request.Regex,
-                            NoPastDates = request.NoPastDates
+                            NoPastDates = request.NoPastDates,
+                            MinLength = request.MinLength?.ToString(),
+                            MaxLength = request.MaxLength?.ToString(),
+                            MinValue = request.MinValue?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            MaxValue = request.MaxValue?.ToString(System.Globalization.CultureInfo.InvariantCulture)
                         };
                         _domainModelEditor.AddProperty(property);
                         _domainModelEditor.AddEnumNamespaceIfMissing(property.DomainModel);
@@ -228,7 +232,11 @@ public class ModelsController : ControllerBase
                 Type = request.FieldType,
                 IsRequired = request.IsRequired,
                 Regex = request.Regex,
-                NoPastDates = request.NoPastDates
+                NoPastDates = request.NoPastDates,
+                MinLength = request.MinLength?.ToString(),
+                MaxLength = request.MaxLength?.ToString(),
+                MinValue = request.MinValue?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                MaxValue = request.MaxValue?.ToString(System.Globalization.CultureInfo.InvariantCulture)
             };
             _domainModelEditor.AddProperty(property);
         }
@@ -338,7 +346,11 @@ public class ModelsController : ControllerBase
             Regex = request.Regex,
             NoPastDates = request.NoPastDates,
             RelationKind = propertyToUpdate.RelationKind,
-            RelatedDomainModel = propertyToUpdate.RelatedDomainModel
+            RelatedDomainModel = propertyToUpdate.RelatedDomainModel,
+            MinLength = request.MinLength?.ToString(),
+            MaxLength = request.MaxLength?.ToString(),
+            MinValue = request.MinValue?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            MaxValue = request.MaxValue?.ToString(System.Globalization.CultureInfo.InvariantCulture)
         });
 
         if (request.OldFieldName != request.NewFieldName)

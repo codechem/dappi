@@ -169,6 +169,15 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         {
             newProperty = newProperty.WithFutureDateAttribute();
         }
+        if (property.Type == "string" && (!string.IsNullOrEmpty(property.MinLength) || !string.IsNullOrEmpty(property.MaxLength)))
+        {
+            newProperty = newProperty.WithLengthAttribute(property.MinLength, property.MaxLength);
+        }
+        var numericTypes = new[] { "int", "float", "double", "decimal", "long", "short", "byte" };
+        if (numericTypes.Contains(property.Type) && (!string.IsNullOrEmpty(property.MinValue) || !string.IsNullOrEmpty(property.MaxValue)))
+        {
+            newProperty = newProperty.WithRangeAttribute(property.MinValue, property.MaxValue, property.Type);
+        }
 
         var newNode = classNode.AddMembers(newProperty);
         var newRoot = root.ReplaceNode(classNode, newNode);
@@ -231,6 +240,31 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
             .SelectMany(al => al.Attributes)
             .Any(a => a.Name.ToString() == "FutureDate");
 
+        string? minLength = null;
+        string? maxLength = null;
+        string? minValue = null;
+        string? maxValue = null;
+
+        var lengthAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .FirstOrDefault(a => a.Name.ToString() == "Length");
+
+        if (lengthAttribute?.ArgumentList?.Arguments.Count >= 2)
+        {
+            minLength = lengthAttribute.ArgumentList.Arguments[0].Expression.ToString();
+            maxLength = lengthAttribute.ArgumentList.Arguments[1].Expression.ToString();
+        }
+
+        var rangeAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .FirstOrDefault(a => a.Name.ToString() == "Range");
+
+        if (rangeAttribute?.ArgumentList?.Arguments.Count >= 2)
+        {
+            minValue = rangeAttribute.ArgumentList.Arguments[0].Expression.ToString();
+            maxValue = rangeAttribute.ArgumentList.Arguments[1].Expression.ToString();
+        }
+
         return new Property
         {
             DomainModel = modelName,
@@ -241,7 +275,11 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
             RelatedDomainModel = relatedModel,
             Regex = regex,
             NoPastDates = hasFutureDateAttribute,
-            HasIndex = false
+            HasIndex = false,
+            MinLength = minLength,
+            MaxLength = maxLength,
+            MinValue = minValue,
+            MaxValue = maxValue
         };
     }
 
@@ -294,7 +332,11 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
                 IsRequired = propertyData.IsRequired,
                 Regex = propertyData.Regex,
                 HasIndex = propertyData.HasIndex,
-                NoPastDates = propertyData.NoPastDates
+                NoPastDates = propertyData.NoPastDates,
+                MinLength = propertyData.MinLength != null && int.TryParse(propertyData.MinLength, out var parsedMinLength) ? parsedMinLength : null,
+                MaxLength = propertyData.MaxLength != null && int.TryParse(propertyData.MaxLength, out var parsedMaxLength) ? parsedMaxLength : null,
+                MinValue = propertyData.MinValue != null && double.TryParse(propertyData.MinValue, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedMinValue) ? parsedMinValue : null,
+                MaxValue = propertyData.MaxValue != null && double.TryParse(propertyData.MaxValue, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedMaxValue) ? parsedMaxValue : null
             });
         }
 
@@ -355,6 +397,15 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         if (newProperty.NoPastDates && IsDateType(newProperty.Type))
         {
             updatedProperty = updatedProperty.WithFutureDateAttribute();
+        }
+        if (newProperty.Type == "string" && (!string.IsNullOrEmpty(newProperty.MinLength) || !string.IsNullOrEmpty(newProperty.MaxLength)))
+        {
+            updatedProperty = updatedProperty.WithLengthAttribute(newProperty.MinLength, newProperty.MaxLength);
+        }
+        var numericTypes = new[] { "int", "float", "double", "decimal", "long", "short", "byte" };
+        if (numericTypes.Contains(newProperty.Type) && (!string.IsNullOrEmpty(newProperty.MinValue) || !string.IsNullOrEmpty(newProperty.MaxValue)))
+        {
+            updatedProperty = updatedProperty.WithRangeAttribute(newProperty.MinValue, newProperty.MaxValue, newProperty.Type);
         }
 
         var newClassNode = classNode.ReplaceNode(oldPropertyNode, updatedProperty);

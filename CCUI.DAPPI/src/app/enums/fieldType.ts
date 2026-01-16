@@ -8,5 +8,7 @@ export enum FieldTypeEnum
     Media,
     Link,
     Checkbox,
-    DateTime
+    DateTime,
+    Double,
+    Float
 }

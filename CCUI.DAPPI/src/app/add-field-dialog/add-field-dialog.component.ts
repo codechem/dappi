@@ -46,6 +46,10 @@ export interface AddFieldDialogData {
   hasIndex?: boolean;
   regex?: string;
   noPastDates?: boolean;
+  minLength?: number | null;
+  maxLength?: number | null;
+  minValue?: number | null;
+  maxValue?: number | null;
 }
 
 @Component({
@@ -161,13 +165,21 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: this.selectedRelationType,
     },
     {
-      type: FieldTypeEnum.Number,
+      type: FieldTypeEnum.Float,
       icon: '123',
-      label: 'Decimal Number',
-      description: 'For decimal numerical values and calculations',
+      label: 'Float Number',
+      description: 'For float numerical values and calculations',
       value: 'float',
       netType: 'float',
     },
+    {
+      type: FieldTypeEnum.Double,
+      icon: '123',
+      label: 'Double Number',
+      description: 'For double numerical values and calculations',
+      value: 'double',
+      netType: 'double',
+    }
   ];
   private subscription: Subscription = new Subscription();
 
@@ -180,6 +192,10 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     relatedRelationName: [''],
     hasIndex: [false],
     noPastDates: [false],
+    minLength: [null, [Validators.min(0)]],
+    maxLength: [null, [Validators.min(0)]],
+    minValue: [null],
+    maxValue: [null],
   });
 
   selectedFieldTypeId: FieldTypeEnum | null = null;
@@ -221,8 +237,12 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       relatedRelationName: [''],
       regex: [data.regex || '', [ModelValidators.validRegex]],
       hasIndex: [data.hasIndex || false],
-      noPastDates: [data.noPastDates || false]
-    });
+      noPastDates: [data.noPastDates || false],
+      minLength: [data.minLength ?? null, [ModelValidators.validMinField]],
+      maxLength: [data.maxLength ?? null, [ModelValidators.validMaxField]],
+      minValue: [data.minValue ?? null, [ModelValidators.validMinValue]],
+      maxValue: [data.maxValue ?? null, [ModelValidators.validMaxValue]]
+    }, { validators: [ModelValidators.minMaxValidator, ModelValidators.minMaxValueValidator] });
     
     if (this.isEditMode && data.fieldType) {
       this.preselectFieldType(data.fieldType);
@@ -377,6 +397,10 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
         hasIndex: this.fieldForm.value.hasIndex,
         regex: this.isTextType() ? this.fieldForm.value.regex : undefined,
         noPastDates: this.isDateType() ? this.fieldForm.value.noPastDates : undefined,
+        minLength: this.isTextType() ? this.fieldForm.value.minLength : null,
+        maxLength: this.isTextType() ? this.fieldForm.value.maxLength : null,
+        minValue: this.isNumericType() ? this.fieldForm.value.minValue : null,
+        maxValue: this.isNumericType() ? this.fieldForm.value.maxValue : null,
       };
       
       this.dialogRef.close(result);
@@ -403,6 +427,10 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       regex: this.fieldForm.value.regex,
       hasIndex: this.fieldForm.value.hasIndex,
       noPastDates: this.fieldForm.value.noPastDates,
+      ...(this.selectedFieldTypeId === this.fieldTypeEnum.String && this.fieldForm.value.minLength && { minLength: this.fieldForm.value.minLength }),
+      ...(this.selectedFieldTypeId === this.fieldTypeEnum.String && this.fieldForm.value.maxLength && { maxLength: this.fieldForm.value.maxLength }),
+      ...((this.selectedFieldTypeId === this.fieldTypeEnum.Number || this.selectedFieldTypeId === this.fieldTypeEnum.Float || this.selectedFieldTypeId === this.fieldTypeEnum.Double) && this.fieldForm.value.minValue !== null && this.fieldForm.value.minValue !== undefined && this.fieldForm.value.minValue !== '' && { minValue: this.fieldForm.value.minValue }),
+      ...((this.selectedFieldTypeId === this.fieldTypeEnum.Number || this.selectedFieldTypeId === this.fieldTypeEnum.Float || this.selectedFieldTypeId === this.fieldTypeEnum.Double) && this.fieldForm.value.maxValue !== null && this.fieldForm.value.maxValue !== undefined && this.fieldForm.value.maxValue !== '' && { maxValue: this.fieldForm.value.maxValue })
     };
 
     if (this.selectedFieldTypeId === this.fieldTypeEnum.Dropdown) {
@@ -437,7 +465,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     const typeMapping: Record<string, FieldTypeEnum> = {
       'string': FieldTypeEnum.String,
       'int': FieldTypeEnum.Number,
-      'float': FieldTypeEnum.Number,
+      'float': FieldTypeEnum.Float,
+      'double': FieldTypeEnum.Double,
       'DateOnly': FieldTypeEnum.Date,
       'DateTime': FieldTypeEnum.DateTime,
       'bool': FieldTypeEnum.Checkbox,
@@ -466,7 +495,9 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       formValue.requiredField !== this.data.isRequired ||
       formValue.hasIndex !== this.data.hasIndex ||
       (this.isTextType() && formValue.regex !== (this.data.regex || '')) ||
-      (this.isDateType() && formValue.noPastDates !== (this.data.noPastDates || false))
+      (this.isDateType() && formValue.noPastDates !== (this.data.noPastDates || false)) ||
+      (this.isTextType() && (formValue.minLength !== (this.data.minLength ?? null) || formValue.maxLength !== (this.data.maxLength ?? null))) ||
+      (this.isNumericType() && (formValue.minValue !== (this.data.minValue ?? null) || formValue.maxValue !== (this.data.maxValue ?? null)))
     );
   }
 
@@ -476,5 +507,11 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
 
   private isDateType(): boolean {
     return this.selectedFieldTypeId === FieldTypeEnum.Date || this.selectedFieldTypeId === FieldTypeEnum.DateTime;
+  }
+
+  private isNumericType(): boolean {
+    return this.selectedFieldTypeId === FieldTypeEnum.Number || 
+           this.selectedFieldTypeId === FieldTypeEnum.Float || 
+           this.selectedFieldTypeId === FieldTypeEnum.Double;
   }
 }

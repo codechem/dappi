@@ -21,4 +21,12 @@ public class FieldRequest
     public bool HasIndex { get; set; } = false;
 
     public bool NoPastDates { get; set; } = false;
+    
+    public int? MaxLength { get; set; }
+    
+    public int? MinLength { get; set; }
+    
+    public double? MinValue { get; set; }
+    
+    public double? MaxValue { get; set; }
 }

@@ -17,6 +17,12 @@ public class StringProperty : DappiPropertyInfo
     public string? Regex { get; set; }
 }
 
+public class NumberProperty : DappiPropertyInfo
+{
+    public double? MinValue { get; set; }
+    public double? MaxValue { get; set; }
+}
+
 public class EnumProperty : DappiPropertyInfo
 {
     public List<string> Values { get; set; } = new();

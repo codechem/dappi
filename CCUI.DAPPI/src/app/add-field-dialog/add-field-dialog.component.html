@@ -85,6 +85,91 @@
               }
             </mat-form-field>
           }
+
+          @if (selectedFieldTypeId === fieldTypeEnum.String) {
+            <mat-form-field appearance="outline" class="input-field">
+              <mat-label>Min Length</mat-label>
+              <input
+                matInput
+                type="number"
+                min="1"
+                max="1000"
+                step="1"
+                formControlName="minLength"
+              />
+
+              @if (fieldForm.get('minLength')?.hasError('invalidMinField') &&
+                  fieldForm.get('minLength')?.touched) {
+                <mat-error>Min length must be a whole number between 1 and 1000</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="input-field">
+              <mat-label>Max Length</mat-label>
+              <input
+                matInput
+                type="number"
+                formControlName="maxLength"
+                placeholder="Enter max length"
+                min="1"
+                max="1000"
+                step="1"
+              />
+
+              @if (fieldForm.get('maxLength')?.hasError('invalidMaxField') &&
+                  fieldForm.get('maxLength')?.touched) {
+                <mat-error>Max length must be a whole number between 1 and 1000</mat-error>
+              }
+            </mat-form-field>
+
+            @if (fieldForm.hasError('minGreaterThanMax') &&
+                (fieldForm.get('minLength')?.touched || fieldForm.get('maxLength')?.touched)) {
+              <mat-error class="cross-field-error">
+                Min length cannot be greater than max length
+              </mat-error>
+            }
+          }
+
+          @if (selectedFieldTypeId === fieldTypeEnum.Number || selectedFieldTypeId === fieldTypeEnum.Double || selectedFieldTypeId === fieldTypeEnum.Float) {
+            <mat-form-field appearance="outline" class="input-field">
+              <mat-label>Min Value</mat-label>
+              <input
+                matInput
+                type="number"
+                [attr.step]="selectedFieldTypeId === fieldTypeEnum.Number ? '1' : 'any'"
+                formControlName="minValue"
+                placeholder="Enter min value"
+              />
+
+              @if (fieldForm.get('minValue')?.hasError('invalidMinValue') &&
+                  fieldForm.get('minValue')?.touched) {
+                <mat-error>Min value must be a valid number</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="input-field">
+              <mat-label>Max Value</mat-label>
+              <input
+                matInput
+                type="number"
+                [attr.step]="selectedFieldTypeId === fieldTypeEnum.Number ? '1' : 'any'"
+                formControlName="maxValue"
+                placeholder="Enter max value"
+              />
+
+              @if (fieldForm.get('maxValue')?.hasError('invalidMaxValue') &&
+                  fieldForm.get('maxValue')?.touched) {
+                <mat-error>Max value must be a valid number</mat-error>
+              }
+            </mat-form-field>
+
+            @if (fieldForm.hasError('minValueGreaterThanMaxValue') &&
+                (fieldForm.get('minValue')?.touched || fieldForm.get('maxValue')?.touched)) {
+              <mat-error class="cross-field-error">
+                Min value cannot be greater than max value
+              </mat-error>
+            }
+          }
         </div>
 
         <div class="required-field">

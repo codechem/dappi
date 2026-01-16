@@ -231,6 +231,10 @@ export class BuilderComponent implements OnInit, OnDestroy {
           hasIndex: field.hasIndex,
           regex: field.regex,
           noPastDates: field.noPastDates,
+          minLength: field.minLength ?? null,
+          maxLength: field.maxLength ?? null,
+          minValue: field.minValue ?? null,
+          maxValue: field.maxValue ?? null,
         };
       });
     }
@@ -250,6 +254,10 @@ export class BuilderComponent implements OnInit, OnDestroy {
         hasIndex: field.hasIndex || false,
         regex: field.regex,
         noPastDates: field.noPastDates || false,
+        minLength: field.minLength ?? null,
+        maxLength: field.maxLength ?? null,
+        minValue: field.minValue ?? null,
+        maxValue: field.maxValue ?? null,
       },
     });
 
@@ -265,6 +273,10 @@ export class BuilderComponent implements OnInit, OnDestroy {
                 hasIndex: result.hasIndex,
                 regex: result.regex,
                 noPastDates: result.noPastDates,
+                minLength: result.minLength ?? null,
+                maxLength: result.maxLength ?? null,
+                minValue: result.minValue ?? null,
+                maxValue: result.maxValue ?? null,
               }
             })
           );

@@ -22,5 +22,17 @@ namespace Dappi.HeadlessCms.Models
         
         [System.Text.Json.Serialization.JsonPropertyName("noPastDates")]
         public bool NoPastDates { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("minLength")]
+        public int? MinLength { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("maxLength")]
+        public int? MaxLength { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("minValue")]
+        public double? MinValue { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("maxValue")]
+        public double? MaxValue { get; set; }
     }
 }
