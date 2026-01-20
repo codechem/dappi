@@ -55,14 +55,18 @@ export interface AddFieldDialogData {
 }
 
 class MinValueErrorStateMatcher implements ErrorStateMatcher {
-  constructor(private form: FormGroup) {}
+  constructor(
+    private form: FormGroup,
+    private invalidErrorKey: string,
+    private crossFieldErrorKey: string
+  ) {}
 
   isErrorState(control: FormControl | null, form: FormGroupDirective | NgForm | null): boolean {
     const isSubmitted = !!form?.submitted;
     const show = isSubmitted || !!control && (control.touched || control.dirty);
     const controlInvalid = !!control && control.invalid && show;
-    const minInvalid = !!control?.hasError('invalidMinTextValue');
-    const crossFieldInvalid = this.form.hasError('minValueGreaterThanMaxValue') && !minInvalid;
+    const minInvalid = !!control?.hasError(this.invalidErrorKey);
+    const crossFieldInvalid = this.form.hasError(this.crossFieldErrorKey) && !minInvalid;
 
     return controlInvalid || (show && crossFieldInvalid);
   }
@@ -106,7 +110,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   availableEnums: string[] = [];
   selectedEnum: string = '';
 
-  minValueErrorStateMatcher!: ErrorStateMatcher;
+  minTextErrorStateMatcher!: ErrorStateMatcher;
+  minNumberErrorStateMatcher!: ErrorStateMatcher;
 
 
   fieldTypes: FieldType[] = [
@@ -258,7 +263,16 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       max: [data.max ?? null, [ModelValidators.validMaxValue]]
     }, { validators: [ModelValidators.minMaxValueValidator] });
 
-    this.minValueErrorStateMatcher = new MinValueErrorStateMatcher(this.fieldForm);
+    this.minTextErrorStateMatcher = new MinValueErrorStateMatcher(
+      this.fieldForm,
+      'invalidMinTextValue',
+      'minValueGreaterThanMaxValue'
+    );
+    this.minNumberErrorStateMatcher = new MinValueErrorStateMatcher(
+      this.fieldForm,
+      'invalidMinValue',
+      'minValueGreaterThanMaxValue'
+    );
     
     if (this.isEditMode && data.fieldType) {
       this.preselectFieldType(data.fieldType);

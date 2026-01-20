@@ -96,7 +96,7 @@
                 step="1"
                 placeholder="Enter min length"
                 formControlName="min"
-                [errorStateMatcher]="minValueErrorStateMatcher"
+                [errorStateMatcher]="minTextErrorStateMatcher"
               />
 
               @if (fieldForm.get('min')?.hasError('invalidMinTextValue') &&
@@ -137,11 +137,17 @@
                 [attr.step]="selectedFieldTypeId === fieldTypeEnum.Number ? '1' : 'any'"
                 formControlName="min"
                 placeholder="Enter min value"
+                [errorStateMatcher]="minNumberErrorStateMatcher"
               />
 
               @if (fieldForm.get('min')?.hasError('invalidMinValue') &&
                   fieldForm.get('min')?.touched) {
                 <mat-error>Min value must be a valid number</mat-error>
+              }
+              @if (!fieldForm.get('min')?.hasError('invalidMinValue') &&
+                  fieldForm.hasError('minValueGreaterThanMaxValue') &&
+                  (fieldForm.get('min')?.touched || fieldForm.get('max')?.touched)) {
+                <mat-error>Min value cannot be greater than max value</mat-error>
               }
             </mat-form-field>
 
@@ -161,12 +167,6 @@
               }
             </mat-form-field>
 
-            @if (fieldForm.hasError('minValueGreaterThanMaxValue') &&
-                (fieldForm.get('min')?.touched || fieldForm.get('max')?.touched)) {
-              <mat-error class="cross-field-error">
-                Min value cannot be greater than max value
-              </mat-error>
-            }
           }
         </div>
 
