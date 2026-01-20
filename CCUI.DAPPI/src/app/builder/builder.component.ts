@@ -231,10 +231,10 @@ export class BuilderComponent implements OnInit, OnDestroy {
           hasIndex: field.hasIndex,
           regex: field.regex,
           noPastDates: field.noPastDates,
-          minLength: field.minLength ?? null,
-          maxLength: field.maxLength ?? null,
-          minValue: field.minValue ?? null,
-          maxValue: field.maxValue ?? null,
+          minLength: field.minLength ?? undefined,
+          maxLength: field.maxLength ?? undefined,
+          minValue: field.minValue ?? undefined,
+          maxValue: field.maxValue ?? undefined,
         };
       });
     }
