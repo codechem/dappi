@@ -444,8 +444,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       regex: this.fieldForm.value.regex,
       hasIndex: this.fieldForm.value.hasIndex,
       noPastDates: this.fieldForm.value.noPastDates,
-      ...((this.selectedFieldTypeId === this.fieldTypeEnum.String || this.selectedFieldTypeId === this.fieldTypeEnum.Number || this.selectedFieldTypeId === this.fieldTypeEnum.Float || this.selectedFieldTypeId === this.fieldTypeEnum.Double) && this.fieldForm.value.min !== null && this.fieldForm.value.min !== undefined && this.fieldForm.value.min !== '' && { min: this.fieldForm.value.min }),
-      ...((this.selectedFieldTypeId === this.fieldTypeEnum.String || this.selectedFieldTypeId === this.fieldTypeEnum.Number || this.selectedFieldTypeId === this.fieldTypeEnum.Float || this.selectedFieldTypeId === this.fieldTypeEnum.Double) && this.fieldForm.value.max !== null && this.fieldForm.value.max !== undefined && this.fieldForm.value.max !== '' && { max: this.fieldForm.value.max })
+      ...this.buildMinMaxPayload(),
     };
 
     if (this.selectedFieldTypeId === this.fieldTypeEnum.Dropdown) {
@@ -546,5 +545,33 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     return this.selectedFieldTypeId === FieldTypeEnum.Number || 
            this.selectedFieldTypeId === FieldTypeEnum.Float || 
            this.selectedFieldTypeId === FieldTypeEnum.Double;
+  }
+
+  private isMinMaxApplicable(): boolean {
+    return this.isTextType() || this.isNumericType();
+  }
+
+  private hasValue(value: unknown): boolean {
+    return value !== null && value !== undefined && value !== '';
+  }
+
+  private buildMinMaxPayload(): { min?: number; max?: number } {
+    if (!this.isMinMaxApplicable()) {
+      return {};
+    }
+
+    const min = this.fieldForm.value.min;
+    const max = this.fieldForm.value.max;
+    const payload: { min?: number; max?: number } = {};
+
+    if (this.hasValue(min)) {
+      payload.min = min;
+    }
+
+    if (this.hasValue(max)) {
+      payload.max = max;
+    }
+
+    return payload;
   }
 }
