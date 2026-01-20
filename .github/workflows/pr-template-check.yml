@@ -44,31 +44,9 @@ jobs:
               core.setFailed('❌ PR description is empty. Please fill out the template with information about your changes.');
               return;
             }
-
-            // Keywords that indicate the template hasn't been filled out
-            const templateKeywords = [
-              'Provide a clear summary of your changes',
-              'What did you add, remove, or modify?',
-              'Explain why these changes were needed',
-              'Fixes #(issue number)',
-            ];
-
-            // Check if template keywords are still present (indicating it wasn't filled out)
-            const foundKeywords = templateKeywords.filter(keyword => 
-              prBody.includes(keyword)
-            );
-
-            if (foundKeywords.length >= 2) {
-              core.setFailed(
-                `❌ PR template appears to be unfilled. Please replace the template text with your actual changes.\n\n` +
-                `Found unchanged template text:\n${foundKeywords.map(k => `  - "${k}"`).join('\n')}`
-              );
-              return;
-            }
-
-            // Check if "Fixes #(issue number)" is still present unchanged
-            if (prBody.includes('Fixes #(issue number)')) {
-              core.setFailed('❌ Please update "Fixes #(issue number)" with an actual issue number or remove it if not applicable.');
+            
+            if (prBody.includes('Closes #(issue number)')) {
+              core.setFailed('❌ Please update "Closes #(issue number)" with an actual issue number or remove it if not applicable.');
               return;
             }
 
