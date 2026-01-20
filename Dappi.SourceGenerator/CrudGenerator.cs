@@ -27,13 +27,13 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
 
         foreach (var item in collectedData)
         {
-            var arguments = string.Join("," ,item.CrudActions.Select(x => $"{nameof(CrudActions)}.{x}"));
+            var arguments = string.Join(",", item.CrudActions.Select(x => $"{nameof(CrudActions)}.{x}"));
             var controllerAttribute = $"[{CcControllerAttribute.ShortName}({arguments})]";
             var collectionAddCode = GenerateCollectionAddCode(item);
             var collectionUpdateCode = GenerateCollectionUpdateCode(item);
             var includesCode = GetIncludesIfAny(item.PropertiesInfos, mediaInfoPropertyNames, item.ClassName);
             var hasAuthorizationOnControllerLevel = item.AuthorizeAttributes.FirstOrDefault() is
-                { OnControllerLevel: true };
+            { OnControllerLevel: true };
             var authorizeTag = hasAuthorizationOnControllerLevel ? "[Authorize]" : null;
             var mediaInfoUpdateCode = string.Empty;
             if (mediaInfoPropertyNames.ContainsKey(item.ClassName))
@@ -53,6 +53,7 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Extensions;
 using Dappi.HeadlessCms.Exceptions;
 using Dappi.HeadlessCms.ActionFilters;
+using Dappi.HeadlessCms.Core.Requests;
 using Dappi.Core.Attributes;
 using Dappi.Core.Enums;
 using {item.ModelNamespace};
@@ -85,10 +86,11 @@ namespace {item.RootNamespace}.Controllers;
 public partial class {item.ClassName}Controller(
     {dbContextData.ClassName} dbContext,
     IDataShaperService shaper, 
-    IMediaUploadService uploadService) : ControllerBase
+    IMediaUploadService uploadService,
+    IMediaUploadQueue queue) : ControllerBase
 {{
 
-    {AggregateActions(item,includesCode,collectionAddCode,collectionUpdateCode,mediaInfoUpdateCode,includeCode,removeCode)}    
+    {AggregateActions(item, includesCode, collectionAddCode, collectionUpdateCode, mediaInfoUpdateCode, includeCode, removeCode)}    
 
     private static (object entity, PropertyInfo property, Type[] entityInterfaces, bool isEnumerable, bool isCollection) GetEntityProperty(object entity, string propertyName)
     {{
@@ -216,7 +218,7 @@ public partial class {item.ClassName}Controller(
             }}
         }}");
         }
-        
+
         return sb.ToString().TrimEnd();
     }
 
@@ -297,7 +299,7 @@ public partial class {item.ClassName}Controller(
         return (includeCode.ToString().TrimEnd(), removeCode.ToString().TrimEnd());
     }
 
-    private static string AggregateActions(SourceModel item, string includesCode, string collectionAddCode , string collectionUpdateCode, string mediaInfoUpdateCode, string includeCode, string removeCode)
+    private static string AggregateActions(SourceModel item, string includesCode, string collectionAddCode, string collectionUpdateCode, string mediaInfoUpdateCode, string includeCode, string removeCode)
     {
         var actions = new List<string>()
         {
@@ -310,11 +312,11 @@ public partial class {item.ClassName}Controller(
             GeneratePatchAction(item.CrudActions, item, includesCode),
             GenerateDeleteAction(item.CrudActions, item, includeCode, removeCode),
         };
-      var sb = new StringBuilder();
-      foreach (var action in actions.Where(action => !string.IsNullOrEmpty(action)))
-      {
-          sb.Append(action);
-      }
-      return sb.ToString();
+        var sb = new StringBuilder();
+        foreach (var action in actions.Where(action => !string.IsNullOrEmpty(action)))
+        {
+            sb.Append(action);
+        }
+        return sb.ToString();
     }
 }

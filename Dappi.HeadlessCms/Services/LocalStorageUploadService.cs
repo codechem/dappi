@@ -76,5 +76,36 @@ namespace Dappi.HeadlessCms.Services
                 _ => "unsupported",
             };
         }
+
+        public async Task<MediaInfo> SaveFileAsync(Guid id, IFormFile file)
+        {
+            var uploadsFolder = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "wwwroot",
+                "uploads");
+
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var fileExtension = Path.GetExtension(file.FileName);
+            var fileName = $"{Guid.NewGuid()}_{id}{fileExtension}";
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            await using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(fileStream);
+            }
+
+            var relativePath = $"uploads{Path.DirectorySeparatorChar}{fileName}";
+
+            return new MediaInfo
+            {
+                Id = Guid.NewGuid(),
+                Url = relativePath,
+                OriginalFileName = file.FileName,
+                FileSize = file.Length,
+                UploadDate = DateTime.UtcNow
+            };
+        }
     }
 }

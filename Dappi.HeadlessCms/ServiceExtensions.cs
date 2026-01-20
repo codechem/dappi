@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
 using Dappi.HeadlessCms.Authentication;
+using Dappi.HeadlessCms.Background;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Database.Interceptors;
 using Dappi.HeadlessCms.Interfaces;
@@ -46,8 +47,10 @@ public static class ServiceExtensions
 
         services.AddScoped<IDbContextAccessor, DbContextAccessor<TDbContext>>();
         services.AddScoped<IEnumService, EnumService>();
-
+        
+        services.AddSingleton<IMediaUploadQueue, MediaUploadQueue>();
         services.AddTransient<IMediaUploadService, LocalStorageUploadService>();
+        services.AddHostedService<MediaUploadWorker>();
 
         services.AddHttpContextAccessor();
 
