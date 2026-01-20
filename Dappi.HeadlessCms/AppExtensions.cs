@@ -53,8 +53,8 @@ public static class AppExtensions
         app.MapControllers();
 
         using var scope = app.Services.CreateScope();
-        await app.Services.SeedRolesAndUsersAsync<DappiUser, DappiRole>();
         await MigrateIfNoModelsAreInDraftStateAsync<TDbContext>(scope.ServiceProvider);
+        await app.Services.SeedRolesAndUsersAsync<DappiUser, DappiRole>();
 
         return app;
     }
