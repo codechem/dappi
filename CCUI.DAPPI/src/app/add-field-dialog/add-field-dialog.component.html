@@ -96,11 +96,17 @@
                 max="1000"
                 step="1"
                 formControlName="minLength"
+                [errorStateMatcher]="minLengthErrorStateMatcher"
               />
 
               @if (fieldForm.get('minLength')?.hasError('invalidMinField') &&
                   fieldForm.get('minLength')?.touched) {
                 <mat-error>Min length must be a whole number between 1 and 1000</mat-error>
+              }
+              @if (!fieldForm.get('minLength')?.hasError('invalidMinField') &&
+                  fieldForm.hasError('minGreaterThanMax') &&
+                  (fieldForm.get('minLength')?.touched || fieldForm.get('maxLength')?.touched)) {
+                <mat-error>Min length cannot be greater than max length</mat-error>
               }
             </mat-form-field>
 
@@ -121,13 +127,6 @@
                 <mat-error>Max length must be a whole number between 1 and 1000</mat-error>
               }
             </mat-form-field>
-
-            @if (fieldForm.hasError('minGreaterThanMax') &&
-                (fieldForm.get('minLength')?.touched || fieldForm.get('maxLength')?.touched)) {
-              <mat-error class="cross-field-error">
-                Min length cannot be greater than max length
-              </mat-error>
-            }
           }
 
           @if (selectedFieldTypeId === fieldTypeEnum.Number || selectedFieldTypeId === fieldTypeEnum.Double || selectedFieldTypeId === fieldTypeEnum.Float) {

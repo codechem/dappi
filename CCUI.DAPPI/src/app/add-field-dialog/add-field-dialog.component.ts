@@ -5,11 +5,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { ErrorStateMatcher } from '@angular/material/core';
 import {
   FormsModule,
   Validators,
   FormBuilder,
   FormGroup,
+  FormControl,
+  FormGroupDirective,
+  NgForm,
   ReactiveFormsModule,
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -52,6 +56,20 @@ export interface AddFieldDialogData {
   maxValue?: number | null;
 }
 
+class MinLengthErrorStateMatcher implements ErrorStateMatcher {
+  constructor(private form: FormGroup) {}
+
+  isErrorState(control: FormControl | null, form: FormGroupDirective | NgForm | null): boolean {
+    const isSubmitted = !!form?.submitted;
+    const show = isSubmitted || !!control && (control.touched || control.dirty);
+    const controlInvalid = !!control && control.invalid && show;
+    const minInvalid = !!control?.hasError('invalidMinField');
+    const crossFieldInvalid = this.form.hasError('minGreaterThanMax') && !minInvalid;
+
+    return controlInvalid || (show && crossFieldInvalid);
+  }
+}
+
 @Component({
   selector: 'app-add-field-dialog',
   standalone: true,
@@ -89,6 +107,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   availableModels: { label: string; value: string }[] = [];
   availableEnums: string[] = [];
   selectedEnum: string = '';
+
+  minLengthErrorStateMatcher!: ErrorStateMatcher;
 
 
   fieldTypes: FieldType[] = [
@@ -243,6 +263,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       minValue: [data.minValue ?? null, [ModelValidators.validMinValue]],
       maxValue: [data.maxValue ?? null, [ModelValidators.validMaxValue]]
     }, { validators: [ModelValidators.minMaxValidator, ModelValidators.minMaxValueValidator] });
+
+    this.minLengthErrorStateMatcher = new MinLengthErrorStateMatcher(this.fieldForm);
     
     if (this.isEditMode && data.fieldType) {
       this.preselectFieldType(data.fieldType);
