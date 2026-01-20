@@ -22,11 +22,7 @@ public class FieldRequest
 
     public bool NoPastDates { get; set; } = false;
     
-    public int? MaxLength { get; set; }
+    public double? Min { get; set; }
     
-    public int? MinLength { get; set; }
-    
-    public double? MinValue { get; set; }
-    
-    public double? MaxValue { get; set; }
+    public double? Max { get; set; }
 }

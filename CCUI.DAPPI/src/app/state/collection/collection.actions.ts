@@ -8,10 +8,8 @@ export interface UpdateFieldPayload {
   hasIndex: boolean;
   regex?: string;
   noPastDates?: boolean;
-  minLength?: number | null;
-  maxLength?: number | null;
-  minValue?: number | null;
-  maxValue?: number | null;
+  min?: number | null;
+  max?: number | null;
 }
 
 export const loadPublishedCollectionTypes = createAction(

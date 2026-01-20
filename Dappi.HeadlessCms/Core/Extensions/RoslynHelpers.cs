@@ -97,22 +97,43 @@ namespace Dappi.HeadlessCms.Core.Extensions
         public static PropertyDeclarationSyntax WithLengthAttribute(this PropertyDeclarationSyntax property,
             string? minLength, string? maxLength)
         {
-            const int DefaultMaxLength = 1000;
-            
-            var min = string.IsNullOrEmpty(minLength) ? "0" : minLength;
-            var max = string.IsNullOrEmpty(maxLength) ? DefaultMaxLength.ToString() : maxLength;
-            
-            var attribute = SyntaxFactory.Attribute(SyntaxFactory.ParseName("Length"));
-            var arguments = new[]
+            var hasMin = !string.IsNullOrWhiteSpace(minLength);
+            var hasMax = !string.IsNullOrWhiteSpace(maxLength);
+
+            if (!hasMin && !hasMax)
             {
-                SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression(min)),
-                SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression(max))
-            };
-            
+                return property;
+            }
+
+            if (hasMin && hasMax)
+            {
+                var lengthAttribute = SyntaxFactory.Attribute(SyntaxFactory.ParseName("Length"));
+                var lengthArguments = new[]
+                {
+                    SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression(minLength!)),
+                    SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression(maxLength!))
+                };
+
+                lengthAttribute = lengthAttribute.WithArgumentList(
+                    SyntaxFactory.AttributeArgumentList(SyntaxFactory.SeparatedList(lengthArguments))
+                );
+
+                var lengthAttributeList = SyntaxFactory.AttributeList(
+                    SyntaxFactory.SingletonSeparatedList(lengthAttribute));
+                return property.AddAttributeLists(lengthAttributeList);
+            }
+
+            var attributeName = hasMin ? "MinLength" : "MaxLength";
+            var attributeValue = hasMin ? minLength! : maxLength!;
+            var attribute = SyntaxFactory.Attribute(SyntaxFactory.ParseName(attributeName));
             attribute = attribute.WithArgumentList(
-                SyntaxFactory.AttributeArgumentList(SyntaxFactory.SeparatedList(arguments))
+                SyntaxFactory.AttributeArgumentList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression(attributeValue))
+                    )
+                )
             );
-            
+
             var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
             return property.AddAttributeLists(attributeList);
         }

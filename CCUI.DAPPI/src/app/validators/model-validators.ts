@@ -203,52 +203,33 @@ export class ModelValidators {
     }
   }
 
-  static validMinField(control: AbstractControl): ValidationErrors | null {
+  static validMinTextValue(control: AbstractControl): ValidationErrors | null {
     const value = control.value;
 
     if (value === null || value === undefined || value === '') {
       return null;
     }
 
-    const intValue = Number(value);
+    const numValue = Number(value);
 
-    if (
-      !Number.isInteger(intValue) ||
-      intValue < 1 ||
-      intValue > 1000
-    ) {
-      return { invalidMinField: true };
+    if (!Number.isInteger(numValue) || numValue < 0) {
+      return { invalidMinTextValue: true };
     }
 
     return null;
   }
 
-  static validMaxField(control: AbstractControl): ValidationErrors | null {
+  static validMaxTextValue(control: AbstractControl): ValidationErrors | null {
     const value = control.value;
 
     if (value === null || value === undefined || value === '') {
       return null;
     }
 
-    const intValue = Number(value);
+    const numValue = Number(value);
 
-    if (
-      !Number.isInteger(intValue) ||
-      intValue < 1 ||
-      intValue > 1000
-    ) {
-      return { invalidMaxField: true };
-    }
-
-    return null;
-  }
-
-  static minMaxValidator(control: AbstractControl): ValidationErrors | null {
-    const minLength = control.get('minLength')?.value;
-    const maxLength = control.get('maxLength')?.value;
-
-    if (minLength && maxLength && Number(minLength) > Number(maxLength)) {
-      return { minGreaterThanMax: true };
+    if (!Number.isInteger(numValue) || numValue < 0) {
+      return { invalidMaxTextValue: true };
     }
 
     return null;
@@ -287,8 +268,8 @@ export class ModelValidators {
   }
 
   static minMaxValueValidator(control: AbstractControl): ValidationErrors | null {
-    const minValue = control.get('minValue')?.value;
-    const maxValue = control.get('maxValue')?.value;
+    const minValue = control.get('min')?.value;
+    const maxValue = control.get('max')?.value;
 
     if (minValue !== null && minValue !== undefined && minValue !== '' &&
         maxValue !== null && maxValue !== undefined && maxValue !== '' &&

@@ -14,10 +14,8 @@ export interface FieldItem {
   hasIndex?: boolean;
   regex?: string;
   noPastDates?: boolean;
-  minLength?: number;
-  maxLength?: number;
-  minValue?: number;
-  maxValue?: number;
+  min?: number;
+  max?: number;
 }
 
 

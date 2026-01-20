@@ -59,10 +59,8 @@ export interface ModelField {
   isRequired?: boolean;
   isEnum?: boolean;
   regex?: string;
-  minLength?: number;
-  maxLength?: number;
-  minValue?: number;
-  maxValue?: number;
+  min?: number;
+  max?: number;
   hasIndex?: boolean;
   noPastDates?: boolean;
 }

@@ -50,21 +50,19 @@ export interface AddFieldDialogData {
   hasIndex?: boolean;
   regex?: string;
   noPastDates?: boolean;
-  minLength?: number | null;
-  maxLength?: number | null;
-  minValue?: number | null;
-  maxValue?: number | null;
+  min?: number | null;
+  max?: number | null;
 }
 
-class MinLengthErrorStateMatcher implements ErrorStateMatcher {
+class MinValueErrorStateMatcher implements ErrorStateMatcher {
   constructor(private form: FormGroup) {}
 
   isErrorState(control: FormControl | null, form: FormGroupDirective | NgForm | null): boolean {
     const isSubmitted = !!form?.submitted;
     const show = isSubmitted || !!control && (control.touched || control.dirty);
     const controlInvalid = !!control && control.invalid && show;
-    const minInvalid = !!control?.hasError('invalidMinField');
-    const crossFieldInvalid = this.form.hasError('minGreaterThanMax') && !minInvalid;
+    const minInvalid = !!control?.hasError('invalidMinTextValue');
+    const crossFieldInvalid = this.form.hasError('minValueGreaterThanMaxValue') && !minInvalid;
 
     return controlInvalid || (show && crossFieldInvalid);
   }
@@ -108,7 +106,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   availableEnums: string[] = [];
   selectedEnum: string = '';
 
-  minLengthErrorStateMatcher!: ErrorStateMatcher;
+  minValueErrorStateMatcher!: ErrorStateMatcher;
 
 
   fieldTypes: FieldType[] = [
@@ -212,10 +210,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     relatedRelationName: [''],
     hasIndex: [false],
     noPastDates: [false],
-    minLength: [null, [Validators.min(0)]],
-    maxLength: [null, [Validators.min(0)]],
-    minValue: [null],
-    maxValue: [null],
+    min: [null],
+    max: [null],
   });
 
   selectedFieldTypeId: FieldTypeEnum | null = null;
@@ -258,13 +254,11 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       regex: [data.regex || '', [ModelValidators.validRegex]],
       hasIndex: [data.hasIndex || false],
       noPastDates: [data.noPastDates || false],
-      minLength: [data.minLength ?? null, [ModelValidators.validMinField]],
-      maxLength: [data.maxLength ?? null, [ModelValidators.validMaxField]],
-      minValue: [data.minValue ?? null, [ModelValidators.validMinValue]],
-      maxValue: [data.maxValue ?? null, [ModelValidators.validMaxValue]]
-    }, { validators: [ModelValidators.minMaxValidator, ModelValidators.minMaxValueValidator] });
+      min: [data.min ?? null, [ModelValidators.validMinValue]],
+      max: [data.max ?? null, [ModelValidators.validMaxValue]]
+    }, { validators: [ModelValidators.minMaxValueValidator] });
 
-    this.minLengthErrorStateMatcher = new MinLengthErrorStateMatcher(this.fieldForm);
+    this.minValueErrorStateMatcher = new MinValueErrorStateMatcher(this.fieldForm);
     
     if (this.isEditMode && data.fieldType) {
       this.preselectFieldType(data.fieldType);
@@ -273,6 +267,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       this.fieldForm.get('relatedModel')?.updateValueAndValidity();
       this.fieldForm.get('relatedRelationName')?.updateValueAndValidity();
     }
+
+    this.updateMinMaxValidators();
   }
 
   relationTypes: {
@@ -399,6 +395,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     this.fieldForm.get('relatedModel')?.updateValueAndValidity();
     this.fieldForm.get('relatedRelationName')?.updateValueAndValidity();
     this.selectedRelationTypeIndex = null;
+    this.updateMinMaxValidators();
   }
 
   onAddField(): void {
@@ -419,10 +416,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
         hasIndex: this.fieldForm.value.hasIndex,
         regex: this.isTextType() ? this.fieldForm.value.regex : undefined,
         noPastDates: this.isDateType() ? this.fieldForm.value.noPastDates : undefined,
-        minLength: this.isTextType() ? this.fieldForm.value.minLength : null,
-        maxLength: this.isTextType() ? this.fieldForm.value.maxLength : null,
-        minValue: this.isNumericType() ? this.fieldForm.value.minValue : null,
-        maxValue: this.isNumericType() ? this.fieldForm.value.maxValue : null,
+        min: (this.isTextType() || this.isNumericType()) ? this.fieldForm.value.min : null,
+        max: (this.isTextType() || this.isNumericType()) ? this.fieldForm.value.max : null,
       };
       
       this.dialogRef.close(result);
@@ -449,10 +444,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       regex: this.fieldForm.value.regex,
       hasIndex: this.fieldForm.value.hasIndex,
       noPastDates: this.fieldForm.value.noPastDates,
-      ...(this.selectedFieldTypeId === this.fieldTypeEnum.String && this.fieldForm.value.minLength && { minLength: this.fieldForm.value.minLength }),
-      ...(this.selectedFieldTypeId === this.fieldTypeEnum.String && this.fieldForm.value.maxLength && { maxLength: this.fieldForm.value.maxLength }),
-      ...((this.selectedFieldTypeId === this.fieldTypeEnum.Number || this.selectedFieldTypeId === this.fieldTypeEnum.Float || this.selectedFieldTypeId === this.fieldTypeEnum.Double) && this.fieldForm.value.minValue !== null && this.fieldForm.value.minValue !== undefined && this.fieldForm.value.minValue !== '' && { minValue: this.fieldForm.value.minValue }),
-      ...((this.selectedFieldTypeId === this.fieldTypeEnum.Number || this.selectedFieldTypeId === this.fieldTypeEnum.Float || this.selectedFieldTypeId === this.fieldTypeEnum.Double) && this.fieldForm.value.maxValue !== null && this.fieldForm.value.maxValue !== undefined && this.fieldForm.value.maxValue !== '' && { maxValue: this.fieldForm.value.maxValue })
+      ...((this.selectedFieldTypeId === this.fieldTypeEnum.String || this.selectedFieldTypeId === this.fieldTypeEnum.Number || this.selectedFieldTypeId === this.fieldTypeEnum.Float || this.selectedFieldTypeId === this.fieldTypeEnum.Double) && this.fieldForm.value.min !== null && this.fieldForm.value.min !== undefined && this.fieldForm.value.min !== '' && { min: this.fieldForm.value.min }),
+      ...((this.selectedFieldTypeId === this.fieldTypeEnum.String || this.selectedFieldTypeId === this.fieldTypeEnum.Number || this.selectedFieldTypeId === this.fieldTypeEnum.Float || this.selectedFieldTypeId === this.fieldTypeEnum.Double) && this.fieldForm.value.max !== null && this.fieldForm.value.max !== undefined && this.fieldForm.value.max !== '' && { max: this.fieldForm.value.max })
     };
 
     if (this.selectedFieldTypeId === this.fieldTypeEnum.Dropdown) {
@@ -518,9 +511,27 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       formValue.hasIndex !== this.data.hasIndex ||
       (this.isTextType() && formValue.regex !== (this.data.regex || '')) ||
       (this.isDateType() && formValue.noPastDates !== (this.data.noPastDates || false)) ||
-      (this.isTextType() && (formValue.minLength !== (this.data.minLength ?? null) || formValue.maxLength !== (this.data.maxLength ?? null))) ||
-      (this.isNumericType() && (formValue.minValue !== (this.data.minValue ?? null) || formValue.maxValue !== (this.data.maxValue ?? null)))
+      ((this.isTextType() || this.isNumericType()) && (formValue.min !== (this.data.min ?? null) || formValue.max !== (this.data.max ?? null)))
     );
+  }
+
+  private updateMinMaxValidators(): void {
+    const minValueControl = this.fieldForm.get('min');
+    const maxValueControl = this.fieldForm.get('max');
+
+    if (this.isTextType()) {
+      minValueControl?.setValidators([ModelValidators.validMinTextValue]);
+      maxValueControl?.setValidators([ModelValidators.validMaxTextValue]);
+    } else if (this.isNumericType()) {
+      minValueControl?.setValidators([ModelValidators.validMinValue]);
+      maxValueControl?.setValidators([ModelValidators.validMaxValue]);
+    } else {
+      minValueControl?.clearValidators();
+      maxValueControl?.clearValidators();
+    }
+
+    minValueControl?.updateValueAndValidity();
+    maxValueControl?.updateValueAndValidity();
   }
 
   private isTextType(): boolean {

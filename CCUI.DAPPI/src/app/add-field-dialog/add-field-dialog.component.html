@@ -92,21 +92,20 @@
               <input
                 matInput
                 type="number"
-                min="1"
-                max="1000"
+                min="0"
                 step="1"
                 placeholder="Enter min length"
-                formControlName="minLength"
-                [errorStateMatcher]="minLengthErrorStateMatcher"
+                formControlName="min"
+                [errorStateMatcher]="minValueErrorStateMatcher"
               />
 
-              @if (fieldForm.get('minLength')?.hasError('invalidMinField') &&
-                  fieldForm.get('minLength')?.touched) {
-                <mat-error>Min length must be a whole number between 1 and 1000</mat-error>
+              @if (fieldForm.get('min')?.hasError('invalidMinTextValue') &&
+                  fieldForm.get('min')?.touched) {
+                <mat-error>Min length must be a whole number 0 or greater</mat-error>
               }
-              @if (!fieldForm.get('minLength')?.hasError('invalidMinField') &&
-                  fieldForm.hasError('minGreaterThanMax') &&
-                  (fieldForm.get('minLength')?.touched || fieldForm.get('maxLength')?.touched)) {
+              @if (!fieldForm.get('min')?.hasError('invalidMinTextValue') &&
+                  fieldForm.hasError('minValueGreaterThanMaxValue') &&
+                  (fieldForm.get('min')?.touched || fieldForm.get('max')?.touched)) {
                 <mat-error>Min length cannot be greater than max length</mat-error>
               }
             </mat-form-field>
@@ -116,16 +115,15 @@
               <input
                 matInput
                 type="number"
-                formControlName="maxLength"
+                formControlName="max"
                 placeholder="Enter max length"
-                min="1"
-                max="1000"
+                min="0"
                 step="1"
               />
 
-              @if (fieldForm.get('maxLength')?.hasError('invalidMaxField') &&
-                  fieldForm.get('maxLength')?.touched) {
-                <mat-error>Max length must be a whole number between 1 and 1000</mat-error>
+              @if (fieldForm.get('max')?.hasError('invalidMaxTextValue') &&
+                  fieldForm.get('max')?.touched) {
+                <mat-error>Max length must be a whole number 0 or greater</mat-error>
               }
             </mat-form-field>
           }
@@ -137,12 +135,12 @@
                 matInput
                 type="number"
                 [attr.step]="selectedFieldTypeId === fieldTypeEnum.Number ? '1' : 'any'"
-                formControlName="minValue"
+                formControlName="min"
                 placeholder="Enter min value"
               />
 
-              @if (fieldForm.get('minValue')?.hasError('invalidMinValue') &&
-                  fieldForm.get('minValue')?.touched) {
+              @if (fieldForm.get('min')?.hasError('invalidMinValue') &&
+                  fieldForm.get('min')?.touched) {
                 <mat-error>Min value must be a valid number</mat-error>
               }
             </mat-form-field>
@@ -153,18 +151,18 @@
                 matInput
                 type="number"
                 [attr.step]="selectedFieldTypeId === fieldTypeEnum.Number ? '1' : 'any'"
-                formControlName="maxValue"
+                formControlName="max"
                 placeholder="Enter max value"
               />
 
-              @if (fieldForm.get('maxValue')?.hasError('invalidMaxValue') &&
-                  fieldForm.get('maxValue')?.touched) {
+              @if (fieldForm.get('max')?.hasError('invalidMaxValue') &&
+                  fieldForm.get('max')?.touched) {
                 <mat-error>Max value must be a valid number</mat-error>
               }
             </mat-form-field>
 
             @if (fieldForm.hasError('minValueGreaterThanMaxValue') &&
-                (fieldForm.get('minValue')?.touched || fieldForm.get('maxValue')?.touched)) {
+                (fieldForm.get('min')?.touched || fieldForm.get('max')?.touched)) {
               <mat-error class="cross-field-error">
                 Min value cannot be greater than max value
               </mat-error>

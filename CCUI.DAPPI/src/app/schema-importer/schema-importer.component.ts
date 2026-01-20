@@ -17,7 +17,7 @@ interface SchemaAttribute {
   allowedTypes?: string[];
   components?: string[];
   targetField?: string;
-  maxLength?: number;
+  max?: number;
   inversedBy?: string;
 }
 
@@ -76,7 +76,7 @@ export class SchemaImporterComponent {
       },
       "description": {
         "type": "text",
-        "maxLength": 80
+        "max": 80
       },
       "slug": {
         "type": "uid",
@@ -152,7 +152,7 @@ export class SchemaImporterComponent {
           allowedTypes: attr.allowedTypes,
           components: attr.components,
           targetField: attr.targetField,
-          maxLength: attr.maxLength,
+          max: attr.max ?? attr.maxLength,
           target: attr.target,
           relation: attr.relation,
           inversedBy: attr.inversedBy,
@@ -218,8 +218,8 @@ export class SchemaImporterComponent {
       return `Dynamic Zone (${attr.components.length} components)`;
     }
 
-    if (attr.type === 'text' && attr.maxLength) {
-      return `Text (max ${attr.maxLength} chars)`;
+    if (attr.type === 'text' && attr.max) {
+      return `Text (max ${attr.max} chars)`;
     }
 
     if (attr.type === 'uid' && attr.targetField) {
