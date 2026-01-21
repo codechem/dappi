@@ -7,5 +7,4 @@ public class AppDbContext : DappiDbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
-
 }
