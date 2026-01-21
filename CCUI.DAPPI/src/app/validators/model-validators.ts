@@ -237,10 +237,6 @@ export class ModelValidators {
 
   static validNumericInput(control: AbstractControl): ValidationErrors | null {
     const value = control.value;
-    
-    if (value === null || value === undefined || value === '') {
-      return null;
-    }
 
     const valueString = String(value);
     const numericRegex = /^-?\d+(\.\d+)?$/;

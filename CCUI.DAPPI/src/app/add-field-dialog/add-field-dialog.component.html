@@ -133,7 +133,9 @@
               <mat-label>Min Value</mat-label>
               <input
                 matInput
-                type="number"
+                type="text"
+                inputmode="decimal"
+                pattern="^-?\d+(\.\d+)?$"
                 [attr.step]="selectedFieldTypeId === fieldTypeEnum.Number ? '1' : 'any'"
                 formControlName="min"
                 placeholder="Enter min value"
@@ -161,7 +163,8 @@
               <mat-label>Max Value</mat-label>
               <input
                 matInput
-                type="number"
+                type="text"
+                inputmode="decimal"
                 [attr.step]="selectedFieldTypeId === fieldTypeEnum.Number ? '1' : 'any'"
                 formControlName="max"
                 placeholder="Enter max value"
