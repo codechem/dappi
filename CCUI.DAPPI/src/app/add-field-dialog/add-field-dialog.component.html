@@ -149,7 +149,7 @@
               }
               @if (fieldForm.get('min')?.hasError('invalidNumberInput') &&
                   fieldForm.get('min')?.touched) {
-                <mat-error>Invalid input</mat-error>
+                <mat-error>Invalid number input</mat-error>
               }
               @if (!fieldForm.get('min')?.hasError('invalidMinValue') &&
                   !fieldForm.get('min')?.hasError('invalidNumberInput') &&
@@ -177,7 +177,7 @@
               }
               @if (fieldForm.get('max')?.hasError('invalidNumberInput') &&
                   fieldForm.get('max')?.touched) {
-                <mat-error>Invalid input</mat-error>
+                <mat-error>Invalid number input</mat-error>
               }
             </mat-form-field>
 
