@@ -83,8 +83,6 @@ const CSHARP_KEYWORDS = [
   'while',
 ];
 
-const INT32_MAX = 2147483647;
-
 export class ModelValidators {
   static pascalCase(control: AbstractControl): ValidationErrors | null {
     const value = control.value;
