@@ -153,6 +153,7 @@
                 <mat-error>Invalid number input</mat-error>
               }
               @if (fieldForm.get('min')?.hasError('invalidWholeNumberInput') &&
+                  !fieldForm.get('min')?.hasError('invalidNumberInput') &&
                   fieldForm.get('min')?.touched) {
                 <mat-error>Min value must be a whole number</mat-error>
               }
@@ -188,6 +189,7 @@
                 <mat-error>Invalid number input</mat-error>
               }
               @if (fieldForm.get('max')?.hasError('invalidWholeNumberInput') &&
+                  !fieldForm.get('max')?.hasError('invalidNumberInput') &&
                   fieldForm.get('max')?.touched) {
                 <mat-error>Max value must be a whole number</mat-error>
               }
