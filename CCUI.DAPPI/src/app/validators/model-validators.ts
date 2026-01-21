@@ -236,11 +236,32 @@ export class ModelValidators {
   static validNumericInput(control: AbstractControl): ValidationErrors | null {
     const value = control.value;
 
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
     const valueString = String(value);
     const numericRegex = /^-?\d+(\.\d+)?$/;
 
     if (!numericRegex.test(valueString)) {
       return { invalidNumberInput: true };
+    }
+
+    return null;
+  }
+
+  static validWholeNumberInput(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const valueString = String(value);
+    const wholeNumberRegex = /^-?\d+$/;
+
+    if (!wholeNumberRegex.test(valueString)) {
+      return { invalidWholeNumberInput: true };
     }
 
     return null;

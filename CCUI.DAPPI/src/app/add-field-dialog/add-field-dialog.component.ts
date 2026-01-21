@@ -536,8 +536,12 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       minValueControl?.setValidators([ModelValidators.validMinTextValue]);
       maxValueControl?.setValidators([ModelValidators.validMaxTextValue]);
     } else if (this.isNumericType()) {
-      minValueControl?.setValidators([ModelValidators.validMinValue, ModelValidators.validNumericInput]);
-      maxValueControl?.setValidators([ModelValidators.validMaxValue, ModelValidators.validNumericInput]);
+      const numericValidators = this.selectedFieldTypeId === FieldTypeEnum.Number
+        ? [ModelValidators.validNumericInput, ModelValidators.validWholeNumberInput]
+        : [ModelValidators.validNumericInput];
+
+      minValueControl?.setValidators([ModelValidators.validMinValue, ...numericValidators]);
+      maxValueControl?.setValidators([ModelValidators.validMaxValue, ...numericValidators]);
     } else {
       minValueControl?.clearValidators();
       maxValueControl?.clearValidators();

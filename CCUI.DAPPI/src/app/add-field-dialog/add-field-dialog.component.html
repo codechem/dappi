@@ -135,7 +135,7 @@
                 matInput
                 type="text"
                 inputmode="decimal"
-                pattern="^-?\d+(\.\d+)?$"
+                [attr.pattern]="selectedFieldTypeId === fieldTypeEnum.Number ? '^-?\\d+$' : '^-?\\d+(\\.\\d+)?$'"
                 [attr.step]="selectedFieldTypeId === fieldTypeEnum.Number ? '1' : 'any'"
                 formControlName="min"
                 placeholder="Enter min value"
@@ -144,6 +144,7 @@
 
               @if (fieldForm.get('min')?.hasError('invalidMinValue') &&
                   !fieldForm.get('min')?.hasError('invalidNumberInput') &&
+                  !fieldForm.get('min')?.hasError('invalidWholeNumberInput') &&
                   fieldForm.get('min')?.touched) {
                 <mat-error>Min value must be a valid number</mat-error>
               }
@@ -151,8 +152,13 @@
                   fieldForm.get('min')?.touched) {
                 <mat-error>Invalid number input</mat-error>
               }
+              @if (fieldForm.get('min')?.hasError('invalidWholeNumberInput') &&
+                  fieldForm.get('min')?.touched) {
+                <mat-error>Min value must be a whole number</mat-error>
+              }
               @if (!fieldForm.get('min')?.hasError('invalidMinValue') &&
                   !fieldForm.get('min')?.hasError('invalidNumberInput') &&
+                  !fieldForm.get('min')?.hasError('invalidWholeNumberInput') &&
                   fieldForm.hasError('minValueGreaterThanMaxValue') &&
                   (fieldForm.get('min')?.touched || fieldForm.get('max')?.touched)) {
                 <mat-error>Min value cannot be greater than max value</mat-error>
@@ -165,6 +171,7 @@
                 matInput
                 type="text"
                 inputmode="decimal"
+                [attr.pattern]="selectedFieldTypeId === fieldTypeEnum.Number ? '^-?\\d+$' : '^-?\\d+(\\.\\d+)?$'"
                 [attr.step]="selectedFieldTypeId === fieldTypeEnum.Number ? '1' : 'any'"
                 formControlName="max"
                 placeholder="Enter max value"
@@ -172,12 +179,17 @@
 
               @if (fieldForm.get('max')?.hasError('invalidMaxValue') &&
                   !fieldForm.get('max')?.hasError('invalidNumberInput') &&
+                  !fieldForm.get('max')?.hasError('invalidWholeNumberInput') &&
                   fieldForm.get('max')?.touched) {
                 <mat-error>Max value must be a valid number</mat-error>
               }
               @if (fieldForm.get('max')?.hasError('invalidNumberInput') &&
                   fieldForm.get('max')?.touched) {
                 <mat-error>Invalid number input</mat-error>
+              }
+              @if (fieldForm.get('max')?.hasError('invalidWholeNumberInput') &&
+                  fieldForm.get('max')?.touched) {
+                <mat-error>Max value must be a whole number</mat-error>
               }
             </mat-form-field>
 
