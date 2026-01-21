@@ -259,8 +259,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       regex: [data.regex || '', [ModelValidators.validRegex]],
       hasIndex: [data.hasIndex || false],
       noPastDates: [data.noPastDates || false],
-      min: [data.min ?? null, [ModelValidators.validMinValue]],
-      max: [data.max ?? null, [ModelValidators.validMaxValue]]
+      min: [data.min ?? null, [ModelValidators.validMinValue, ModelValidators.validNumericInput]],
+      max: [data.max ?? null, [ModelValidators.validMaxValue, ModelValidators.validNumericInput]]
     }, { validators: [ModelValidators.minMaxValueValidator] });
 
     this.minTextErrorStateMatcher = new MinValueErrorStateMatcher(
@@ -536,8 +536,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       minValueControl?.setValidators([ModelValidators.validMinTextValue]);
       maxValueControl?.setValidators([ModelValidators.validMaxTextValue]);
     } else if (this.isNumericType()) {
-      minValueControl?.setValidators([ModelValidators.validMinValue]);
-      maxValueControl?.setValidators([ModelValidators.validMaxValue]);
+      minValueControl?.setValidators([ModelValidators.validMinValue, ModelValidators.validNumericInput]);
+      maxValueControl?.setValidators([ModelValidators.validMaxValue, ModelValidators.validNumericInput]);
     } else {
       minValueControl?.clearValidators();
       maxValueControl?.clearValidators();

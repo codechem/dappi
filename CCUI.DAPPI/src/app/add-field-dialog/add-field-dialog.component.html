@@ -78,7 +78,7 @@
 
           @if(selectedFieldTypeId === fieldTypeEnum.String) {
             <mat-form-field appearance="outline" class="input-field">
-              <mat-label>Regex Pattern*</mat-label>
+              <mat-label>Regex Pattern</mat-label>
               <input matInput formControlName="regex" placeholder="Enter regex pattern" />
               @if (fieldForm.get('regex')?.hasError('invalidRegex') && fieldForm.get('regex')?.touched) {
                 <mat-error>Invalid regex</mat-error>
@@ -141,10 +141,16 @@
               />
 
               @if (fieldForm.get('min')?.hasError('invalidMinValue') &&
+                  !fieldForm.get('min')?.hasError('invalidNumberInput') &&
                   fieldForm.get('min')?.touched) {
                 <mat-error>Min value must be a valid number</mat-error>
               }
+              @if (fieldForm.get('min')?.hasError('invalidNumberInput') &&
+                  fieldForm.get('min')?.touched) {
+                <mat-error>Invalid input</mat-error>
+              }
               @if (!fieldForm.get('min')?.hasError('invalidMinValue') &&
+                  !fieldForm.get('min')?.hasError('invalidNumberInput') &&
                   fieldForm.hasError('minValueGreaterThanMaxValue') &&
                   (fieldForm.get('min')?.touched || fieldForm.get('max')?.touched)) {
                 <mat-error>Min value cannot be greater than max value</mat-error>
@@ -162,8 +168,13 @@
               />
 
               @if (fieldForm.get('max')?.hasError('invalidMaxValue') &&
+                  !fieldForm.get('max')?.hasError('invalidNumberInput') &&
                   fieldForm.get('max')?.touched) {
                 <mat-error>Max value must be a valid number</mat-error>
+              }
+              @if (fieldForm.get('max')?.hasError('invalidNumberInput') &&
+                  fieldForm.get('max')?.touched) {
+                <mat-error>Invalid input</mat-error>
               }
             </mat-form-field>
 
