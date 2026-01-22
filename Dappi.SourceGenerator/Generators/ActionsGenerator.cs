@@ -316,25 +316,34 @@ namespace Dappi.SourceGenerator.Generators
                                  if (property.PropertyType != typeof(MediaInfo))
                                      return BadRequest($"Property {fieldName} must be a MediaInfo type to store media information.");
 
-                                 var tcs = new TaskCompletionSource<MediaInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
-                                 var request = new MediaUploadRequest(id, file, tcs);
-                                 await queue.EnqueueAsync(request);
+                                 var mediaInfo = new MediaInfo
+                                 {
+                                     Id = Guid.NewGuid(),
+                                     Url = null,
+                                     OriginalFileName = file.FileName,
+                                     FileSize = file.Length,
+                                     UploadDate = DateTime.UtcNow,
+                                     Status = MediaUploadStatus.Pending
+                                 };
                                  
-                                 MediaInfo mediaInfo;
-                                 try
-                                 {
-                                     mediaInfo = await tcs.Task;
+                                 try { 
+                                    uploadService.ValidateFile(file);
                                  }
-                                 catch (Exception ex)
+                                 catch(Exception ex)
                                  {
-                                     return StatusCode(500, $"Upload failed: {ex.Message}");
-                                 }   
+                                     return BadRequest(new {message = ex.Message});
+                                 }
                                  
                                  property.SetValue(entity, mediaInfo);
 
                                  await dbContext.Set<MediaInfo>().AddAsync(mediaInfo);
                                  await dbContext.SaveChangesAsync();
 
+                                 await queue.EnqueueAsync(new MediaUploadRequest(
+                                     mediaInfo.Id,
+                                     file
+                                 ));
+                                 
                                  dbContext.Entry(entity).State = EntityState.Modified;
                                  await dbContext.SaveChangesAsync();
 

@@ -1,29 +1,43 @@
+using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
-using Dappi.HeadlessCms.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Dappi.HeadlessCms.Background
 {
     public class MediaUploadWorker(
         IMediaUploadQueue queue,
-        IMediaUploadService mediaService)
+        IServiceScopeFactory scopeFactory)
         : BackgroundService
     {
         protected override async Task ExecuteAsync(
             CancellationToken stoppingToken)
         {
-            await foreach (var request in queue.GetReader().ReadAllAsync(stoppingToken))
+            while (!stoppingToken.IsCancellationRequested)
             {
-                try
+                using var scope = scopeFactory.CreateScope();
+                var uploadService = scope.ServiceProvider.GetRequiredService<IMediaUploadService>();
+                await foreach (var request in queue.GetReader().ReadAllAsync(stoppingToken))
                 {
-                    var result = await mediaService.SaveFileAsync(
-                        request.Id, request.File);
+                    var status = MediaUploadStatus.Pending;
+                    try
+                    {
+                        await uploadService.SaveFileAsync(
+                            request.MediaId,
+                            request.File);
 
-                    request.Completion.SetResult(result);
-                }
-                catch (Exception ex)
-                {
-                    request.Completion.SetException(ex);
+                        status = MediaUploadStatus.Completed;
+                    }
+                    catch
+                    {
+                        status = MediaUploadStatus.Failed;
+                    }
+                    finally
+                    {
+                        await uploadService.UpdateStatusAsync(
+                            request.MediaId,
+                            status);
+                    }
                 }
             }
         }

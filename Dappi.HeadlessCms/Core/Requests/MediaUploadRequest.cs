@@ -7,8 +7,7 @@ namespace Dappi.HeadlessCms.Core.Requests
     // in our UploadMediaAsync we have the id of the entity, the file, and we return mediaInfo
     // our channel can only do one job and that is why we wrap these in a request
     public record MediaUploadRequest(
-        Guid Id,
-        IFormFile File,
-        TaskCompletionSource<MediaInfo> Completion
+        Guid MediaId,
+        IFormFile File
     );
 }
