@@ -210,7 +210,9 @@ public class ModelsController : ControllerBase
                             Type = request.FieldType,
                             IsRequired = request.IsRequired,
                             Regex = request.Regex,
-                            NoPastDates = request.NoPastDates
+                            NoPastDates = request.NoPastDates,
+                            Min = request.Min?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            Max = request.Max?.ToString(System.Globalization.CultureInfo.InvariantCulture)
                         };
                         _domainModelEditor.AddProperty(property);
                         _domainModelEditor.AddEnumNamespaceIfMissing(property.DomainModel);
@@ -228,7 +230,9 @@ public class ModelsController : ControllerBase
                 Type = request.FieldType,
                 IsRequired = request.IsRequired,
                 Regex = request.Regex,
-                NoPastDates = request.NoPastDates
+                NoPastDates = request.NoPastDates,
+                Min = request.Min?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                Max = request.Max?.ToString(System.Globalization.CultureInfo.InvariantCulture)
             };
             _domainModelEditor.AddProperty(property);
         }
@@ -338,7 +342,9 @@ public class ModelsController : ControllerBase
             Regex = request.Regex,
             NoPastDates = request.NoPastDates,
             RelationKind = propertyToUpdate.RelationKind,
-            RelatedDomainModel = propertyToUpdate.RelatedDomainModel
+            RelatedDomainModel = propertyToUpdate.RelatedDomainModel,
+            Min = request.Min?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Max = request.Max?.ToString(System.Globalization.CultureInfo.InvariantCulture)
         });
 
         if (request.OldFieldName != request.NewFieldName)

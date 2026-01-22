@@ -159,7 +159,7 @@ export class ModelValidators {
     };
   }
 
-   static fieldNameSameAsModel(modelName:string) {
+  static fieldNameSameAsModel(modelName:string) {
     return (control: AbstractControl) : ValidationErrors | null => {
       const value = control.value;
 
@@ -199,5 +199,116 @@ export class ModelValidators {
     } catch (e) {
       return { invalidRegex: true };
     }
+  }
+
+  static validMinTextValue(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const numValue = Number(value);
+
+    if (!Number.isInteger(numValue) || numValue < 0) {
+      return { invalidMinTextValue: true };
+    }
+
+    return null;
+  }
+
+  static validMaxTextValue(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const numValue = Number(value);
+
+    if (!Number.isInteger(numValue) || numValue < 0) {
+      return { invalidMaxTextValue: true };
+    }
+
+    return null;
+  }
+
+  static validNumericInput(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const valueString = String(value);
+    const numericRegex = /^-?\d+(\.\d+)?$/;
+
+    if (!numericRegex.test(valueString)) {
+      return { invalidNumberInput: true };
+    }
+
+    return null;
+  }
+
+  static validWholeNumberInput(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const valueString = String(value);
+    const wholeNumberRegex = /^-?\d+$/;
+
+    if (!wholeNumberRegex.test(valueString)) {
+      return { invalidWholeNumberInput: true };
+    }
+
+    return null;
+  }
+
+  static validMinValue(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const numValue = Number(value);
+
+    if (isNaN(numValue)) {
+      return { invalidMinValue: true };
+    }
+
+    return null;
+  }
+
+  static validMaxValue(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const numValue = Number(value);
+
+    if (isNaN(numValue)) {
+      return { invalidMaxValue: true };
+    }
+
+    return null;
+  }
+
+  static minMaxValueValidator(control: AbstractControl): ValidationErrors | null {
+    const minValue = control.get('min')?.value;
+    const maxValue = control.get('max')?.value;
+
+    if (minValue !== null && minValue !== undefined && minValue !== '' &&
+        maxValue !== null && maxValue !== undefined && maxValue !== '' &&
+        Number(minValue) > Number(maxValue)) {
+      return { minValueGreaterThanMaxValue: true };
+    }
+
+    return null;
   }
 }

@@ -5,11 +5,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { ErrorStateMatcher } from '@angular/material/core';
 import {
   FormsModule,
   Validators,
   FormBuilder,
   FormGroup,
+  FormControl,
+  FormGroupDirective,
+  NgForm,
   ReactiveFormsModule,
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -46,6 +50,26 @@ export interface AddFieldDialogData {
   hasIndex?: boolean;
   regex?: string;
   noPastDates?: boolean;
+  min?: number | null;
+  max?: number | null;
+}
+
+class MinValueErrorStateMatcher implements ErrorStateMatcher {
+  constructor(
+    private form: FormGroup,
+    private invalidErrorKey: string,
+    private crossFieldErrorKey: string
+  ) {}
+
+  isErrorState(control: FormControl | null, form: FormGroupDirective | NgForm | null): boolean {
+    const isSubmitted = !!form?.submitted;
+    const show = isSubmitted || !!control && (control.touched || control.dirty);
+    const controlInvalid = !!control && control.invalid && show;
+    const minInvalid = !!control?.hasError(this.invalidErrorKey);
+    const crossFieldInvalid = this.form.hasError(this.crossFieldErrorKey) && !minInvalid;
+
+    return controlInvalid || (show && crossFieldInvalid);
+  }
 }
 
 @Component({
@@ -85,6 +109,9 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
   availableModels: { label: string; value: string }[] = [];
   availableEnums: string[] = [];
   selectedEnum: string = '';
+
+  minTextErrorStateMatcher!: ErrorStateMatcher;
+  minNumberErrorStateMatcher!: ErrorStateMatcher;
 
 
   fieldTypes: FieldType[] = [
@@ -161,13 +188,21 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       netType: this.selectedRelationType,
     },
     {
-      type: FieldTypeEnum.Number,
+      type: FieldTypeEnum.Float,
       icon: '123',
-      label: 'Decimal Number',
-      description: 'For decimal numerical values and calculations',
+      label: 'Float Number',
+      description: 'For float numerical values and calculations',
       value: 'float',
       netType: 'float',
     },
+    {
+      type: FieldTypeEnum.Double,
+      icon: '123',
+      label: 'Double Number',
+      description: 'For double numerical values and calculations',
+      value: 'double',
+      netType: 'double',
+    }
   ];
   private subscription: Subscription = new Subscription();
 
@@ -180,6 +215,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     relatedRelationName: [''],
     hasIndex: [false],
     noPastDates: [false],
+    min: [null],
+    max: [null],
   });
 
   selectedFieldTypeId: FieldTypeEnum | null = null;
@@ -221,8 +258,21 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       relatedRelationName: [''],
       regex: [data.regex || '', [ModelValidators.validRegex]],
       hasIndex: [data.hasIndex || false],
-      noPastDates: [data.noPastDates || false]
-    });
+      noPastDates: [data.noPastDates || false],
+      min: [data.min ?? null, [ModelValidators.validMinValue, ModelValidators.validNumericInput]],
+      max: [data.max ?? null, [ModelValidators.validMaxValue, ModelValidators.validNumericInput]]
+    }, { validators: [ModelValidators.minMaxValueValidator] });
+
+    this.minTextErrorStateMatcher = new MinValueErrorStateMatcher(
+      this.fieldForm,
+      'invalidMinTextValue',
+      'minValueGreaterThanMaxValue'
+    );
+    this.minNumberErrorStateMatcher = new MinValueErrorStateMatcher(
+      this.fieldForm,
+      'invalidMinValue',
+      'minValueGreaterThanMaxValue'
+    );
     
     if (this.isEditMode && data.fieldType) {
       this.preselectFieldType(data.fieldType);
@@ -231,6 +281,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       this.fieldForm.get('relatedModel')?.updateValueAndValidity();
       this.fieldForm.get('relatedRelationName')?.updateValueAndValidity();
     }
+
+    this.updateMinMaxValidators();
   }
 
   relationTypes: {
@@ -357,6 +409,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     this.fieldForm.get('relatedModel')?.updateValueAndValidity();
     this.fieldForm.get('relatedRelationName')?.updateValueAndValidity();
     this.selectedRelationTypeIndex = null;
+    this.updateMinMaxValidators();
   }
 
   onAddField(): void {
@@ -377,6 +430,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
         hasIndex: this.fieldForm.value.hasIndex,
         regex: this.isTextType() ? this.fieldForm.value.regex : undefined,
         noPastDates: this.isDateType() ? this.fieldForm.value.noPastDates : undefined,
+        min: (this.isTextType() || this.isNumericType()) ? this.fieldForm.value.min : null,
+        max: (this.isTextType() || this.isNumericType()) ? this.fieldForm.value.max : null,
       };
       
       this.dialogRef.close(result);
@@ -403,6 +458,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       regex: this.fieldForm.value.regex,
       hasIndex: this.fieldForm.value.hasIndex,
       noPastDates: this.fieldForm.value.noPastDates,
+      ...this.buildMinMaxPayload(),
     };
 
     if (this.selectedFieldTypeId === this.fieldTypeEnum.Dropdown) {
@@ -437,7 +493,8 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
     const typeMapping: Record<string, FieldTypeEnum> = {
       'string': FieldTypeEnum.String,
       'int': FieldTypeEnum.Number,
-      'float': FieldTypeEnum.Number,
+      'float': FieldTypeEnum.Float,
+      'double': FieldTypeEnum.Double,
       'DateOnly': FieldTypeEnum.Date,
       'DateTime': FieldTypeEnum.DateTime,
       'bool': FieldTypeEnum.Checkbox,
@@ -466,8 +523,32 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       formValue.requiredField !== this.data.isRequired ||
       formValue.hasIndex !== this.data.hasIndex ||
       (this.isTextType() && formValue.regex !== (this.data.regex || '')) ||
-      (this.isDateType() && formValue.noPastDates !== (this.data.noPastDates || false))
+      (this.isDateType() && formValue.noPastDates !== (this.data.noPastDates || false)) ||
+      ((this.isTextType() || this.isNumericType()) && (formValue.min !== (this.data.min ?? null) || formValue.max !== (this.data.max ?? null)))
     );
+  }
+
+  private updateMinMaxValidators(): void {
+    const minValueControl = this.fieldForm.get('min');
+    const maxValueControl = this.fieldForm.get('max');
+
+    if (this.isTextType()) {
+      minValueControl?.setValidators([ModelValidators.validMinTextValue]);
+      maxValueControl?.setValidators([ModelValidators.validMaxTextValue]);
+    } else if (this.isNumericType()) {
+      const numericValidators = this.selectedFieldTypeId === FieldTypeEnum.Number
+        ? [ModelValidators.validNumericInput, ModelValidators.validWholeNumberInput]
+        : [ModelValidators.validNumericInput];
+
+      minValueControl?.setValidators([ModelValidators.validMinValue, ...numericValidators]);
+      maxValueControl?.setValidators([ModelValidators.validMaxValue, ...numericValidators]);
+    } else {
+      minValueControl?.clearValidators();
+      maxValueControl?.clearValidators();
+    }
+
+    minValueControl?.updateValueAndValidity();
+    maxValueControl?.updateValueAndValidity();
   }
 
   private isTextType(): boolean {
@@ -476,5 +557,39 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
 
   private isDateType(): boolean {
     return this.selectedFieldTypeId === FieldTypeEnum.Date || this.selectedFieldTypeId === FieldTypeEnum.DateTime;
+  }
+
+  private isNumericType(): boolean {
+    return this.selectedFieldTypeId === FieldTypeEnum.Number || 
+           this.selectedFieldTypeId === FieldTypeEnum.Float || 
+           this.selectedFieldTypeId === FieldTypeEnum.Double;
+  }
+
+  private isMinMaxApplicable(): boolean {
+    return this.isTextType() || this.isNumericType();
+  }
+
+  private hasValue(value: unknown): boolean {
+    return value !== null && value !== undefined && value !== '';
+  }
+
+  private buildMinMaxPayload(): { min?: number; max?: number } {
+    if (!this.isMinMaxApplicable()) {
+      return {};
+    }
+
+    const min = this.fieldForm.value.min;
+    const max = this.fieldForm.value.max;
+    const payload: { min?: number; max?: number } = {};
+
+    if (this.hasValue(min)) {
+      payload.min = min;
+    }
+
+    if (this.hasValue(max)) {
+      payload.max = max;
+    }
+
+    return payload;
   }
 }

@@ -78,12 +78,123 @@
 
           @if(selectedFieldTypeId === fieldTypeEnum.String) {
             <mat-form-field appearance="outline" class="input-field">
-              <mat-label>Regex Pattern*</mat-label>
+              <mat-label>Regex Pattern</mat-label>
               <input matInput formControlName="regex" placeholder="Enter regex pattern" />
               @if (fieldForm.get('regex')?.hasError('invalidRegex') && fieldForm.get('regex')?.touched) {
                 <mat-error>Invalid regex</mat-error>
               }
             </mat-form-field>
+          }
+
+          @if (selectedFieldTypeId === fieldTypeEnum.String) {
+            <mat-form-field appearance="outline" class="input-field">
+              <mat-label>Min Length</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Enter min length"
+                formControlName="min"
+                [errorStateMatcher]="minTextErrorStateMatcher"
+              />
+
+              @if (fieldForm.get('min')?.hasError('invalidMinTextValue') &&
+                  fieldForm.get('min')?.touched) {
+                <mat-error>Min length must be a whole number 0 or greater</mat-error>
+              }
+              @if (!fieldForm.get('min')?.hasError('invalidMinTextValue') &&
+                  fieldForm.hasError('minValueGreaterThanMaxValue') &&
+                  (fieldForm.get('min')?.touched || fieldForm.get('max')?.touched)) {
+                <mat-error>Min length cannot be greater than max length</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="input-field">
+              <mat-label>Max Length</mat-label>
+              <input
+                matInput
+                type="number"
+                formControlName="max"
+                placeholder="Enter max length"
+                min="0"
+                step="1"
+              />
+
+              @if (fieldForm.get('max')?.hasError('invalidMaxTextValue') &&
+                  fieldForm.get('max')?.touched) {
+                <mat-error>Max length must be a whole number 0 or greater</mat-error>
+              }
+            </mat-form-field>
+          }
+
+          @if (selectedFieldTypeId === fieldTypeEnum.Number || selectedFieldTypeId === fieldTypeEnum.Double || selectedFieldTypeId === fieldTypeEnum.Float) {
+            <mat-form-field appearance="outline" class="input-field">
+              <mat-label>Min Value</mat-label>
+              <input
+                matInput
+                type="text"
+                inputmode="decimal"
+                [attr.pattern]="selectedFieldTypeId === fieldTypeEnum.Number ? '^-?\\d+$' : '^-?\\d+(\\.\\d+)?$'"
+                [attr.step]="selectedFieldTypeId === fieldTypeEnum.Number ? '1' : 'any'"
+                formControlName="min"
+                placeholder="Enter min value"
+                [errorStateMatcher]="minNumberErrorStateMatcher"
+              />
+
+              @if (fieldForm.get('min')?.hasError('invalidMinValue') &&
+                  !fieldForm.get('min')?.hasError('invalidNumberInput') &&
+                  !fieldForm.get('min')?.hasError('invalidWholeNumberInput') &&
+                  fieldForm.get('min')?.touched) {
+                <mat-error>Min value must be a valid number</mat-error>
+              }
+              @if (fieldForm.get('min')?.hasError('invalidNumberInput') &&
+                  fieldForm.get('min')?.touched) {
+                <mat-error>Invalid number input</mat-error>
+              }
+              @if (fieldForm.get('min')?.hasError('invalidWholeNumberInput') &&
+                  !fieldForm.get('min')?.hasError('invalidNumberInput') &&
+                  fieldForm.get('min')?.touched) {
+                <mat-error>Min value must be a whole number</mat-error>
+              }
+              @if (!fieldForm.get('min')?.hasError('invalidMinValue') &&
+                  !fieldForm.get('min')?.hasError('invalidNumberInput') &&
+                  !fieldForm.get('min')?.hasError('invalidWholeNumberInput') &&
+                  fieldForm.hasError('minValueGreaterThanMaxValue') &&
+                  (fieldForm.get('min')?.touched || fieldForm.get('max')?.touched)) {
+                <mat-error>Min value cannot be greater than max value</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="input-field">
+              <mat-label>Max Value</mat-label>
+              <input
+                matInput
+                type="text"
+                inputmode="decimal"
+                [attr.pattern]="selectedFieldTypeId === fieldTypeEnum.Number ? '^-?\\d+$' : '^-?\\d+(\\.\\d+)?$'"
+                [attr.step]="selectedFieldTypeId === fieldTypeEnum.Number ? '1' : 'any'"
+                formControlName="max"
+                placeholder="Enter max value"
+              />
+
+              @if (fieldForm.get('max')?.hasError('invalidMaxValue') &&
+                  !fieldForm.get('max')?.hasError('invalidNumberInput') &&
+                  !fieldForm.get('max')?.hasError('invalidWholeNumberInput') &&
+                  fieldForm.get('max')?.touched) {
+                <mat-error>Max value must be a valid number</mat-error>
+              }
+              @if (fieldForm.get('max')?.hasError('invalidNumberInput') &&
+                  fieldForm.get('max')?.touched) {
+                <mat-error>Invalid number input</mat-error>
+              }
+              @if (fieldForm.get('max')?.hasError('invalidWholeNumberInput') &&
+                  !fieldForm.get('max')?.hasError('invalidNumberInput') &&
+                  fieldForm.get('max')?.touched) {
+                <mat-error>Max value must be a whole number</mat-error>
+              }
+            </mat-form-field>
+
           }
         </div>
 

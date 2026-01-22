@@ -12,9 +12,22 @@ public class DappiPropertyInfo
 
 public class StringProperty : DappiPropertyInfo
 {
-    public int? MaxLength { get; set; }
-    public int? MinLength { get; set; }
+    [JsonPropertyName("min")]
+    public int? Min { get; set; }
+
+    [JsonPropertyName("max")]
+    public int? Max { get; set; }
+
     public string? Regex { get; set; }
+}
+
+public class NumberProperty : DappiPropertyInfo
+{
+    [JsonPropertyName("min")]
+    public double? Min { get; set; }
+
+    [JsonPropertyName("max")]
+    public double? Max { get; set; }
 }
 
 public class EnumProperty : DappiPropertyInfo

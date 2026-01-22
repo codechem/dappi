@@ -169,6 +169,15 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         {
             newProperty = newProperty.WithFutureDateAttribute();
         }
+        if (property.Type == "string" && (!string.IsNullOrEmpty(property.Min) || !string.IsNullOrEmpty(property.Max)))
+        {
+            newProperty = newProperty.WithLengthAttribute(property.Min, property.Max);
+        }
+        var numericTypes = new[] { "int", "float", "double", "decimal", "long", "short", "byte" };
+        if (numericTypes.Contains(property.Type) && (!string.IsNullOrEmpty(property.Min) || !string.IsNullOrEmpty(property.Max)))
+        {
+            newProperty = newProperty.WithRangeAttribute(property.Min, property.Max, property.Type);
+        }
 
         var newNode = classNode.AddMembers(newProperty);
         var newRoot = root.ReplaceNode(classNode, newNode);
@@ -231,6 +240,49 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
             .SelectMany(al => al.Attributes)
             .Any(a => a.Name.ToString() == "FutureDate");
 
+        string? minValue = null;
+        string? maxValue = null;
+
+        var lengthAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .FirstOrDefault(a => a.Name.ToString() == "Length");
+
+        var minLengthAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .FirstOrDefault(a => a.Name.ToString() == "MinLength");
+
+        var maxLengthAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .FirstOrDefault(a => a.Name.ToString() == "MaxLength");
+
+        var isStringType = propertyType == "string";
+
+        if (isStringType && lengthAttribute?.ArgumentList?.Arguments.Count >= 2)
+        {
+            minValue = lengthAttribute.ArgumentList.Arguments[0].Expression.ToString();
+            maxValue = lengthAttribute.ArgumentList.Arguments[1].Expression.ToString();
+        }
+
+        if (isStringType && minLengthAttribute?.ArgumentList?.Arguments.Count >= 1)
+        {
+            minValue = minLengthAttribute.ArgumentList.Arguments[0].Expression.ToString();
+        }
+
+        if (isStringType && maxLengthAttribute?.ArgumentList?.Arguments.Count >= 1)
+        {
+            maxValue = maxLengthAttribute.ArgumentList.Arguments[0].Expression.ToString();
+        }
+
+        var rangeAttribute = propertyNode.AttributeLists
+            .SelectMany(al => al.Attributes)
+            .FirstOrDefault(a => a.Name.ToString() == "Range");
+
+        if (!isStringType && rangeAttribute?.ArgumentList?.Arguments.Count >= 2)
+        {
+            minValue = rangeAttribute.ArgumentList.Arguments[0].Expression.ToString();
+            maxValue = rangeAttribute.ArgumentList.Arguments[1].Expression.ToString();
+        }
+
         return new Property
         {
             DomainModel = modelName,
@@ -241,7 +293,9 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
             RelatedDomainModel = relatedModel,
             Regex = regex,
             NoPastDates = hasFutureDateAttribute,
-            HasIndex = false
+            HasIndex = false,
+            Min = minValue,
+            Max = maxValue
         };
     }
 
@@ -294,7 +348,9 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
                 IsRequired = propertyData.IsRequired,
                 Regex = propertyData.Regex,
                 HasIndex = propertyData.HasIndex,
-                NoPastDates = propertyData.NoPastDates
+                NoPastDates = propertyData.NoPastDates,
+                Min = propertyData.Min != null && double.TryParse(propertyData.Min, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedMinValue) ? parsedMinValue : null,
+                Max = propertyData.Max != null && double.TryParse(propertyData.Max, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedMaxValue) ? parsedMaxValue : null
             });
         }
 
@@ -355,6 +411,15 @@ public class DomainModelEditor(string domainModelFolderPath , string enumsFolder
         if (newProperty.NoPastDates && IsDateType(newProperty.Type))
         {
             updatedProperty = updatedProperty.WithFutureDateAttribute();
+        }
+        if (newProperty.Type == "string" && (!string.IsNullOrEmpty(newProperty.Min) || !string.IsNullOrEmpty(newProperty.Max)))
+        {
+            updatedProperty = updatedProperty.WithLengthAttribute(newProperty.Min, newProperty.Max);
+        }
+        var numericTypes = new[] { "int", "float", "double", "decimal", "long", "short", "byte" };
+        if (numericTypes.Contains(newProperty.Type) && (!string.IsNullOrEmpty(newProperty.Min) || !string.IsNullOrEmpty(newProperty.Max)))
+        {
+            updatedProperty = updatedProperty.WithRangeAttribute(newProperty.Min, newProperty.Max, newProperty.Type);
         }
 
         var newClassNode = classNode.ReplaceNode(oldPropertyNode, updatedProperty);

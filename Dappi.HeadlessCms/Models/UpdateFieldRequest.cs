@@ -17,4 +17,8 @@ public class UpdateFieldRequest
     public bool HasIndex { get; set; } = false;
 
     public bool NoPastDates { get; set; } = false;
+
+    public double? Min { get; set; }
+
+    public double? Max { get; set; }
 }

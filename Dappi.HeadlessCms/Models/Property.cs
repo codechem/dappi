@@ -13,5 +13,7 @@ namespace Dappi.HeadlessCms.Models
         public string? Regex { get; set; } = null;
         public bool NoPastDates { get; set; } = false;
         public bool HasIndex { get; set; } = false;
+        public string? Min { get; set; }
+        public string? Max { get; set; }
     }
 }
