@@ -1,5 +1,4 @@
 using System.Net.Mime;
-using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
@@ -8,22 +7,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Dappi.HeadlessCms.Services
 {
-    public class LocalStorageUploadService(IDbContextAccessor _dbContext) : IMediaUploadService
+    public class LocalStorageUploadService(IDbContextAccessor dbContext) : IMediaUploadService
     {
         public void DeleteMedia(MediaInfo media)
         {
+            if (media.Url == null) throw new ArgumentNullException(media.Url);
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", media.Url);
-            if (File.Exists(filePath))
-            {
-                try
-                {
-                    File.Delete(filePath);
-                }
-                catch (Exception ex)
-                {
-                    // Handle exception
-                }
-            }
+            if (File.Exists(filePath)) File.Delete(filePath);
         }
 
         public void ValidateFile(IFormFile file)
@@ -57,27 +47,27 @@ namespace Dappi.HeadlessCms.Services
             }
 
             var relativePath = $"uploads{Path.DirectorySeparatorChar}{fileName}";
-            
-            var media = await _dbContext.DbContext.Set<MediaInfo>()
+
+            var media = await dbContext.DbContext.Set<MediaInfo>()
                 .Where(m => m.Id == mediaId).FirstOrDefaultAsync();
 
-            if (media == null) return ;
+            if (media == null) return;
 
             media.Url = relativePath;
-            await _dbContext.DbContext.SaveChangesAsync();
+            await dbContext.DbContext.SaveChangesAsync();
         }
 
         public async Task UpdateStatusAsync(Guid mediaId, MediaUploadStatus status)
         {
-            var media = await _dbContext.DbContext.Set<MediaInfo>()
+            var media = await dbContext.DbContext.Set<MediaInfo>()
                 .Where(m => m.Id == mediaId).FirstOrDefaultAsync();
 
             if (media == null) return;
 
             media.Status = status;
-            await _dbContext.DbContext.SaveChangesAsync();
+            await dbContext.DbContext.SaveChangesAsync();
         }
-        
+
         private string GetContentType(string fileExtension)
         {
             return fileExtension.ToLower() switch

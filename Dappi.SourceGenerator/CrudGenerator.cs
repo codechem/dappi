@@ -288,9 +288,21 @@ public partial class {item.ClassName}Controller(
                 removeCode.AppendLine($$"""         if(model.{{mediaInfo.PropertyName}} is not null){ """);
                 includeCode.AppendLine($@"                  .Include(p => p.{mediaInfo.PropertyName})");
                 removeCode.AppendLine($@"
-            dbContext.Set<MediaInfo>().Attach(model.{mediaInfo.PropertyName}); 
-            dbContext.Set<MediaInfo>().Remove(model.{mediaInfo.PropertyName});
-            uploadService.DeleteMedia(model.{mediaInfo.PropertyName});");
+            try {{
+                dbContext.Set<MediaInfo>().Attach(model.{mediaInfo.PropertyName}); 
+                dbContext.Set<MediaInfo>().Remove(model.{mediaInfo.PropertyName});
+                uploadService.DeleteMedia(model.{mediaInfo.PropertyName});
+            }}
+            catch(ArgumentNullException ex){{
+                return NotFound($""Media URL not found for {mediaInfo.PropertyName}"");
+            }}  
+            catch(IOException ex){{
+                return StatusCode(500, $""Internal server error: {{ex.Message}}"");
+            }}
+            catch(Exception ex){{
+                return StatusCode(500, $""An unexpected error occurred: {{ex.Message}}"");            
+            }}
+            ");
                 removeCode.AppendLine("         }");
                 removeCode.AppendLine("");
             }
