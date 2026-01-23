@@ -2,8 +2,9 @@ namespace Dappi.HeadlessCms.Validators;
 
 public static class FieldValidationHelper
 {
-    public static readonly string[] TextTypes = { "string" };
-    public static readonly string[] NumericTypes = { "int", "double", "float" };
+    public static readonly string[] TextTypes = ["string"];
+    public static readonly string[] NumericTypes = ["int", "double", "float"];
+
 
     public static bool ValidateMinValue(string fieldType, double? min)
     {
