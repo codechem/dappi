@@ -20,6 +20,9 @@ namespace Dappi.HeadlessCms.Background
                 await foreach (var request in queue.GetReader().ReadAllAsync(stoppingToken))
                 {
                     var status = MediaUploadStatus.Pending;
+                    await uploadService.UpdateStatusAsync(
+                        request.MediaId,
+                        status);
                     try
                     {
                         await uploadService.SaveFileAsync(

@@ -11,6 +11,6 @@ namespace Dappi.HeadlessCms.Models
         public string OriginalFileName { get; set; }
         public long FileSize { get; set; }
         public DateTime UploadDate { get; set; }
-        public MediaUploadStatus Status { get; set; }
+        public MediaUploadStatus? Status { get; set; }
     }
 }

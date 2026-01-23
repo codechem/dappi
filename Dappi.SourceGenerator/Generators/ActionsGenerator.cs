@@ -322,8 +322,7 @@ namespace Dappi.SourceGenerator.Generators
                                      Url = null,
                                      OriginalFileName = file.FileName,
                                      FileSize = file.Length,
-                                     UploadDate = DateTime.UtcNow,
-                                     Status = MediaUploadStatus.Pending
+                                     UploadDate = DateTime.UtcNow
                                  };
                                  
                                  try { 
