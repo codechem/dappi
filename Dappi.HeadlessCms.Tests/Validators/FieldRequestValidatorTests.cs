@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Validators;
 using FluentValidation.TestHelper;
@@ -8,320 +9,281 @@ public class FieldRequestValidatorTests
 {
     private readonly FieldRequestValidator _validator = new();
 
-    [Fact]
-    public void Should_have_error_when_Min_is_negative_for_string_field()
+    [Theory]
+    [MemberData(nameof(FieldRequestValidatorTestData.InvalidMinTestCases), MemberType = typeof(FieldRequestValidatorTestData))]
+    public void Should_have_error_for_invalid_Min_value(FieldRequest model, Expression<Func<FieldRequest, object?>> propertyExpression, string expectedErrorMessage)
     {
-        var model = new FieldRequest
-        {
-            FieldName = "TestField",
-            FieldType = "string",
-            Min = -1
-        };
-
         var result = _validator.TestValidate(model);
 
-        result.ShouldHaveValidationErrorFor(x => x.Min)
-            .WithErrorMessage("Min value is invalid for the field type.");
-    }
-
-    [Fact]
-    public void Should_have_error_when_Min_has_decimal_value_for_string_field()
-    {
-        var model = new FieldRequest
-        {
-            FieldName = "TestField",
-            FieldType = "string",
-            Min = 5.5
-        };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldHaveValidationErrorFor(x => x.Min)
-            .WithErrorMessage("Min value is invalid for the field type.");
+        result.ShouldHaveValidationErrorFor(propertyExpression)
+            .WithErrorMessage(expectedErrorMessage);
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(5)]
-    [InlineData(100)]
-    public void Should_not_have_error_when_Min_is_valid_for_string_field(double minValue)
+    [MemberData(nameof(FieldRequestValidatorTestData.ValidMinTestCases), MemberType = typeof(FieldRequestValidatorTestData))]
+    public void Should_not_have_error_for_valid_Min_value(FieldRequest model, Expression<Func<FieldRequest, object?>> propertyExpression)
     {
-        var model = new FieldRequest
-        {
-            FieldName = "TestField",
-            FieldType = "string",
-            Min = minValue
-        };
-
         var result = _validator.TestValidate(model);
 
-        result.ShouldNotHaveValidationErrorFor(x => x.Min);
+        result.ShouldNotHaveValidationErrorFor(propertyExpression);
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(5)]
-    [InlineData(-5)]
-    [InlineData(100.5)]
-    [InlineData(-100.5)]
-    public void Should_not_have_error_when_Min_is_valid_for_numeric_field(double minValue)
+    [MemberData(nameof(FieldRequestValidatorTestData.InvalidMaxTestCases), MemberType = typeof(FieldRequestValidatorTestData))]
+    public void Should_have_error_for_invalid_Max_value(FieldRequest model, Expression<Func<FieldRequest, object?>> propertyExpression, string expectedErrorMessage)
     {
-        var model = new FieldRequest
-        {
-            FieldName = "TestField",
-            FieldType = "int",
-            Min = minValue
-        };
-
         var result = _validator.TestValidate(model);
 
-        result.ShouldNotHaveValidationErrorFor(x => x.Min);
-    }
-
-    [Fact]
-    public void Should_have_error_when_Min_is_NaN_for_numeric_field()
-    {
-        var model = new FieldRequest
-        {
-            FieldName = "TestField",
-            FieldType = "int",
-            Min = double.NaN
-        };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldHaveValidationErrorFor(x => x.Min)
-            .WithErrorMessage("Min value is invalid for the field type.");
-    }
-
-    [Fact]
-    public void Should_not_have_error_when_Min_is_null()
-    {
-        var model = new FieldRequest
-        {
-            FieldName = "TestField",
-            FieldType = "string",
-            Min = null
-        };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldNotHaveValidationErrorFor(x => x.Min);
-    }
-
-    [Fact]
-    public void Should_have_error_when_Max_is_negative_for_string_field()
-    {
-        var model = new FieldRequest
-        {
-            FieldName = "TestField",
-            FieldType = "string",
-            Max = -1
-        };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldHaveValidationErrorFor(x => x.Max)
-            .WithErrorMessage("Max value is invalid for the field type.");
-    }
-
-    [Fact]
-    public void Should_have_error_when_Max_has_decimal_value_for_string_field()
-    {
-        var model = new FieldRequest
-        {
-            FieldName = "TestField",
-            FieldType = "string",
-            Max = 5.5
-        };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldHaveValidationErrorFor(x => x.Max)
-            .WithErrorMessage("Max value is invalid for the field type.");
+        result.ShouldHaveValidationErrorFor(propertyExpression)
+            .WithErrorMessage(expectedErrorMessage);
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(5)]
-    [InlineData(100)]
-    public void Should_not_have_error_when_Max_is_valid_for_string_field(double maxValue)
+    [MemberData(nameof(FieldRequestValidatorTestData.ValidMaxTestCases), MemberType = typeof(FieldRequestValidatorTestData))]
+    public void Should_not_have_error_for_valid_Max_value(
+        FieldRequest model,
+        Expression<Func<FieldRequest, object?>> propertyExpression)
     {
-        var model = new FieldRequest
-        {
-            FieldName = "TestField",
-            FieldType = "string",
-            Max = maxValue
-        };
-
         var result = _validator.TestValidate(model);
 
-        result.ShouldNotHaveValidationErrorFor(x => x.Max);
+        result.ShouldNotHaveValidationErrorFor(propertyExpression);
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(5)]
-    [InlineData(-5)]
-    [InlineData(100.5)]
-    [InlineData(-100.5)]
-    public void Should_not_have_error_when_Max_is_valid_for_numeric_field(double maxValue)
+    [MemberData(nameof(FieldRequestValidatorTestData.MinMaxComparisonTestCases), MemberType = typeof(FieldRequestValidatorTestData))]
+    public void Should_validate_Min_Max_comparison(FieldRequest model, bool shouldHaveError, string? expectedErrorMessage)
     {
-        var model = new FieldRequest
-        {
-            FieldName = "TestField",
-            FieldType = "int",
-            Max = maxValue
-        };
-
         var result = _validator.TestValidate(model);
 
-        result.ShouldNotHaveValidationErrorFor(x => x.Max);
+        if (shouldHaveError)
+        {
+            result.ShouldHaveValidationErrorFor(x => x)
+                .WithErrorMessage(expectedErrorMessage!);
+        }
+        else
+        {
+            result.ShouldNotHaveValidationErrorFor(x => x);
+        }
+    }
+}
+
+public class FieldRequestValidatorTestData
+{
+    public static IEnumerable<object[]> InvalidMinTestCases()
+    {
+        Expression<Func<FieldRequest, object?>> minExpression = x => x.Min;
+        const string errorMessage = "Min value is invalid for the field type.";
+
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Min = -1 },
+            minExpression,
+            errorMessage
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Min = 5.5 },
+            minExpression,
+            errorMessage
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = double.NaN },
+            minExpression,
+            errorMessage
+        };
     }
 
-    [Fact]
-    public void Should_have_error_when_Max_is_NaN_for_numeric_field()
+    public static IEnumerable<object[]> ValidMinTestCases()
     {
-        var model = new FieldRequest
+        Expression<Func<FieldRequest, object?>> minExpression = x => x.Min;
+        
+        yield return new object[]
         {
-            FieldName = "TestField",
-            FieldType = "int",
-            Max = double.NaN
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Min = 0 },
+            minExpression
         };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldHaveValidationErrorFor(x => x.Max)
-            .WithErrorMessage("Max value is invalid for the field type.");
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Min = 5 },
+            minExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Min = 100 },
+            minExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = 0 },
+            minExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = 5 },
+            minExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = -5 },
+            minExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = 100.5 },
+            minExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = -100.5 },
+            minExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Min = null },
+            minExpression
+        };
     }
 
-    [Fact]
-    public void Should_not_have_error_when_Max_is_null()
+    public static IEnumerable<object[]> InvalidMaxTestCases()
     {
-        var model = new FieldRequest
+        Expression<Func<FieldRequest, object?>> maxExpression = x => x.Max;
+        const string errorMessage = "Max value is invalid for the field type.";
+        
+        yield return new object[]
         {
-            FieldName = "TestField",
-            FieldType = "string",
-            Max = null
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Max = -1 },
+            maxExpression,
+            errorMessage
         };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldNotHaveValidationErrorFor(x => x.Max);
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Max = 5.5 },
+            maxExpression,
+            errorMessage
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Max = double.NaN },
+            maxExpression,
+            errorMessage
+        };
     }
 
-    [Fact]
-    public void Should_have_error_when_Min_is_greater_than_Max()
+    public static IEnumerable<object[]> ValidMaxTestCases()
     {
-        var model = new FieldRequest
+        Expression<Func<FieldRequest, object?>> maxExpression = x => x.Max;
+        
+        yield return new object[]
         {
-            FieldName = "TestField",
-            FieldType = "int",
-            Min = 10,
-            Max = 5
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Max = 0 },
+            maxExpression
         };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldHaveValidationErrorFor(x => x)
-            .WithErrorMessage("Min value cannot be greater than max value.");
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Max = 5 },
+            maxExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Max = 100 },
+            maxExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Max = 0 },
+            maxExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Max = 5 },
+            maxExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Max = -5 },
+            maxExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Max = 100.5 },
+            maxExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Max = -100.5 },
+            maxExpression
+        };
+        
+        yield return new object[]
+        {
+            new FieldRequest { FieldName = "TestField", FieldType = "string", Max = null },
+            maxExpression
+        };
     }
 
-    [Fact]
-    public void Should_not_have_error_when_Min_equals_Max()
+    public static IEnumerable<object[]> MinMaxComparisonTestCases()
     {
-        var model = new FieldRequest
+        yield return new object[]
         {
-            FieldName = "TestField",
-            FieldType = "int",
-            Min = 5,
-            Max = 5
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = 10, Max = 5 },
+            true,
+            "Min value cannot be greater than max value."
         };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldNotHaveValidationErrorFor(x => x);
-    }
-
-    [Fact]
-    public void Should_not_have_error_when_Min_is_less_than_Max()
-    {
-        var model = new FieldRequest
+        
+        yield return new object[]
         {
-            FieldName = "TestField",
-            FieldType = "int",
-            Min = 5,
-            Max = 10
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = 5, Max = 5 },
+            false,
+            null!
         };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldNotHaveValidationErrorFor(x => x);
-    }
-
-    [Fact]
-    public void Should_not_have_error_when_only_Min_is_specified()
-    {
-        var model = new FieldRequest
+        
+        yield return new object[]
         {
-            FieldName = "TestField",
-            FieldType = "int",
-            Min = 5,
-            Max = null
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = 5, Max = 10 },
+            false,
+            null!
         };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldNotHaveValidationErrorFor(x => x);
-    }
-
-    [Fact]
-    public void Should_not_have_error_when_only_Max_is_specified()
-    {
-        var model = new FieldRequest
+        
+        yield return new object[]
         {
-            FieldName = "TestField",
-            FieldType = "int",
-            Min = null,
-            Max = 10
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = 5, Max = null },
+            false,
+            null!
         };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldNotHaveValidationErrorFor(x => x);
-    }
-
-    [Fact]
-    public void Should_not_have_error_when_both_Min_and_Max_are_null()
-    {
-        var model = new FieldRequest
+        
+        yield return new object[]
         {
-            FieldName = "TestField",
-            FieldType = "int",
-            Min = null,
-            Max = null
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = null, Max = 10 },
+            false,
+            null!
         };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldNotHaveValidationErrorFor(x => x);
-    }
-
-    [Fact]
-    public void Should_have_errors_when_Min_and_Max_are_invalid_for_string_field()
-    {
-        var model = new FieldRequest
+        
+        yield return new object[]
         {
-            FieldName = "TestField",
-            FieldType = "string",
-            Min = -1,
-            Max = 5.5
+            new FieldRequest { FieldName = "TestField", FieldType = "int", Min = null, Max = null },
+            false,
+            null!
         };
-
-        var result = _validator.TestValidate(model);
-
-        result.ShouldHaveValidationErrorFor(x => x.Min);
-        result.ShouldHaveValidationErrorFor(x => x.Max);
     }
 }
 
