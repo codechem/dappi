@@ -450,7 +450,7 @@ namespace Dappi.HeadlessCms.Tests.Core
                                  [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
                                  public Guid Id { get; set; }
 
-                                 [Range(18, 2147483647)]
+                                 [Range(18, int.MaxValue)]
                                  public int? Name { get; set; }
                              }
                          }
@@ -496,7 +496,7 @@ namespace Dappi.HeadlessCms.Tests.Core
                                  [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
                                  public Guid Id { get; set; }
 
-                                 [Range(-2147483648, 100)]
+                                 [Range(int.MinValue, 100)]
                                  public int? Name { get; set; }
                              }
                          }
