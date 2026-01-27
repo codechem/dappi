@@ -1,14 +1,22 @@
 using System.Net.Mime;
+using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dappi.HeadlessCms.Services
 {
-    public class LocalStorageUploadService : IMediaUploadService
+    public class LocalStorageUploadService(IDbContextAccessor dbContext) : IMediaUploadService
     {
+        public void DeleteMedia(MediaInfo media)
+        {
+            if (media.Url == null) throw new ArgumentNullException(media.Url);
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", media.Url);
+            if (File.Exists(filePath)) File.Delete(filePath);
+        }
 
-        public async Task<MediaInfo> UploadMediaAsync(Guid id, IFormFile file)
+        public void ValidateFile(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 throw new Exception("No file was uploaded.");
@@ -17,52 +25,47 @@ namespace Dappi.HeadlessCms.Services
 
             if (GetContentType(fileExtension) == "unsupported")
                 throw new Exception("Unsupported media type.");
+        }
 
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        public async Task SaveFileAsync(Guid mediaId, IFormFile file)
+        {
+            var uploadsFolder = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "wwwroot",
+                "uploads");
 
             if (!Directory.Exists(uploadsFolder))
-            {
                 Directory.CreateDirectory(uploadsFolder);
-            }
 
-
-            var fileName = $"{Guid.NewGuid()}_{id}{fileExtension}";
+            var fileExtension = Path.GetExtension(file.FileName);
+            var fileName = $"{Guid.NewGuid()}_{mediaId}{fileExtension}";
             var filePath = Path.Combine(uploadsFolder, fileName);
 
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            await using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(fileStream);
             }
 
             var relativePath = $"uploads{Path.DirectorySeparatorChar}{fileName}";
 
-            var mediaInfo = new MediaInfo
-            {
-                Id = Guid.NewGuid(),
-                Url = relativePath,
-                OriginalFileName = file.FileName,
-                FileSize = file.Length,
-                UploadDate = DateTime.UtcNow
-            };
+            var media = await dbContext.DbContext.Set<MediaInfo>()
+                .Where(m => m.Id == mediaId).FirstOrDefaultAsync();
 
+            if (media == null) return;
 
-            return mediaInfo;
+            media.Url = relativePath;
+            await dbContext.DbContext.SaveChangesAsync();
         }
 
-        public void DeleteMedia(MediaInfo media)
+        public async Task UpdateStatusAsync(Guid mediaId, MediaUploadStatus status)
         {
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", media.Url);
-            if (File.Exists(filePath))
-            {
-                try
-                {
-                    File.Delete(filePath);
-                }
-                catch (Exception ex)
-                {
-                    // Handle exception
-                }
-            }
+            var media = await dbContext.DbContext.Set<MediaInfo>()
+                .Where(m => m.Id == mediaId).FirstOrDefaultAsync();
+
+            if (media == null) return;
+
+            media.Status = status;
+            await dbContext.DbContext.SaveChangesAsync();
         }
 
         private string GetContentType(string fileExtension)
