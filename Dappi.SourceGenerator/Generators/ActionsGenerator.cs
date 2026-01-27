@@ -316,12 +316,33 @@ namespace Dappi.SourceGenerator.Generators
                                  if (property.PropertyType != typeof(MediaInfo))
                                      return BadRequest($"Property {fieldName} must be a MediaInfo type to store media information.");
 
-                                 var mediaInfo = await uploadService.UploadMediaAsync(id, file);
+                                 var mediaInfo = new MediaInfo
+                                 {
+                                     Id = Guid.NewGuid(),
+                                     Url = null,
+                                     OriginalFileName = file.FileName,
+                                     FileSize = file.Length,
+                                     UploadDate = DateTime.UtcNow
+                                 };
+                                 
+                                 try { 
+                                    uploadService.ValidateFile(file);
+                                 }
+                                 catch(Exception ex)
+                                 {
+                                     return BadRequest(new {message = ex.Message});
+                                 }
+                                 
                                  property.SetValue(entity, mediaInfo);
 
                                  await dbContext.Set<MediaInfo>().AddAsync(mediaInfo);
                                  await dbContext.SaveChangesAsync();
 
+                                 await queue.EnqueueAsync(new MediaUploadRequest(
+                                     mediaInfo.Id,
+                                     file
+                                 ));
+                                 
                                  dbContext.Entry(entity).State = EntityState.Modified;
                                  await dbContext.SaveChangesAsync();
 
