@@ -168,45 +168,48 @@ namespace Dappi.HeadlessCms.Core.Extensions
                 }
             }
             
+            ExpressionSyntax CreateMinMaxExpression(string typeName, bool isMax)
+            {
+                var keyword = typeName.ToLower() switch
+                {
+                    "int" => SyntaxKind.IntKeyword,
+                    "float" => SyntaxKind.FloatKeyword,
+                    "double" => SyntaxKind.DoubleKeyword,
+                    _ => SyntaxKind.DoubleKeyword
+                };
+                
+                return SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(keyword)),
+                    SyntaxFactory.IdentifierName(isMax ? "MaxValue" : "MinValue"));
+            }
+             
+            ExpressionSyntax minExpression;
             if (minDouble == null)
             {
-                minDouble = propertyType.ToLower() switch
-                {
-                    "int" => int.MinValue,
-                    "float" => float.MinValue,
-                    "double" => double.MinValue,
-                    "decimal" => (double)decimal.MinValue,
-                    "long" => long.MinValue,
-                    "short" => short.MinValue,
-                    "byte" => byte.MinValue,
-                    _ => double.MinValue
-                };
+                minExpression = CreateMinMaxExpression(propertyType, false);
+            }
+            else
+            {
+                minExpression = SyntaxFactory.LiteralExpression(
+                    SyntaxKind.NumericLiteralExpression,
+                    SyntaxFactory.Literal(minDouble.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), minDouble.Value));
             }
             
+            ExpressionSyntax maxExpression;
             if (maxDouble == null)
             {
-                maxDouble = propertyType.ToLower() switch
-                {
-                    "int" => int.MaxValue,
-                    "float" => float.MaxValue,
-                    "double" => double.MaxValue,
-                    "decimal" => (double)decimal.MaxValue,
-                    "long" => long.MaxValue,
-                    "short" => short.MaxValue,
-                    "byte" => byte.MaxValue,
-                    _ => double.MaxValue
-                };
+                maxExpression = CreateMinMaxExpression(propertyType, true);
+            }
+            else
+            {
+                maxExpression = SyntaxFactory.LiteralExpression(
+                    SyntaxKind.NumericLiteralExpression,
+                    SyntaxFactory.Literal(maxDouble.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), maxDouble.Value));
             }
             
-            var minLiteral = SyntaxFactory.LiteralExpression(
-                SyntaxKind.NumericLiteralExpression,
-                SyntaxFactory.Literal(minDouble.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), minDouble.Value));
-            var maxLiteral = SyntaxFactory.LiteralExpression(
-                SyntaxKind.NumericLiteralExpression,
-                SyntaxFactory.Literal(maxDouble.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), maxDouble.Value));
-            
-            arguments.Add(SyntaxFactory.AttributeArgument(minLiteral));
-            arguments.Add(SyntaxFactory.AttributeArgument(maxLiteral));
+            arguments.Add(SyntaxFactory.AttributeArgument(minExpression));
+            arguments.Add(SyntaxFactory.AttributeArgument(maxExpression));
             
             attribute = attribute.WithArgumentList(
                 SyntaxFactory.AttributeArgumentList(SyntaxFactory.SeparatedList(arguments))

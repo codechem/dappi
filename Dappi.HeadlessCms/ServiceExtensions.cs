@@ -9,6 +9,9 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
 using Dappi.HeadlessCms.Core;
+using Dappi.HeadlessCms.Validators;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -61,6 +64,9 @@ public static class ServiceExtensions
         services.AddScoped<IContentTypeChangesService, ContentTypeChangesService>();
         services.AddScoped<IDataShaperService, DataShaperService>();
         services.AddDappiSwaggerGen();
+
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssemblyContaining<FieldRequestValidator>();
 
         services.AddControllers()
             .AddJsonOptions(jsonOptions ?? (options =>

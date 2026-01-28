@@ -1,0 +1,13 @@
+﻿{
+  Status: 200 OK,
+  Content: {
+    Headers: {
+      Content-Length: 227,
+      Content-Type: application/json; charset=utf-8
+    },
+    Value: {
+      Message: Field 'TestField' of type 'string' added successfully to 'MinMaxTestStringMinOnly' model.,
+      FilePath: {CurrentDirectory}Entities/MinMaxTestStringMinOnly.cs
+    }
+  }
+}

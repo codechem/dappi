@@ -1,0 +1,20 @@
+﻿{
+  Status: 400 Bad Request,
+  Content: {
+    Headers: {
+      Content-Length: 254,
+      Content-Type: application/problem+json; charset=utf-8
+    },
+    Value: {
+      type: https://tools.ietf.org/html/rfc9110#section-15.5.1,
+      title: One or more validation errors occurred.,
+      status: 400,
+      errors: {
+        Min: [
+          Min value is invalid for the field type.
+        ]
+      },
+      traceId: {Scrubbed}
+    }
+  }
+}

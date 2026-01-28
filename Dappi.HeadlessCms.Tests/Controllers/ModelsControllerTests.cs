@@ -69,7 +69,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
 
         [Theory]
         [ClassData(typeof(InvalidPropertyTypesAndClassNames))]
-        public async Task CreateModel_Should_Return_BadRequest_If_Model_Name_Is_Invalid(string modelName)
+        public async Task CreateModel_Should_Return_BadRequest_If_Min_Property_Type_Is_Invalid(string modelName)
         {
             var auth = await _client.Authorize();
             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
@@ -78,7 +78,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             var res = await _client.PostAsJsonAsync(_baseUrl, request);
             
             _verifySettings.UseDirectory(
-                $"{_snapshotPath}/{nameof(CreateModel_Should_Return_BadRequest_If_Model_Name_Is_Invalid)}/{modelName}");
+                $"{_snapshotPath}/{nameof(CreateModel_Should_Return_BadRequest_If_Min_Property_Type_Is_Invalid)}/{modelName}");
 
             await Verify(res, _verifySettings).UseFileName("response");
         }
@@ -433,6 +433,154 @@ namespace Dappi.HeadlessCms.Tests.Controllers
              await Verify(dbContext, _verifySettings).UseFileName("dbContext");
              await Verify(file1, _verifySettings).UseFileName("file1");
              await Verify(file2, _verifySettings).UseFileName("file2");
+             await Verify(res, _verifySettings).UseFileName("response");
+         }
+
+         [Theory]
+         [ClassData(typeof(ValidMinMaxConstraints))]
+         public async Task AddField_Should_Accept_Valid_MinMax_Constraints(
+             string fieldType,
+             double? min,
+             double? max,
+             string testName)
+         {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
+             var modelRequest = new ModelRequest { ModelName = $"MinMaxTest{testName}", IsAuditableEntity = false };
+             await _client.PostAsJsonAsync(_baseUrl, modelRequest);
+             
+             var fieldRequest = new FieldRequest
+             {
+                 FieldName = "TestField",
+                 FieldType = fieldType,
+                 IsRequired = false,
+                 Min = min,
+                 Max = max
+             };
+             
+             var res = await _client.PutAsJsonAsync($"{_baseUrl}/{modelRequest.ModelName}", fieldRequest);
+             var filePath = Path.Combine(_entitiesPath, $"{modelRequest.ModelName}.cs");
+             var actual = await File.ReadAllTextAsync(filePath);
+
+             _verifySettings.UseDirectory(
+                 $"{_snapshotPath}/{nameof(AddField_Should_Accept_Valid_MinMax_Constraints)}/{testName}");
+             await Verify(actual, _verifySettings).UseFileName("model");
+             await Verify(res, _verifySettings).UseFileName("response");
+         }
+
+         [Theory]
+         [ClassData(typeof(InvalidMinMaxConstraints))]
+         public async Task AddField_Should_Return_BadRequest_For_Invalid_MinMax_Constraints(
+             string fieldType, 
+             double? min, 
+             double? max, 
+             string testName)
+         {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
+             var modelRequest = new ModelRequest { ModelName = $"InvalidMinMax{testName}", IsAuditableEntity = false };
+             await _client.PostAsJsonAsync(_baseUrl, modelRequest);
+             
+             var fieldRequest = new FieldRequest
+             {
+                 FieldName = "TestField",
+                 FieldType = fieldType,
+                 IsRequired = false,
+                 Min = min,
+                 Max = max
+             };
+             
+             var res = await _client.PutAsJsonAsync($"{_baseUrl}/{modelRequest.ModelName}", fieldRequest);
+
+             _verifySettings.UseDirectory(
+                 $"{_snapshotPath}/{nameof(AddField_Should_Return_BadRequest_For_Invalid_MinMax_Constraints)}/{testName}");
+             await Verify(res, _verifySettings).UseFileName("response");
+         }
+
+         [Theory]
+         [ClassData(typeof(InvalidMinMaxConstraints))]
+         public async Task UpdateField_Should_Return_BadRequest_For_Invalid_MinMax_Update(
+             string fieldType,
+             double? min,
+             double? max,
+             string testName)
+         {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
+             var modelRequest = new ModelRequest { ModelName = $"UpdateInvalidMinMax{testName}", IsAuditableEntity = false };
+             await _client.PutAsJsonAsync(_baseUrl, modelRequest);
+             
+             var fieldRequest = new FieldRequest
+             {
+                 FieldName = "TestField",
+                 FieldType = fieldType,
+                 IsRequired = false,
+                 Min = 0,
+                 Max = 100
+             };
+             await _client.PutAsJsonAsync($"{_baseUrl}/{modelRequest.ModelName}", fieldRequest);
+             
+             var updateRequest = new UpdateFieldRequest
+             {
+                 OldFieldName = "TestField",
+                 NewFieldName = "TestField",
+                 FieldType = fieldType,
+                 IsRequired = false,
+                 Min = min,
+                 Max = max
+             };
+             
+             var res = await _client.PutAsJsonAsync($"{_baseUrl}/{modelRequest.ModelName}", updateRequest);
+
+             _verifySettings.UseDirectory(
+                 $"{_snapshotPath}/{nameof(UpdateField_Should_Return_BadRequest_For_Invalid_MinMax_Update)}/{testName}");
+             await Verify(res, _verifySettings).UseFileName("response");
+         }
+
+         [Theory]
+         [ClassData(typeof(ValidMinMaxConstraints))]
+         public async Task UpdateField_Should_Accept_Valid_MinMax_Update(
+             string fieldType,
+             double? min,
+             double? max,
+             string testName)
+         {
+             var auth = await _client.Authorize();
+             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
+             
+             var modelRequest = new ModelRequest { ModelName = $"UpdateValidMinMax{testName}", IsAuditableEntity = false };
+             await _client.PostAsJsonAsync(_baseUrl, modelRequest);
+             
+             var fieldRequest = new FieldRequest
+             {
+                 FieldName = "TestField",
+                 FieldType = fieldType,
+                 IsRequired = false,
+                 Min = 0,
+                 Max = 10
+             };
+             await _client.PutAsJsonAsync($"{_baseUrl}/{modelRequest.ModelName}", fieldRequest);
+             
+             var updateRequest = new UpdateFieldRequest
+             {
+                 OldFieldName = "TestField",
+                 NewFieldName = "TestField",
+                 FieldType = fieldType,
+                 IsRequired = false,
+                 Min = min,
+                 Max = max
+             };
+             
+             var res = await _client.PostAsJsonAsync($"{_baseUrl}/{modelRequest.ModelName}", updateRequest);
+             var filePath = Path.Combine(_entitiesPath, $"{modelRequest.ModelName}.cs");
+             var actual = await File.ReadAllTextAsync(filePath);
+
+             _verifySettings.UseDirectory(
+                 $"{_snapshotPath}/{nameof(UpdateField_Should_Accept_Valid_MinMax_Update)}/{testName}");
+             await Verify(actual, _verifySettings).UseFileName("model");
              await Verify(res, _verifySettings).UseFileName("response");
          }
 
