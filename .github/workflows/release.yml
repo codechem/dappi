@@ -20,7 +20,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
       
-    - name: Build DependencyInjection project
+    - name: Build HeadlessCms project
       run: dotnet build Dappi.HeadlessCms --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
       
     - name: Build Cli project
@@ -32,7 +32,7 @@ jobs:
     - name: Build Core project
       run: dotnet build Dappi.Core --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
 
-    - name: Pack DependencyInjection
+    - name: Pack HeadlessCms
       run: dotnet pack Dappi.HeadlessCms --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
       
     - name: Pack SourceGenerator
