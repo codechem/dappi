@@ -1,0 +1,45 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Lint check using dotnet format
+      - name: Check code formatting
+        run: dotnet format --verify-no-changes --verbosity diagnostic
+
+      # Build all projects
+      - name: Build HeadlessCms project
+        run: dotnet build Dappi.HeadlessCms --configuration Release --no-restore
+
+      - name: Build Cli project
+        run: dotnet build Dappi.Cli --configuration Release --no-restore
+
+      - name: Build SourceGenerator project
+        run: dotnet build Dappi.SourceGenerator --configuration Release --no-restore
+
+      - name: Build Core project
+        run: dotnet build Dappi.Core --configuration Release --no-restore
+
+      # Run tests
+      - name: Run HeadlessCms Tests
+        run: dotnet test Dappi.HeadlessCms.Tests --configuration Release --no-restore --verbosity normal
+
+      - name: Run Core Tests
+        run: dotnet test Dappi.Core.Tests --configuration Release --no-restore --verbosity normal
