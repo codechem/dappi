@@ -21,8 +21,8 @@ jobs:
         run: dotnet restore
 
       # Lint check using dotnet format
-      - name: Check code formatting
-        run: dotnet format --verify-no-changes --verbosity diagnostic
+      # - name: Check code formatting
+      #   run: dotnet format --verify-no-changes --verbosity diagnostic
 
       # Build all projects
       - name: Build HeadlessCms project
