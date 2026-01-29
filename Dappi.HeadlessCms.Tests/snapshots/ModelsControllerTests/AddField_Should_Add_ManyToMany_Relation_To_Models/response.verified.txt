@@ -2,12 +2,12 @@
   Status: 200 OK,
   Content: {
     Headers: {
-      Content-Length: 221,
+      Content-Length: 141,
       Content-Type: application/json; charset=utf-8
     },
     Value: {
       Message: Field 'TestRelation' of type 'ManyToMany' added successfully to 'TestClassSeven' model.,
-      FilePath: {CurrentDirectory}Entities/TestClassSeven.cs
+      FilePath: Entities/TestClassSeven.cs
     }
   }
 }

@@ -10,6 +10,8 @@ public class UpdateFieldRequest
     [Required]
     public string NewFieldName { get; set; } = null!;
 
+    public required string FieldType { get; set; }
+
     public bool IsRequired { get; set; } = false;
 
     public string? Regex { get; set; }

@@ -2,12 +2,12 @@
   Status: 200 OK,
   Content: {
     Headers: {
-      Content-Length: 215,
+      Content-Length: 135,
       Content-Type: application/json; charset=utf-8
     },
     Value: {
       Message: Field 'TestRelation' of type 'OneToOne' added successfully to 'TestClassOne' model.,
-      FilePath: {CurrentDirectory}Entities/TestClassOne.cs
+      FilePath: Entities/TestClassOne.cs
     }
   }
 }
