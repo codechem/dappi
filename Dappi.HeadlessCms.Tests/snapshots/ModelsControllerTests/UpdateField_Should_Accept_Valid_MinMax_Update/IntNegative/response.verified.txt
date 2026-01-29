@@ -1,0 +1,13 @@
+﻿{
+  Status: 200 OK,
+  Content: {
+    Headers: {
+      Content-Length: 153,
+      Content-Type: application/json; charset=utf-8
+    },
+    Value: {
+      Message: Field 'TestField' updated successfully to 'TestField' in 'UpdateValidMinMaxIntNegative' model.,
+      FilePath: UpdateValidMinMaxIntNegative.cs
+    }
+  }
+}

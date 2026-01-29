@@ -2,12 +2,12 @@
   Status: 200 OK,
   Content: {
     Headers: {
-      Content-Length: 205,
+      Content-Length: 125,
       Content-Type: application/json; charset=utf-8
     },
     Value: {
       Message: Field 'TestIntType' of type 'int' added successfully to 'ProductTwo' model.,
-      FilePath: {CurrentDirectory}Entities/ProductTwo.cs
+      FilePath: Entities/ProductTwo.cs
     }
   }
 }

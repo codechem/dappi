@@ -6,8 +6,8 @@
       Content-Type: application/json; charset=utf-8
     },
     Value: {
-      Message: Field 'TestField' of type 'string' added successfully to 'MinMaxTestStringMinOnly' model.,
-      FilePath: Entities/MinMaxTestStringMinOnly.cs
+      Message: Field 'TestField' of type 'string' added successfully to 'MinMaxTestStringMaxOnly' model.,
+      FilePath: Entities/MinMaxTestStringMaxOnly.cs
     }
   }
 }

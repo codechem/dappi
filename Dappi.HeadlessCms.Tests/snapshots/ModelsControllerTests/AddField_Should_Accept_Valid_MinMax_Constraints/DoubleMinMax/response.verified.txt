@@ -2,12 +2,12 @@
   Status: 200 OK,
   Content: {
     Headers: {
-      Content-Length: 225,
+      Content-Length: 150,
       Content-Type: application/json; charset=utf-8
     },
     Value: {
       Message: Field 'TestField' of type 'double' added successfully to 'MinMaxTestDoubleMinMax' model.,
-      FilePath: {CurrentDirectory}Entities/MinMaxTestDoubleMinMax.cs
+      FilePath: Entities/MinMaxTestDoubleMinMax.cs
     }
   }
 }

@@ -137,7 +137,11 @@ public class ModelsController : ControllerBase
         await _contentTypeChangesService.AddContentTypeChangeAsync(modelName, new Dictionary<string, string>(),
             ContentTypeState.PendingDelete);
 
-        return Ok(new { Message = $"Model '{modelName}' deleted successfully.", FilePath = modelFilePath });
+        return Ok(new
+        {
+            Message = $"Model '{modelName}' deleted successfully.",
+            FilePath = Path.GetRelativePath(Directory.GetCurrentDirectory(), modelFilePath)
+        });
     }
 
     [HttpPut("{modelName}")]
@@ -252,7 +256,7 @@ public class ModelsController : ControllerBase
         {
             Message =
                 $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
-            FilePath = modelFilePath
+            FilePath = Path.GetRelativePath(Directory.GetCurrentDirectory(), modelFilePath)
         });
     }
 
@@ -370,7 +374,7 @@ public class ModelsController : ControllerBase
         return Ok(new
         {
             Message = $"Field '{request.OldFieldName}' updated successfully to '{request.NewFieldName}' in '{modelName}' model.",
-            FilePath = modelFilePath
+            FilePath = Path.GetRelativePath(_entitiesFolderPath, modelFilePath)
         });
     }
 
@@ -419,7 +423,7 @@ public class ModelsController : ControllerBase
         return Ok(new
         {
             Message = $"Field '{fieldName}' deleted successfully from '{modelName}' model.",
-            FilePath = modelFilePath
+            FilePath = Path.GetRelativePath(_entitiesFolderPath, modelFilePath)
         });
     }
 

@@ -1,1 +1,20 @@
-﻿
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Dappi.HeadlessCms.Models;
+using Dappi.Core.Attributes;
+using Dappi.HeadlessCms.Core.Attributes;
+using Dappi.Core.Enums;
+
+namespace Entities
+{
+    [CcController]
+    public class UpdateValidMinMaxDoubleMinMax
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid Id { get; set; }
+
+        [Range(-99.5, 99.5)]
+        public double? TestField { get; set; }
+    }
+}

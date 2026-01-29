@@ -1,3 +1,4 @@
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Dappi.HeadlessCms.Models;
@@ -511,7 +512,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
              _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
              
              var modelRequest = new ModelRequest { ModelName = $"UpdateInvalidMinMax{testName}", IsAuditableEntity = false };
-             await _client.PutAsJsonAsync(_baseUrl, modelRequest);
+             await _client.PostAsJsonAsync(_baseUrl, modelRequest);
              
              var fieldRequest = new FieldRequest
              {
@@ -533,7 +534,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
                  Max = max
              };
              
-             var res = await _client.PutAsJsonAsync($"{_baseUrl}/{modelRequest.ModelName}", updateRequest);
+             var res = await PatchAsJsonAsync(_client, $"{_baseUrl}/{modelRequest.ModelName}/fields", updateRequest);
 
              _verifySettings.UseDirectory(
                  $"{_snapshotPath}/{nameof(UpdateField_Should_Return_BadRequest_For_Invalid_MinMax_Update)}/{testName}");
@@ -574,7 +575,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
                  Max = max
              };
              
-             var res = await _client.PostAsJsonAsync($"{_baseUrl}/{modelRequest.ModelName}", updateRequest);
+             var res = await PatchAsJsonAsync(_client, $"{_baseUrl}/{modelRequest.ModelName}/fields", updateRequest);
              var filePath = Path.Combine(_entitiesPath, $"{modelRequest.ModelName}.cs");
              var actual = await File.ReadAllTextAsync(filePath);
 
@@ -707,6 +708,17 @@ namespace Dappi.HeadlessCms.Tests.Controllers
              await Verify(updatedCommentFile, _verifySettings).UseFileName(comment);
              await Verify(deleteRes, _verifySettings).UseFileName("response");
          }
+
+        private static Task<HttpResponseMessage> PatchAsJsonAsync<T>(HttpClient client, string requestUri, T value)
+        {
+            var content = JsonContent.Create(value);
+            var request = new HttpRequestMessage(HttpMethod.Patch, requestUri)
+            {
+                Content = content
+            };
+
+            return client.SendAsync(request);
+        }
 
         public void Dispose()
         {
