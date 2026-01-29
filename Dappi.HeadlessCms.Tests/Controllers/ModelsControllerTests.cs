@@ -70,7 +70,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
 
         [Theory]
         [ClassData(typeof(InvalidPropertyTypesAndClassNames))]
-        public async Task CreateModel_Should_Return_BadRequest_If_Min_Property_Type_Is_Invalid(string modelName)
+        public async Task CreateModel_Should_Return_BadRequest_If_Model_Name_Is_Invalid(string modelName)
         {
             var auth = await _client.Authorize();
             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {auth?.Token}");
@@ -79,7 +79,7 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             var res = await _client.PostAsJsonAsync(_baseUrl, request);
             
             _verifySettings.UseDirectory(
-                $"{_snapshotPath}/{nameof(CreateModel_Should_Return_BadRequest_If_Min_Property_Type_Is_Invalid)}/{modelName}");
+                $"{_snapshotPath}/{nameof(CreateModel_Should_Return_BadRequest_If_Model_Name_Is_Invalid)}/{modelName}");
 
             await Verify(res, _verifySettings).UseFileName("response");
         }
