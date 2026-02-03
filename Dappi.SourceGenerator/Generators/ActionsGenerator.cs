@@ -19,6 +19,7 @@ namespace Dappi.SourceGenerator.Generators
 
                      [HttpGet("{id}")]
                      {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
+                     [IncludeQueryFilter]
                      public async Task<IActionResult> Get{{item.ClassName}}(Guid id, [FromQuery] string? fields = null)
                      {
                          try
@@ -59,6 +60,7 @@ namespace Dappi.SourceGenerator.Generators
                      [HttpGet]
                      {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
                      [CollectionFilter]
+                     [IncludeQueryFilter]
                      public async Task<IActionResult> Get{{item.ClassName.Pluralize()}}([FromQuery] {{item.ClassName}}Filter? filter, [FromQuery] string? fields = null)
                      {
                          try
@@ -115,6 +117,7 @@ namespace Dappi.SourceGenerator.Generators
 
                          [HttpGet("get-all")]
                          {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
+                         [IncludeQueryFilter]
                          public async Task<IActionResult> GetAll{{item.ClassName.Pluralize()}}()
                          {
                              var query = dbContext.{{item.ClassName.Pluralize()}}.AsNoTracking();
