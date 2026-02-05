@@ -27,9 +27,9 @@ namespace Dappi.SourceGenerator.Generators
                              if (id == Guid.Empty)
                                  return BadRequest();
 
-                             var query = dbContext.{{item.ClassName.Pluralize()}}.AsNoTracking().AsQueryable();
+                            var query = dbContext.{{item.ClassName.Pluralize()}}.AsNoTracking().AsQueryable();
                             
-                             query = query{{includesCode}};
+                            query = ApplyDynamicIncludes(query);
 
                              var result = await query
                                  .FirstOrDefaultAsync(p => p.Id == id);
@@ -67,7 +67,7 @@ namespace Dappi.SourceGenerator.Generators
                          {
                              var query = dbContext.{{item.ClassName.Pluralize()}}.AsNoTracking().AsQueryable();
                             
-                             query = query{{includesCode}};
+                             query = ApplyDynamicIncludes(query);
 
                              var filters = HttpContext.Items[CollectionFilter.FilterParamsKey] as List<Filter>;
                              if (filters is not null && filters.Count > 0)
@@ -122,7 +122,7 @@ namespace Dappi.SourceGenerator.Generators
                          {
                              var query = dbContext.{{item.ClassName.Pluralize()}}.AsNoTracking();
                             
-                             query = query{{includesCode}};
+                             query = ApplyDynamicIncludes(query);
                              
                              return Ok(new {items = await query.ToListAsync()});
                          }

@@ -5,7 +5,7 @@ namespace Dappi.HeadlessCms.ActionFilters
 {
     public class IncludeQueryFilter : ActionFilterAttribute
     {
-        private const string IncludeParamsKey = "Includes";
+        public const string IncludeParamsKey = "Includes";
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {
@@ -14,25 +14,12 @@ namespace Dappi.HeadlessCms.ActionFilters
 
             var includeTree = new Dictionary<string, IncludeNode>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var includeValue in includeValues)
+            foreach (var segments in from includeValue in includeValues.OfType<string>() select includeValue
+                         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) into includePaths from includePath in includePaths select includePath
+                         .Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                         .ToArray() into segments where segments.Length != 0 select segments)
             {
-                if (includeValue is null)
-                    continue;
-
-                var includePaths = includeValue
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-                foreach (var includePath in includePaths)
-                {
-                    var segments = includePath
-                        .Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                        .ToArray();
-
-                    if (segments.Length == 0)
-                        continue;
-
-                    AddSegmentsRecursive(includeTree, segments, 0);
-                }
+                AddSegments(includeTree, segments, 0);
             }
 
             if (includeTree.Count == 0)
@@ -43,11 +30,11 @@ namespace Dappi.HeadlessCms.ActionFilters
             context.HttpContext.Items[IncludeParamsKey] = includeTree;
         }
 
-        private static void AddSegmentsRecursive(IDictionary<string, IncludeNode> nodes, IReadOnlyList<string> segments, int index)
+        private static void AddSegments(IDictionary<string, IncludeNode> nodes, IReadOnlyList<string> segments, int index)
         {
             while (index != segments.Count)
             {
-                var segment = segments[index];
+                var segment = CapitalizeSegment(segments[index]);
                 if (!nodes.TryGetValue(segment, out var current))
                 {
                     current = new IncludeNode(segment);
@@ -57,6 +44,21 @@ namespace Dappi.HeadlessCms.ActionFilters
                 nodes = current.Children;
                 index++;
             }
+        }
+
+        private static string CapitalizeSegment(string segment)
+        {
+            if (string.IsNullOrEmpty(segment))
+            {
+                return segment;
+            }
+
+            if (segment.Length == 1)
+            {
+                return segment.ToUpperInvariant();
+            }
+
+            return char.ToUpperInvariant(segment[0]) + segment.Substring(1);
         }
     }
 }

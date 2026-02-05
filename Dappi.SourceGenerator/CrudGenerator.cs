@@ -65,6 +65,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
 using System.Collections;
+using System.Collections.Generic;
 using Dappi.Core.Constants;
 using System.Globalization;
 using System.Linq;
@@ -135,6 +136,35 @@ public partial class {item.ClassName}Controller(
                 p.PropertyType.GetGenericArguments()[0].Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
 
         return dbSetProperty?.GetValue(dbContext);
+    }}
+    
+    private IQueryable<{item.ClassName}> ApplyDynamicIncludes(IQueryable<{item.ClassName}> query)
+    {{
+        var includeTree = HttpContext.Items[IncludeQueryFilter.IncludeParamsKey] as IDictionary<string, IncludeNode>;
+        if (includeTree is null || includeTree.Count == 0)
+        {{
+            return query;
+        }}
+
+        foreach (var include in includeTree)
+        {{
+            query = ApplyIncludeRecursively(query, include.Key, include.Value);
+        }}
+
+        return query;
+    }}
+
+    private static IQueryable<{item.ClassName}> ApplyIncludeRecursively(IQueryable<{item.ClassName}> query, string path, IncludeNode node)
+    {{
+        query = query.Include(path);
+
+        foreach (var child in node.Children)
+        {{
+            var childPath = string.Concat(path, ""."", child.Key);
+            query = ApplyIncludeRecursively(query, childPath, child.Value);
+        }}
+
+        return query;
     }}
 }}";
 
