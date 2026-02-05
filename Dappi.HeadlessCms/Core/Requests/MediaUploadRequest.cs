@@ -8,6 +8,17 @@ namespace Dappi.HeadlessCms.Core.Requests
     // our channel can only do one job and that is why we wrap these in a request
     public record MediaUploadRequest(
         Guid MediaId,
-        IFormFile File
+        StreamAndExtensionPair StreamAndExtensionPair
     );
+
+    public record StreamAndExtensionPair(Stream Stream, string Extension)
+    {
+        public static async Task<StreamAndExtensionPair> CreateFromFormFile(IFormFile file)
+        {
+            var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+            return new StreamAndExtensionPair(memoryStream, Path.GetExtension(file.FileName));    
+        }
+    }
 }

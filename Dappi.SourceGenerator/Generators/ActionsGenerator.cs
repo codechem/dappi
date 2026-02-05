@@ -337,10 +337,9 @@ namespace Dappi.SourceGenerator.Generators
 
                                  await dbContext.Set<MediaInfo>().AddAsync(mediaInfo);
                                  await dbContext.SaveChangesAsync();
-
                                  await queue.EnqueueAsync(new MediaUploadRequest(
                                      mediaInfo.Id,
-                                     file
+                                     await StreamAndExtensionPair.CreateFromFormFile(file)
                                  ));
                                  
                                  dbContext.Entry(entity).State = EntityState.Modified;
