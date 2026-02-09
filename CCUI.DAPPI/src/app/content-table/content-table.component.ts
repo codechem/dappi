@@ -31,6 +31,7 @@ import { ContentItem, CrudActions, FieldType, ModelResponse, TableHeader } from 
 import { DrawerComponent } from '../relation-drawer/drawer.component';
 import { ImageViewerComponent } from '../image-viewer/image-viewer.component';
 import { selectAllowedCrudActions } from '../state/collection/collection.selectors';
+import { MediaUploadStatus } from '../models/media-info.model';
 
 @Component({
   selector: 'app-content-table',
@@ -325,6 +326,16 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  isPendingFileUpload(item: ContentItem, header: TableHeader) {
+    const value = item[header.key];
+
+    if (value === null || value === undefined) {
+      return false;
+    }
+
+    return value.Status === MediaUploadStatus.Pending;
+  }
+
   getCellDisplay(item: ContentItem, header: TableHeader) {
     const value = item[header.key];
 
@@ -334,7 +345,7 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
 
     switch (header.type) {
       case FieldType.file:
-        return value.Url;
+        return value?.Url ?? '';
 
       case FieldType.date:
         return this.formatDate(value);

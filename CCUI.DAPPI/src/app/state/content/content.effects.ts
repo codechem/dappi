@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { EMPTY, of } from 'rxjs';
-import { map, mergeMap, catchError, withLatestFrom } from 'rxjs/operators';
+import { EMPTY, of, timer } from 'rxjs';
+import { map, mergeMap, catchError, withLatestFrom, switchMap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngrx/store';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -27,33 +27,37 @@ export class ContentEffects {
     this.actions$.pipe(
       ofType(ContentActions.loadContent),
       withLatestFrom(this.store.select(selectSelectedType)),
-      mergeMap(([action, selectedType]) => {
+      switchMap(([action, selectedType]) => {
         const endpoint = `${BASE_API_URL}${selectedType.toLowerCase().replace(/\s+/g, '-')}`;
 
-        return this.http
-          .get<any>(endpoint, {
-            params: {
-              offset: ((action.page - 1) * action.limit).toString(),
-              limit: action.limit.toString(),
-              SearchTerm: action.searchText || '',
-            },
-          })
-          .pipe(
-            map((response) => {
-              const transformedData = this.transformEnumValues(response.Data);
-
-              return ContentActions.loadContentSuccess({
-                items: {
-                  ...response,
-                  Data: transformedData,
+        return timer(0, 2000).pipe(
+          switchMap(() =>
+            this.http
+              .get<any>(endpoint, {
+                params: {
+                  offset: ((action.page - 1) * action.limit).toString(),
+                  limit: action.limit.toString(),
+                  SearchTerm: action.searchText || '',
                 },
-              });
-            }),
-            catchError((error) => {
-              this.showErrorPopup(`Failed to load content: ${error.error}`);
-              return of(ContentActions.loadContentFailure({ error: error.message }));
-            })
-          );
+              })
+              .pipe(
+                map((response) => {
+                  const transformedData = this.transformEnumValues(response.Data);
+
+                  return ContentActions.loadContentSuccess({
+                    items: {
+                      ...response,
+                      Data: transformedData,
+                    },
+                  });
+                }),
+                catchError((error) => {
+                  this.showErrorPopup(`Failed to load content: ${error.error}`);
+                  return of(ContentActions.loadContentFailure({ error: error.message }));
+                })
+              )
+          )
+        );
       })
     )
   );
