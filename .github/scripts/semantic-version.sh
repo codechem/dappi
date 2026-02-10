@@ -12,7 +12,7 @@ PREVENT_REMOVE_FILE=$2
 
 LAST_TAG=$(git describe --tags --abbrev=0 --always)
 echo "Last tag: #$LAST_TAG#"
-PATTERN="^[0-9]+\.[0-9]+\.[0-9]+$"
+PATTERN="^[0-9]+\.[0-9]+\.[0-9]+(-.+)?$"
 
 increment_version() {
     local version=$1
@@ -61,6 +61,8 @@ create_file() {
 get_commit_range() {
     if [[ $LAST_TAG =~ $PATTERN ]]; then
         create_file true
+        # Strip any pre-release suffix for version calculation (e.g. 1.5.2-preview -> 1.5.2)
+        LAST_TAG=$(echo "$LAST_TAG" | sed 's/-.*//')
     else
         create_file
         LAST_TAG="0.0.0"
