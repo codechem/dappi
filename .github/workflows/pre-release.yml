@@ -73,16 +73,7 @@ jobs:
             exit 0
           fi
 
-          # Determine the last tag for commit count
-          LAST_TAG=$(git describe --tags --abbrev=0 --always 2>/dev/null || echo "0.0.0")
-          PATTERN="^[0-9]+\.[0-9]+\.[0-9]+(-.+)?$"
-          if [[ ! $LAST_TAG =~ $PATTERN ]]; then
-            COMMIT_COUNT=$(git rev-list --count HEAD)
-          else
-            COMMIT_COUNT=$(git rev-list --count "$LAST_TAG"..HEAD)
-          fi
-
-          NEW_VERSION="${BASE_VERSION}-pre.${COMMIT_COUNT}"
+          NEW_VERSION="${BASE_VERSION}-preview"
 
           echo "New pre-release version: $NEW_VERSION"
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
@@ -154,11 +145,11 @@ jobs:
           echo "Generated release notes:"
           cat release_notes.md
 
-      - name: Create tag
+      - name: Create or update tag
         if: steps.next_version.outputs.skip != 'true'
         run: |
-          git tag "${{ steps.next_version.outputs.version }}"
-          git push origin "${{ steps.next_version.outputs.version }}"
+          git tag -f "${{ steps.next_version.outputs.version }}"
+          git push origin "${{ steps.next_version.outputs.version }}" --force
 
       - name: Create GitHub pre-release
         if: steps.next_version.outputs.skip != 'true'
@@ -169,5 +160,6 @@ jobs:
           body_path: release_notes.md
           prerelease: true
           generate_release_notes: false
+          make_latest: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

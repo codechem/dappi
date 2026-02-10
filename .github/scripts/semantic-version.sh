@@ -61,7 +61,7 @@ create_file() {
 get_commit_range() {
     if [[ $LAST_TAG =~ $PATTERN ]]; then
         create_file true
-        # Strip any pre-release suffix for version calculation (e.g. 1.5.2-preview -> 1.5.2)
+        # Strip any pre-release suffix for version calculation (e.g. 1.6.0-preview -> 1.6.0)
         LAST_TAG=$(echo "$LAST_TAG" | sed 's/-.*//')
     else
         create_file
