@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     # Skip automated commits (e.g. frontend build output commits)
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    outputs:
+      version: ${{ steps.next_version.outputs.version }}
+      skip: ${{ steps.next_version.outputs.skip }}
 
     steps:
       - name: Checkout repository
@@ -82,7 +85,28 @@ jobs:
           rm -f messages.txt
 
       # ──────────────────────────────────────────────
-      # 3. Create tag & GitHub pre-release
+      # 3. Build & test .NET projects
+      # ──────────────────────────────────────────────
+      - name: Setup .NET
+        if: steps.next_version.outputs.skip != 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore dependencies
+        if: steps.next_version.outputs.skip != 'true'
+        run: dotnet restore
+
+      - name: Build solution
+        if: steps.next_version.outputs.skip != 'true'
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run tests
+        if: steps.next_version.outputs.skip != 'true'
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+      # ──────────────────────────────────────────────
+      # 4. Create tag & GitHub pre-release
       # ──────────────────────────────────────────────
       - name: Generate release notes
         if: steps.next_version.outputs.skip != 'true'
@@ -139,6 +163,22 @@ jobs:
             fi
 
             echo "---"
+
+            # New contributors: authors in this range who never appeared before LAST_TAG
+            if [ "$LAST_TAG" != "0.0.0" ]; then
+              CURRENT_AUTHORS=$(git log --pretty=format:"%aN" $RANGE | sort -u)
+              PREVIOUS_AUTHORS=$(git log --pretty=format:"%aN" "$LAST_TAG" | sort -u)
+              NEW_AUTHORS=$(comm -23 <(echo "$CURRENT_AUTHORS") <(echo "$PREVIOUS_AUTHORS"))
+            else
+              NEW_AUTHORS=""
+            fi
+
+            if [ -n "$NEW_AUTHORS" ]; then
+              echo "### 🆕 New Contributors"
+              echo "$NEW_AUTHORS" | while IFS= read -r author; do echo "- @$author made their first contribution"; done
+              echo ""
+            fi
+
             echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${LAST_TAG}...${{ steps.next_version.outputs.version }}"
           } > release_notes.md
 
@@ -163,3 +203,14 @@ jobs:
           make_latest: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ──────────────────────────────────────────────
+  # Deploy: call the release pipeline after a successful pre-release
+  # ──────────────────────────────────────────────
+  deploy:
+    needs: pre-release
+    if: needs.pre-release.outputs.skip != 'true'
+    uses: ./.github/workflows/release.yml
+    with:
+      tag_name: ${{ needs.pre-release.outputs.version }}
+    secrets: inherit
