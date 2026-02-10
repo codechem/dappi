@@ -53,7 +53,7 @@ coverage/
 .coverage
 
 # Entity Framework migration files
-Migrations/
+/templates/MyCompany.MyProject.WebApi/Migrations/
 
 # Ignore IDE-specific files
 *.idea/

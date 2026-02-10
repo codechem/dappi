@@ -1,4 +1,5 @@
 using System.Net.Mime;
+using Dappi.HeadlessCms.Core.Requests;
 using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
@@ -44,6 +45,35 @@ namespace Dappi.HeadlessCms.Services
             await using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(fileStream);
+            }
+
+            var relativePath = $"uploads{Path.DirectorySeparatorChar}{fileName}";
+
+            var media = await dbContext.DbContext.Set<MediaInfo>()
+                .Where(m => m.Id == mediaId).FirstOrDefaultAsync();
+
+            if (media == null) return;
+
+            media.Url = relativePath;
+            await dbContext.DbContext.SaveChangesAsync();
+        }
+        
+        public async Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair)
+        {
+            var uploadsFolder = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "wwwroot",
+                "uploads");
+
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var fileName = $"{Guid.NewGuid()}_{mediaId}{streamAndExtensionPair.Extension}";
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            await using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await streamAndExtensionPair.Stream.CopyToAsync(fileStream); 
             }
 
             var relativePath = $"uploads{Path.DirectorySeparatorChar}{fileName}";

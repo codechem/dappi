@@ -94,20 +94,31 @@
             @for (header of getFilteredHeaders(headers) | slice: 1; track header.key) {
               <td class="cell" [style.max-width.px]="getColumnWidth(header)" role="cell">
                 @if (header.type === fieldType.file) {
-                  @if (getCellDisplay(item, header)) {
+                  @if (isPendingFileUpload(item, header)) {
+                    <span class="file-uploading"></span>
+                  } @else if (isFailedFileUpload(item, header)) {
+                    <div class="failed-file-container">
+                      <img
+                        src="no-picture.svg"
+                        class="file-preview"
+                        alt="Failed upload"
+                      />
+                      <span>File not found</span>
+                    </div>
+                  } @else if (getCellDisplay(item, header)) {
                     <img
                       [src]="getCellDisplay(item, header)"
                       class="file-preview"
                       alt="{{ header.label }}"
                       (click)="openImageViewer(getCellDisplay(item, header), header.label)"
                     />
-                    @if (isImageViewerOpen && currentImageUrl === getCellDisplay(item, header)) {
-                      <app-image-viewer
-                        [imageUrl]="currentImageUrl"
-                        [title]="currentImageTitle"
-                        (closed)="closeImageViewer()"
-                      ></app-image-viewer>
-                    }
+                  }
+                  @if (isImageViewerOpen && currentImageUrl === getCellDisplay(item, header)) {
+                    <app-image-viewer
+                      [imageUrl]="currentImageUrl"
+                      [title]="currentImageTitle"
+                      (closed)="closeImageViewer()"
+                    ></app-image-viewer>
                   }
                 } @else {
                   @if (header.type === fieldType.relation || header.type === fieldType.collection) {
