@@ -147,10 +147,6 @@ namespace Dappi.HeadlessCms.Tests.Controllers
             
             await _client.PostAsJsonAsync(_baseUrl,
                 new ModelRequest { ModelName = "TestModel1", IsAuditableEntity = false });
-            await _client.PostAsJsonAsync(_baseUrl,
-                new ModelRequest { ModelName = "TestModel2", IsAuditableEntity = false });
-            await _client.PostAsJsonAsync(_baseUrl,
-                new ModelRequest { ModelName = "TestModel3", IsAuditableEntity = false });
             var res = await _client.GetAsync(_baseUrl);
 
             var verifySettings = new VerifySettings();

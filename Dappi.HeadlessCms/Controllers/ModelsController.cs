@@ -163,7 +163,8 @@ public class ModelsController : ControllerBase
         }
 
 
-        var modelFilePath = Path.Combine(_entitiesFolderPath, $"{modelName}.cs");
+        var modelFilePath = Path.Combine(_entitiesFolderPath,
+            $"{modelName}.cs");
         if (!System.IO.File.Exists(modelFilePath))
         {
             return NotFound("Model class not found.");
@@ -172,7 +173,8 @@ public class ModelsController : ControllerBase
         var fieldDict = new Dictionary<string, string> { { request.FieldName, request.FieldType } };
         var relatedFieldDict = new Dictionary<string, string>();
 
-        var existingProperty = _domainModelEditor.GetProperty(modelName, request.FieldName);
+        var existingProperty = _domainModelEditor.GetProperty(modelName,
+            request.FieldName);
         if (existingProperty != null)
         {
             return BadRequest($"Property {request.FieldName} name already exists in {modelFilePath}.");
@@ -183,24 +185,30 @@ public class ModelsController : ControllerBase
             switch (request.FieldType)
             {
                 case Constants.Relations.OneToOne:
-                    HandleOneToOneRelationship(request, modelName);
-                    relatedFieldDict.Add(request.RelatedRelationName ?? modelName, request.FieldType);
+                    HandleOneToOneRelationship(request,
+                        modelName);
+                    relatedFieldDict.Add(request.RelatedRelationName ?? modelName,
+                        request.FieldType);
                     break;
 
                 case Constants.Relations.OneToMany:
-                    HandleOneToManyRelationship(request, modelName);
-                    relatedFieldDict.Add(request.RelatedRelationName ?? modelName, Constants.Relations.ManyToOne);
+                    HandleOneToManyRelationship(request,
+                        modelName);
+                    relatedFieldDict.Add(request.RelatedRelationName ?? modelName,
+                        Constants.Relations.ManyToOne);
                     break;
 
                 case Constants.Relations.ManyToOne:
-                    HandleManyToOneRelationship(request, modelName);
+                    HandleManyToOneRelationship(request,
+                        modelName);
                     relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
                         Constants.Relations.OneToMany);
                     break;
 
                 case Constants.Relations.ManyToMany:
                     {
-                        HandleManyToManyRelationship(request, modelName);
+                        HandleManyToManyRelationship(request,
+                            modelName);
                         relatedFieldDict.Add(request.RelatedRelationName ?? $"{modelName.Pluralize()}",
                             Constants.Relations.ManyToMany);
                         break;
@@ -241,7 +249,8 @@ public class ModelsController : ControllerBase
             _domainModelEditor.AddProperty(property);
         }
 
-        await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(modelName, fieldDict);
+        await _contentTypeChangesService.UpdateContentTypeChangeFieldsAsync(modelName,
+            fieldDict);
 
         if (request.RelatedTo != null && relatedFieldDict.Count != 0)
         {
@@ -256,7 +265,8 @@ public class ModelsController : ControllerBase
         {
             Message =
                 $"Field '{request.FieldName}' of type '{request.FieldType}' added successfully to '{modelName}' model.",
-            FilePath = Path.GetRelativePath(Directory.GetCurrentDirectory(), modelFilePath)
+            FilePath = Path.GetRelativePath(Directory.GetCurrentDirectory(),
+                modelFilePath)
         });
     }
 
