@@ -96,6 +96,15 @@
                 @if (header.type === fieldType.file) {
                   @if (isPendingFileUpload(item, header)) {
                     <span class="file-uploading"></span>
+                  } @else if (isFailedFileUpload(item, header)) {
+                    <div class="failed-file-container">
+                      <img
+                        src="no-picture.svg"
+                        class="file-preview"
+                        alt="Failed upload"
+                      />
+                      <span>File not found</span>
+                    </div>
                   } @else if (getCellDisplay(item, header)) {
                     <img
                       [src]="getCellDisplay(item, header)"

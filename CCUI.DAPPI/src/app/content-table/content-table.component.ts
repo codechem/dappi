@@ -336,6 +336,16 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     return value.Status === MediaUploadStatus.Pending;
   }
 
+  isFailedFileUpload(item: ContentItem, header: TableHeader) {
+    const value = item[header.key];
+
+    if (value === null || value === undefined) {
+      return false;
+    }
+    
+    return value.Status === MediaUploadStatus.Failed;
+  }
+
   getCellDisplay(item: ContentItem, header: TableHeader) {
     const value = item[header.key];
 

@@ -359,6 +359,12 @@
   animation: rotation 1s linear infinite;
 }
 
+.failed-file-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 @keyframes rotation {
   0% {
     transform: rotate(0deg);
