@@ -42,6 +42,8 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
                     GenerateMediaInfoCreationCode("model", "existingModel", mediaInfoPropertyNames[item.ClassName]);
             }
 
+            // TODO: find a way to check which upload service to use
+
             (string includeCode, string removeCode) = GenerateDeleteCodeForMediaInfo(item);
             var generatedCode = $@"using Microsoft.AspNetCore.Mvc;
 using {dbContextData.ResidingNamespace};
@@ -50,6 +52,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Interfaces;
+using Dappi.HeadlessCms.Interfaces.StorageServices;
 using Dappi.HeadlessCms.Extensions;
 using Dappi.HeadlessCms.Exceptions;
 using Dappi.HeadlessCms.ActionFilters;
@@ -87,7 +90,7 @@ namespace {item.RootNamespace}.Controllers;
 public partial class {item.ClassName}Controller(
     {dbContextData.ClassName} dbContext,
     IDataShaperService shaper, 
-    IMediaUploadService uploadService,
+    IAwsS3StorageService uploadService,
     IMediaUploadQueue queue) : ControllerBase
 {{
 

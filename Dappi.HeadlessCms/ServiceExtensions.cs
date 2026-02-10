@@ -9,6 +9,8 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
 using Dappi.HeadlessCms.Core;
+using Dappi.HeadlessCms.Interfaces.StorageServices;
+using Dappi.HeadlessCms.Services.StorageServices;
 using Dappi.HeadlessCms.Validators;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -53,7 +55,10 @@ public static class ServiceExtensions
         
         services.AddSingleton<IMediaUploadQueue, MediaUploadQueue>();
         services.AddScoped<IMediaUploadService, LocalStorageUploadService>();
-        services.AddHostedService<MediaUploadWorker>();
+        services.AddScoped<IAwsS3StorageService, AwsS3StorageService>();
+        // services.AddHostedService<MediaUploadWorker>(); 
+        // TODO : find a way how to set which media upload worker will do the uploading
+        services.AddHostedService<AwsS3MediaUploadWorker>();
 
         services.AddHttpContextAccessor();
 
