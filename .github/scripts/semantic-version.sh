@@ -12,7 +12,7 @@ PREVENT_REMOVE_FILE=$2
 
 LAST_TAG=$(git describe --tags --abbrev=0 --always)
 echo "Last tag: #$LAST_TAG#"
-PATTERN="^[0-9]+\.[0-9]+\.[0-9]+$"
+PATTERN="^[0-9]+\.[0-9]+\.[0-9]+(-.+)?$"
 
 increment_version() {
     local version=$1
@@ -61,6 +61,8 @@ create_file() {
 get_commit_range() {
     if [[ $LAST_TAG =~ $PATTERN ]]; then
         create_file true
+        # Strip any pre-release suffix for version calculation (e.g. 1.6.0-preview -> 1.6.0)
+        LAST_TAG=$(echo "$LAST_TAG" | sed 's/-.*//')
     else
         create_file
         LAST_TAG="0.0.0"
@@ -71,25 +73,22 @@ get_commit_range() {
 start() {
     get_commit_range
     new_version=$LAST_TAG
-    increment_type=""
+    has_changes=false
 
     while read message; do
         if [[ $message =~ (([a-z]+)(\(.+\))?\!:)|(BREAKING CHANGE:) ]]; then
-            increment_type="major"
-            break
+            new_version=$(increment_version $new_version "major")
+            has_changes=true
         elif [[ $message =~ (^(feat|style)(\(.+\))?:) ]]; then
-            if [ -z "$increment_type" ] || [ "$increment_type" == "patch" ]; then
-                increment_type="minor"
-            fi
+            new_version=$(increment_version $new_version "minor")
+            has_changes=true
         elif [[ $message =~ ^((fix|build|perf|refactor|revert)(\(.+\))?:) ]]; then
-            if [ -z "$increment_type" ]; then
-                increment_type="patch"
-            fi
+            new_version=$(increment_version $new_version "patch")
+            has_changes=true
         fi
     done < messages.txt
 
-    if [ -n "$increment_type" ]; then
-        new_version=$(increment_version $LAST_TAG $increment_type)
+    if [ "$has_changes" = true ]; then
         echo "New version: $new_version"
         push_newversion $new_version
     else
