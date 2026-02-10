@@ -1,0 +1,173 @@
+name: Pre-Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  pre-release:
+    runs-on: ubuntu-latest
+    # Skip automated commits (e.g. frontend build output commits)
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ──────────────────────────────────────────────
+      # 1. Build Angular frontend so assets are current
+      # ──────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './CCUI.DAPPI/package-lock.json'
+
+      - name: Install frontend dependencies
+        working-directory: ./CCUI.DAPPI
+        run: npm ci
+
+      - name: Build Angular frontend
+        working-directory: ./CCUI.DAPPI
+        run: npm run build
+
+      - name: Commit frontend build output if changed
+        id: commit_frontend
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+          git add templates/MyCompany.MyProject.WebApi/wwwroot -f
+
+          if git diff --cached --quiet; then
+            echo "No frontend changes to commit"
+            echo "committed=false" >> $GITHUB_OUTPUT
+          else
+            git commit -m "chore: update Angular build output [skip ci]"
+            git push
+            echo "committed=true" >> $GITHUB_OUTPUT
+          fi
+
+      # ──────────────────────────────────────────────
+      # 2. Calculate semantic version from conventional commits
+      # ──────────────────────────────────────────────
+      - name: Calculate next version
+        id: next_version
+        run: |
+          # Run the shared semantic versioning script (no tag push, keep messages.txt)
+          OUTPUT=$(bash .github/scripts/semantic-version.sh false true)
+          echo "$OUTPUT"
+
+          # Extract the base version from script output
+          BASE_VERSION=$(echo "$OUTPUT" | grep -oP '(?<=New version: )\S+' || true)
+
+          if [ -z "$BASE_VERSION" ]; then
+            echo "No changes requiring a version increment."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Determine the last tag for commit count
+          LAST_TAG=$(git describe --tags --abbrev=0 --always 2>/dev/null || echo "0.0.0")
+          PATTERN="^[0-9]+\.[0-9]+\.[0-9]+$"
+          if [[ ! $LAST_TAG =~ $PATTERN ]]; then
+            COMMIT_COUNT=$(git rev-list --count HEAD)
+          else
+            COMMIT_COUNT=$(git rev-list --count "$LAST_TAG"..HEAD)
+          fi
+
+          NEW_VERSION="${BASE_VERSION}-pre.${COMMIT_COUNT}"
+
+          echo "New pre-release version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "skip=false"            >> $GITHUB_OUTPUT
+
+          rm -f messages.txt
+
+      # ──────────────────────────────────────────────
+      # 3. Create tag & GitHub pre-release
+      # ──────────────────────────────────────────────
+      - name: Generate release notes
+        if: steps.next_version.outputs.skip != 'true'
+        id: release_notes
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 --always 2>/dev/null || echo "0.0.0")
+          PATTERN="^[0-9]+\.[0-9]+\.[0-9]+$"
+          if [[ ! $LAST_TAG =~ $PATTERN ]]; then
+            LAST_TAG="0.0.0"
+          fi
+
+          if [ "$LAST_TAG" = "0.0.0" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="$LAST_TAG..HEAD"
+          fi
+
+          {
+            echo "## What's Changed"
+            echo ""
+
+            # Breaking changes
+            BREAKING=$(git log --pretty=format:"%s" $RANGE | grep -E '^[a-z]+(\(.+\))?!:|BREAKING CHANGE' || true)
+            if [ -n "$BREAKING" ]; then
+              echo "### ⚠️ Breaking Changes"
+              echo "$BREAKING" | while IFS= read -r line; do echo "- $line"; done
+              echo ""
+            fi
+
+            # Features
+            FEATURES=$(git log --pretty=format:"%s" $RANGE | grep -E '^feat(\(.+\))?:' || true)
+            if [ -n "$FEATURES" ]; then
+              echo "### 🚀 Features"
+              echo "$FEATURES" | while IFS= read -r line; do echo "- $line"; done
+              echo ""
+            fi
+
+            # Bug fixes
+            FIXES=$(git log --pretty=format:"%s" $RANGE | grep -E '^fix(\(.+\))?:' || true)
+            if [ -n "$FIXES" ]; then
+              echo "### 🐛 Bug Fixes"
+              echo "$FIXES" | while IFS= read -r line; do echo "- $line"; done
+              echo ""
+            fi
+
+            # Everything else (skip [skip ci] noise)
+            OTHER=$(git log --pretty=format:"%s" $RANGE \
+              | grep -vE '^(feat|fix)(\(.+\))?(!)?\:' \
+              | grep -v '\[skip ci\]' || true)
+            if [ -n "$OTHER" ]; then
+              echo "### 🔧 Other Changes"
+              echo "$OTHER" | while IFS= read -r line; do echo "- $line"; done
+              echo ""
+            fi
+
+            echo "---"
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${LAST_TAG}...${{ steps.next_version.outputs.version }}"
+          } > release_notes.md
+
+          echo "Generated release notes:"
+          cat release_notes.md
+
+      - name: Create tag
+        if: steps.next_version.outputs.skip != 'true'
+        run: |
+          git tag "${{ steps.next_version.outputs.version }}"
+          git push origin "${{ steps.next_version.outputs.version }}"
+
+      - name: Create GitHub pre-release
+        if: steps.next_version.outputs.skip != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.next_version.outputs.version }}
+          name: 'v${{ steps.next_version.outputs.version }}'
+          body_path: release_notes.md
+          prerelease: true
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

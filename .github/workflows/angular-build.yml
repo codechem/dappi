@@ -1,9 +1,10 @@
 name: Build and Update Angular
 
+# The pre-release pipeline (pre-release.yml) now builds Angular on every
+# merge to main before creating a tag, so this workflow no longer needs the
+# automatic push trigger.  It can still be run manually when needed.
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
