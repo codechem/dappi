@@ -30,7 +30,7 @@ export class ContentEffects {
       switchMap(([action, selectedType]) => {
         const endpoint = `${BASE_API_URL}${selectedType.toLowerCase().replace(/\s+/g, '-')}`;
 
-        return timer(0, 2000).pipe(
+        return timer(0, 1000).pipe(
           switchMap(() =>
             this.http
               .get<any>(endpoint, {
