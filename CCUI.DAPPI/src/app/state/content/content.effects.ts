@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { EMPTY, of } from 'rxjs';
-import { map, mergeMap, catchError, withLatestFrom } from 'rxjs/operators';
+import { EMPTY, of, timer } from 'rxjs';
+import { map, mergeMap, catchError, withLatestFrom, switchMap, expand, takeWhile } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngrx/store';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -9,7 +9,7 @@ import * as ContentActions from './content.actions';
 import { selectItemsPerPage, selectSelectedType } from './content.selectors';
 import { FieldType, ModelField, ModelResponse, PaginatedResponse } from '../../models/content.model';
 import { BASE_API_URL } from '../../../Constants';
-import { MediaInfo } from '../../models/media-info.model';
+import { MediaInfo, MediaUploadStatus } from '../../models/media-info.model';
 import { RecentContent } from '../../models/recent-content';
 
 @Injectable({
@@ -27,33 +27,40 @@ export class ContentEffects {
     this.actions$.pipe(
       ofType(ContentActions.loadContent),
       withLatestFrom(this.store.select(selectSelectedType)),
-      mergeMap(([action, selectedType]) => {
+      switchMap(([action, selectedType]) => {
         const endpoint = `${BASE_API_URL}${selectedType.toLowerCase().replace(/\s+/g, '-')}`;
 
-        return this.http
-          .get<any>(endpoint, {
-            params: {
-              offset: ((action.page - 1) * action.limit).toString(),
-              limit: action.limit.toString(),
-              SearchTerm: action.searchText || '',
-            },
-          })
-          .pipe(
-            map((response) => {
-              const transformedData = this.transformEnumValues(response.Data);
-
-              return ContentActions.loadContentSuccess({
-                items: {
-                  ...response,
-                  Data: transformedData,
+        return timer(0, 1000).pipe(
+          switchMap(() =>
+            this.http
+              .get<any>(endpoint, {
+                params: {
+                  offset: ((action.page - 1) * action.limit).toString(),
+                  limit: action.limit.toString(),
+                  SearchTerm: action.searchText || '',
                 },
-              });
-            }),
-            catchError((error) => {
-              this.showErrorPopup(`Failed to load content: ${error.error}`);
-              return of(ContentActions.loadContentFailure({ error: error.message }));
+              })
+              .pipe(
+                map((response) => {
+                  const transformedData = this.transformEnumValues(response.Data);
+                  return { response, transformedData };
+                })
+              )
+          ),
+          takeWhile(({ response }) => this.hasPendingMedia(response.Data), true),
+          map(({ response, transformedData }) =>
+            ContentActions.loadContentSuccess({
+              items: {
+                ...response,
+                Data: transformedData,
+              },
             })
-          );
+          ),
+          catchError((error) => {
+            this.showErrorPopup(`Failed to load content: ${error.error}`);
+            return of(ContentActions.loadContentFailure({ error: error.message }));
+          })
+        );
       })
     )
   );
@@ -371,6 +378,19 @@ export class ContentEffects {
       horizontalPosition: 'center',
       verticalPosition: 'bottom',
       panelClass: ['error-snackbar'],
+    });
+  }
+
+  private hasPendingMedia(data: any[]): boolean {
+    if (!data || data.length === 0) return false;
+    
+    return data.some(item => {
+      return Object.values(item).some(value => {
+        return value && 
+               typeof value === 'object' && 
+               'Status' in value && 
+               value.Status === MediaUploadStatus.Pending;
+      });
     });
   }
 
