@@ -37,6 +37,9 @@ namespace Dappi.SourceGenerator.Generators
                              if (result is null)
                                  return NotFound();
 
+                             if (!ShouldShape(fields))
+                                 return Ok(result);
+
                              return Ok(shaper.ShapeObject(result,fields));
                          } 
                          catch(PropertyNotFoundException ex)
@@ -87,7 +90,20 @@ namespace Dappi.SourceGenerator.Generators
                                  .Take(filter.Limit)
                                  .ToListAsync();
 
-                             var listDto = new ListResponseDTO<ExpandoObject>
+                             if (!ShouldShape(fields))
+                             {
+                                 var listDto = new ListResponseDTO<{{item.ClassName}}>
+                                 {
+                                     Data = data,
+                                     Limit = filter.Limit,
+                                     Offset = filter.Offset,
+                                     Total = total
+                                 };
+
+                                 return Ok(listDto);
+                             }
+
+                             var shapedListDto = new ListResponseDTO<ExpandoObject>
                              {
                                  Data = data.Select(x => shaper.ShapeObject(x,fields)),
                                  Limit = filter.Limit,
@@ -95,7 +111,7 @@ namespace Dappi.SourceGenerator.Generators
                                  Total = total
                              };
 
-                             return Ok(listDto);
+                             return Ok(shapedListDto);
                          }
                          catch(PropertyNotFoundException ex)
                          {

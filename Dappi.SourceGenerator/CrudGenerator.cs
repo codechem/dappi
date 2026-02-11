@@ -126,6 +126,16 @@ public partial class {item.ClassName}Controller(
         property.SetValue(entity, value?.Deserialize(property.PropertyType));
     }}
 
+    private bool ShouldShape(string? fields)
+    {{
+        var hasIncludes = HttpContext.Items.ContainsKey(IncludeQueryFilter.IncludeParamsKey);
+        if (hasIncludes && string.IsNullOrWhiteSpace(fields))
+        {{
+            return false;
+        }})
+
+        return true;
+    }}
 
     private dynamic GetDbSetForType(string typeName)
     {{
