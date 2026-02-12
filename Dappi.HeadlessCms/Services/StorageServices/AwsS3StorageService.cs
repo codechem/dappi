@@ -33,36 +33,54 @@ namespace Dappi.HeadlessCms.Services.StorageServices
         {
             var accessKey = configuration["AWS:AccessKey"];
             var secretKey = configuration["AWS:SecretKey"];
-            var region = Amazon.RegionEndpoint.GetBySystemName(configuration["AWS:Region"]);
-
+            var regionName = configuration["AWS:Region"];
             var bucketName = configuration["AwsS3BucketConfiguration:BucketName"];
-            var objectKey = $"{mediaId}{streamAndExtensionPair.Extension}";
 
-            using var client = new AmazonS3Client(accessKey, secretKey, region);
-
-            var putRequest = new PutObjectRequest
+            if (string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey))
             {
-                BucketName = bucketName,
-                Key = objectKey,
-                InputStream = streamAndExtensionPair.Stream,
-                AutoCloseStream = true,
-                ContentType = GetContentType(streamAndExtensionPair.Extension)
-            };
+                throw new Exception("AWS Credentials are missing from configuration.");
+            }
 
-            await client.PutObjectAsync(putRequest);
+            var region = Amazon.RegionEndpoint.GetBySystemName(regionName ?? "eu-central-1");
 
-            var s3Url = $"https://{bucketName}.s3.amazonaws.com/{objectKey}";
+            var extension = streamAndExtensionPair.Extension.StartsWith(".")
+                ? streamAndExtensionPair.Extension
+                : "." + streamAndExtensionPair.Extension;
 
-            var media = await dbContext.DbContext.Set<MediaInfo>()
-                .FirstOrDefaultAsync(m => m.Id == mediaId);
+            var objectKey = $"{mediaId:D}{extension}";
 
-            if (media != null)
+            var credentials = new Amazon.Runtime.BasicAWSCredentials(accessKey, secretKey);
+            using var client = new AmazonS3Client(credentials, region);
+
+            try
             {
-                media.Url = s3Url;
-                await dbContext.DbContext.SaveChangesAsync();
+                var putRequest = new PutObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = objectKey,
+                    InputStream = streamAndExtensionPair.Stream,
+                    AutoCloseStream = true,
+                    ContentType = GetContentType(streamAndExtensionPair.Extension)
+                };
+
+                await client.PutObjectAsync(putRequest);
+
+                var s3Url = $"https://{bucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
+
+                var media = await dbContext.DbContext.Set<MediaInfo>()
+                    .FirstOrDefaultAsync(m => m.Id == mediaId);
+
+                if (media != null)
+                {
+                    media.Url = s3Url;
+                    await dbContext.DbContext.SaveChangesAsync();
+                }
+            }
+            catch (AmazonS3Exception e)
+            {
+                throw new Exception($"Error encountered on server. Message:'{e.Message}' when writing an object", e);
             }
         }
-
         public async Task UpdateStatusAsync(Guid mediaId, MediaUploadStatus status)
         {
             var media = await dbContext.DbContext.Set<MediaInfo>()
