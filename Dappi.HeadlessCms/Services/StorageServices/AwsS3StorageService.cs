@@ -17,7 +17,7 @@ namespace Dappi.HeadlessCms.Services.StorageServices
         {
             // TODO: implement deletion of objects on s3
         }
-        
+
         public void ValidateFile(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -28,13 +28,17 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             if (GetContentType(fileExtension) == "unsupported")
                 throw new Exception("Unsupported media type.");
         }
-        
+
         public async Task UploadToS3Async(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair)
         {
+            var accessKey = configuration["AWS:AccessKey"];
+            var secretKey = configuration["AWS:SecretKey"];
+            var region = Amazon.RegionEndpoint.GetBySystemName(configuration["AWS:Region"]);
+
             var bucketName = configuration["AwsS3BucketConfiguration:BucketName"];
             var objectKey = $"{mediaId}{streamAndExtensionPair.Extension}";
-    
-            using var client = new AmazonS3Client();
+
+            using var client = new AmazonS3Client(accessKey, secretKey, region);
 
             var putRequest = new PutObjectRequest
             {
@@ -42,7 +46,7 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                 Key = objectKey,
                 InputStream = streamAndExtensionPair.Stream,
                 AutoCloseStream = true,
-                ContentType = GetContentType(streamAndExtensionPair.Extension) 
+                ContentType = GetContentType(streamAndExtensionPair.Extension)
             };
 
             await client.PutObjectAsync(putRequest);
@@ -69,7 +73,7 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             media.Status = status;
             await dbContext.DbContext.SaveChangesAsync();
         }
-        
+
         private string GetContentType(string extension) => extension.ToLower() switch
         {
             ".jpg" or ".jpeg" => "image/jpeg",
