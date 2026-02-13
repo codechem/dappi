@@ -6,7 +6,7 @@ using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dappi.HeadlessCms.Services
+namespace Dappi.HeadlessCms.Services.StorageServices
 {
     public class LocalStorageUploadService(IDbContextAccessor dbContext) : IMediaUploadService
     {

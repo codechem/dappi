@@ -9,6 +9,8 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
 using Dappi.HeadlessCms.Core;
+using Dappi.HeadlessCms.Models;
+using Dappi.HeadlessCms.Services.StorageServices;
 using Dappi.HeadlessCms.Validators;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -87,6 +89,27 @@ public static class ServiceExtensions
             "Entities"
         ),Path.Combine(Directory.GetCurrentDirectory(), "Enums")));
         services.AddEndpointsApiExplorer();
+        return services;
+    }
+    
+    public static IServiceCollection AddS3Storage(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var accessKey = configuration["AWS:AccessKey"];
+        var secretKey = configuration["AWS:SecretKey"];
+        var region = configuration["AWS:Region"];
+        var bucketName = configuration["AWS:BucketName"];
+
+        if (string.IsNullOrWhiteSpace(accessKey) ||
+            string.IsNullOrWhiteSpace(secretKey) ||
+            string.IsNullOrWhiteSpace(region) ||
+            string.IsNullOrWhiteSpace(bucketName))
+        {
+            throw new Exception("Environment variables for AWS are not set");
+        }
+
+        services.AddScoped<IMediaUploadService, AwsS3StorageService>();
         return services;
     }
 
