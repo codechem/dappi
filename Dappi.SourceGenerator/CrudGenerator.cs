@@ -65,10 +65,11 @@ using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
 using System.Collections;
+using System.Collections.Generic;
 using Dappi.Core.Constants;
 using System.Globalization;
 using System.Linq;
-using System.Dynamic;
+using System.Linq.Dynamic.Core;
 
 /*
 ==== area for testing ====
@@ -86,7 +87,6 @@ namespace {item.RootNamespace}.Controllers;
 {controllerAttribute}
 public partial class {item.ClassName}Controller(
     {dbContextData.ClassName} dbContext,
-    IDataShaperService shaper, 
     IMediaUploadService uploadService,
     IMediaUploadQueue queue) : ControllerBase
 {{
@@ -125,6 +125,47 @@ public partial class {item.ClassName}Controller(
         property.SetValue(entity, value?.Deserialize(property.PropertyType));
     }}
 
+    private static string? BuildSelectExpression(string? fields)
+    {{
+        if (string.IsNullOrWhiteSpace(fields))
+        {{
+            return null;
+        }}
+
+        var bindingFlags = BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance;
+        var propertyMap = typeof({item.ClassName}).GetProperties(bindingFlags)
+            .ToDictionary(p => p.Name, p => p.Name, StringComparer.OrdinalIgnoreCase);
+
+        var requestedFields = fields
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(field => field.Trim())
+            .Where(field => !string.IsNullOrWhiteSpace(field))
+            .ToArray();
+
+        if (requestedFields.Length == 0)
+        {{
+            return null;
+        }}
+
+        var selected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var selectParts = new List<string>(requestedFields.Length);
+
+        foreach (var field in requestedFields)
+        {{
+            if (!propertyMap.TryGetValue(field, out var propertyName))
+            {{
+                throw new PropertyNotFoundException(
+                    ""Property "" + field + "" not found in "" + typeof({item.ClassName}).FullName);
+            }}
+
+            if (selected.Add(propertyName))
+            {{
+                selectParts.Add(propertyName);
+            }}
+        }}
+
+        return ""new ("" + string.Join("", "", selectParts) + "")"";
+    }}
 
     private dynamic GetDbSetForType(string typeName)
     {{
@@ -135,6 +176,35 @@ public partial class {item.ClassName}Controller(
                 p.PropertyType.GetGenericArguments()[0].Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
 
         return dbSetProperty?.GetValue(dbContext);
+    }}
+    
+    private IQueryable<{item.ClassName}> ApplyDynamicIncludes(IQueryable<{item.ClassName}> query)
+    {{
+        var includeTree = HttpContext.Items[IncludeQueryFilter.IncludeParamsKey] as IDictionary<string, IncludeNode>;
+        if (includeTree is null || includeTree.Count == 0)
+        {{
+            return query;
+        }}
+
+        foreach (var include in includeTree)
+        {{
+            query = ApplyIncludeRecursively(query, include.Key, include.Value);
+        }}
+
+        return query;
+    }}
+
+    private static IQueryable<{item.ClassName}> ApplyIncludeRecursively(IQueryable<{item.ClassName}> query, string path, IncludeNode node)
+    {{
+        query = query.Include(path);
+
+        foreach (var child in node.Children)
+        {{
+            var childPath = string.Concat(path, ""."", child.Key);
+            query = ApplyIncludeRecursively(query, childPath, child.Value);
+        }}
+
+        return query;
     }}
 }}";
 

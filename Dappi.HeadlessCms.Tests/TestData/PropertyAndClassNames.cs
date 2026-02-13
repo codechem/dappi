@@ -1,5 +1,4 @@
 using Dappi.HeadlessCms.Models;
-using Xunit;
 
 namespace Dappi.HeadlessCms.Tests.TestData
 {

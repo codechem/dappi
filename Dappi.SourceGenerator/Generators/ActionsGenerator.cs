@@ -19,6 +19,7 @@ namespace Dappi.SourceGenerator.Generators
 
                      [HttpGet("{id}")]
                      {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
+                     [IncludeQueryFilter]
                      public async Task<IActionResult> Get{{item.ClassName}}(Guid id, [FromQuery] string? fields = null)
                      {
                          try
@@ -26,17 +27,29 @@ namespace Dappi.SourceGenerator.Generators
                              if (id == Guid.Empty)
                                  return BadRequest();
 
-                             var query = dbContext.{{item.ClassName.Pluralize()}}.AsNoTracking().AsQueryable();
                             
-                             query = query{{includesCode}};
 
-                             var result = await query
-                                 .FirstOrDefaultAsync(p => p.Id == id);
+                                var selectExpression = BuildSelectExpression(fields);
+                                if (selectExpression is null)
+                                {
+                                    var result = await query
+                                        .FirstOrDefaultAsync(p => p.Id == id);
 
-                             if (result is null)
-                                 return NotFound();
+                                    if (result is null)
+                                        return NotFound();
 
-                             return Ok(shaper.ShapeObject(result,fields));
+                                    return Ok(result);
+                                }
+
+                                var shapedResult = await query
+                                    .Where(p => p.Id == id)
+                                    .Select(selectExpression)
+                                    .FirstOrDefaultAsync();
+
+                                if (shapedResult is null)
+                                    return NotFound();
+
+                                return Ok(shapedResult);
                          } 
                          catch(PropertyNotFoundException ex)
                          {
@@ -59,13 +72,14 @@ namespace Dappi.SourceGenerator.Generators
                      [HttpGet]
                      {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
                      [CollectionFilter]
+                     [IncludeQueryFilter]
                      public async Task<IActionResult> Get{{item.ClassName.Pluralize()}}([FromQuery] {{item.ClassName}}Filter? filter, [FromQuery] string? fields = null)
                      {
                          try
                          {
                              var query = dbContext.{{item.ClassName.Pluralize()}}.AsNoTracking().AsQueryable();
                             
-                             query = query{{includesCode}};
+                             query = ApplyDynamicIncludes(query);
 
                              var filters = HttpContext.Items[CollectionFilter.FilterParamsKey] as List<Filter>;
                              if (filters is not null && filters.Count > 0)
@@ -80,20 +94,41 @@ namespace Dappi.SourceGenerator.Generators
                              }
 
                              var total = await query.CountAsync();
-                             var data = await query
+
+                             var selectExpression = BuildSelectExpression(fields);
+                             if (selectExpression is null)
+                             {
+                                 var data = await query
+                                     .Skip(filter.Offset)
+                                     .Take(filter.Limit)
+                                     .ToListAsync();
+
+                                 var listDto = new ListResponseDTO<{{item.ClassName}}>
+                                 {
+                                     Data = data,
+                                     Limit = filter.Limit,
+                                     Offset = filter.Offset,
+                                     Total = total
+                                 };
+
+                                 return Ok(listDto);
+                             }
+
+                             var shapedData = await query
                                  .Skip(filter.Offset)
                                  .Take(filter.Limit)
-                                 .ToListAsync();
+                                 .Select(selectExpression)
+                                 .ToDynamicListAsync();
 
-                             var listDto = new ListResponseDTO<ExpandoObject>
+                             var shapedListDto = new ListResponseDTO<object>
                              {
-                                 Data = data.Select(x => shaper.ShapeObject(x,fields)),
+                                 Data = shapedData,
                                  Limit = filter.Limit,
                                  Offset = filter.Offset,
                                  Total = total
                              };
 
-                             return Ok(listDto);
+                             return Ok(shapedListDto);
                          }
                          catch(PropertyNotFoundException ex)
                          {
@@ -115,11 +150,12 @@ namespace Dappi.SourceGenerator.Generators
 
                          [HttpGet("get-all")]
                          {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
+                         [IncludeQueryFilter]
                          public async Task<IActionResult> GetAll{{item.ClassName.Pluralize()}}()
                          {
                              var query = dbContext.{{item.ClassName.Pluralize()}}.AsNoTracking();
                             
-                             query = query{{includesCode}};
+                             query = ApplyDynamicIncludes(query);
                              
                              return Ok(new {items = await query.ToListAsync()});
                          }
