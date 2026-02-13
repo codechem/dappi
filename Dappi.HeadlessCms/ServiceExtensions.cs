@@ -9,6 +9,7 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
 using Dappi.HeadlessCms.Core;
+using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Services.StorageServices;
 using Dappi.HeadlessCms.Validators;
 using FluentValidation;
@@ -32,6 +33,7 @@ public static class ServiceExtensions
     public static IServiceCollection AddDappi<TDbContext>(
         this IServiceCollection services,
         IConfiguration configuration,
+        MediaStorageProvider mediaStorageProvider = MediaStorageProvider.Local,
         Action<JsonOptions>? jsonOptions = null)
         where TDbContext : DappiDbContext
     {
@@ -53,8 +55,21 @@ public static class ServiceExtensions
         services.AddScoped<IEnumService, EnumService>();
         
         services.AddSingleton<IMediaUploadQueue, MediaUploadQueue>();
-        services.AddScoped<IMediaUploadService, LocalStorageUploadService>();
-        services.AddScoped<IMediaUploadService, AwsS3StorageService>();
+
+        switch (mediaStorageProvider)
+        {
+            case MediaStorageProvider.AwsS3BucketStorage:
+                {
+                    services.AddScoped<IMediaUploadService, AwsS3StorageService>();
+                    break;
+                }
+            default:
+                {
+                    services.AddScoped<IMediaUploadService, LocalStorageUploadService>();
+                    break;
+                }
+        }
+        
         services.AddHostedService<MediaUploadWorker>(); 
 
         services.AddHttpContextAccessor();
