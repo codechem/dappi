@@ -1,7 +1,7 @@
-using Dappi.HeadlessCms.Core.Requests;
 using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Dappi.HeadlessCms.Background;
@@ -10,19 +10,43 @@ public class MediaUploadWorker(
     IMediaUploadQueue queue,
     IServiceScopeFactory scopeFactory,
     ILogger<MediaUploadWorker> logger)
-    : BaseMediaUploadWorker<IMediaUploadService>(queue, scopeFactory, logger)
+    : BackgroundService
 {
-    protected override async Task ProcessRequestAsync(IMediaUploadService service, MediaUploadRequest request, CancellationToken ct)
+    protected override async Task ExecuteAsync(
+        CancellationToken stoppingToken)
     {
-        await service.UpdateStatusAsync(request.MediaId, MediaUploadStatus.Pending);
-        
-        await service.SaveFileAsync(request.MediaId, request.StreamAndExtensionPair);
-        
-        await service.UpdateStatusAsync(request.MediaId, MediaUploadStatus.Completed);
-    }
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            using var scope = scopeFactory.CreateScope();
+            var uploadService = scope.ServiceProvider.GetRequiredService<IMediaUploadService>();
+            await foreach (var request in queue.GetReader().ReadAllAsync(stoppingToken))
+            {
+                var status = MediaUploadStatus.Pending;
+                await uploadService.UpdateStatusAsync(
+                    request.MediaId,
+                    status);
+                try
+                {
+                    logger.LogInformation("File upload started for mediaId {RequestMediaId}", request.MediaId);
 
-    protected override async Task HandleFailureAsync(IMediaUploadService service, MediaUploadRequest request, Exception ex)
-    {
-        await service.UpdateStatusAsync(request.MediaId, MediaUploadStatus.Failed);
+                    await uploadService.SaveFileAsync(
+                        request.MediaId, request.StreamAndExtensionPair);
+
+                    status = MediaUploadStatus.Completed;
+                }
+                catch(Exception ex)
+                {
+                    logger.LogError("File upload failed for mediaId {RequestMediaId}: {ExMessage}", request.MediaId, ex.Message); 
+                    status = MediaUploadStatus.Failed;
+                }
+                finally
+                {
+                    await uploadService.UpdateStatusAsync(
+                        request.MediaId,
+                        status);
+                    logger.LogInformation("File upload completed for mediaId {RequestMediaId}", request.MediaId);
+                }
+            }
+        }
     }
 }

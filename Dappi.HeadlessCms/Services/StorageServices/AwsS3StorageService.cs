@@ -3,7 +3,6 @@ using Amazon.S3.Model;
 using Dappi.HeadlessCms.Core.Requests;
 using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
-using Dappi.HeadlessCms.Interfaces.StorageServices;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -11,25 +10,14 @@ using Microsoft.Extensions.Configuration;
 
 namespace Dappi.HeadlessCms.Services.StorageServices
 {
-    public class AwsS3StorageService(IConfiguration configuration, IDbContextAccessor dbContext) : IAwsS3StorageService
+    public class AwsS3StorageService(IConfiguration configuration, IDbContextAccessor dbContext) : IMediaUploadService
     {
         public void DeleteMedia(MediaInfo media)
         {
             // TODO: implement deletion of objects on s3
         }
 
-        public void ValidateFile(IFormFile file)
-        {
-            if (file == null || file.Length == 0)
-                throw new Exception("No file was uploaded.");
-
-            var fileExtension = Path.GetExtension(file.FileName);
-
-            if (GetContentType(fileExtension) == "unsupported")
-                throw new Exception("Unsupported media type.");
-        }
-
-        public async Task UploadToS3Async(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair)
+        public async Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair)
         {
             var accessKey = configuration["AWS:AccessKey"];
             var secretKey = configuration["AWS:SecretKey"];
@@ -81,6 +69,18 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                 throw new Exception($"Error encountered on server. Message:'{e.Message}' when writing an object", e);
             }
         }
+
+        public void ValidateFile(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                throw new Exception("No file was uploaded.");
+
+            var fileExtension = Path.GetExtension(file.FileName);
+
+            if (GetContentType(fileExtension) == "unsupported")
+                throw new Exception("Unsupported media type.");
+        }
+
         public async Task UpdateStatusAsync(Guid mediaId, MediaUploadStatus status)
         {
             var media = await dbContext.DbContext.Set<MediaInfo>()
