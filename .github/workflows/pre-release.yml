@@ -17,10 +17,18 @@ jobs:
       skip: ${{ steps.next_version.outputs.skip }}
 
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BUILD_OUTPUT_UPDATER_APPID }}
+          private-key: ${{ secrets.BUILD_OUTPUT_UPDATER_SECRET }}
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       # ──────────────────────────────────────────────
       # 1. Build Angular frontend so assets are current
