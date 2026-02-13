@@ -54,9 +54,7 @@ public static class ServiceExtensions
         services.AddScoped<IEnumService, EnumService>();
         
         services.AddSingleton<IMediaUploadQueue, MediaUploadQueue>();
-
         services.AddScoped<IMediaUploadService, LocalStorageUploadService>();
-        
         services.AddHostedService<MediaUploadWorker>(); 
 
         services.AddHttpContextAccessor();
