@@ -27,20 +27,29 @@ namespace Dappi.SourceGenerator.Generators
                              if (id == Guid.Empty)
                                  return BadRequest();
 
-                            var query = dbContext.{{item.ClassName.Pluralize()}}.AsNoTracking().AsQueryable();
                             
-                            query = ApplyDynamicIncludes(query);
 
-                             var result = await query
-                                 .FirstOrDefaultAsync(p => p.Id == id);
+                                var selectExpression = BuildSelectExpression(fields);
+                                if (selectExpression is null)
+                                {
+                                    var result = await query
+                                        .FirstOrDefaultAsync(p => p.Id == id);
 
-                             if (result is null)
-                                 return NotFound();
+                                    if (result is null)
+                                        return NotFound();
 
-                             if (!ShouldShape(fields))
-                                 return Ok(result);
+                                    return Ok(result);
+                                }
 
-                             return Ok(shaper.ShapeObject(result,fields));
+                                var shapedResult = await query
+                                    .Where(p => p.Id == id)
+                                    .Select(selectExpression)
+                                    .FirstOrDefaultAsync();
+
+                                if (shapedResult is null)
+                                    return NotFound();
+
+                                return Ok(shapedResult);
                          } 
                          catch(PropertyNotFoundException ex)
                          {
@@ -85,13 +94,15 @@ namespace Dappi.SourceGenerator.Generators
                              }
 
                              var total = await query.CountAsync();
-                             var data = await query
-                                 .Skip(filter.Offset)
-                                 .Take(filter.Limit)
-                                 .ToListAsync();
 
-                             if (!ShouldShape(fields))
+                             var selectExpression = BuildSelectExpression(fields);
+                             if (selectExpression is null)
                              {
+                                 var data = await query
+                                     .Skip(filter.Offset)
+                                     .Take(filter.Limit)
+                                     .ToListAsync();
+
                                  var listDto = new ListResponseDTO<{{item.ClassName}}>
                                  {
                                      Data = data,
@@ -103,9 +114,15 @@ namespace Dappi.SourceGenerator.Generators
                                  return Ok(listDto);
                              }
 
-                             var shapedListDto = new ListResponseDTO<ExpandoObject>
+                             var shapedData = await query
+                                 .Skip(filter.Offset)
+                                 .Take(filter.Limit)
+                                 .Select(selectExpression)
+                                 .ToDynamicListAsync();
+
+                             var shapedListDto = new ListResponseDTO<object>
                              {
-                                 Data = data.Select(x => shaper.ShapeObject(x,fields)),
+                                 Data = shapedData,
                                  Limit = filter.Limit,
                                  Offset = filter.Offset,
                                  Total = total
