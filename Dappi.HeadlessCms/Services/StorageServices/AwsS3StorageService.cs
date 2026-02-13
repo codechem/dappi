@@ -22,7 +22,7 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             var accessKey = configuration["AWS:AccessKey"];
             var secretKey = configuration["AWS:SecretKey"];
             var regionName = configuration["AWS:Region"];
-            var bucketName = configuration["AwsS3BucketConfiguration:BucketName"];
+            var bucketName = configuration["AWS:BucketName"];
 
             if (string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey))
             {

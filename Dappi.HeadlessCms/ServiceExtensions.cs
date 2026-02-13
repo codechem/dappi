@@ -33,7 +33,6 @@ public static class ServiceExtensions
     public static IServiceCollection AddDappi<TDbContext>(
         this IServiceCollection services,
         IConfiguration configuration,
-        MediaStorageProvider mediaStorageProvider = MediaStorageProvider.Local,
         Action<JsonOptions>? jsonOptions = null)
         where TDbContext : DappiDbContext
     {
@@ -56,19 +55,7 @@ public static class ServiceExtensions
         
         services.AddSingleton<IMediaUploadQueue, MediaUploadQueue>();
 
-        switch (mediaStorageProvider)
-        {
-            case MediaStorageProvider.AwsS3BucketStorage:
-                {
-                    services.AddScoped<IMediaUploadService, AwsS3StorageService>();
-                    break;
-                }
-            default:
-                {
-                    services.AddScoped<IMediaUploadService, LocalStorageUploadService>();
-                    break;
-                }
-        }
+        services.AddScoped<IMediaUploadService, LocalStorageUploadService>();
         
         services.AddHostedService<MediaUploadWorker>(); 
 
@@ -104,6 +91,27 @@ public static class ServiceExtensions
             "Entities"
         ),Path.Combine(Directory.GetCurrentDirectory(), "Enums")));
         services.AddEndpointsApiExplorer();
+        return services;
+    }
+    
+    public static IServiceCollection AddS3Storage(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var accessKey = configuration["AWS:AccessKey"];
+        var secretKey = configuration["AWS:SecretKey"];
+        var region = configuration["AWS:Region"];
+        var bucketName = configuration["AWS:BucketName"];
+
+        if (string.IsNullOrWhiteSpace(accessKey) ||
+            string.IsNullOrWhiteSpace(secretKey) ||
+            string.IsNullOrWhiteSpace(region) ||
+            string.IsNullOrWhiteSpace(bucketName))
+        {
+            throw new Exception("Environment variables for AWS are not set");
+        }
+
+        services.AddScoped<IMediaUploadService, AwsS3StorageService>();
         return services;
     }
 
