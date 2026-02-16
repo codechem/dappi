@@ -172,7 +172,8 @@ public static class ClassPropertiesAnalyzer
                     PropertyType = propertyType,
                     PropertyAttributes = propertyAttributes,
                     PropertyForeignKey = propertyForeignKey,
-                    GenericTypeName = genericTypeName
+                    GenericTypeName = genericTypeName,
+                    IsPublic = property.DeclaredAccessibility == Accessibility.Public
                 };
             }).ToList();
         return propertiesInfo;

@@ -32,6 +32,7 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
             var collectionAddCode = GenerateCollectionAddCode(item);
             var collectionUpdateCode = GenerateCollectionUpdateCode(item);
             var includesCode = GetIncludesIfAny(item.PropertiesInfos, mediaInfoPropertyNames, item.ClassName);
+            var publicPropertyNamesCode = GeneratePublicPropertyNamesArray(item.PropertiesInfos);
             var hasAuthorizationOnControllerLevel = item.AuthorizeAttributes.FirstOrDefault() is
             { OnControllerLevel: true };
             var authorizeTag = hasAuthorizationOnControllerLevel ? "[Authorize]" : null;
@@ -127,14 +128,16 @@ public partial class {item.ClassName}Controller(
 
     private static string? BuildSelectExpression(string? fields)
     {{
+
         if (string.IsNullOrWhiteSpace(fields))
         {{
             return null;
         }}
 
-        var bindingFlags = BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance;
-        var propertyMap = typeof({item.ClassName}).GetProperties(bindingFlags)
-            .ToDictionary(p => p.Name, p => p.Name, StringComparer.OrdinalIgnoreCase);
+        {publicPropertyNamesCode}
+
+        var propertyMap = publicPropertyNames
+            .ToDictionary(p => p, p => p, StringComparer.OrdinalIgnoreCase);
 
         var requestedFields = fields
             .Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -251,6 +254,24 @@ public partial class {item.ClassName}Controller(
 
         return sb.ToString().TrimEnd();
     }
+
+    private static string GeneratePublicPropertyNamesArray(List<PropertyInfo> propertiesInfos)
+    {
+        var publicPropertyNames = propertiesInfos
+            .Where(p => p.IsPublic)
+            .Select(p => p.PropertyName)
+            .OrderBy(name => name)
+            .ToList();
+
+        if (publicPropertyNames.Count == 0)
+        {
+            return "var publicPropertyNames = new string[0];";
+        }
+
+        var fields = string.Join(", ", publicPropertyNames.Select(name => $"\"{name}\""));
+        return $"var publicPropertyNames = new[] {{{fields}}};";
+    }
+    
 
     private static string GenerateCollectionAddCode(SourceModel model)
     {

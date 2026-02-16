@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using Dappi.SourceGenerator.Generators;
 using Dappi.SourceGenerator.Models;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace Dappi.SourceGenerator;
 

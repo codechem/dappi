@@ -17,47 +17,51 @@ namespace Dappi.SourceGenerator.Generators
 
             return $$"""
 
-                     [HttpGet("{id}")]
-                     {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
-                     [IncludeQueryFilter]
-                     public async Task<IActionResult> Get{{item.ClassName}}(Guid id, [FromQuery] string? fields = null)
-                     {
-                         try
-                         {
-                             if (id == Guid.Empty)
-                                 return BadRequest();
+                      [HttpGet("{id}")]
+                      {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
+                      [IncludeQueryFilter]
+                      public async Task<IActionResult> Get{{item.ClassName}}(Guid id, [FromQuery] string? fields = null)
+                      {
+                          try
+                          {
+                              if (id == Guid.Empty)
+                                  return BadRequest();
 
-                            
+                              var query = dbContext.{{item.ClassName.Pluralize()}}.AsNoTracking().AsQueryable();
+                      
+                              query = ApplyDynamicIncludes(query);
 
-                                var selectExpression = BuildSelectExpression(fields);
-                                if (selectExpression is null)
-                                {
-                                    var result = await query
-                                        .FirstOrDefaultAsync(p => p.Id == id);
+                                 var selectExpression = BuildSelectExpression(fields);
+                                 if (selectExpression is null)
+                                 {
+                                     var result = await query
+                                         .FirstOrDefaultAsync(p => p.Id == id);
 
-                                    if (result is null)
-                                        return NotFound();
+                                     if (result is null)
+                                         return NotFound();
 
-                                    return Ok(result);
-                                }
+                                     return Ok(result);
+                                 }
 
-                                var shapedResult = await query
-                                    .Where(p => p.Id == id)
-                                    .Select(selectExpression)
-                                    .FirstOrDefaultAsync();
+                                 var shapedResults = await query
+                                     .Where(p => p.Id == id)
+                                     .Select(selectExpression)
+                                     .ToDynamicListAsync();
 
-                                if (shapedResult is null)
-                                    return NotFound();
+                                 var shapedResult = shapedResults.FirstOrDefault();
 
-                                return Ok(shapedResult);
-                         } 
-                         catch(PropertyNotFoundException ex)
-                         {
-                             return BadRequest(new {message = ex.Message});
-                         }
-                     }
-                         
-                     """;
+                                 if (shapedResult is null)
+                                     return NotFound();
+
+                                 return Ok(shapedResult);
+                          } 
+                          catch(PropertyNotFoundException ex)
+                          {
+                              return BadRequest(new {message = ex.Message});
+                          }
+                      }
+                          
+                      """;
         }
 
         public static string GenerateGetAction(List<CrudActions> crudActions, SourceModel item, string includesCode)
