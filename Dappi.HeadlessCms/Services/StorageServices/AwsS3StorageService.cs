@@ -10,7 +10,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace Dappi.HeadlessCms.Services.StorageServices
 {
-    public class AwsS3StorageService(IConfiguration configuration, IDbContextAccessor dbContext) : IMediaUploadService
+    public class AwsS3StorageService(IConfiguration configuration, IDbContextAccessor dbContext)
+        : IMediaUploadService
     {
         public void DeleteMedia(MediaInfo media)
         {
@@ -24,7 +25,8 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             var regionName = configuration["AWS:Account:Region"];
             var bucketName = configuration["AWS:Storage:BucketName"];
             var cdnUrl = configuration["AWS:Storage:CdnUrl"];
-            var useCdn = bool.TryParse(configuration["AWS:Storage:UseCdn"], out var parsed) && parsed;
+            var useCdn =
+                bool.TryParse(configuration["AWS:Storage:UseCdn"], out var parsed) && parsed;
 
             if (string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey))
             {
@@ -55,16 +57,17 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                     Key = objectKey,
                     InputStream = streamAndExtensionPair.Stream,
                     AutoCloseStream = true,
-                    ContentType = GetContentType(streamAndExtensionPair.Extension)
+                    ContentType = GetContentType(streamAndExtensionPair.Extension),
                 };
 
                 await client.PutObjectAsync(putRequest);
 
                 var baseUrl = useCdn
-                    ? cdnUrl
+                    ? $"{cdnUrl}/{objectKey}"
                     : $"https://{bucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
 
-                var media = await dbContext.DbContext.Set<MediaInfo>()
+                var media = await dbContext
+                    .DbContext.Set<MediaInfo>()
                     .FirstOrDefaultAsync(m => m.Id == mediaId);
 
                 if (media != null)
@@ -75,7 +78,10 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             }
             catch (AmazonS3Exception e)
             {
-                throw new Exception($"Error encountered on server. Message:'{e.Message}' when writing an object", e);
+                throw new Exception(
+                    $"Error encountered on server. Message:'{e.Message}' when writing an object",
+                    e
+                );
             }
         }
 
@@ -92,21 +98,25 @@ namespace Dappi.HeadlessCms.Services.StorageServices
 
         public async Task UpdateStatusAsync(Guid mediaId, MediaUploadStatus status)
         {
-            var media = await dbContext.DbContext.Set<MediaInfo>()
-                .Where(m => m.Id == mediaId).FirstOrDefaultAsync();
+            var media = await dbContext
+                .DbContext.Set<MediaInfo>()
+                .Where(m => m.Id == mediaId)
+                .FirstOrDefaultAsync();
 
-            if (media == null) return;
+            if (media == null)
+                return;
 
             media.Status = status;
             await dbContext.DbContext.SaveChangesAsync();
         }
 
-        private string GetContentType(string extension) => extension.ToLower() switch
-        {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".pdf" => "application/pdf",
-            _ => "application/octet-stream"
-        };
+        private string GetContentType(string extension) =>
+            extension.ToLower() switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".pdf" => "application/pdf",
+                _ => "application/octet-stream",
+            };
     }
 }
