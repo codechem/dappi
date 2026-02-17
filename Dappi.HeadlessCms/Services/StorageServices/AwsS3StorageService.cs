@@ -19,14 +19,21 @@ namespace Dappi.HeadlessCms.Services.StorageServices
 
         public async Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair)
         {
-            var accessKey = configuration["AWS:AccessKey"];
-            var secretKey = configuration["AWS:SecretKey"];
-            var regionName = configuration["AWS:Region"];
-            var bucketName = configuration["AWS:BucketName"];
+            var accessKey = configuration["AWS:Account:AccessKey"];
+            var secretKey = configuration["AWS:Account:SecretKey"];
+            var regionName = configuration["AWS:Account:Region"];
+            var bucketName = configuration["AWS:Storage:BucketName"];
+            var cdnUrl = configuration["AWS:Storage:CdnUrl"];
+            var useCdn = bool.TryParse(configuration["AWS:Storage:UseCdn"], out var parsed) && parsed;
 
             if (string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey))
             {
                 throw new Exception("AWS Credentials are missing from configuration.");
+            }
+
+            if (useCdn && string.IsNullOrEmpty(cdnUrl))
+            {
+                throw new Exception("Cdn Url is missing from configuration.");
             }
 
             var region = Amazon.RegionEndpoint.GetBySystemName(regionName ?? "eu-central-1");
@@ -53,14 +60,16 @@ namespace Dappi.HeadlessCms.Services.StorageServices
 
                 await client.PutObjectAsync(putRequest);
 
-                var s3Url = $"https://{bucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
+                var baseUrl = useCdn
+                    ? cdnUrl
+                    : $"https://{bucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
 
                 var media = await dbContext.DbContext.Set<MediaInfo>()
                     .FirstOrDefaultAsync(m => m.Id == mediaId);
 
                 if (media != null)
                 {
-                    media.Url = s3Url;
+                    media.Url = baseUrl;
                     await dbContext.DbContext.SaveChangesAsync();
                 }
             }
