@@ -35,7 +35,7 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                 ? streamAndExtensionPair.Extension
                 : "." + streamAndExtensionPair.Extension;
 
-            var objectKey = $"{mediaId:D}{extension}";
+            var objectKey = $"{mediaId}{extension}";
 
             var credentials = new Amazon.Runtime.BasicAWSCredentials(accessKey, secretKey);
             using var client = new AmazonS3Client(credentials, region);
