@@ -3,50 +3,59 @@ name: Build and Deploy
 on:
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      tag_name:
+        description: 'The tag/version to publish'
+        required: true
+        type: string
 
 jobs:
   publish-nuget:
     runs-on: ubuntu-latest
-    
+    env:
+      VERSION: ${{ inputs.tag_name || github.event.release.tag_name }}
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 9.0.x
-        
-    - name: Restore dependencies
-      run: dotnet restore
-      
-    - name: Build DependencyInjection project
-      run: dotnet build Dappi.HeadlessCms --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
-      
-    - name: Build Cli project
-      run: dotnet build Dappi.Cli --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.VERSION }}
 
-    - name: Build SourceGenerator project
-      run: dotnet build Dappi.SourceGenerator --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
-    
-    - name: Build Core project
-      run: dotnet build Dappi.Core --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-restore
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
 
-    - name: Pack DependencyInjection
-      run: dotnet pack Dappi.HeadlessCms --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
-      
-    - name: Pack SourceGenerator
-      run: dotnet pack Dappi.SourceGenerator --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
+      - name: Restore dependencies
+        run: dotnet restore
 
-    - name: Pack Cli
-      run: dotnet pack Dappi.Cli --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
+      - name: Build HeadlessCms project
+        run: dotnet build Dappi.HeadlessCms --configuration Release /p:Version=${{ env.VERSION }} --no-restore
 
-    - name: Pack Core
-      run: dotnet pack Dappi.Core --configuration Release /p:Version=${{ github.event.release.tag_name }} --no-build --output nupkgs
-             
-             
-    - name: Publish to GitHub Packages
-      run: |
-        dotnet nuget push ./nupkgs/*.nupkg \
-        --source "https://api.nuget.org/v3/index.json" \
-        --api-key ${{ secrets.NUGET_API_KEY }}
+      - name: Build Cli project
+        run: dotnet build Dappi.Cli --configuration Release /p:Version=${{ env.VERSION }} --no-restore
+
+      - name: Build SourceGenerator project
+        run: dotnet build Dappi.SourceGenerator --configuration Release /p:Version=${{ env.VERSION }} --no-restore
+
+      - name: Build Core project
+        run: dotnet build Dappi.Core --configuration Release /p:Version=${{ env.VERSION }} --no-restore
+
+      - name: Pack HeadlessCms
+        run: dotnet pack Dappi.HeadlessCms --configuration Release /p:Version=${{ env.VERSION }} --no-build --output nupkgs
+
+      - name: Pack SourceGenerator
+        run: dotnet pack Dappi.SourceGenerator --configuration Release /p:Version=${{ env.VERSION }} --no-build --output nupkgs
+
+      - name: Pack Cli
+        run: dotnet pack Dappi.Cli --configuration Release /p:Version=${{ env.VERSION }} --no-build --output nupkgs
+
+      - name: Pack Core
+        run: dotnet pack Dappi.Core --configuration Release /p:Version=${{ env.VERSION }} --no-build --output nupkgs
+
+      - name: Publish to GitHub Packages
+        run: |
+          dotnet nuget push ./nupkgs/*.nupkg \
+          --source "https://api.nuget.org/v3/index.json" \
+          --api-key ${{ secrets.NUGET_API_KEY }}
