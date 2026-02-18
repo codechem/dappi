@@ -1,4 +1,4 @@
-using Dappi.Core.Extensions;
+using Dappi.HeadlessCms.Extensions;
 
 namespace Dappi.HeadlessCms.Tests.DataShaping;
 
