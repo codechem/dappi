@@ -1,4 +1,4 @@
-using Dappi.HeadlessCms.Extensions;
+using Dappi.HeadlessCms.Exceptions;
 
 namespace Dappi.HeadlessCms.Tests.DataShaping;
 
@@ -64,7 +64,7 @@ public class SelectExpressionsTests
     public void BuildSelectExpression_Should_Throw_When_Field_Does_Not_Exist()
     {
         var unknownFieldStr = "Id,UnknownField";
-        Assert.Throws<NotSupportedException>(() => unknownFieldStr.BuildSelectExpression(PublicPropertyNames));
+        Assert.Throws<PropertyNotFoundException>(() => unknownFieldStr.BuildSelectExpression(PublicPropertyNames));
     }
 
     [Fact]
