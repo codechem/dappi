@@ -8,6 +8,23 @@ namespace Dappi.SourceGenerator.Generators
 {
     public static class ActionsGenerator
     {
+        private static string GeneratePublicPropertyNamesArray(List<PropertyInfo> propertiesInfos)
+        {
+            var publicPropertyNames = propertiesInfos
+                .Where(p => p.IsPublic)
+                .Select(p => p.PropertyName)
+                .OrderBy(name => name)
+                .ToList();
+
+            if (publicPropertyNames.Count == 0)
+            {
+                return "Array.Empty<string>()";
+            }
+
+            var fields = string.Join(", ", publicPropertyNames.Select(name => $"\"{name}\""));
+            return $"new[] {{{fields}}}";
+        }
+
         public static string GenerateGetByIdAction(List<CrudActions> crudActions, SourceModel item, string includesCode)
         {
             if (!crudActions.Contains(CrudActions.GetOne))
@@ -31,7 +48,8 @@ namespace Dappi.SourceGenerator.Generators
                       
                               query = ApplyDynamicIncludes(query);
 
-                                 var selectExpression = BuildSelectExpression(fields);
+                                 var selectExpression = fields.BuildSelectExpression(
+                                     {{GeneratePublicPropertyNamesArray(item.PropertiesInfos)}});
                                  if (selectExpression is null)
                                  {
                                      var result = await query
@@ -99,7 +117,8 @@ namespace Dappi.SourceGenerator.Generators
 
                              var total = await query.CountAsync();
 
-                             var selectExpression = BuildSelectExpression(fields);
+                             var selectExpression = fields.BuildSelectExpression(
+                                 {{GeneratePublicPropertyNamesArray(item.PropertiesInfos)}});
                              if (selectExpression is null)
                              {
                                  var data = await query

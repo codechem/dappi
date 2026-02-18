@@ -32,7 +32,6 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
             var collectionAddCode = GenerateCollectionAddCode(item);
             var collectionUpdateCode = GenerateCollectionUpdateCode(item);
             var includesCode = GetIncludesIfAny(item.PropertiesInfos, mediaInfoPropertyNames, item.ClassName);
-            var publicPropertyNamesCode = GeneratePublicPropertyNamesArray(item.PropertiesInfos);
             var hasAuthorizationOnControllerLevel = item.AuthorizeAttributes.FirstOrDefault() is
             { OnControllerLevel: true };
             var authorizeTag = hasAuthorizationOnControllerLevel ? "[Authorize]" : null;
@@ -71,6 +70,7 @@ using Dappi.Core.Constants;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using Dappi.Core.Extensions;
 
 /*
 ==== area for testing ====
@@ -91,7 +91,6 @@ public partial class {item.ClassName}Controller(
     IMediaUploadService uploadService,
     IMediaUploadQueue queue) : ControllerBase
 {{
-
     {AggregateActions(item, includesCode, collectionAddCode, collectionUpdateCode, mediaInfoUpdateCode, includeCode, removeCode)}    
 
     private static (object entity, PropertyInfo property, Type[] entityInterfaces, bool isEnumerable, bool isCollection) GetEntityProperty(object entity, string propertyName)
@@ -124,50 +123,6 @@ public partial class {item.ClassName}Controller(
     private static void SetValueToProperty(object entity, PropertyInfo property, JsonElement? value)
     {{
         property.SetValue(entity, value?.Deserialize(property.PropertyType));
-    }}
-
-    private static string? BuildSelectExpression(string? fields)
-    {{
-
-        if (string.IsNullOrWhiteSpace(fields))
-        {{
-            return null;
-        }}
-
-        {publicPropertyNamesCode}
-
-        var propertyMap = publicPropertyNames
-            .ToDictionary(p => p, p => p, StringComparer.OrdinalIgnoreCase);
-
-        var requestedFields = fields
-            .Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(field => field.Trim())
-            .Where(field => !string.IsNullOrWhiteSpace(field))
-            .ToArray();
-
-        if (requestedFields.Length == 0)
-        {{
-            return null;
-        }}
-
-        var selected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var selectParts = new List<string>(requestedFields.Length);
-
-        foreach (var field in requestedFields)
-        {{
-            if (!propertyMap.TryGetValue(field, out var propertyName))
-            {{
-                throw new PropertyNotFoundException(
-                    ""Property "" + field + "" not found in "" + typeof({item.ClassName}).FullName);
-            }}
-
-            if (selected.Add(propertyName))
-            {{
-                selectParts.Add(propertyName);
-            }}
-        }}
-
-        return ""new ("" + string.Join("", "", selectParts) + "")"";
     }}
 
     private dynamic GetDbSetForType(string typeName)
@@ -254,24 +209,6 @@ public partial class {item.ClassName}Controller(
 
         return sb.ToString().TrimEnd();
     }
-
-    private static string GeneratePublicPropertyNamesArray(List<PropertyInfo> propertiesInfos)
-    {
-        var publicPropertyNames = propertiesInfos
-            .Where(p => p.IsPublic)
-            .Select(p => p.PropertyName)
-            .OrderBy(name => name)
-            .ToList();
-
-        if (publicPropertyNames.Count == 0)
-        {
-            return "var publicPropertyNames = new string[0];";
-        }
-
-        var fields = string.Join(", ", publicPropertyNames.Select(name => $"\"{name}\""));
-        return $"var publicPropertyNames = new[] {{{fields}}};";
-    }
-    
 
     private static string GenerateCollectionAddCode(SourceModel model)
     {
