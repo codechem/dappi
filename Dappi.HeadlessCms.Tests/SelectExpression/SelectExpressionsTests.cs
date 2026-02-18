@@ -1,4 +1,5 @@
 using Dappi.HeadlessCms.Exceptions;
+using Dappi.HeadlessCms.Extensions;
 
 namespace Dappi.HeadlessCms.Tests.DataShaping;
 
