@@ -426,6 +426,7 @@ export class AddFieldDialogComponent implements OnInit, OnDestroy {
       const result = {
         oldFieldName: this.originalFieldName,
         newFieldName: this.fieldForm.value.fieldName,
+        fieldType: this.data.fieldType,
         isRequired: this.fieldForm.value.requiredField,
         hasIndex: this.fieldForm.value.hasIndex,
         regex: this.isTextType() ? this.fieldForm.value.regex : undefined,

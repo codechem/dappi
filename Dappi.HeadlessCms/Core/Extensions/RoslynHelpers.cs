@@ -94,6 +94,7 @@ namespace Dappi.HeadlessCms.Core.Extensions
             var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(attribute));
             return property.AddAttributeLists(attributeList);
         }
+        
         public static PropertyDeclarationSyntax WithLengthAttribute(this PropertyDeclarationSyntax property,
             string? minLength, string? maxLength)
         {

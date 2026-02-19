@@ -20,6 +20,7 @@ public class PropertyInfo
     public string PropertyForeignKey { get; set; } = string.Empty;
     public List<string> PropertyAttributes { get; set; } = [];
     public string GenericTypeName { get; set; } = string.Empty;
+    public bool IsPublic { get; set; }
 }
 
 public class DappiAuthorizeInfo

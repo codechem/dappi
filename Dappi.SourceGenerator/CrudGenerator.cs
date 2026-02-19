@@ -65,10 +65,12 @@ using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
 using System.Collections;
+using System.Collections.Generic;
 using Dappi.Core.Constants;
 using System.Globalization;
 using System.Linq;
-using System.Dynamic;
+using System.Linq.Dynamic.Core;
+using Dappi.Core.Extensions;
 
 /*
 ==== area for testing ====
@@ -86,11 +88,9 @@ namespace {item.RootNamespace}.Controllers;
 {controllerAttribute}
 public partial class {item.ClassName}Controller(
     {dbContextData.ClassName} dbContext,
-    IDataShaperService shaper, 
     IMediaUploadService uploadService,
     IMediaUploadQueue queue) : ControllerBase
 {{
-
     {AggregateActions(item, includesCode, collectionAddCode, collectionUpdateCode, mediaInfoUpdateCode, includeCode, removeCode)}    
 
     private static (object entity, PropertyInfo property, Type[] entityInterfaces, bool isEnumerable, bool isCollection) GetEntityProperty(object entity, string propertyName)
@@ -125,7 +125,6 @@ public partial class {item.ClassName}Controller(
         property.SetValue(entity, value?.Deserialize(property.PropertyType));
     }}
 
-
     private dynamic GetDbSetForType(string typeName)
     {{
         var dbSetProperty = dbContext.GetType()
@@ -135,6 +134,35 @@ public partial class {item.ClassName}Controller(
                 p.PropertyType.GetGenericArguments()[0].Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
 
         return dbSetProperty?.GetValue(dbContext);
+    }}
+    
+    private IQueryable<{item.ClassName}> ApplyDynamicIncludes(IQueryable<{item.ClassName}> query)
+    {{
+        var includeTree = HttpContext.Items[IncludeQueryFilter.IncludeParamsKey] as IDictionary<string, IncludeNode>;
+        if (includeTree is null || includeTree.Count == 0)
+        {{
+            return query;
+        }}
+
+        foreach (var include in includeTree)
+        {{
+            query = ApplyIncludeRecursively(query, include.Key, include.Value);
+        }}
+
+        return query;
+    }}
+
+    private static IQueryable<{item.ClassName}> ApplyIncludeRecursively(IQueryable<{item.ClassName}> query, string path, IncludeNode node)
+    {{
+        query = query.Include(path);
+
+        foreach (var child in node.Children)
+        {{
+            var childPath = string.Concat(path, ""."", child.Key);
+            query = ApplyIncludeRecursively(query, childPath, child.Value);
+        }}
+
+        return query;
     }}
 }}";
 
