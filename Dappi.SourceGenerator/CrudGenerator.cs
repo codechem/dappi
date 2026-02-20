@@ -151,6 +151,21 @@ public partial class {item.ClassName}Controller(
     
     private IQueryable<{item.ClassName}> ApplyDynamicIncludes(IQueryable<{item.ClassName}> query)
     {{
+        if (!HttpContext.Request.Query.ContainsKey(""include""))
+        {{
+            return query;
+        }}
+
+        var shouldApplyFullIncludes = HttpContext.Request.Query[""include""]
+            .SelectMany(includeValue => includeValue
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Any(includePath => includePath == ""*"");
+
+        if (shouldApplyFullIncludes)
+        {{
+            return ApplyFullIncludes(query);
+        }}
+
         var includeTree = HttpContext.Items[IncludeQueryFilter.IncludeParamsKey] as IDictionary<string, IncludeNode>;
         if (includeTree is null || includeTree.Count == 0)
         {{
@@ -165,6 +180,54 @@ public partial class {item.ClassName}Controller(
         return query;
     }}
 
+private IQueryable<{item.ClassName}> ApplyFullIncludes(IQueryable<{item.ClassName}> query)
+    {{
+        var rootEntityType = dbContext.Model.FindEntityType(typeof({item.ClassName}));
+        if (rootEntityType is null)
+        {{
+            return query;
+        }}
+
+        var includePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var visitedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        visitedTypes.Add(rootEntityType.Name);
+        var prefix = string.Empty;
+
+        CollectIncludePaths(rootEntityType, prefix, includePaths, visitedTypes);
+
+        foreach (var includePath in includePaths)
+        {{
+            query = query.Include(includePath);
+        }}
+
+        return query;
+    }}
+
+    private static void CollectIncludePaths(
+        Microsoft.EntityFrameworkCore.Metadata.IEntityType entityType,
+        string prefix,
+        HashSet<string> includePaths,
+        HashSet<string> visitedTypes)
+    {{
+        var relations = entityType.GetNavigations(); 
+        foreach (var relation in relations)
+        {{
+            var entityTypeName = relation.TargetEntityType.Name;
+            if (visitedTypes.Contains(entityTypeName))
+            {{
+                continue;
+            }}
+
+            var navigationPath = string.IsNullOrEmpty(prefix) ? relation.Name : string.Concat(prefix, ""."", relation.Name);
+
+            includePaths.Add(navigationPath);
+            visitedTypes.Add(entityTypeName);
+            
+            CollectIncludePaths(relation.TargetEntityType, navigationPath, includePaths, visitedTypes);
+            visitedTypes.Remove(entityTypeName);
+        }}
+    }}
+    
     private static IQueryable<{item.ClassName}> ApplyIncludeRecursively(IQueryable<{item.ClassName}> query, string path, IncludeNode node)
     {{
         query = query.Include(path);
