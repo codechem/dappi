@@ -157,7 +157,7 @@ public partial class {item.ClassName}Controller(
         }}
 
         var shouldApplyFullIncludes = HttpContext.Request.Query[""include""]
-            .SelectMany(includeValue => includeValue
+            .SelectMany(includeValue => (includeValue ?? string.Empty)
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             .Any(includePath => includePath == ""*"");
 
@@ -180,7 +180,7 @@ public partial class {item.ClassName}Controller(
         return query;
     }}
 
-private IQueryable<{item.ClassName}> ApplyFullIncludes(IQueryable<{item.ClassName}> query)
+    private IQueryable<{item.ClassName}> ApplyFullIncludes(IQueryable<{item.ClassName}> query)
     {{
         var rootEntityType = dbContext.Model.FindEntityType(typeof({item.ClassName}));
         if (rootEntityType is null)

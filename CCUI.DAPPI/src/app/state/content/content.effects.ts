@@ -38,6 +38,7 @@ export class ContentEffects {
                   offset: ((action.page - 1) * action.limit).toString(),
                   limit: action.limit.toString(),
                   SearchTerm: action.searchText || '',
+                  include: '*',
                 },
               })
               .pipe(
