@@ -7,17 +7,23 @@ namespace Dappi.SourceGenerator.Utilities;
 
 public static class ClassPropertiesAnalyzer
 {
-    public static string GetIncludesIfAny(List<PropertyInfo> propertiesInfos, Dictionary<string, IEnumerable<string>> mediaInfoPropertyNames, string sourceModelClassName)
+    public static string GetIncludesIfAny(
+        List<PropertyInfo> propertiesInfos,
+        Dictionary<string, IEnumerable<string>> mediaInfoPropertyNames,
+        string sourceModelClassName
+    )
     {
         var propertiesWithForeignKey = propertiesInfos
             .Where(p => !string.IsNullOrEmpty(p.PropertyForeignKey))
             .ToList();
 
-        var collectionProperties = propertiesInfos
-            .Where(ContainsCollectionTypeName)
-            .ToList();
-        
-        if (!mediaInfoPropertyNames.ContainsKey(sourceModelClassName) && !propertiesWithForeignKey.Any() && !collectionProperties.Any())
+        var collectionProperties = propertiesInfos.Where(ContainsCollectionTypeName).ToList();
+
+        if (
+            !mediaInfoPropertyNames.ContainsKey(sourceModelClassName)
+            && !propertiesWithForeignKey.Any()
+            && !collectionProperties.Any()
+        )
             return string.Empty;
 
         var responseBuilder = new StringBuilder();
@@ -30,22 +36,40 @@ public static class ClassPropertiesAnalyzer
                 responseBuilder.Append(@$"            .Include(p => p.{propertyName})");
             }
         }
-        
+
         foreach (var propertyInfo in propertiesWithForeignKey)
         {
             if (propertyInfo.GenericTypeName == "Guid")
             {
-                responseBuilder.Append(GenerateIncludesCode(mediaInfoPropertyNames, propertyInfo.PropertyForeignKey, propertyInfo.PropertyForeignKey));
-                
+                responseBuilder.Append(
+                    GenerateIncludesCode(
+                        mediaInfoPropertyNames,
+                        propertyInfo.PropertyForeignKey,
+                        propertyInfo.PropertyForeignKey
+                    )
+                );
+
                 continue;
             }
 
-            responseBuilder.Append(GenerateIncludesCode(mediaInfoPropertyNames, propertyInfo.GenericTypeName, propertyInfo.PropertyName));
+            responseBuilder.Append(
+                GenerateIncludesCode(
+                    mediaInfoPropertyNames,
+                    propertyInfo.GenericTypeName,
+                    propertyInfo.PropertyName
+                )
+            );
         }
 
         foreach (var propertyInfo in collectionProperties)
         {
-            responseBuilder.Append(GenerateIncludesCode(mediaInfoPropertyNames, propertyInfo.GenericTypeName, propertyInfo.PropertyName));
+            responseBuilder.Append(
+                GenerateIncludesCode(
+                    mediaInfoPropertyNames,
+                    propertyInfo.GenericTypeName,
+                    propertyInfo.PropertyName
+                )
+            );
         }
 
         return responseBuilder.ToString();
@@ -86,8 +110,10 @@ public static class ClassPropertiesAnalyzer
         return builder.ToString();
     }
 
-    public static string PropagateDappiAuthorizationTags(List<DappiAuthorizeInfo> dappiAuthorizeInfos,
-        AuthorizeMethods httpMethod)
+    public static string PropagateDappiAuthorizationTags(
+        List<DappiAuthorizeInfo> dappiAuthorizeInfos,
+        AuthorizeMethods httpMethod
+    )
     {
         foreach (var dappiInfo in dappiAuthorizeInfos)
         {
@@ -126,8 +152,10 @@ public static class ClassPropertiesAnalyzer
 
             if (namedTypeSymbol.IsGenericType && namedTypeSymbol.TypeArguments.Length > 0)
             {
-                string genericArguments = string.Join(", ", namedTypeSymbol.TypeArguments
-                    .Select(t => GetSimpleTypeName(t)));
+                string genericArguments = string.Join(
+                    ", ",
+                    namedTypeSymbol.TypeArguments.Select(t => GetSimpleTypeName(t))
+                );
                 return $"{genericArguments}";
             }
 
@@ -137,10 +165,10 @@ public static class ClassPropertiesAnalyzer
         return typeSymbol.ToDisplayString();
     }
 
-
     public static List<PropertyInfo> GoThroughPropertiesAndGatherInfo(INamedTypeSymbol classSymbol)
     {
-        var propertiesInfo = classSymbol.GetMembers()
+        var propertiesInfo = classSymbol
+            .GetMembers()
             .OfType<IPropertySymbol>()
             .Select(property =>
             {
@@ -148,15 +176,21 @@ public static class ClassPropertiesAnalyzer
                 var propertyType = property.Type;
                 var genericTypeName = GetFormattedTypeName(propertyType);
                 var propertyForeignKey = string.Empty;
-                var propertyAttributes = property.GetAttributes()
+                var propertyAttributes = property
+                    .GetAttributes()
                     // .Select(attr => attr.AttributeClass?.ToDisplayString())
                     .Select(attr =>
                     {
                         // Check if the attribute is ForeignKeyAttribute
-                        if (attr.AttributeClass?.ToDisplayString() == "System.ComponentModel.DataAnnotations.Schema.ForeignKeyAttribute")
+                        if (
+                            attr.AttributeClass?.ToDisplayString()
+                            == "System.ComponentModel.DataAnnotations.Schema.ForeignKeyAttribute"
+                        )
                         {
                             // Get the constructor argument value (e.g., "Author")
-                            var foreignKeyName = attr.ConstructorArguments.FirstOrDefault().Value?.ToString();
+                            var foreignKeyName = attr
+                                .ConstructorArguments.FirstOrDefault()
+                                .Value?.ToString();
                             propertyForeignKey = foreignKeyName;
                             return $"{attr.AttributeClass?.Name} (ForeignKey Name: {foreignKeyName})";
                         }
@@ -173,9 +207,10 @@ public static class ClassPropertiesAnalyzer
                     PropertyAttributes = propertyAttributes,
                     PropertyForeignKey = propertyForeignKey,
                     GenericTypeName = genericTypeName,
-                    IsPublic = property.DeclaredAccessibility == Accessibility.Public
+                    IsPublic = property.DeclaredAccessibility == Accessibility.Public,
                 };
-            }).ToList();
+            })
+            .ToList();
         return propertiesInfo;
     }
 
@@ -186,10 +221,14 @@ public static class ClassPropertiesAnalyzer
             || propertyInfo.PropertyType.Name.Contains("ICollection");
     }
 
-    private static string GenerateIncludesCode(Dictionary<string, IEnumerable<string>> mediaInfoPropertyNames, string propertyTypeName, string propertyName)
+    private static string GenerateIncludesCode(
+        Dictionary<string, IEnumerable<string>> mediaInfoPropertyNames,
+        string propertyTypeName,
+        string propertyName
+    )
     {
         StringBuilder stringBuilder = new StringBuilder();
-        
+
         if (mediaInfoPropertyNames.TryGetValue(propertyTypeName, out var mediaInfoNames))
         {
             foreach (var mediaInfoName in mediaInfoNames)

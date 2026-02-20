@@ -9,6 +9,7 @@ namespace Dappi.HeadlessCms.Models
 
         public string Name { get; }
 
-        public IDictionary<string, IncludeNode> Children { get; } = new Dictionary<string, IncludeNode>(StringComparer.OrdinalIgnoreCase);
+        public IDictionary<string, IncludeNode> Children { get; } =
+            new Dictionary<string, IncludeNode>(StringComparer.OrdinalIgnoreCase);
     }
 }

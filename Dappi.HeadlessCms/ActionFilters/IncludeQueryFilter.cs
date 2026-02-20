@@ -14,10 +14,22 @@ namespace Dappi.HeadlessCms.ActionFilters
 
             var includeTree = new Dictionary<string, IncludeNode>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var segments in from includeValue in includeValues.OfType<string>() select includeValue
-                         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) into includePaths from includePath in includePaths select includePath
-                         .Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                         .ToArray() into segments where segments.Length != 0 select segments)
+            foreach (
+                var segments in from includeValue in includeValues.OfType<string>()
+                select includeValue.Split(
+                    ',',
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                ) into includePaths
+                from includePath in includePaths
+                select includePath
+                    .Split(
+                        '.',
+                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                    )
+                    .ToArray() into segments
+                where segments.Length != 0
+                select segments
+            )
             {
                 AddSegments(includeTree, segments, 0);
             }
@@ -30,7 +42,11 @@ namespace Dappi.HeadlessCms.ActionFilters
             context.HttpContext.Items[IncludeParamsKey] = includeTree;
         }
 
-        private static void AddSegments(IDictionary<string, IncludeNode> nodes, IReadOnlyList<string> segments, int index)
+        private static void AddSegments(
+            IDictionary<string, IncludeNode> nodes,
+            IReadOnlyList<string> segments,
+            int index
+        )
         {
             while (index != segments.Count)
             {

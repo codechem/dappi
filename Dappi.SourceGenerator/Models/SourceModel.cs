@@ -7,7 +7,7 @@ public class SourceModel
 {
     public string ClassName { get; set; } = string.Empty;
     public string ModelNamespace { get; set; } = string.Empty;
-    public string RootNamespace { get; set; }  = string.Empty;
+    public string RootNamespace { get; set; } = string.Empty;
     public List<PropertyInfo> PropertiesInfos { get; set; } = [];
     public List<DappiAuthorizeInfo> AuthorizeAttributes { get; set; } = [];
     public List<CrudActions> CrudActions { get; set; } = [];
@@ -28,5 +28,5 @@ public class DappiAuthorizeInfo
     public List<string> Roles { get; set; } = [];
     public List<string> Methods { get; set; } = [];
     public bool IsAuthenticated { get; set; } = true;
-    public bool OnControllerLevel => Methods is null or {Count: 0};
+    public bool OnControllerLevel => Methods is null or { Count: 0 };
 }
