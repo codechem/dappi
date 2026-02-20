@@ -265,6 +265,7 @@ export class BuilderComponent implements OnInit, OnDestroy {
               payload: {
                 oldFieldName: result.oldFieldName,
                 newFieldName: result.newFieldName,
+                fieldType: result.fieldType ?? field.type,
                 isRequired: result.isRequired,
                 hasIndex: result.hasIndex,
                 regex: result.regex,

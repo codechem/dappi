@@ -4,6 +4,7 @@ import { ConfigureModelRequest, ModelField, ModelResponse } from '../../models/c
 export interface UpdateFieldPayload {
   oldFieldName: string;
   newFieldName: string;
+  fieldType: string;
   isRequired: boolean;
   hasIndex: boolean;
   regex?: string;

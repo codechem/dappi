@@ -2,21 +2,23 @@ using System.Collections.Immutable;
 using System.Text;
 using Dappi.Core.Attributes;
 using Dappi.Core.Enums;
+using Dappi.Core.Utils;
 using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Generators;
 using Dappi.SourceGenerator.Models;
-using Dappi.Core.Utils;
 using Microsoft.CodeAnalysis;
-using static Dappi.SourceGenerator.Utilities.ClassPropertiesAnalyzer;
 using static Dappi.SourceGenerator.Generators.ActionsGenerator;
+using static Dappi.SourceGenerator.Utilities.ClassPropertiesAnalyzer;
 
 namespace Dappi.SourceGenerator;
 
 [Generator]
 public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
 {
-    protected override void Execute(SourceProductionContext context,
-        (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input)
+    protected override void Execute(
+        SourceProductionContext context,
+        (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input
+    )
     {
         var (compilation, collectedData) = input;
         var dbContextData = compilation.GetDbContextInformation();
@@ -27,23 +29,34 @@ public class CrudGenerator : BaseSourceModelToSourceOutputGenerator
 
         foreach (var item in collectedData)
         {
-            var arguments = string.Join(",", item.CrudActions.Select(x => $"{nameof(CrudActions)}.{x}"));
+            var arguments = string.Join(
+                ",",
+                item.CrudActions.Select(x => $"{nameof(CrudActions)}.{x}")
+            );
             var controllerAttribute = $"[{CcControllerAttribute.ShortName}({arguments})]";
             var collectionAddCode = GenerateCollectionAddCode(item);
             var collectionUpdateCode = GenerateCollectionUpdateCode(item);
-            var includesCode = GetIncludesIfAny(item.PropertiesInfos, mediaInfoPropertyNames, item.ClassName);
-            var hasAuthorizationOnControllerLevel = item.AuthorizeAttributes.FirstOrDefault() is
-            { OnControllerLevel: true };
+            var includesCode = GetIncludesIfAny(
+                item.PropertiesInfos,
+                mediaInfoPropertyNames,
+                item.ClassName
+            );
+            var hasAuthorizationOnControllerLevel =
+                item.AuthorizeAttributes.FirstOrDefault() is { OnControllerLevel: true };
             var authorizeTag = hasAuthorizationOnControllerLevel ? "[Authorize]" : null;
             var mediaInfoUpdateCode = string.Empty;
             if (mediaInfoPropertyNames.ContainsKey(item.ClassName))
             {
-                mediaInfoUpdateCode =
-                    GenerateMediaInfoCreationCode("model", "existingModel", mediaInfoPropertyNames[item.ClassName]);
+                mediaInfoUpdateCode = GenerateMediaInfoCreationCode(
+                    "model",
+                    "existingModel",
+                    mediaInfoPropertyNames[item.ClassName]
+                );
             }
 
             (string includeCode, string removeCode) = GenerateDeleteCodeForMediaInfo(item);
-            var generatedCode = $@"using Microsoft.AspNetCore.Mvc;
+            var generatedCode =
+                $@"using Microsoft.AspNetCore.Mvc;
 using {dbContextData.ResidingNamespace};
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -65,10 +78,12 @@ using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Reflection;
 using System.Collections;
+using System.Collections.Generic;
 using Dappi.Core.Constants;
 using System.Globalization;
 using System.Linq;
-using System.Dynamic;
+using System.Linq.Dynamic.Core;
+using Dappi.Core.Extensions;
 
 /*
 ==== area for testing ====
@@ -86,11 +101,9 @@ namespace {item.RootNamespace}.Controllers;
 {controllerAttribute}
 public partial class {item.ClassName}Controller(
     {dbContextData.ClassName} dbContext,
-    IDataShaperService shaper, 
     IMediaUploadService uploadService,
     IMediaUploadQueue queue) : ControllerBase
 {{
-
     {AggregateActions(item, includesCode, collectionAddCode, collectionUpdateCode, mediaInfoUpdateCode, includeCode, removeCode)}    
 
     private static (object entity, PropertyInfo property, Type[] entityInterfaces, bool isEnumerable, bool isCollection) GetEntityProperty(object entity, string propertyName)
@@ -125,7 +138,6 @@ public partial class {item.ClassName}Controller(
         property.SetValue(entity, value?.Deserialize(property.PropertyType));
     }}
 
-
     private dynamic GetDbSetForType(string typeName)
     {{
         var dbSetProperty = dbContext.GetType()
@@ -136,6 +148,35 @@ public partial class {item.ClassName}Controller(
 
         return dbSetProperty?.GetValue(dbContext);
     }}
+    
+    private IQueryable<{item.ClassName}> ApplyDynamicIncludes(IQueryable<{item.ClassName}> query)
+    {{
+        var includeTree = HttpContext.Items[IncludeQueryFilter.IncludeParamsKey] as IDictionary<string, IncludeNode>;
+        if (includeTree is null || includeTree.Count == 0)
+        {{
+            return query;
+        }}
+
+        foreach (var include in includeTree)
+        {{
+            query = ApplyIncludeRecursively(query, include.Key, include.Value);
+        }}
+
+        return query;
+    }}
+
+    private static IQueryable<{item.ClassName}> ApplyIncludeRecursively(IQueryable<{item.ClassName}> query, string path, IncludeNode node)
+    {{
+        query = query.Include(path);
+
+        foreach (var child in node.Children)
+        {{
+            var childPath = string.Concat(path, ""."", child.Key);
+            query = ApplyIncludeRecursively(query, childPath, child.Value);
+        }}
+
+        return query;
+    }}
 }}";
 
             context.AddSource($"{item.ClassName}Controller.cs", generatedCode);
@@ -144,9 +185,7 @@ public partial class {item.ClassName}Controller(
 
     private static string GenerateCollectionUpdateCode(SourceModel model)
     {
-        var collectionProperties = model.PropertiesInfos
-            .Where(ContainsCollectionTypeName)
-            .ToList();
+        var collectionProperties = model.PropertiesInfos.Where(ContainsCollectionTypeName).ToList();
 
         if (!collectionProperties.Any())
             return string.Empty;
@@ -165,7 +204,8 @@ public partial class {item.ClassName}Controller(
 
             var propNameLower = prop.PropertyName.ToLower();
 
-            sb.AppendLine($@"        // Update {prop.PropertyName} collection
+            sb.AppendLine(
+                $@"        // Update {prop.PropertyName} collection
         if (model.{prop.PropertyName} != null)
         {{
             var {propNameLower}Ids = model.{prop.PropertyName}.Select(m => m.Id).ToList();
@@ -176,7 +216,8 @@ public partial class {item.ClassName}Controller(
             
             existingModel.{prop.PropertyName}.Clear();
             existingModel.{prop.PropertyName} = existing{entityType.Pluralize()};
-        }}");
+        }}"
+            );
         }
 
         return sb.ToString().TrimEnd();
@@ -184,9 +225,7 @@ public partial class {item.ClassName}Controller(
 
     private static string GenerateCollectionAddCode(SourceModel model)
     {
-        var collectionProperties = model.PropertiesInfos
-            .Where(ContainsCollectionTypeName)
-            .ToList();
+        var collectionProperties = model.PropertiesInfos.Where(ContainsCollectionTypeName).ToList();
 
         if (!collectionProperties.Any())
             return string.Empty;
@@ -205,7 +244,8 @@ public partial class {item.ClassName}Controller(
 
             string propNameLower = prop.PropertyName.ToLower();
 
-            sb.AppendLine($@"        var {propNameLower}Ids = model.{prop.PropertyName}?.Select(m => m.Id).ToList();
+            sb.AppendLine(
+                $@"        var {propNameLower}Ids = model.{prop.PropertyName}?.Select(m => m.Id).ToList();
         
         if ({propNameLower}Ids != null && {propNameLower}Ids.Count > 0)
         {{
@@ -217,7 +257,8 @@ public partial class {item.ClassName}Controller(
             {{
                 modelToSave.{prop.PropertyName} = existing{entityType.Pluralize()};
             }}
-        }}");
+        }}"
+            );
         }
 
         return sb.ToString().TrimEnd();
@@ -226,23 +267,28 @@ public partial class {item.ClassName}Controller(
     private static bool ContainsCollectionTypeName(PropertyInfo x)
     {
         return x.PropertyType.Name.Contains("IEnumerable")
-               || x.PropertyType.Name.Contains("List")
-               || x.PropertyType.Name.Contains("ICollection");
+            || x.PropertyType.Name.Contains("List")
+            || x.PropertyType.Name.Contains("ICollection");
     }
 
     private static Dictionary<string, IEnumerable<string>> GetMediaInfoPropertyNames(
-        ImmutableArray<SourceModel> collectedData)
+        ImmutableArray<SourceModel> collectedData
+    )
     {
         return collectedData
-            .SelectMany(s => s.PropertiesInfos
-                .Where(p => p.PropertyType.Name.Contains("MediaInfo"))
-                .Select(p => new { s.ClassName, p.PropertyName }))
+            .SelectMany(s =>
+                s.PropertiesInfos.Where(p => p.PropertyType.Name.Contains("MediaInfo"))
+                    .Select(p => new { s.ClassName, p.PropertyName })
+            )
             .GroupBy(item => item.ClassName)
             .ToDictionary(g => g.Key, g => g.Select(item => item.PropertyName));
     }
 
-    private static string GenerateMediaInfoCreationCode(string updatedModelName, string existingModelName,
-        IEnumerable<string> mediaInfoPropertyNames)
+    private static string GenerateMediaInfoCreationCode(
+        string updatedModelName,
+        string existingModelName,
+        IEnumerable<string> mediaInfoPropertyNames
+    )
     {
         if (!mediaInfoPropertyNames.Any())
         {
@@ -252,7 +298,8 @@ public partial class {item.ClassName}Controller(
         var sb = new StringBuilder();
         foreach (var prop in mediaInfoPropertyNames)
         {
-            sb.AppendLine($@"
+            sb.AppendLine(
+                $@"
         if ({updatedModelName}.{prop} != null) {{
             var existing{prop} = await dbContext.Set<MediaInfo>().FirstOrDefaultAsync(media => media.Url.Equals({updatedModelName}.{prop}.Url) && media.FileSize == {updatedModelName}.{prop}.FileSize);
             if (existing{prop} == null) {{
@@ -269,7 +316,8 @@ public partial class {item.ClassName}Controller(
             else {{
                 {existingModelName}.{prop} = existing{prop};
             }}
-        }}");
+        }}"
+            );
         }
 
         return sb.ToString().TrimEnd();
@@ -277,17 +325,26 @@ public partial class {item.ClassName}Controller(
 
     private static (string include, string remove) GenerateDeleteCodeForMediaInfo(SourceModel model)
     {
-        var includeCode = new StringBuilder($"var model = dbContext.{model.ClassName.Pluralize()} \n");
+        var includeCode = new StringBuilder(
+            $"var model = dbContext.{model.ClassName.Pluralize()} \n"
+        );
         var removeCode = new StringBuilder();
         removeCode.AppendLine("");
-        var mediaInfos = model.PropertiesInfos.Where(p => p.PropertyType.Name.Contains("MediaInfo")).ToList();
+        var mediaInfos = model
+            .PropertiesInfos.Where(p => p.PropertyType.Name.Contains("MediaInfo"))
+            .ToList();
         if (mediaInfos.Any())
         {
             foreach (var mediaInfo in mediaInfos)
             {
-                removeCode.AppendLine($$"""         if(model.{{mediaInfo.PropertyName}} is not null){ """);
-                includeCode.AppendLine($@"                  .Include(p => p.{mediaInfo.PropertyName})");
-                removeCode.AppendLine($@"
+                removeCode.AppendLine(
+                    $$"""         if(model.{{mediaInfo.PropertyName}} is not null){ """
+                );
+                includeCode.AppendLine(
+                    $@"                  .Include(p => p.{mediaInfo.PropertyName})"
+                );
+                removeCode.AppendLine(
+                    $@"
             try {{
                 dbContext.Set<MediaInfo>().Attach(model.{mediaInfo.PropertyName}); 
                 dbContext.Set<MediaInfo>().Remove(model.{mediaInfo.PropertyName});
@@ -302,7 +359,8 @@ public partial class {item.ClassName}Controller(
             catch(Exception ex){{
                 return StatusCode(500, $""An unexpected error occurred: {{ex.Message}}"");            
             }}
-            ");
+            "
+                );
                 removeCode.AppendLine("         }");
                 removeCode.AppendLine("");
             }
@@ -312,7 +370,15 @@ public partial class {item.ClassName}Controller(
         return (includeCode.ToString().TrimEnd(), removeCode.ToString().TrimEnd());
     }
 
-    private static string AggregateActions(SourceModel item, string includesCode, string collectionAddCode, string collectionUpdateCode, string mediaInfoUpdateCode, string includeCode, string removeCode)
+    private static string AggregateActions(
+        SourceModel item,
+        string includesCode,
+        string collectionAddCode,
+        string collectionUpdateCode,
+        string mediaInfoUpdateCode,
+        string includeCode,
+        string removeCode
+    )
     {
         var actions = new List<string>()
         {
@@ -321,7 +387,13 @@ public partial class {item.ClassName}Controller(
             GenerateGetAllAction(item.CrudActions, item, includesCode),
             GeneratePostAction(item.CrudActions, item, collectionAddCode),
             GeneratePostActionForMediaInfo(item.CrudActions, item),
-            GeneratePutAction(item.CrudActions, item, includesCode, collectionUpdateCode, mediaInfoUpdateCode),
+            GeneratePutAction(
+                item.CrudActions,
+                item,
+                includesCode,
+                collectionUpdateCode,
+                mediaInfoUpdateCode
+            ),
             GeneratePatchAction(item.CrudActions, item, includesCode),
             GenerateDeleteAction(item.CrudActions, item, includeCode, removeCode),
         };

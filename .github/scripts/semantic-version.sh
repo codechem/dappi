@@ -3,7 +3,7 @@
 # Rules for generating semantic versioning
 # major: breaking change
 # minor: feat, style
-# patch: build, fix, perf, refactor, revert
+# patch: build, fix, perf, refactor, revert, chore, test
 
 GENERATE_VERSION=$1
 echo "Generate version: $GENERATE_VERSION"
@@ -82,7 +82,7 @@ start() {
         elif [[ $message =~ (^(feat|style)(\(.+\))?:) ]]; then
             new_version=$(increment_version $new_version "minor")
             has_changes=true
-        elif [[ $message =~ ^((fix|build|perf|refactor|revert)(\(.+\))?:) ]]; then
+        elif [[ $message =~ ^((fix|build|perf|refactor|revert|chore|test|ci)(\(.+\))?:) ]]; then
             new_version=$(increment_version $new_version "patch")
             has_changes=true
         fi

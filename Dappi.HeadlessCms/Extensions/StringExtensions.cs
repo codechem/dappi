@@ -1,3 +1,4 @@
+using Dappi.HeadlessCms.Exceptions;
 using Microsoft.CodeAnalysis.CSharp;
 
 namespace Dappi.HeadlessCms.Extensions
@@ -12,10 +13,12 @@ namespace Dappi.HeadlessCms.Extensions
                 return false;
             }
 
-            if (name.Any(char.IsWhiteSpace)
+            if (
+                name.Any(char.IsWhiteSpace)
                 || name.Any(char.IsSeparator)
                 || name.Any(char.IsPunctuation)
-                || char.IsDigit(name[0]))
+                || char.IsDigit(name[0])
+            )
             {
                 return false;
             }
@@ -27,16 +30,16 @@ namespace Dappi.HeadlessCms.Extensions
 
             // if it is a reserved keyword it will be parsed successfully to a Keyword kind.
             var keywordKind = SyntaxFacts.GetKeywordKind(name);
-            
+
             return !SyntaxFacts.IsKeywordKind(keywordKind);
         }
-        
+
         public static object ConvertValue(this string value)
         {
             ArgumentNullException.ThrowIfNull(value);
             var values = value.Split(',');
             var convertedValues = new List<object>();
-            
+
             foreach (var v in values)
             {
                 if (int.TryParse(v, out var intValue))
@@ -64,8 +67,59 @@ namespace Dappi.HeadlessCms.Extensions
                     convertedValues.Add(v);
                 }
             }
-            
+
             return convertedValues.Count > 1 ? convertedValues : convertedValues.First();
+        }
+
+        public static string? BuildSelectExpression(
+            this string? fields,
+            IEnumerable<string> publicPropertyNames
+        )
+        {
+            if (string.IsNullOrWhiteSpace(fields))
+            {
+                return null;
+            }
+
+            if (publicPropertyNames is null)
+            {
+                throw new ArgumentNullException(nameof(publicPropertyNames));
+            }
+
+            var propertyMap = publicPropertyNames.ToDictionary(
+                property => property,
+                property => property,
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            var requestedFields = fields!
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(field => field.Trim())
+                .Where(field => !string.IsNullOrWhiteSpace(field))
+                .ToArray();
+
+            if (requestedFields.Length == 0)
+            {
+                return null;
+            }
+
+            var selected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var selectParts = new List<string>(requestedFields.Length);
+
+            foreach (var field in requestedFields)
+            {
+                if (!propertyMap.TryGetValue(field, out var propertyName))
+                {
+                    throw new PropertyNotFoundException($"Property '{field}' can not be found.");
+                }
+
+                if (selected.Add(propertyName))
+                {
+                    selectParts.Add(propertyName);
+                }
+            }
+
+            return "new (" + string.Join(", ", selectParts) + ")";
         }
     }
 }
