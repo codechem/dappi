@@ -1,29 +1,34 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <LangVersion>latest</LangVersion>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-
-        <!-- Required package metadata -->
-        <PackageId>Dappi.SourceGenerator</PackageId>
-        <Authors>CodeChem</Authors>
-        <Description>SourceGenerator for DAPPI</Description>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Compile Include="..\Dappi.Core\**\*.cs" LinkBase="Common" />
-        <Compile Remove="..\Dappi.Core\**\*.AssemblyAttributes.cs" />
-        <Compile Remove="..\Dappi.Core\**\AssemblyInfo.cs" />
-    </ItemGroup>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PackageScribanIncludeSource>true</PackageScribanIncludeSource>
+    <!-- Required package metadata -->
+    <PackageId>Dappi.SourceGenerator</PackageId>
+    <Authors>CodeChem</Authors>
+    <Description>SourceGenerator for DAPPI</Description>
+    <Nullable>enable</Nullable>
+    <IsRoslynComponent>true</IsRoslynComponent>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+    <PackageReference Include="Scriban" Version="3.2.1" IncludeAssets="Build" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference
+      Include="System.Threading.Tasks.Extensions"
+      Version="4.6.3"
+      PrivateAssets="all"
+    />
+    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Dappi.Core\**\*.cs" LinkBase="Common" />
+    <Compile Remove="..\Dappi.Core\**\*.AssemblyAttributes.cs" />
+    <Compile Remove="..\Dappi.Core\**\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="@(None -&gt; WithMetadataValue('Extension', '.tpl'))" />
+  </ItemGroup>
 </Project>
