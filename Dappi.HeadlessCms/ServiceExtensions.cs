@@ -7,6 +7,7 @@ using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Database.Interceptors;
 using Dappi.HeadlessCms.Interfaces;
+using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
 using Dappi.HeadlessCms.Services.StorageServices;
@@ -66,6 +67,7 @@ public static class ServiceExtensions
         services.AddScoped<ICurrentExternalSessionProvider, CurrentExternalSessionProvider>();
 
         services.AddScoped<IContentTypeChangesService, ContentTypeChangesService>();
+        services.AddDappiSwaggerGen();
 
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<FieldRequestValidator>();
@@ -262,7 +264,7 @@ public static class ServiceExtensions
         return services;
     }
 
-    public static IServiceCollection AddDappiSwaggerGen(this IServiceCollection services)
+    private static IServiceCollection AddDappiSwaggerGen(this IServiceCollection services)
     {
         return services.AddSwaggerGen(c =>
         {
