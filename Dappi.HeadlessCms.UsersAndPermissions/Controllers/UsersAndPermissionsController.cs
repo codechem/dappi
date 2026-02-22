@@ -5,30 +5,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Dappi.HeadlessCms.UsersAndPermissions.Controllers;
 
-public class RolePermissionDto
-{
-    public string PermissionName { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public bool Selected { get; set; }
-}
-
 [ApiController]
-[Route("api/users-and-permissions/[controller]")]
-public class RolesController : ControllerBase
+[Route("api/[controller]")]
+public class UsersAndPermissionsController(
+    IDbContextAccessor usersAndPermissionsDb,
+    AvailablePermissionsRepository availablePermissionsRepository
+) : ControllerBase
 {
-    private readonly UsersAndPermissionsDbContext _usersAndPermissionsDb;
-    private readonly AvailablePermissionsRepository _availablePermissionsRepository;
+    private readonly UsersAndPermissionsDbContext _usersAndPermissionsDb =
+        usersAndPermissionsDb.DbContext;
 
-    public RolesController(
-        IDbContextAccessor usersAndPermissionsDb,
-        AvailablePermissionsRepository availablePermissionsRepository
-    )
-    {
-        _usersAndPermissionsDb = usersAndPermissionsDb.DbContext;
-        _availablePermissionsRepository = availablePermissionsRepository;
-    }
-
-    [HttpGet()]
+    [HttpGet]
     public async Task<ActionResult<Dictionary<string, List<RolePermissionDto>>>> GetRolePermissions(
         string roleName,
         CancellationToken cancellationToken
@@ -37,9 +24,8 @@ public class RolesController : ControllerBase
         if (string.IsNullOrWhiteSpace(roleName))
             return BadRequest("Role name is required.");
 
-        // 1. Load the role and its assigned permissions
         var role = await _usersAndPermissionsDb
-            .AppRoles.Include(r => r.Permissions) // adjust nav property name
+            .AppRoles.Include(r => r.Permissions)
             .FirstOrDefaultAsync(r => r.Name == roleName, cancellationToken);
 
         if (role is null)
@@ -50,10 +36,8 @@ public class RolesController : ControllerBase
             .Where(n => !string.IsNullOrWhiteSpace(n))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // 2. Get all available permissions from AvailablePermissionsRepository
-        var availablePermissions = _availablePermissionsRepository.GetAllPermissions();
+        var availablePermissions = availablePermissionsRepository.GetAllPermissions();
 
-        // 3. Build grouped dictionary
         var result = new Dictionary<string, List<RolePermissionDto>>(
             StringComparer.OrdinalIgnoreCase
         );

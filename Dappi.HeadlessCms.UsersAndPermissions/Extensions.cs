@@ -36,7 +36,7 @@ namespace Dappi.HeadlessCms.UsersAndPermissions
             services
                 .AddControllers()
                 .AddApplicationPart(
-                    typeof(Dappi.HeadlessCms.UsersAndPermissions.Controllers.RolesController).Assembly
+                    typeof(Dappi.HeadlessCms.UsersAndPermissions.Controllers.UsersAndPermissionsController).Assembly
                 )
                 .AddJsonOptions(options =>
                 {
