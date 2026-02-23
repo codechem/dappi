@@ -21,6 +21,12 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
         public string HttpRoute { get; set; } = string.Empty;
     }
 
+    private class ControllerEntry
+    {
+        public string Controller_name { get; set; } = string.Empty;
+        public List<MethodRouteEntry> Methods { get; set; } = new();
+    }
+
     protected override void Execute(
         SourceProductionContext context,
         (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input
@@ -39,46 +45,61 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
             { "HttpOptions", "OPTIONS" },
         };
 
+        // Aggregate all controllers with their methods
+        var controllers = new List<ControllerEntry>();
+
         foreach (var model in collectedData)
         {
+            var controllerName = $"{model.ClassName}Controller";
+
+            var controllerEntry = new ControllerEntry
+            {
+                Controller_name = controllerName,
+                Methods = new List<MethodRouteEntry>(),
+            };
+
             var existingPartialController = FindPartialControllerForClass(compilation, model);
 
-            if (existingPartialController is null)
-                continue;
-
-            var methodsWithHttp = existingPartialController
-                .Members.OfType<MethodDeclarationSyntax>()
-                .Select(method => new
-                {
-                    Method = method,
-                    HttpAttr = method
-                        .AttributeLists.SelectMany(al => al.Attributes)
-                        .FirstOrDefault(IsHttpMethodAttribute),
-                })
-                .Where(x => x.HttpAttr is not null)
-                .Select(x =>
-                {
-                    var route = x
-                        .HttpAttr?.ArgumentList?.Arguments.FirstOrDefault()
-                        ?.ToFullString();
-                    return new MethodRouteEntry
+            if (existingPartialController is not null)
+            {
+                var methodsWithHttp = existingPartialController
+                    .Members.OfType<MethodDeclarationSyntax>()
+                    .Select(method => new
                     {
-                        MethodName = x.Method.Identifier.Text,
-                        HttpRoute =
-                            httpMethodAttributesToVerb[x.HttpAttr?.Name.ToString()!]
-                            + "/"
-                            + route?.Replace("/", "").Replace("\"", "").Trim(),
-                    };
-                })
-                .ToList();
+                        Method = method,
+                        HttpAttr = method
+                            .AttributeLists.SelectMany(al => al.Attributes)
+                            .FirstOrDefault(IsHttpMethodAttribute),
+                    })
+                    .Where(x => x.HttpAttr is not null)
+                    .Select(x =>
+                    {
+                        var routeArg = x
+                            .HttpAttr?.ArgumentList?.Arguments.FirstOrDefault()
+                            ?.ToFullString();
+                        var cleanedRoute = routeArg
+                            ?.Replace("/", string.Empty)
+                            .Replace("\"", string.Empty)
+                            .Trim();
+
+                        var verb = httpMethodAttributesToVerb[x.HttpAttr!.Name.ToString()!];
+
+                        return new MethodRouteEntry
+                        {
+                            MethodName = x.Method.Identifier.Text,
+                            HttpRoute = $"{verb}/{cleanedRoute}",
+                        };
+                    })
+                    .ToList();
+
+                controllerEntry.Methods.AddRange(methodsWithHttp);
+            }
 
             var resolvedActions = model
                 .CrudActions.Select(action =>
                 {
                     var actionName = action.ToString();
 
-                    // TODO: It would be a good idea to move this logic to the base generator so it can be re used in the CrudGenerator, but a refactor of the CrudGenerator is needed first
-                    // TODO: Cleanup HttpRoute to not be this shitty
                     return actionName switch
                     {
                         "Get" => new MethodRouteEntry
@@ -109,31 +130,54 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
                         "Delete" => new MethodRouteEntry
                         {
                             MethodName = "Delete",
-                            HttpRoute = $"DELETE/{model.ClassName}/{{id}}",
+                            HttpRoute = $"DELETE/{model.ClassName}{{id}}",
                         },
                         "Patch" => new MethodRouteEntry
                         {
                             MethodName = $"JsonPatch{model.ClassName}",
                             HttpRoute = $"PATCH/{model.ClassName}/{{id}}",
                         },
-                        _ => throw new NotSupportedException(
-                            "Unsupported CRUD action: " + actionName
-                        ),
+                        _ => null,
                     };
                 })
-                .Where(x => x is not null)
+                .Where(x => x is not null)!
                 .ToList();
 
-            var allMethods = methodsWithHttp.Concat(resolvedActions).ToList();
-            var templateContent = EmbeddedResourceLoader.LoadEmbeddedTemplate(TemplateResourceName);
-            var template = Template.Parse(templateContent);
+            controllerEntry.Methods.AddRange(resolvedActions);
 
-            var output = template.Render(
-                new { ControllerName = $"{model.ClassName}Controller", Methods = allMethods }
-            );
-
-            context.AddSource($"{model.ClassName}.MethodsAndPermissions.cs", output);
+            if (controllerEntry.Methods.Count > 0)
+            {
+                controllers.Add(controllerEntry);
+            }
         }
+
+        var templateContent = EmbeddedResourceLoader.LoadEmbeddedTemplate(TemplateResourceName);
+        var template = Template.Parse(templateContent);
+
+        if (template.HasErrors)
+        {
+            foreach (var message in template.Messages)
+            {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            id: "DAPPMETHODS001",
+                            title: "Methods & Permissions template error",
+                            messageFormat: message.Message,
+                            category: "SourceGenerator",
+                            defaultSeverity: DiagnosticSeverity.Error,
+                            isEnabledByDefault: true
+                        ),
+                        Location.None
+                    )
+                );
+            }
+            return;
+        }
+
+        var output = template.Render(new { controllers });
+
+        context.AddSource("MethodsAndPermissions.g.cs", output);
     }
 
     private static ClassDeclarationSyntax? FindPartialControllerForClass(
