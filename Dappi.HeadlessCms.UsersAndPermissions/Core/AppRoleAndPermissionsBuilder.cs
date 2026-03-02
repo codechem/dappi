@@ -3,20 +3,20 @@ using System.Reflection;
 namespace Dappi.HeadlessCms.UsersAndPermissions.Core
 {
     public interface IRoleStage<TUser>
-        where TUser : IAppUser
+        where TUser : AppUser
     {
         IControllerStage<TUser> ForRole(string roleName, bool isDefaultForAuthenticated = false);
         AppRole[] Build();
     }
 
     public interface IControllerStage<TUser>
-        where TUser : IAppUser
+        where TUser : AppUser
     {
         IPermissionStage<TUser> ForController(string controllerName);
     }
 
     public interface IPermissionStage<TUser>
-        where TUser : IAppUser
+        where TUser : AppUser
     {
         IPermissionStage<TUser> Allow(string methodName);
         IPermissionStage<TUser> AllowAll();
@@ -29,7 +29,7 @@ namespace Dappi.HeadlessCms.UsersAndPermissions.Core
         : IRoleStage<TUser>,
             IControllerStage<TUser>,
             IPermissionStage<TUser>
-        where TUser : IAppUser
+        where TUser : AppUser
     {
         private record RoleEntry(
             string RoleName,

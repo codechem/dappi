@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Dappi.Core.Utils;
+using Dappi.SourceGenerator.Extensions;
 using Dappi.SourceGenerator.Models;
 using Dappi.SourceGenerator.Utilities;
 using Microsoft.CodeAnalysis;
@@ -33,6 +34,12 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
     )
     {
         var (compilation, collectedData) = input;
+
+        if (!compilation.HasDappiSystem("UsersAndPermissions"))
+        {
+            // User & Permissions system not referenced, skip generation
+            return;
+        }
 
         var httpMethodAttributesToVerb = new Dictionary<string, string>
         {
@@ -172,8 +179,16 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
                     )
                 );
             }
+
             return;
         }
+
+        TryAddUsersAndPermissionsController(
+            compilation,
+            httpMethodAttributesToVerb,
+            controllers,
+            context
+        );
 
         var output = template.Render(new { controllers });
 
@@ -192,6 +207,148 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
                 cds.Identifier.Text == $"{model.ClassName}Controller"
                 && cds.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))
             );
+    }
+
+    private void TryAddUsersAndPermissionsController(
+        Compilation compilation,
+        IReadOnlyDictionary<string, string> httpMethodAttributesToVerb,
+        List<ControllerEntry> controllers,
+        SourceProductionContext context
+    )
+    {
+        // Adjust this to match the real namespace of your controller
+        var possibleTypeNames = new[]
+        {
+            "Dappi.HeadlessCms.UsersAndPermissions.Api.UsersAndPermissionsController`1",
+            "Dappi.HeadlessCms.UsersAndPermissions.Api.UsersAndPermissionsController",
+        };
+
+        INamedTypeSymbol? controllerSymbol = null;
+
+        foreach (var name in possibleTypeNames)
+        {
+            controllerSymbol = compilation.GetTypeByMetadataName(name);
+            if (controllerSymbol is not null)
+                break;
+        }
+
+        if (controllerSymbol is null)
+        {
+            return;
+        }
+
+        var entry = BuildControllerEntryFromSymbol(controllerSymbol, httpMethodAttributesToVerb);
+        if (entry is null || entry.Methods.Count == 0)
+            return;
+
+        var existing = controllers.FirstOrDefault(c =>
+            string.Equals(c.Controller_name, entry.Controller_name, StringComparison.Ordinal)
+        );
+
+        if (existing is null)
+        {
+            controllers.Add(entry);
+            return;
+        }
+
+        foreach (var m in entry.Methods)
+        {
+            var alreadyExists = existing.Methods.Any(em =>
+                string.Equals(em.MethodName, m.MethodName, StringComparison.Ordinal)
+                && string.Equals(em.HttpRoute, m.HttpRoute, StringComparison.OrdinalIgnoreCase)
+            );
+
+            if (!alreadyExists)
+            {
+                existing.Methods.Add(m);
+            }
+        }
+    }
+
+    private ControllerEntry? BuildControllerEntryFromSymbol(
+        INamedTypeSymbol controllerSymbol,
+        IReadOnlyDictionary<string, string> httpMethodAttributesToVerb
+    )
+    {
+        var controllerEntry = new ControllerEntry
+        {
+            Controller_name = controllerSymbol.Name,
+            Methods = new List<MethodRouteEntry>(),
+        };
+
+        foreach (var member in controllerSymbol.GetMembers().OfType<IMethodSymbol>())
+        {
+            if (
+                member.MethodKind != MethodKind.Ordinary
+                || member.DeclaredAccessibility != Accessibility.Public
+            )
+                continue;
+
+            var httpAttr = member
+                .GetAttributes()
+                .FirstOrDefault(a => IsHttpMethodAttributeSymbol(a.AttributeClass));
+
+            if (httpAttr is null)
+                continue;
+
+            var attrClassName = httpAttr.AttributeClass?.Name;
+            if (attrClassName is null)
+                continue;
+
+            if (
+                !httpMethodAttributesToVerb.TryGetValue(
+                    attrClassName.Replace("Attribute", string.Empty),
+                    out var verb
+                )
+            )
+            {
+                continue;
+            }
+
+            string? cleanedRoute = null;
+            if (httpAttr.ConstructorArguments.Length > 0)
+            {
+                var arg = httpAttr.ConstructorArguments[0];
+                if (arg.Kind == TypedConstantKind.Primitive && arg.Value is string s)
+                {
+                    cleanedRoute = s.Replace("/", string.Empty).Trim();
+                }
+            }
+
+            var routePart = cleanedRoute ?? string.Empty;
+
+            controllerEntry.Methods.Add(
+                new MethodRouteEntry
+                {
+                    MethodName = member.Name,
+                    HttpRoute = string.IsNullOrWhiteSpace(routePart) ? verb : $"{verb}/{routePart}",
+                }
+            );
+        }
+
+        return controllerEntry.Methods.Count == 0 ? null : controllerEntry;
+    }
+
+    private static bool IsHttpMethodAttributeSymbol(INamedTypeSymbol? attrSymbol)
+    {
+        if (attrSymbol is null)
+            return false;
+
+        var name = attrSymbol.Name; // e.g. HttpGetAttribute or HttpGet
+        return name == "HttpGet"
+            || name == "HttpPost"
+            || name == "HttpPut"
+            || name == "HttpDelete"
+            || name == "HttpPatch"
+            || name == "HttpHead"
+            || name == "HttpOptions"
+            || name == "HttpGetAttribute"
+            || name == "HttpPostAttribute"
+            || name == "HttpPutAttribute"
+            || name == "HttpDeleteAttribute"
+            || name == "HttpPatchAttribute"
+            || name == "HttpHeadAttribute"
+            || name == "HttpOptionsAttribute";
     }
 
     private static bool IsHttpMethodAttribute(AttributeSyntax attr)

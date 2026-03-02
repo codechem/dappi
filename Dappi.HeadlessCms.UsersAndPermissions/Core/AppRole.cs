@@ -1,12 +1,13 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace Dappi.HeadlessCms.UsersAndPermissions.Core
 {
-    public class AppRole
+    public class AppRole : IdentityRole<int>
     {
-        public int Id { get; private set; }
         public string Name { get; private set; }
 
         private readonly List<AppPermission> _permissions = [];
-        public IEnumerable<IAppUser> Users { get; set; }
+        public IEnumerable<AppUser> Users { get; set; }
 
         private AppRole() { } // For EF Core
 
@@ -42,13 +43,6 @@ namespace Dappi.HeadlessCms.UsersAndPermissions.Core
         {
             if (_permissions.All(p => p.Name != permission.Name))
                 _permissions.Add(permission);
-        }
-
-        public void RemovePermission(AppPermission permission)
-        {
-            var existing = _permissions.FirstOrDefault(p => p.Name == permission.Name);
-            if (existing != null)
-                _permissions.Remove(existing);
         }
 
         public void ClearPermissions() => _permissions.Clear();

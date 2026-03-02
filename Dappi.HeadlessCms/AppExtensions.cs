@@ -16,7 +16,8 @@ public static class AppExtensions
 {
     public static async Task<IApplicationBuilder> UseDappi<TDbContext>(
         this WebApplication app,
-        Action<SwaggerUIOptions>? configureSwagger = null)
+        Action<SwaggerUIOptions>? configureSwagger = null
+    )
         where TDbContext : DappiDbContext
     {
         app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -24,29 +25,38 @@ public static class AppExtensions
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
         {
             app.UseSwagger();
-            app.UseSwaggerUI(configureSwagger ?? (c =>
-            {
-                c.SwaggerEndpoint("/swagger/Toolkit/swagger.json", "Toolkit API v1");
-                c.SwaggerEndpoint("/swagger/Default/swagger.json", "Default API v1");
-                c.RoutePrefix = "swagger";
-            }));
+            app.UseSwaggerUI(
+                configureSwagger
+                    ?? (
+                        c =>
+                        {
+                            c.SwaggerEndpoint("/swagger/Toolkit/swagger.json", "Toolkit API v1");
+                            c.SwaggerEndpoint("/swagger/Default/swagger.json", "Default API v1");
+                            c.RoutePrefix = "swagger";
+                        }
+                    )
+            );
         }
 
-        app.Use(async (context, next) =>
-        {
-            await next();
-
-            if (!context.Request.Path.Value!.StartsWith("/api/") &&
-                !Path.HasExtension(context.Request.Path) ||
-                context.Response.StatusCode == 404)
+        app.Use(
+            async (context, next) =>
             {
-                if (!context.Response.HasStarted)
+                await next();
+
+                if (
+                    !context.Request.Path.Value!.StartsWith("/api/")
+                        && !Path.HasExtension(context.Request.Path)
+                    || context.Response.StatusCode == 404
+                )
                 {
-                    context.Request.Path = "/index.html";
-                    await next();
+                    if (!context.Response.HasStarted)
+                    {
+                        context.Request.Path = "/index.html";
+                        await next();
+                    }
                 }
             }
-        });
+        );
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();
@@ -60,7 +70,8 @@ public static class AppExtensions
     }
 
     private static async Task MigrateIfNoModelsAreInDraftStateAsync<TDbContext>(
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider
+    )
         where TDbContext : DappiDbContext
     {
         var logger = serviceProvider.GetRequiredService<ILogger<TDbContext>>();
@@ -76,12 +87,14 @@ public static class AppExtensions
         {
             logger.LogWarning(
                 "Unable to migrate schema changes due to pending model changes. Most probably you have models in draft state. {Message}",
-                ex.Message);
+                ex.Message
+            );
         }
     }
 
     private static async Task SeedRolesAndUsersAsync<TUser, TRole>(
-        this IServiceProvider serviceProvider)
+        this IServiceProvider serviceProvider
+    )
         where TUser : IdentityUser, new()
         where TRole : IdentityRole, new()
     {
@@ -124,35 +137,39 @@ public static class AppExtensions
     }
 
     private static async Task PublishContentTypeChangesAsync<TDbContext>(
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider
+    )
         where TDbContext : DappiDbContext
     {
         try
         {
             var dbContext = serviceProvider.GetRequiredService<TDbContext>();
 
-            await dbContext.ContentTypeChanges
-                .Where(ctc =>
-                    ctc.State == ContentTypeState.PendingPublish ||
-                    ctc.State == ContentTypeState.PendingDelete ||
-                    ctc.State == ContentTypeState.PendingActionsChange)
+            await dbContext
+                .ContentTypeChanges.Where(ctc =>
+                    ctc.State == ContentTypeState.PendingPublish
+                    || ctc.State == ContentTypeState.PendingDelete
+                    || ctc.State == ContentTypeState.PendingActionsChange
+                )
                 .ExecuteUpdateAsync(setters =>
                     setters.SetProperty(
                         e => e.State,
-                        e => e.State == ContentTypeState.PendingPublish
-                            ? ContentTypeState.Published
-                            : e.State == ContentTypeState.PendingDelete
-                                ? ContentTypeState.Deleted
-                                : e.State == ContentTypeState.PendingActionsChange
-                                    ? ContentTypeState.ActionsChanged
-                                    : e.State));
+                        e =>
+                            e.State == ContentTypeState.PendingPublish ? ContentTypeState.Published
+                            : e.State == ContentTypeState.PendingDelete ? ContentTypeState.Deleted
+                            : e.State == ContentTypeState.PendingActionsChange
+                                ? ContentTypeState.ActionsChanged
+                            : e.State
+                    )
+                );
         }
         catch (Exception ex)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<TDbContext>>();
             logger.LogError(
                 "Error publishing content-type changes: {PublishContentChangesError}",
-                ex);
+                ex
+            );
             throw;
         }
     }
