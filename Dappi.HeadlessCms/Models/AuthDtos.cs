@@ -32,6 +32,7 @@ namespace Dappi.HeadlessCms.Models
     {
         public string Id { get; set; }
         public string Name { get; set; }
+        public int UserCount { get; set; }
     }
 
     public class CreateRoleDto

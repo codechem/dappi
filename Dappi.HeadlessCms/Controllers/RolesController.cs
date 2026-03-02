@@ -12,14 +12,16 @@ namespace Dappi.HeadlessCms.Controllers;
 public class RolesController : ControllerBase
 {
     private readonly RoleManager<DappiRole> _roleManager;
+    private readonly UserManager<DappiUser> _userManager;
 
-    public RolesController(RoleManager<DappiRole> roleManager)
+    public RolesController(RoleManager<DappiRole> roleManager, UserManager<DappiUser> userManager)
     {
         _roleManager = roleManager;
+        _userManager = userManager;
     }
 
     [HttpGet]
-    public IActionResult GetRoles([FromQuery] string searchTerm = "")
+    public async Task<IActionResult> GetRoles([FromQuery] string searchTerm = "")
     {
         var query = _roleManager.Roles.AsQueryable();
 
@@ -32,17 +34,24 @@ public class RolesController : ControllerBase
         var totalCount = query.Count();
         var roles = query
             .OrderBy(role => role.Name)
-            .Select(role => new RoleDto
+            .ToList();
+
+        var roleDtos = new List<RoleDto>();
+        foreach (var role in roles)
+        {
+            var usersInRole = await _userManager.GetUsersInRoleAsync(role.Name!);
+            roleDtos.Add(new RoleDto
             {
                 Id = role.Id,
-                Name = role.Name ?? string.Empty
-            })
-            .ToList();
+                Name = role.Name ?? string.Empty,
+                UserCount = usersInRole.Count
+            });
+        }
 
         var response = new
         {
             Total = totalCount,
-            Data = roles
+            Data = roleDtos
         };
 
         return Ok(response);

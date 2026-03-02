@@ -6,6 +6,7 @@ import { BASE_API_URL } from '../../../Constants';
 export interface RoleItem {
   Id: string;
   Name: string;
+  UserCount: number;
 }
 
 export interface RolesResponse {

@@ -1,0 +1,27 @@
+<header class="header">
+  <div class="title-block">
+    <h1>Users</h1>
+    <p>Manage users and their assigned roles</p>
+  </div>
+</header>
+
+@if (isLoading$ | async; as isLoading) {
+  @if (isLoading) {
+    <div class="content loading-content">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading users...</p>
+    </div>
+  }
+}
+
+@if (!items.length && !isSearching) {
+  <div class="content">
+    <img src="assets/illustration.svg" alt="No users" />
+    <h2>There are no users yet</h2>
+    <p>Users are managed through Identity</p>
+  </div>
+} @else {
+  <div class="content-list">
+    <app-content-table></app-content-table>
+  </div>
+}
