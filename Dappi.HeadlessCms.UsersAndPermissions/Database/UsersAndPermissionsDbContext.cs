@@ -8,6 +8,7 @@ namespace Dappi.HeadlessCms.UsersAndPermissions.Database
     {
         public DbSet<AppPermission> AppPermissions { get; set; }
         public DbSet<AppRole> AppRoles { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -24,6 +25,12 @@ namespace Dappi.HeadlessCms.UsersAndPermissions.Database
                 entity.HasKey(p => p.Id);
                 entity.Property(p => p.Name).IsRequired();
                 entity.HasMany(r => r.Permissions);
+            });
+
+            modelBuilder.Entity<RefreshToken>(e =>
+            {
+                e.HasIndex(t => t.Token).IsUnique();
+                e.HasIndex(t => t.UserId);
             });
 
             base.OnModelCreating(modelBuilder);
