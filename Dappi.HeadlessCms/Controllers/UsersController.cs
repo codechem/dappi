@@ -26,9 +26,6 @@ namespace Dappi.HeadlessCms.Controllers
         [HttpPost]
         public async Task<IActionResult> InviteUser([FromBody] InviteUserDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var user = new DappiUser { UserName = dto.Username, Email = dto.Email };
             var result = await _userManager.CreateAsync(user, dto.Password);
 

@@ -1,3 +1,5 @@
+using Dappi.HeadlessCms;
+
 namespace Dappi.HeadlessCms.Models
 {
     public class LoginDto
@@ -55,6 +57,6 @@ namespace Dappi.HeadlessCms.Models
         public required string Username { get; set; }
         public required string Email { get; set; }
         public required string Password { get; set; }
-        public List<string> Roles { get; set; } = new List<string>();
+        public List<string> Roles { get; set; } = [Constants.UserRoles.User];
     }
 }
