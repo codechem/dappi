@@ -1,10 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Store } from '@ngrx/store';
 import { Subscription } from 'rxjs';
 import { ContentTableComponent } from '../../content-table/content-table.component';
+import { InviteUserDialogComponent, InviteUserData } from '../../invite-user-dialog/invite-user-dialog.component';
 import { ContentItem, PaginatedResponse } from '../../models/content.model';
+import { UsersManagementService } from '../../services/auth/users-management.service';
 import * as CollectionActions from '../../state/collection/collection.actions';
 import * as ContentActions from '../../state/content/content.actions';
 import {
@@ -18,6 +21,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    MatDialogModule,
     MatProgressSpinnerModule,
     ContentTableComponent,
   ],
@@ -29,12 +33,17 @@ export class UsersComponent implements OnInit, OnDestroy {
 
   isSearching = false;
   items: ContentItem[] = [];
+  inviteError = '';
 
   isLoading$ = this.store.select(selectLoading);
   private isSearching$ = this.store.select(selectIsSearching);
   private items$ = this.store.select(selectItems);
 
-  constructor(private store: Store) {}
+  constructor(
+    private store: Store,
+    private dialog: MatDialog,
+    private usersManagementService: UsersManagementService,
+  ) {}
 
   ngOnInit(): void {
     this.subscription.add(
@@ -54,6 +63,28 @@ export class UsersComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+  }
+
+  inviteUser(): void {
+    const dialogRef = this.dialog.open(InviteUserDialogComponent);
+
+    dialogRef.afterClosed().subscribe((data: InviteUserData | null) => {
+      if (!data) return;
+
+      this.inviteError = '';
+
+      this.subscription.add(
+        this.usersManagementService.inviteUser(data).subscribe({
+          next: () => {
+            this.loadUsers();
+          },
+          error: (error) => {
+            const apiMessage = error?.error?.message || error?.error?.title;
+            this.inviteError = apiMessage || 'Failed to invite user.';
+          },
+        })
+      );
+    });
   }
 
   private loadUsers(): void {

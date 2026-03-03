@@ -49,4 +49,12 @@ namespace Dappi.HeadlessCms.Models
     {
         public List<string> Roles { get; set; }
     }
+
+    public class InviteUserDto
+    {
+        public required string Username { get; set; }
+        public required string Email { get; set; }
+        public required string Password { get; set; }
+        public List<string> Roles { get; set; } = new List<string>();
+    }
 }

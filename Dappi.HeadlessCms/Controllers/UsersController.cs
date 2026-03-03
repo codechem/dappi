@@ -23,6 +23,32 @@ namespace Dappi.HeadlessCms.Controllers
             _logger = logger;
         }
 
+        [HttpPost]
+        public async Task<IActionResult> InviteUser([FromBody] InviteUserDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = new DappiUser { UserName = dto.Username, Email = dto.Email };
+            var result = await _userManager.CreateAsync(user, dto.Password);
+
+            if (!result.Succeeded)
+            {
+                _logger.LogWarning("Failed to create user {Username}: {Errors}",
+                    dto.Username, string.Join(", ", result.Errors.Select(e => e.Description)));
+                return BadRequest(new { message = result.Errors.FirstOrDefault()?.Description ?? "Failed to create user." });
+            }
+
+            var rolesToAssign = dto.Roles.Count > 0 ? dto.Roles : new List<string> { "User" };
+            foreach (var role in rolesToAssign)
+            {
+                await _userManager.AddToRoleAsync(user, role);
+            }
+            _logger.LogInformation("User {Username} created successfully with roles: {Roles}", dto.Username, string.Join(", ", rolesToAssign));
+
+            return Ok(new UserRoleDto { Id = user.Id, Name = user.UserName, Email = user.Email, Roles = rolesToAssign });
+        }
+
         [HttpGet]
         public IActionResult GetUsers([FromQuery] int offset = 0, [FromQuery] int limit = 10,
             [FromQuery] string searchTerm = "")

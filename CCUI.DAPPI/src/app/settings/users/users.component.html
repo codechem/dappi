@@ -3,7 +3,14 @@
     <h1>Users</h1>
     <p>Manage users and their assigned roles</p>
   </div>
+  <button class="create-button" (click)="inviteUser()" aria-label="Invite user">
+    + Invite Users
+  </button>
 </header>
+
+@if (inviteError) {
+  <div class="error-message">{{ inviteError }}</div>
+}
 
 @if (isLoading$ | async; as isLoading) {
   @if (isLoading) {

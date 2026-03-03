@@ -26,6 +26,27 @@
   }
 }
 
+.create-button {
+  border: none;
+  border-radius: 6px;
+  background: vars.$primary-main;
+  color: vars.$primary-contrast-text;
+  height: 40px;
+  padding: 0 16px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.error-message {
+  color: vars.$error-light;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
 .content {
   flex: 1;
   display: flex;
