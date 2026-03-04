@@ -12,16 +12,21 @@
   <div class="error-message">{{ rolesError }}</div>
 }
 
-<div class="roles-table-container">
-  @if (rolesLoading) {
-    <div class="loading-indicator">
-      <p>Loading roles...</p>
-    </div>
-  } @else if (!roles.length) {
-    <div class="no-results">
-      <p>No roles found.</p>
-    </div>
-  } @else {
+@if (rolesLoading) {
+  <div class="content loading-content">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading roles...</p>
+  </div>
+}
+
+@if (!roles.length && !rolesLoading) {
+  <div class="content">
+    <img src="assets/illustration.svg" alt="No roles" />
+    <h2>There are no roles yet</h2>
+    <p>Create a role to manage permissions</p>
+  </div>
+} @else if (!rolesLoading) {
+  <div class="content-list roles-table-container">
     <table class="roles-table" role="table" aria-label="Roles table">
       <thead>
         <tr class="header-row">
@@ -49,5 +54,5 @@
         }
       </tbody>
     </table>
-  }
-</div>
+  </div>
+}

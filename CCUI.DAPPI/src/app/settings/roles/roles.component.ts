@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subscription } from 'rxjs';
 import { AddRoleDialogComponent } from '../../add-role-dialog/add-role-dialog.component';
 import { RolesManagementService, RoleItem } from '../../services/auth/roles-management.service';
@@ -13,6 +14,7 @@ import { RolesManagementService, RoleItem } from '../../services/auth/roles-mana
     CommonModule,
     MatIconModule,
     MatDialogModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './roles.component.html',
   styleUrl: './roles.component.scss',
