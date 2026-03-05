@@ -6,6 +6,7 @@ import { Subject, Subscription } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Store } from '@ngrx/store';
 import * as AuthActions from '../state/auth/auth.actions';
+import { selectUser } from '../state/auth/auth.selectors';
 
 interface MenuItem {
   icon: string;
@@ -25,6 +26,7 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription = new Subscription();
 
   activeIcon = 'home';
+  isAdmin = false;
 
   menuItems: MenuItem[] = [
     { icon: 'home', tooltip: 'Home', route: '/home', id: 'home' },
@@ -47,6 +49,12 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
       route: '/schema-importer',
       id: 'schema-importer',
     },
+    {
+      icon: 'settings',
+      tooltip: 'Settings',
+      route: '/settings',
+      id: 'settings',
+    },
   ];
 
   private destroy$ = new Subject<void>();
@@ -66,6 +74,15 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
         .subscribe((event: any) => {
           const currentPath = event.url.split('/')[1] || 'home';
           this.updateActiveIcon(currentPath);
+        })
+    );
+
+    this.subscriptions.add(
+      this.store
+        .select(selectUser)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((user) => {
+          this.isAdmin = user?.roles.includes('Admin') ?? false;
         })
     );
 

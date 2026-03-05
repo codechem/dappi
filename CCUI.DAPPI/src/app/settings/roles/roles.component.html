@@ -1,0 +1,58 @@
+<header class="header">
+  <div class="title-block">
+    <h1>Roles</h1>
+    <p>Manage User roles</p>
+  </div>
+  <button class="create-button" (click)="addRole()" [disabled]="rolesLoading" aria-label="Add role">
+    + Add role
+  </button>
+</header>
+
+@if (rolesError) {
+  <div class="error-message">{{ rolesError }}</div>
+}
+
+@if (rolesLoading) {
+  <div class="content loading-content">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading roles...</p>
+  </div>
+}
+
+@if (!roles.length && !rolesLoading) {
+  <div class="content">
+    <img src="assets/illustration.svg" alt="No roles" />
+    <h2>There are no roles yet</h2>
+    <p>Create a role to manage permissions</p>
+  </div>
+} @else if (!rolesLoading) {
+  <div class="content-list roles-table-container">
+    <table class="roles-table" role="table" aria-label="Roles table">
+      <thead>
+        <tr class="header-row">
+          <th class="cell">Name</th>
+          <th class="cell">Users</th>
+          <th class="cell actions-cell"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (role of roles; track role.Id) {
+          <tr class="content-row">
+            <td class="cell">{{ role.Name }}</td>
+            <td class="cell"><span class="user-count-badge">{{ role.UserCount }}</span></td>
+            <td class="cell actions-cell">
+              <button
+                class="delete-role-button"
+                (click)="deleteRole(role)"
+                [disabled]="deletingRoleId === role.Id || rolesLoading"
+                aria-label="Delete role"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

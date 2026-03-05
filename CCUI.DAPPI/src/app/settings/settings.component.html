@@ -1,0 +1,36 @@
+<div class="layout">
+  <aside class="settings-sidebar">
+    <div class="settings-sidebar__title">Settings</div>
+    <div class="settings-sidebar__divider"></div>
+
+    <div class="settings-sidebar__section">User Administration</div>
+
+    <button
+      class="settings-sidebar__item"
+      [class.settings-sidebar__item--active]="activeTab === 'users'"
+      (click)="selectTab('users')"
+      aria-label="Users"
+    >
+      <mat-icon>people</mat-icon>
+      <span>Users</span>
+    </button>
+
+    <button
+      class="settings-sidebar__item"
+      [class.settings-sidebar__item--active]="activeTab === 'roles'"
+      (click)="selectTab('roles')"
+      aria-label="Roles"
+    >
+      <mat-icon>admin_panel_settings</mat-icon>
+      <span>Roles</span>
+    </button>
+  </aside>
+
+  <div class="container">
+    @if (activeTab === 'users') {
+      <app-users></app-users>
+    } @else {
+      <app-roles></app-roles>
+    }
+  </div>
+</div>
