@@ -10,6 +10,7 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
+using Dappi.HeadlessCms.Services.MailServices;
 using Dappi.HeadlessCms.Services.StorageServices;
 using Dappi.HeadlessCms.Validators;
 using FluentValidation;
@@ -126,6 +127,12 @@ public static class ServiceExtensions
         }
 
         services.AddScoped<IMediaUploadService, AwsS3StorageService>();
+        return services;
+    }
+
+    public static IServiceCollection AddAwsSes(this IServiceCollection services)
+    {
+        services.AddScoped<IEmailService, AmazonSesService>();
         return services;
     }
 
