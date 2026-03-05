@@ -1,13 +1,13 @@
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
+using Dappi.HeadlessCms.ActionFilters;
 using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Background;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Database.Interceptors;
 using Dappi.HeadlessCms.Interfaces;
-using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
 using Dappi.HeadlessCms.Services.StorageServices;
@@ -67,13 +67,12 @@ public static class ServiceExtensions
         services.AddScoped<ICurrentExternalSessionProvider, CurrentExternalSessionProvider>();
 
         services.AddScoped<IContentTypeChangesService, ContentTypeChangesService>();
-        services.AddDappiSwaggerGen();
 
         services.AddFluentValidationAutoValidation();
-        services.AddValidatorsFromAssemblyContaining<FieldRequestValidator>();
+        services.AddValidatorsFromAssembly(typeof(TDbContext).Assembly);
 
         services
-            .AddControllers()
+            .AddControllers(option => option.Filters.Add<ValidationFilter>())
             .AddJsonOptions(
                 jsonOptions
                     ?? (
@@ -87,7 +86,6 @@ public static class ServiceExtensions
             );
 
         var dbContextType = typeof(TDbContext);
-        var location = Assembly.GetAssembly(dbContextType)?.Location;
 
         services.AddScoped<DbContextEditor>(
             (_) =>
@@ -96,11 +94,11 @@ public static class ServiceExtensions
                     dbContextName: dbContextType.Name
                 )
         );
-
         services.AddScoped<DomainModelEditor>(_ => new DomainModelEditor(
             Path.Combine(Directory.GetCurrentDirectory(), "Entities"),
             Path.Combine(Directory.GetCurrentDirectory(), "Enums")
         ));
+
         services.AddEndpointsApiExplorer();
         return services;
     }
@@ -169,6 +167,37 @@ public static class ServiceExtensions
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         });
+        authenticationBuilder.AddPolicyScheme(
+            JwtBearerDefaults.AuthenticationScheme,
+            JwtBearerDefaults.AuthenticationScheme,
+            options =>
+            {
+                options.ForwardDefaultSelector = context =>
+                {
+                    // Inspect the token's audience to route to the right scheme
+                    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                    if (authHeader?.StartsWith("Bearer ") == true)
+                    {
+                        var token = authHeader["Bearer ".Length..];
+                        var jwtHandler =
+                            new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+
+                        if (jwtHandler.CanReadToken(token))
+                        {
+                            var jwt = jwtHandler.ReadJwtToken(token);
+                            var audience = jwt.Audiences.FirstOrDefault();
+
+                            if (audience == jwtSettings["Audience"])
+                                return DappiAuthenticationSchemes.DappiAuthenticationScheme;
+
+                            return "Dappi.UsersAndPermissions";
+                        }
+                    }
+
+                    return DappiAuthenticationSchemes.DappiAuthenticationScheme; // fallback
+                };
+            }
+        );
 
         authenticationBuilder.AddJwtBearer(
             DappiAuthenticationSchemes.DappiAuthenticationScheme,
@@ -264,7 +293,7 @@ public static class ServiceExtensions
         return services;
     }
 
-    private static IServiceCollection AddDappiSwaggerGen(this IServiceCollection services)
+    public static IServiceCollection AddDappiSwaggerGen(this IServiceCollection services)
     {
         return services.AddSwaggerGen(c =>
         {
