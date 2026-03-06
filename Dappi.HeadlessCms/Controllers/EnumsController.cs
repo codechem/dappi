@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Enums;
