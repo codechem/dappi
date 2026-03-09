@@ -1,8 +1,8 @@
-using FluentValidation;
-
 namespace Dappi.HeadlessCms.UsersAndPermissions.Api;
 
 public record AuthResult(string AccessToken, string RefreshToken);
+
+public record RefreshTokenDto(string RefreshToken);
 
 public class RolePermissionDto
 {

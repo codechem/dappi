@@ -21,20 +21,6 @@ public class PermissionAuthorizationFilter(IDbContextAccessor db, IMemoryCache c
         if (controllerName is null || actionName is null)
             return;
 
-        if (
-            actionName.Equals(
-                UsersAndPermissionsConstants.AuthenticationRoutes.Login,
-                StringComparison.InvariantCultureIgnoreCase
-            )
-            || actionName.Equals(
-                UsersAndPermissionsConstants.AuthenticationRoutes.Login,
-                StringComparison.InvariantCultureIgnoreCase
-            )
-        )
-        {
-            return;
-        }
-
         var userRoles = context
             .HttpContext.User.Claims.Where(c => c.Type == ClaimTypes.Role)
             .Select(c => c.Value)

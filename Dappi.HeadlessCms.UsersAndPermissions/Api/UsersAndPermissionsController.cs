@@ -14,7 +14,9 @@ public class UsersAndPermissionsController<TUser>(
     IDbContextAccessor usersAndPermissionsDb,
     AvailablePermissionsRepository availablePermissionsRepository,
     UserManager<TUser> userManager,
-    TokenService<TUser> tokenService) : ControllerBase where TUser : AppUser, new()
+    TokenService<TUser> tokenService
+) : ControllerBase
+    where TUser : AppUser, new()
 {
     private readonly UsersAndPermissionsDbContext _usersAndPermissionsDb =
         usersAndPermissionsDb.DbContext;
@@ -22,17 +24,23 @@ public class UsersAndPermissionsController<TUser>(
     [HttpPost(UsersAndPermissionsConstants.AuthenticationRoutes.Register)]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto userDto)
     {
-        var defaultRole = await _usersAndPermissionsDb.AppRoles
-            .FirstOrDefaultAsync(r => r.IsDefaultForAuthenticatedUser);
+        var defaultRole = await _usersAndPermissionsDb.AppRoles.FirstOrDefaultAsync(r =>
+            r.IsDefaultForAuthenticatedUser
+        );
 
         if (defaultRole is null)
         {
             throw new DefaultRoleNotSetException();
         }
 
-        var user = new TUser { Email = userDto.Email, UserName = userDto.Email, RoleId = defaultRole.Id };
+        var user = new TUser
+        {
+            Email = userDto.Email,
+            UserName = userDto.Email,
+            RoleId = defaultRole.Id,
+        };
         var result = await userManager.CreateAsync(user, userDto.Password);
-        
+
         return !result.Succeeded ? throw new AuthenticationFailedException() : Ok(user);
     }
 
@@ -40,19 +48,21 @@ public class UsersAndPermissionsController<TUser>(
     public async Task<IActionResult> Login([FromBody] RegisterUserDto userDto)
     {
 #pragma warning disable CA1862
-        var user = await userManager.Users.Include(x => x.Role)
-            .FirstOrDefaultAsync(x => !(x.Email == null || x.Email.ToLower() != userDto.Email.ToLower()));
+        var user = await userManager
+            .Users.Include(x => x.Role)
+            .FirstOrDefaultAsync(x =>
+                !(x.Email == null || x.Email.ToLower() != userDto.Email.ToLower())
+            );
 #pragma warning restore CA1862
         if (user == null || !await userManager.CheckPasswordAsync(user, userDto.Password))
         {
             throw new AuthenticationFailedException();
         }
 
-        var authResult =  await tokenService.GenerateTokens(user);
+        var authResult = await tokenService.GenerateTokens(user);
         return Ok(authResult);
     }
 
-    [HttpPost]
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto dto)
     {
@@ -61,7 +71,6 @@ public class UsersAndPermissionsController<TUser>(
         return result is null ? throw new AuthenticationFailedException() : Ok(result);
     }
 
-    public record RefreshTokenDto(string RefreshToken);
     [HttpGet]
     public async Task<ActionResult<Dictionary<string, List<RolePermissionDto>>>> GetRolePermissions(
         string roleName,

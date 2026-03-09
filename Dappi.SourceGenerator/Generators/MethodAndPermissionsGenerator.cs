@@ -24,8 +24,8 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
 
     private class ControllerEntry
     {
-        public string Controller_name { get; set; } = string.Empty;
-        public List<MethodRouteEntry> Methods { get; set; } = new();
+        public string ControllerName { get; set; } = string.Empty;
+        public List<MethodRouteEntry> Methods { get; set; } = [];
     }
 
     protected override void Execute(
@@ -35,9 +35,9 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
     {
         var (compilation, collectedData) = input;
 
+        // User & Permissions system not referenced, skip generation
         if (!compilation.HasDappiSystem("UsersAndPermissions"))
         {
-            // User & Permissions system not referenced, skip generation
             return;
         }
 
@@ -52,8 +52,17 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
             { "HttpOptions", "OPTIONS" },
         };
 
-        // Aggregate all controllers with their methods
-        var controllers = new List<ControllerEntry>();
+        var usersAndPermissionsControllerEntry = GetUsersAndPermissionsControllerEntry(
+            compilation,
+            httpMethodAttributesToVerb
+        );
+
+        if (usersAndPermissionsControllerEntry is null)
+        {
+            return;
+        }
+
+        var controllers = new List<ControllerEntry>() { usersAndPermissionsControllerEntry };
 
         foreach (var model in collectedData)
         {
@@ -61,138 +70,114 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
 
             var controllerEntry = new ControllerEntry
             {
-                Controller_name = controllerName,
-                Methods = new List<MethodRouteEntry>(),
+                ControllerName = controllerName,
+                Methods = [],
             };
 
-            var existingPartialController = FindPartialControllerForClass(compilation, model);
+            var partialControllerActions = ScanForPartialControllerAndGetActions(
+                compilation,
+                model,
+                httpMethodAttributesToVerb
+            );
 
-            if (existingPartialController is not null)
+            var sourceGeneratedControllerActions = CreateSourceGeneratedControllerActions(model);
+
+            var actionsToAdd = sourceGeneratedControllerActions
+                .Concat(partialControllerActions)
+                .ToArray();
+
+            if (actionsToAdd.Length > 0)
             {
-                var methodsWithHttp = existingPartialController
-                    .Members.OfType<MethodDeclarationSyntax>()
-                    .Select(method => new
-                    {
-                        Method = method,
-                        HttpAttr = method
-                            .AttributeLists.SelectMany(al => al.Attributes)
-                            .FirstOrDefault(IsHttpMethodAttribute),
-                    })
-                    .Where(x => x.HttpAttr is not null)
-                    .Select(x =>
-                    {
-                        var routeArg = x
-                            .HttpAttr?.ArgumentList?.Arguments.FirstOrDefault()
-                            ?.ToFullString();
-                        var cleanedRoute = routeArg
-                            ?.Replace("/", string.Empty)
-                            .Replace("\"", string.Empty)
-                            .Trim();
-
-                        var verb = httpMethodAttributesToVerb[x.HttpAttr!.Name.ToString()!];
-
-                        return new MethodRouteEntry
-                        {
-                            MethodName = x.Method.Identifier.Text,
-                            HttpRoute = $"{verb}/{cleanedRoute}",
-                        };
-                    })
-                    .ToList();
-
-                controllerEntry.Methods.AddRange(methodsWithHttp);
-            }
-
-            var resolvedActions = model
-                .CrudActions.Select(action =>
-                {
-                    var actionName = action.ToString();
-
-                    return actionName switch
-                    {
-                        "Get" => new MethodRouteEntry
-                        {
-                            MethodName = $"Get{model.ClassName.Pluralize()}",
-                            HttpRoute = $"GET/{model.ClassName}",
-                        },
-                        "GetOne" => new MethodRouteEntry
-                        {
-                            MethodName = $"Get{model.ClassName}",
-                            HttpRoute = $"GET/{model.ClassName}/{{id}}",
-                        },
-                        "GetAll" => new MethodRouteEntry
-                        {
-                            MethodName = $"GetAll{model.ClassName.Pluralize()}",
-                            HttpRoute = $"GET/{model.ClassName}/get-all",
-                        },
-                        "Create" => new MethodRouteEntry
-                        {
-                            MethodName = "Create",
-                            HttpRoute = $"POST/{model.ClassName}",
-                        },
-                        "Update" => new MethodRouteEntry
-                        {
-                            MethodName = "Update",
-                            HttpRoute = $"PUT/{model.ClassName}/{{id}}",
-                        },
-                        "Delete" => new MethodRouteEntry
-                        {
-                            MethodName = "Delete",
-                            HttpRoute = $"DELETE/{model.ClassName}{{id}}",
-                        },
-                        "Patch" => new MethodRouteEntry
-                        {
-                            MethodName = $"JsonPatch{model.ClassName}",
-                            HttpRoute = $"PATCH/{model.ClassName}/{{id}}",
-                        },
-                        _ => null,
-                    };
-                })
-                .Where(x => x is not null)!
-                .ToList();
-
-            controllerEntry.Methods.AddRange(resolvedActions);
-
-            if (controllerEntry.Methods.Count > 0)
-            {
+                controllerEntry.Methods.AddRange(actionsToAdd);
                 controllers.Add(controllerEntry);
             }
         }
 
         var templateContent = EmbeddedResourceLoader.LoadEmbeddedTemplate(TemplateResourceName);
         var template = Template.Parse(templateContent);
-
-        if (template.HasErrors)
-        {
-            foreach (var message in template.Messages)
-            {
-                context.ReportDiagnostic(
-                    Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            id: "DAPPMETHODS001",
-                            title: "Methods & Permissions template error",
-                            messageFormat: message.Message,
-                            category: "SourceGenerator",
-                            defaultSeverity: DiagnosticSeverity.Error,
-                            isEnabledByDefault: true
-                        ),
-                        Location.None
-                    )
-                );
-            }
-
-            return;
-        }
-
-        TryAddUsersAndPermissionsController(
-            compilation,
-            httpMethodAttributesToVerb,
-            controllers,
-            context
-        );
-
         var output = template.Render(new { controllers });
 
         context.AddSource("MethodsAndPermissions.g.cs", output);
+    }
+
+    private static List<MethodRouteEntry> CreateSourceGeneratedControllerActions(SourceModel model)
+    {
+        return model
+            .CrudActions.Select(action =>
+            {
+                var actionName = action.ToString();
+
+                return actionName switch
+                {
+                    "Get" => new MethodRouteEntry
+                    {
+                        MethodName = $"Get{model.ClassName.Pluralize()}",
+                        HttpRoute = $"GET/{model.ClassName}",
+                    },
+                    "GetOne" => new MethodRouteEntry
+                    {
+                        MethodName = $"Get{model.ClassName}",
+                        HttpRoute = $"GET/{model.ClassName}/{{id}}",
+                    },
+                    "GetAll" => new MethodRouteEntry
+                    {
+                        MethodName = $"GetAll{model.ClassName.Pluralize()}",
+                        HttpRoute = $"GET/{model.ClassName}/get-all",
+                    },
+                    "Create" => new MethodRouteEntry
+                    {
+                        MethodName = "Create",
+                        HttpRoute = $"POST/{model.ClassName}",
+                    },
+                    "Update" => new MethodRouteEntry
+                    {
+                        MethodName = "Update",
+                        HttpRoute = $"PUT/{model.ClassName}/{{id}}",
+                    },
+                    "Delete" => new MethodRouteEntry
+                    {
+                        MethodName = "Delete",
+                        HttpRoute = $"DELETE/{model.ClassName}{{id}}",
+                    },
+                    "Patch" => new MethodRouteEntry
+                    {
+                        MethodName = $"JsonPatch{model.ClassName}",
+                        HttpRoute = $"PATCH/{model.ClassName}/{{id}}",
+                    },
+                    _ => null,
+                };
+            })
+            .Where(x => x is not null)
+            .OfType<MethodRouteEntry>()
+            .ToList();
+    }
+
+    private static List<MethodRouteEntry> ScanForPartialControllerAndGetActions(
+        Compilation compilation,
+        SourceModel model,
+        Dictionary<string, string> httpMethodAttributesToVerb
+    )
+    {
+        var existingPartialController = FindPartialControllerForClass(compilation, model);
+
+        if (existingPartialController is null)
+        {
+            return [];
+        }
+
+        var semanticModel = compilation.GetSemanticModel(existingPartialController.SyntaxTree);
+        var partialSymbol = semanticModel.GetDeclaredSymbol(existingPartialController);
+        if (partialSymbol is null)
+        {
+            return [];
+        }
+
+        var partialEntry = BuildControllerEntryFromSymbol(
+            partialSymbol,
+            httpMethodAttributesToVerb
+        );
+
+        return partialEntry is not null ? partialEntry.Methods : [];
     }
 
     private static ClassDeclarationSyntax? FindPartialControllerForClass(
@@ -209,14 +194,11 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
             );
     }
 
-    private void TryAddUsersAndPermissionsController(
+    private static ControllerEntry? GetUsersAndPermissionsControllerEntry(
         Compilation compilation,
-        IReadOnlyDictionary<string, string> httpMethodAttributesToVerb,
-        List<ControllerEntry> controllers,
-        SourceProductionContext context
+        IReadOnlyDictionary<string, string> httpMethodAttributesToVerb
     )
     {
-        // Adjust this to match the real namespace of your controller
         var possibleTypeNames = new[]
         {
             "Dappi.HeadlessCms.UsersAndPermissions.Api.UsersAndPermissionsController`1",
@@ -228,52 +210,24 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
         foreach (var name in possibleTypeNames)
         {
             controllerSymbol = compilation.GetTypeByMetadataName(name);
-            if (controllerSymbol is not null)
+            if (controllerSymbol != null)
                 break;
         }
 
-        if (controllerSymbol is null)
-        {
-            return;
-        }
-
-        var entry = BuildControllerEntryFromSymbol(controllerSymbol, httpMethodAttributesToVerb);
-        if (entry is null || entry.Methods.Count == 0)
-            return;
-
-        var existing = controllers.FirstOrDefault(c =>
-            string.Equals(c.Controller_name, entry.Controller_name, StringComparison.Ordinal)
-        );
-
-        if (existing is null)
-        {
-            controllers.Add(entry);
-            return;
-        }
-
-        foreach (var m in entry.Methods)
-        {
-            var alreadyExists = existing.Methods.Any(em =>
-                string.Equals(em.MethodName, m.MethodName, StringComparison.Ordinal)
-                && string.Equals(em.HttpRoute, m.HttpRoute, StringComparison.OrdinalIgnoreCase)
-            );
-
-            if (!alreadyExists)
-            {
-                existing.Methods.Add(m);
-            }
-        }
+        return controllerSymbol is null
+            ? null
+            : BuildControllerEntryFromSymbol(controllerSymbol, httpMethodAttributesToVerb);
     }
 
-    private ControllerEntry? BuildControllerEntryFromSymbol(
+    private static ControllerEntry? BuildControllerEntryFromSymbol(
         INamedTypeSymbol controllerSymbol,
         IReadOnlyDictionary<string, string> httpMethodAttributesToVerb
     )
     {
         var controllerEntry = new ControllerEntry
         {
-            Controller_name = controllerSymbol.Name,
-            Methods = new List<MethodRouteEntry>(),
+            ControllerName = controllerSymbol.Name,
+            Methods = [],
         };
 
         foreach (var member in controllerSymbol.GetMembers().OfType<IMethodSymbol>())
@@ -309,7 +263,7 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
             if (httpAttr.ConstructorArguments.Length > 0)
             {
                 var arg = httpAttr.ConstructorArguments[0];
-                if (arg.Kind == TypedConstantKind.Primitive && arg.Value is string s)
+                if (arg is { Kind: TypedConstantKind.Primitive, Value: string s })
                 {
                     cleanedRoute = s.Replace("/", string.Empty).Trim();
                 }
@@ -331,45 +285,21 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
 
     private static bool IsHttpMethodAttributeSymbol(INamedTypeSymbol? attrSymbol)
     {
-        if (attrSymbol is null)
-            return false;
-
-        var name = attrSymbol.Name; // e.g. HttpGetAttribute or HttpGet
-        return name == "HttpGet"
-            || name == "HttpPost"
-            || name == "HttpPut"
-            || name == "HttpDelete"
-            || name == "HttpPatch"
-            || name == "HttpHead"
-            || name == "HttpOptions"
-            || name == "HttpGetAttribute"
-            || name == "HttpPostAttribute"
-            || name == "HttpPutAttribute"
-            || name == "HttpDeleteAttribute"
-            || name == "HttpPatchAttribute"
-            || name == "HttpHeadAttribute"
-            || name == "HttpOptionsAttribute";
-    }
-
-    private static bool IsHttpMethodAttribute(AttributeSyntax attr)
-    {
-        var httpMethodAttributes = new HashSet<string>
-        {
-            "HttpGet",
-            "HttpPost",
-            "HttpPut",
-            "HttpDelete",
-            "HttpPatch",
-            "HttpHead",
-            "HttpOptions",
-        };
-
-        var name = attr.Name.ToString();
-        return httpMethodAttributes.Any(h =>
-            name == h
-            || name == $"{h}Attribute"
-            || name.EndsWith($".{h}")
-            || name.EndsWith($".{h}Attribute")
-        );
+        var name = attrSymbol?.Name;
+        return name
+            is "HttpGet"
+                or "HttpPost"
+                or "HttpPut"
+                or "HttpDelete"
+                or "HttpPatch"
+                or "HttpHead"
+                or "HttpOptions"
+                or "HttpGetAttribute"
+                or "HttpPostAttribute"
+                or "HttpPutAttribute"
+                or "HttpDeleteAttribute"
+                or "HttpPatchAttribute"
+                or "HttpHeadAttribute"
+                or "HttpOptionsAttribute";
     }
 }
