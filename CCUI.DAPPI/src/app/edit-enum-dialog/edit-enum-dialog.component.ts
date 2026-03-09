@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { EnumManagementService } from '../services/common/enum-management.service';
+import { extractErrorMessage } from '../utils/utilFunctions';
 
 interface EnumDisplayData {
   name: string;
@@ -114,7 +115,7 @@ export class EditEnumDialogComponent implements OnInit {
       },
       error: (error) => {
         console.error('Failed to update enum:', error);
-        const errorMessage = error.error?.message || 'Failed to update enum';
+        const errorMessage = extractErrorMessage(error, 'Failed to update enum');
         this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
       },
     });

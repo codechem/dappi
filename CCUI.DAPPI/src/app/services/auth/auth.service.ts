@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, catchError, throwError } from 'rxjs';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BASE_API_URL } from '../../../Constants';
+import { extractErrorMessage } from '../../utils/utilFunctions';
 
 export interface LoginRequest {
   username: string;
@@ -51,19 +52,9 @@ export class AuthService {
       if (error.status === 401) {
         errorMessage = 'Invalid username or password';
       } else if (error.status === 400) {
-        if (error.error && typeof error.error === 'object') {
-          const validationErrors = [];
-          for (const key in error.error) {
-            if (error.error.hasOwnProperty(key)) {
-              validationErrors.push(error.error[key]);
-            }
-          }
-          errorMessage = validationErrors.map((e) => e.description).join(' ');
-        } else {
-          errorMessage = error.error?.message || 'Bad request';
-        }
+        errorMessage = extractErrorMessage(error, 'Bad request');
       } else {
-        errorMessage = `Error Code: ${error.status}, Message: ${error.error?.message || error.message}`;
+        errorMessage = `Error Code: ${error.status}, Message: ${extractErrorMessage(error, error.message)}`;
       }
     }
 
