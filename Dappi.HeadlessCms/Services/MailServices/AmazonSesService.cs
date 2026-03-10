@@ -24,7 +24,6 @@ public class AmazonSesService : IEmailService
         var sesSecretKey = configuration.GetSection("AWS:SES:SecretKey").Value;
 
         _sesClient = new AmazonSimpleEmailServiceClient(sesAccessKey, sesSecretKey);
-        ;
     }
 
     public async Task<string> SendEmailAsync(
@@ -116,18 +115,22 @@ public class AmazonSesService : IEmailService
         return success;
     }
 
-    public async Task<string> SendTemplatedEmailAsync(string toAddress, string userName)
+    public async Task<string> SendTemplatedEmailAsync(
+        List<string> toAddresses,
+        string name,
+        string templateName
+    )
     {
         var sourceEmail = _configuration.GetSection("AWS:SES:SourceEmail").Value;
 
         var sendTemplatedEmailRequest = new SendTemplatedEmailRequest
         {
             Source = sourceEmail,
-            Destination = new Destination { ToAddresses = new List<string> { toAddress } },
+            Destination = new Destination { ToAddresses = toAddresses },
             // Template is the actual name of the template created inside the Amazon SES Console
             // be careful, this is case-sensitive
-            // Template = templateNameFromConsole
-            TemplateData = $"{{ \"userName\":\"{userName}\" }}",
+            Template = templateName,
+            TemplateData = $"{{ \"name\":\"{name}\" }}",
         };
 
         var messageId = "";
