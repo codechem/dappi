@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { Store, select } from '@ngrx/store';
@@ -30,11 +30,13 @@ interface ContentTypeChange {
 @Component({
   selector: 'app-recent-content-table',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule, MatTableModule],
   templateUrl: './recent-content-table.component.html',
   styleUrl: './recent-content-table.component.scss',
 })
 export class RecentContentTableComponent implements OnInit, OnDestroy {
+  displayedColumns: string[] = ['modelName', 'fields', 'status', 'modifiedAt', 'actions'];
+
   fieldIcons: { [key: string]: string } = {
     text: 'text_fields',
     number: '123',

@@ -103,7 +103,6 @@
 
 .header-row,
 .content-row {
-  display: table-row;
   background: vars.$background-paper-elevation-1;
 }
 
@@ -120,7 +119,6 @@
 }
 
 .cell {
-  display: table-cell;
   padding: 16px 16px;
   vertical-align: middle;
   text-align: left;

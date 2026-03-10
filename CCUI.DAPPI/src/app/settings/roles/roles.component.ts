@@ -3,6 +3,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTableModule } from '@angular/material/table';
 import { Subscription } from 'rxjs';
 import { AddRoleDialogComponent } from '../../add-role-dialog/add-role-dialog.component';
 import { RolesManagementService, RoleItem } from '../../services/auth/roles-management.service';
@@ -15,12 +16,14 @@ import { RolesManagementService, RoleItem } from '../../services/auth/roles-mana
     MatIconModule,
     MatDialogModule,
     MatProgressSpinnerModule,
+    MatTableModule,
   ],
   templateUrl: './roles.component.html',
   styleUrl: './roles.component.scss',
 })
 export class RolesComponent implements OnInit, OnDestroy {
   private subscription = new Subscription();
+  displayedColumns: string[] = ['name', 'users', 'actions'];
 
   roles: RoleItem[] = [];
   rolesLoading = false;

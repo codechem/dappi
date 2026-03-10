@@ -45,10 +45,7 @@
   table-layout: fixed;
 }
 
-.header-row,
-.content-row {
-  display: table-row;
-}
+
 
 .header-row {
   font-weight: bold;
@@ -59,13 +56,8 @@
   }
 }
 
-.edit-icon {
-  color: #ffff;
-}
-
 .small-cell,
 .cell {
-  display: table-cell;
   padding: 12px 16px;
   box-shadow: none;
 }
@@ -78,23 +70,8 @@
   }
 }
 
-.small-cell,
-.cell {
-  display: table-cell;
-  padding: 12px 16px;
-  vertical-align: middle;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .small-cell {
   width: 50px;
-}
-
-.cell {
-  flex-grow: 1;
 }
 
 .actions-cell {
@@ -154,11 +131,6 @@
     background-color: rgba(vars.$success-main, 0.2);
     color: vars.$success-main;
   }
-  
-  &.deleted {
-    background-color: rgba(vars.$error-light, 0.2);
-    color: vars.$success-main;
-  }
 }
 
 
@@ -171,19 +143,6 @@
 
   &.deleted {
     background-color: rgba(vars.$error-light, 0.2);
-    color: #ffff;
-  }
-}
-
-.status-pill-draft {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 0.8rem;
-  font-weight: 500;
-
-  &.draft {
-    background-color: vars.$background-hover;
     color: #ffff;
   }
 }
