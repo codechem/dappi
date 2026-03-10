@@ -33,7 +33,6 @@ import { DrawerComponent } from '../relation-drawer/drawer.component';
 import { ImageViewerComponent } from '../image-viewer/image-viewer.component';
 import { selectAllowedCrudActions } from '../state/collection/collection.selectors';
 import { MediaUploadStatus } from '../models/media-info.model';
-import { CdkAriaLive } from "../../../node_modules/@angular/cdk/a11y-module.d";
 
 @Component({
   selector: 'app-content-table',
@@ -48,8 +47,7 @@ import { CdkAriaLive } from "../../../node_modules/@angular/cdk/a11y-module.d";
     MatTableModule,
     MenuComponent,
     DrawerComponent,
-    ImageViewerComponent,
-    CdkAriaLive
+    ImageViewerComponent
 ],
   templateUrl: './content-table.component.html',
   styleUrl: './content-table.component.scss',
