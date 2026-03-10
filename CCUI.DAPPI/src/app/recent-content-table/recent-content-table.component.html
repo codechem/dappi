@@ -14,71 +14,78 @@
         No content types found.
       </div>
     } @else {
-      <table class="content-table" role="table" aria-label="Recent Content Types">
-        <thead>
-          <tr class="header-row" role="row">
-            <th class="cell" role="columnheader">Model Name</th>
-            <th class="cell" role="columnheader">Fields</th>
-            <th class="cell" role="columnheader">Status</th>
-            <th class="cell" role="columnheader">Last edited</th>
-            <th class="small-cell actions-cell" role="columnheader">
-              <span class="sr-only">Actions</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of dataSource.data; track item.modelName) {
-            <tr class="content-row" role="row">
-              <td class="cell" role="cell">{{ item.modelName }}</td>
-              <td class="cell field-cell" role="cell">
-                <div class="field-icons">
-                  @if (item.fieldTypes && item.fieldTypes.length > 0) {
-                    @for (fieldType of item.fieldTypes; track fieldType) {
-                      <div
-                        class="field-icon"
-                        [matTooltip]="getFieldTooltip(fieldType)"
-                        (click)="navigateToPathBuilder(item.modelName)"
-                      >
-                        <mat-icon>{{ getFieldIcon(fieldType) }}</mat-icon>
-                      </div>
-                    }
-                    @if (item.additionalFields > 0) {
-                      <span class="additional-fields">+{{ item.additionalFields }}</span>
-                    }
-                  } @else {
-                    <span>-</span>
-                  }
-                </div>
-              </td>
-              <td class="cell" role="cell">
-                @if(item.state == state.Deleted){
-                  <div class="status-pill-deleted deleted">Deleted</div>
-                }
-                @if(item.state == state.PendingDelete){
-                  <div class="status-pill-deleted deleted">Pending Delete</div>
-                }
-                @if(item.state == state.PendingPublish){
-                  <div class="status-pill published">Pending Publish</div>
-                }
-                 @if(item.state == state.Published){
-                  <div class="status-pill published">Published</div>
-                }
-              </td>
-              <td class="cell" role="cell">{{ item.modifiedAt }}</td>
-              <td class="small-cell actions-cell" role="cell">
-                @if (item.state != state.Published) {
-                  <button
-                    mat-icon-button
-                    (click)="editContentType(item.modelName)"
-                    aria-label="Edit content type"
+      <table mat-table [dataSource]="dataSource" class="content-table" aria-label="Recent Content Types">
+        <ng-container matColumnDef="modelName">
+          <th mat-header-cell *matHeaderCellDef class="cell">Model Name</th>
+          <td mat-cell *matCellDef="let item" class="cell">{{ item.modelName }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fields">
+          <th mat-header-cell *matHeaderCellDef class="cell">Fields</th>
+          <td mat-cell *matCellDef="let item" class="cell field-cell">
+            <div class="field-icons">
+              @if (item.fieldTypes && item.fieldTypes.length > 0) {
+                @for (fieldType of item.fieldTypes; track fieldType) {
+                  <div
+                    class="field-icon"
+                    [matTooltip]="getFieldTooltip(fieldType)"
+                    (click)="navigateToPathBuilder(item.modelName)"
                   >
-                    <mat-icon>edit</mat-icon>
-                  </button>
+                    <mat-icon>{{ getFieldIcon(fieldType) }}</mat-icon>
+                  </div>
                 }
-              </td>
-            </tr>
-          }
-        </tbody>
+                @if (item.additionalFields > 0) {
+                  <span class="additional-fields">+{{ item.additionalFields }}</span>
+                }
+              } @else {
+                <span>-</span>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef class="cell">Status</th>
+          <td mat-cell *matCellDef="let item" class="cell">
+            @if(item.state == state.Deleted){
+              <div class="status-pill-deleted deleted">Deleted</div>
+            }
+            @if(item.state == state.PendingDelete){
+              <div class="status-pill-deleted deleted">Pending Delete</div>
+            }
+            @if(item.state == state.PendingPublish){
+              <div class="status-pill published">Pending Publish</div>
+            }
+             @if(item.state == state.Published){
+              <div class="status-pill published">Published</div>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="modifiedAt">
+          <th mat-header-cell *matHeaderCellDef class="cell">Last edited</th>
+          <td mat-cell *matCellDef="let item" class="cell">{{ item.modifiedAt }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="small-cell actions-cell">
+            <span class="sr-only">Actions</span>
+          </th>
+          <td mat-cell *matCellDef="let item" class="small-cell actions-cell">
+            @if (item.state != state.Published) {
+              <button
+                mat-icon-button
+                (click)="editContentType(item.modelName)"
+                aria-label="Edit content type"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="header-row"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns" class="content-row"></tr>
       </table>
     }
   </div>

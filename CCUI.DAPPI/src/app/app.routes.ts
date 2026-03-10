@@ -8,6 +8,8 @@ import { EnumManagerComponent } from './enum-manager/enum-manager.component';
 import { AuthComponent } from './auth/auth.component';
 import { AuthGuard } from './services/auth/auth.guard';
 import { NonAuthGuard } from './services/auth/non-auth.guard';
+import { SettingsComponent } from './settings/settings.component';
+import { AdminGuard } from './services/auth/admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -17,6 +19,7 @@ export const routes: Routes = [
   { path: 'content-create', component: NewEntryComponent, canActivate: [AuthGuard] },
   { path: 'schema-importer', component: SchemaImporterComponent, canActivate: [AuthGuard] },
   { path: 'enum-manager', component: EnumManagerComponent, canActivate: [AuthGuard] },
+  { path: 'settings', component: SettingsComponent, canActivate: [AuthGuard, AdminGuard] },
   { path: 'auth', component: AuthComponent, canActivate: [NonAuthGuard] },
   { path: '**', redirectTo: '/home' },
 ];

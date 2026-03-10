@@ -1,0 +1,35 @@
+<div class="add-role-dialog">
+  <div class="dialog-header">
+    <h2>Add new role</h2>
+    <button mat-icon-button (click)="onCancel()" aria-label="Close dialog">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-content">
+    <hr />
+    <mat-form-field appearance="outline" class="input-field">
+      <mat-label>Role name</mat-label>
+      <input
+        matInput
+        [(ngModel)]="roleName"
+        placeholder="Enter role name"
+        (keydown.enter)="onConfirm()"
+        autofocus
+        aria-label="Role name"
+      />
+    </mat-form-field>
+  </div>
+
+  <div class="dialog-footer">
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button
+      mat-flat-button
+      class="confirm-button"
+      (click)="onConfirm()"
+      [disabled]="!roleName.trim()"
+    >
+      Create
+    </button>
+  </div>
+</div>

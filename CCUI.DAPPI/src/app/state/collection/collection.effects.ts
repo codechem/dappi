@@ -18,6 +18,7 @@ import { selectSelectedType } from '../content/content.selectors';
 import * as ContentActions from '../content/content.actions';
 import { BASE_API_URL } from '../../../Constants';
 import { ModelField, FieldType, ModelResponse, CrudActions } from '../../models/content.model';
+import { extractErrorMessage } from '../../utils/utilFunctions';
 
 @Injectable()
 export class CollectionEffects {
@@ -38,7 +39,7 @@ export class CollectionEffects {
             });
           }),
           catchError((error) => {
-            this.showErrorPopup(`Failed to load collection types: ${error.error}`);
+            this.showErrorPopup(`Failed to load collection types: ${extractErrorMessage(error)}`);
             return of(
               CollectionActions.loadCollectionTypesFailure({
                 error: error.message,
@@ -61,7 +62,7 @@ export class CollectionEffects {
             });
           }),
           catchError((error) => {
-            this.showErrorPopup(`Failed to load draft collection types: ${error.error}`);
+            this.showErrorPopup(`Failed to load draft collection types: ${extractErrorMessage(error)}`);
             return of(
               CollectionActions.loadDraftCollectionTypesFailure({
                 error: error.message,
@@ -84,7 +85,7 @@ export class CollectionEffects {
             });
           }),
           catchError((error) => {
-            this.showErrorPopup(`Failed to load published collection types: ${error.error}`);
+            this.showErrorPopup(`Failed to load published collection types: ${extractErrorMessage(error)}`);
             return of(
               CollectionActions.loadPublishedCollectionTypesFailure({
                 error: error.message,
@@ -149,13 +150,13 @@ export class CollectionEffects {
                 });
               }),
               catchError((error) => {
-                this.showErrorPopup(`Failed to load fields: ${error.error}`);
+                this.showErrorPopup(`Failed to load fields: ${extractErrorMessage(error)}`);
                 return of(CollectionActions.loadFieldsFailure({ error: error.message }));
               })
             );
           }),
           catchError((error) => {
-            this.showErrorPopup(`Failed to load enums: ${error.error}`);
+            this.showErrorPopup(`Failed to load enums: ${extractErrorMessage(error)}`);
             return of(CollectionActions.loadFieldsFailure({ error: error.message }));
           })
         );
@@ -189,7 +190,7 @@ export class CollectionEffects {
               console.log('Backend is restarting. This is expected behavior.');
               return of(CollectionActions.saveContentSuccess({ restarting: true }));
             }
-            this.showErrorPopup(`Failed to save content: ${error.error}`);
+            this.showErrorPopup(`Failed to save content: ${extractErrorMessage(error)}`);
             console.error('Error saving content:', error);
             return of(CollectionActions.saveContentFailure({ error }));
           })
@@ -211,7 +212,7 @@ export class CollectionEffects {
           ),
           catchError((error) => {
             console.error('Error creating model:', error);
-            this.showErrorPopup(`Failed to create model: ${error.error}`);
+            this.showErrorPopup(`Failed to create model: ${extractErrorMessage(error)}`);
             return of(CollectionActions.addCollectionTypeFailure({ error }));
           })
         );
@@ -262,7 +263,7 @@ export class CollectionEffects {
             })
           ),
           catchError((error) => {
-            this.showErrorPopup(`Failed to add field: ${error.error}`);
+            this.showErrorPopup(`Failed to add field: ${extractErrorMessage(error)}`);
             return of(CollectionActions.addFieldFailure({ error: error.message }));
           })
         );
@@ -297,7 +298,7 @@ export class CollectionEffects {
             })
           ),
           catchError((error) => {
-            this.showErrorPopup(`Failed to update field: ${error.error}`);
+            this.showErrorPopup(`Failed to update field: ${extractErrorMessage(error)}`);
             return of(CollectionActions.updateFieldFailure({ error: error.message }));
           })
         );
@@ -317,7 +318,7 @@ export class CollectionEffects {
             return CollectionActions.deleteFieldSuccess({ fieldName: action.fieldName });
           }),
           catchError((error) => {
-            this.showErrorPopup(`Failed to delete field: ${error.error}`);
+            this.showErrorPopup(`Failed to delete field: ${extractErrorMessage(error)}`);
             return of(CollectionActions.deleteFieldFailure({ error: error.message }));
           })
         );
@@ -367,7 +368,7 @@ export class CollectionEffects {
           ),
           catchError((error) => {
             console.error('Error creating model:', error);
-            this.showErrorPopup(`Failed to configure actions: ${error.error}`);
+            this.showErrorPopup(`Failed to configure actions: ${extractErrorMessage(error)}`);
             return of(CollectionActions.configureActionsFailure({ error }));
           })
         );

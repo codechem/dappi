@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
-using Org.BouncyCastle.Bcpg.OpenPgp;
 
 namespace Dappi.HeadlessCms.Controllers;
 
@@ -22,20 +21,28 @@ public class MigrationController : ControllerBase
     private readonly IContentTypeChangesService _contentTypeChangesService;
 
     public MigrationController(
-        IHostApplicationLifetime appLifetime, IContentTypeChangesService contentTypeChangesService)
+        IHostApplicationLifetime appLifetime,
+        IContentTypeChangesService contentTypeChangesService
+    )
     {
         _appLifetime = appLifetime;
         _contentTypeChangesService = contentTypeChangesService;
-        _projectDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly() is not null
-            ? Assembly.GetEntryAssembly().Location
-            : Directory.GetCurrentDirectory());
+        _projectDirectory = Path.GetDirectoryName(
+            Assembly.GetEntryAssembly() is not null
+                ? Assembly.GetEntryAssembly().Location
+                : Directory.GetCurrentDirectory()
+        );
     }
 
     [HttpPost]
     public async Task<IActionResult> ApplyMigrationsAndRestart()
     {
         var draftModels = await _contentTypeChangesService.GetDraftsAsync().ToListAsync();
-        if (draftModels.Any(x => x.State is ContentTypeState.PendingPublish or ContentTypeState.PendingDelete))
+        if (
+            draftModels.Any(x =>
+                x.State is ContentTypeState.PendingPublish or ContentTypeState.PendingDelete
+            )
+        )
         {
             if (OperatingSystem.IsWindows())
             {
@@ -65,17 +72,24 @@ public class MigrationController : ControllerBase
     private void RunDbMigrationScenarioForWindows()
     {
         var currentDir = Directory.GetCurrentDirectory();
-        var csproj = Directory.GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
+        var csproj = Directory
+            .GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly)
+            .FirstOrDefault();
         var scriptPath = Path.Combine(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Scripts",
-            "Start-DappiMigrationRunner.ps1");
+            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!,
+            "Scripts",
+            "Start-DappiMigrationRunner.ps1"
+        );
         var procId = Environment.ProcessId;
 
         var args =
             $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -ProjectPath \"{_projectDirectory}\" -Csproj \"{csproj}\" -ProcessId \"{procId}\" -MigrationName \"{GetMigrationName()}\"";
         var psi = new ProcessStartInfo
         {
-            FileName = "powershell.exe", Arguments = args, UseShellExecute = true, CreateNoWindow = true,
+            FileName = "powershell.exe",
+            Arguments = args,
+            UseShellExecute = true,
+            CreateNoWindow = true,
         };
 
         Process.Start(psi);
@@ -95,7 +109,7 @@ public class MigrationController : ControllerBase
             FileName = "dotnet",
             Arguments = $"ef migrations add {GetMigrationName()}",
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
         };
         Process.Start(startInfo)?.WaitForExit();
     }
@@ -113,7 +127,7 @@ public class MigrationController : ControllerBase
             FileName = "/bin/bash",
             Arguments = $"-c \"{scriptPath}\" {processId} {exePath}",
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
         };
 
         Process.Start(startInfo);
@@ -123,14 +137,16 @@ public class MigrationController : ControllerBase
     private void ApplyMigrationsAfterRestart(string directory)
     {
         var currentDir = Directory.GetCurrentDirectory();
-        var csproj = Directory.GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
+        var csproj = Directory
+            .GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly)
+            .FirstOrDefault();
 
         var startInfo = new ProcessStartInfo
         {
             FileName = "dotnet",
             Arguments = $"ef database update --project {csproj}",
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
         };
         Process.Start(startInfo)?.WaitForExit();
     }

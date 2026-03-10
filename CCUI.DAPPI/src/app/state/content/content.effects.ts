@@ -11,6 +11,7 @@ import { FieldType, ModelField, ModelResponse, PaginatedResponse } from '../../m
 import { BASE_API_URL } from '../../../Constants';
 import { MediaInfo, MediaUploadStatus } from '../../models/media-info.model';
 import { RecentContent } from '../../models/recent-content';
+import { extractErrorMessage } from '../../utils/utilFunctions';
 
 @Injectable({
   providedIn: 'root',
@@ -38,6 +39,7 @@ export class ContentEffects {
                   offset: ((action.page - 1) * action.limit).toString(),
                   limit: action.limit.toString(),
                   SearchTerm: action.searchText || '',
+                  include: '*',
                 },
               })
               .pipe(
@@ -57,7 +59,7 @@ export class ContentEffects {
             })
           ),
           catchError((error) => {
-            this.showErrorPopup(`Failed to load content: ${error.error}`);
+            this.showErrorPopup(`Failed to load content: ${extractErrorMessage(error)}`);
             return of(ContentActions.loadContentFailure({ error: error.message }));
           })
         );
@@ -81,7 +83,7 @@ export class ContentEffects {
             })
           ),
           catchError((error) => {
-            this.showErrorPopup(`Failed to load related items: ${error.error}`);
+            this.showErrorPopup(`Failed to load related items: ${extractErrorMessage(error)}`);
             return of(ContentActions.loadRelatedItemsFailure({ error: error.message }));
           })
         );
@@ -134,7 +136,7 @@ export class ContentEffects {
             );
           }),
           catchError((error) => {
-            this.showErrorPopup(`Failed to load headers: ${error.error}`);
+            this.showErrorPopup(`Failed to load headers: ${extractErrorMessage(error)}`);
             return of(ContentActions.loadHeadersFailure({ error: error.message }));
           })
         );
@@ -153,7 +155,7 @@ export class ContentEffects {
         return this.http.delete(endpoint).pipe(
           map(() => ContentActions.deleteContentSuccess({ id: action.id })),
           catchError((error) => {
-            this.showErrorPopup(`Failed to delete content: ${error.error}`);
+            this.showErrorPopup(`Failed to delete content: ${extractErrorMessage(error)}`);
             return of(ContentActions.deleteContentFailure({ error: error.message }));
           })
         );
@@ -176,7 +178,7 @@ export class ContentEffects {
         return Promise.all(deletePromises)
           .then(() => ContentActions.deleteMultipleContentSuccess({ ids: action.ids }))
           .catch((error) => {
-            this.showErrorPopup(`Failed to delete multiple content: ${error.error}`);
+            this.showErrorPopup(`Failed to delete multiple content: ${extractErrorMessage(error)}`);
             return ContentActions.deleteMultipleContentFailure({
               error: error.message,
             });
@@ -225,7 +227,7 @@ export class ContentEffects {
               });
             }),
             catchError((error) => {
-              this.showErrorPopup(`Failed to create content: ${error.error}`);
+              this.showErrorPopup(`Failed to create content: ${extractErrorMessage(error)}`);
               return of(ContentActions.createContentFailure({ error: error.message }));
             })
           );
@@ -262,7 +264,7 @@ export class ContentEffects {
             });
           }),
           catchError((error) => {
-            this.showErrorPopup(`Failed to upload file: ${error.error}`);
+            this.showErrorPopup(`Failed to upload file: ${extractErrorMessage(error)}`);
             return of(ContentActions.uploadFileFailure({ error: error.message }));
           })
         );
@@ -283,7 +285,7 @@ export class ContentEffects {
             })
           ),
           catchError((error) => {
-            this.showErrorPopup(`Failed to load content type changes: ${error.error}`);
+            this.showErrorPopup(`Failed to load content type changes: ${extractErrorMessage(error)}`);
             return of(ContentActions.loadContentTypeChangesFailure({ error: error.message }));
           })
         );
@@ -317,7 +319,7 @@ export class ContentEffects {
               });
             }),
             catchError((error) => {
-              this.showErrorPopup(`Failed to update content: ${error.error}`);
+              this.showErrorPopup(`Failed to update content: ${extractErrorMessage(error)}`);
               return of(ContentActions.updateContentFailure({ error: error.message }));
             })
           );

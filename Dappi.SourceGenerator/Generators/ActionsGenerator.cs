@@ -103,7 +103,7 @@ namespace Dappi.SourceGenerator.Generators
                 {{PropagateDappiAuthorizationTags(item.AuthorizeAttributes, AuthorizeMethods.Get)}}
                 [CollectionFilter]
                 [IncludeQueryFilter]
-                public async Task<IActionResult> Get{{item.ClassName.Pluralize()}}([FromQuery] {{item.ClassName}}Filter? filter, [FromQuery] string? fields = null)
+                public async Task<IActionResult> Get{{item.ClassName.Pluralize()}}([FromQuery] {{item.ClassName}}Filter? {{item.ClassName.ToCamelCase()}}Filter, [FromQuery] string? fields = null)
                 {
                     try
                     {
@@ -114,13 +114,13 @@ namespace Dappi.SourceGenerator.Generators
                         var filters = HttpContext.Items[CollectionFilter.FilterParamsKey] as List<Filter>;
                         if (filters is not null && filters.Count > 0)
                         {
-                            query = LinqExtensions.ApplyFiltering(query, filter);
+                            query = LinqExtensions.ApplyFiltering(query, {{item.ClassName.ToCamelCase()}}Filter);
                             query = query.ApplyFilter(filters);
                         }
 
-                        if (!string.IsNullOrEmpty(filter.SortBy))
+                        if (!string.IsNullOrEmpty({{item.ClassName.ToCamelCase()}}Filter.SortBy))
                         {
-                            query = LinqExtensions.ApplySorting(query, filter.SortBy, filter.SortDirection);
+                            query = LinqExtensions.ApplySorting(query, {{item.ClassName.ToCamelCase()}}Filter.SortBy, {{item.ClassName.ToCamelCase()}}Filter.SortDirection);
                         }
 
                         var total = await query.CountAsync();
@@ -130,15 +130,15 @@ namespace Dappi.SourceGenerator.Generators
                         if (selectExpression is null)
                         {
                             var data = await query
-                                .Skip(filter.Offset)
-                                .Take(filter.Limit)
+                                .Skip({{item.ClassName.ToCamelCase()}}Filter.Offset)
+                                .Take({{item.ClassName.ToCamelCase()}}Filter.Limit)
                                 .ToListAsync();
 
                             var listDto = new ListResponseDTO<{{item.ClassName}}>
                             {
                                 Data = data,
-                                Limit = filter.Limit,
-                                Offset = filter.Offset,
+                                Limit = {{item.ClassName.ToCamelCase()}}Filter.Limit,
+                                Offset = {{item.ClassName.ToCamelCase()}}Filter.Offset,
                                 Total = total
                             };
 
@@ -146,16 +146,16 @@ namespace Dappi.SourceGenerator.Generators
                         }
 
                         var shapedData = await query
-                            .Skip(filter.Offset)
-                            .Take(filter.Limit)
+                            .Skip({{item.ClassName.ToCamelCase()}}Filter.Offset)
+                            .Take({{item.ClassName.ToCamelCase()}}Filter.Limit)
                             .Select(selectExpression)
                             .ToDynamicListAsync();
 
                         var shapedListDto = new ListResponseDTO<object>
                         {
                             Data = shapedData,
-                            Limit = filter.Limit,
-                            Offset = filter.Offset,
+                            Limit = {{item.ClassName.ToCamelCase()}}Filter.Limit,
+                            Offset = {{item.ClassName.ToCamelCase()}}Filter.Offset,
                             Total = total
                         };
 

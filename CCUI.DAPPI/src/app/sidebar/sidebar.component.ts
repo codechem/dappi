@@ -19,7 +19,6 @@ import {
   debounceTime,
   distinctUntilChanged,
   Subscription,
-  combineLatest,
   map,
   take,
   Observable,
@@ -42,7 +41,6 @@ import {
   loadCollectionTypes,
   loadPublishedCollectionTypes,
 } from '../state/collection/collection.actions';
-import { selectUser } from '../state/auth/auth.selectors';
 import { ModelResponse } from '../models/content.model';
 
 @Component({
@@ -68,7 +66,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
   private isLoadingTypes = false;
 
   isSearching = false;
-  isAdmin = false;
 
   selectedType$ = this.store.select(selectSelectedType);
   collectionTypes$ = this.store.select(selectCollectionTypes);
@@ -98,24 +95,10 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     const typesObservable$ =
       this.headerText === 'Builder' ? this.collectionTypes$ : this.publishedCollectionTypes$;
 
-    this.baseCollectionTypes$ = combineLatest([
-      typesObservable$,
-      this.store.select(selectUser),
-    ]).pipe(
-      map(([types, user]) => {
-        const isAdmin = user?.roles.includes('Admin') ?? false;
-        this.isAdmin = isAdmin;
-
+    this.baseCollectionTypes$ = typesObservable$.pipe(
+      map((types) => {
         const uniqueTypes = new Set([...types]);
-        let resultTypes = Array.from(uniqueTypes);
-
-        if (this.headerText !== 'Builder') {
-          if (isAdmin && !uniqueTypes.has('Users')) {
-            resultTypes.push('Users');
-          }
-        }
-
-        return resultTypes;
+        return Array.from(uniqueTypes);
       }),
       takeUntil(this.destroy$)
     );

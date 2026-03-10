@@ -65,6 +65,20 @@
           <mat-icon>import_export</mat-icon>
         </a>
       </li>
+      @if (isAdmin) {
+        <li class="sidenav__menu-item">
+          <a
+            class="sidenav__link"
+            routerLink="/settings"
+            routerLinkActive="sidenav__link--active"
+            (click)="onMenuItemClick('settings')"
+            matTooltip="Settings"
+            matTooltipPosition="right"
+          >
+            <mat-icon>settings</mat-icon>
+          </a>
+        </li>
+      }
     </ul>
   </nav>
   <div class="sidenav__spacer"></div>

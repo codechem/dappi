@@ -1,0 +1,169 @@
+@use '../../../variables' as vars;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  .title-block {
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    p {
+      margin: 4px 0 0;
+      font-size: 14px;
+      color: vars.$text-secondary;
+    }
+  }
+}
+
+.create-button {
+  border: none;
+  border-radius: 6px;
+  background: vars.$primary-main;
+  color: vars.$primary-contrast-text;
+  height: 40px;
+  padding: 0 16px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.error-message {
+  color: vars.$error-light;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 0;
+
+  img {
+    margin-bottom: 24px;
+    max-width: 200px;
+  }
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 500;
+  }
+
+  p {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: vars.$text-secondary;
+  }
+}
+
+.content-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 24px;
+  overflow: auto;
+  width: 100%;
+  position: relative;
+  contain: size;
+}
+
+.loading-content {
+  p {
+    margin-top: 16px;
+  }
+}
+
+.roles-table-container {
+  border-radius: 8px;
+}
+
+.roles-table {
+  width: 100%;
+  border-spacing: 0 4px;
+  border-collapse: separate;
+}
+
+.header-row,
+.content-row {
+  background: vars.$background-paper-elevation-1;
+}
+
+.header-row {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: vars.$primary-focus;
+
+  .cell {
+    padding: 22.5px 16px;
+    font-weight: 600;
+  }
+}
+
+.cell {
+  padding: 16px 16px;
+  vertical-align: middle;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions-cell {
+  width: 50px;
+  text-align: right;
+}
+
+.delete-role-button {
+  border: none;
+  background: transparent;
+  color: vars.$text-secondary;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+
+  &:hover:not(:disabled) {
+    color: vars.$error-light;
+    background-color: rgba(vars.$error-light, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.user-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 12px;
+  background-color: vars.$primary-focus;
+  color: vars.$text-secondary;
+  font-size: 12px;
+  font-weight: 600;
+}

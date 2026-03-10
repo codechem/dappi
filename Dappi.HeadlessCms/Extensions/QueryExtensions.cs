@@ -35,19 +35,25 @@ namespace Dappi.HeadlessCms.Extensions
                 {
                     try
                     {
-                        const BindingFlags bindingFlags = BindingFlags.IgnoreCase |
-                                                          BindingFlags.Public |
-                                                          BindingFlags.Instance;
-                        
-                        var prop = prev != null
-                            ? prev.GetProperty(field, bindingFlags)
-                            : t.GetProperty(field, bindingFlags);
-                        var isCollection = prop != null && prop.PropertyType.IsGenericType && typeof(ICollection<>)
-                            .IsAssignableFrom(prop.PropertyType.GetGenericTypeDefinition());
+                        const BindingFlags bindingFlags =
+                            BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance;
+
+                        var prop =
+                            prev != null
+                                ? prev.GetProperty(field, bindingFlags)
+                                : t.GetProperty(field, bindingFlags);
+                        var isCollection =
+                            prop != null
+                            && prop.PropertyType.IsGenericType
+                            && typeof(ICollection<>).IsAssignableFrom(
+                                prop.PropertyType.GetGenericTypeDefinition()
+                            );
 
                         if (isCollection)
                         {
-                            startQuery += $"{field}.Any(";
+                            startQuery += string.IsNullOrEmpty(startQuery)
+                                ? $"{field}.Any("
+                                : $".{field}.Any(";
                             endQuery += ")";
                             prev = prop?.PropertyType.GetGenericArguments()[0];
                         }
@@ -59,13 +65,18 @@ namespace Dappi.HeadlessCms.Extensions
                             }
                             else
                             {
-                                if (!string.IsNullOrEmpty(startQuery) && startQuery.LastOrDefault() == '(')
+                                if (
+                                    !string.IsNullOrEmpty(startQuery)
+                                    && startQuery.LastOrDefault() == '('
+                                )
                                 {
                                     startQuery += field;
                                 }
                                 else
                                 {
-                                    startQuery += string.IsNullOrEmpty(startQuery) ? field : $".{field}";
+                                    startQuery += string.IsNullOrEmpty(startQuery)
+                                        ? field
+                                        : $".{field}";
                                 }
                             }
 
@@ -78,7 +89,12 @@ namespace Dappi.HeadlessCms.Extensions
                     }
                 }
 
-                var queryString = BuildFilter(filter.Operation, filter.Value.ConvertValue(), startQuery, endQuery);
+                var queryString = BuildFilter(
+                    filter.Operation,
+                    filter.Value.ConvertValue(),
+                    startQuery,
+                    endQuery
+                );
 
                 sb.Append($" {ConvertOperator(filter.Operator)} {queryString} ");
             }
@@ -99,7 +115,12 @@ namespace Dappi.HeadlessCms.Extensions
             return @operator == Operator.Or ? "||" : "&&";
         }
 
-        private static string BuildFilter(Operation operation, object value, string startQuery, string endQuery = "")
+        private static string BuildFilter(
+            Operation operation,
+            object value,
+            string startQuery,
+            string endQuery = ""
+        )
         {
             switch (operation)
             {
@@ -135,8 +156,7 @@ namespace Dappi.HeadlessCms.Extensions
                     return $"NOT {startQuery}.Contains({value.SurroundWithQuotes()}){endQuery}";
                 //Not Contains Ignore Case
                 case Operation.Ncic:
-                    return
-                        $"NOT {startQuery}.ToLower().Contains({value.SurroundWithQuotes(ignoreCase: true)}){endQuery}";
+                    return $"NOT {startQuery}.ToLower().Contains({value.SurroundWithQuotes(ignoreCase: true)}){endQuery}";
 
                 //Todo:
                 //Implement In,NotIn

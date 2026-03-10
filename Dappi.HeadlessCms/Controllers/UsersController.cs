@@ -15,17 +15,62 @@ namespace Dappi.HeadlessCms.Controllers
         private readonly UserManager<DappiUser> _userManager;
         private readonly ILogger<UsersController> _logger;
 
-        public UsersController(
-            UserManager<DappiUser> userManager,
-            ILogger<UsersController> logger)
+        public UsersController(UserManager<DappiUser> userManager, ILogger<UsersController> logger)
         {
             _userManager = userManager;
             _logger = logger;
         }
 
+        [HttpPost]
+        public async Task<IActionResult> InviteUser([FromBody] InviteUserDto dto)
+        {
+            var user = new DappiUser { UserName = dto.Username, Email = dto.Email };
+            var result = await _userManager.CreateAsync(user, dto.Password);
+
+            if (!result.Succeeded)
+            {
+                _logger.LogWarning(
+                    "Failed to create user {Username}: {Errors}",
+                    dto.Username,
+                    string.Join(", ", result.Errors.Select(e => e.Description))
+                );
+                return BadRequest(
+                    new
+                    {
+                        message = result.Errors.FirstOrDefault()?.Description
+                            ?? "Failed to create user.",
+                    }
+                );
+            }
+
+            var rolesToAssign = dto.Roles.Count > 0 ? dto.Roles : new List<string> { "User" };
+            foreach (var role in rolesToAssign)
+            {
+                await _userManager.AddToRoleAsync(user, role);
+            }
+            _logger.LogInformation(
+                "User {Username} created successfully with roles: {Roles}",
+                dto.Username,
+                string.Join(", ", rolesToAssign)
+            );
+
+            return Ok(
+                new UserRoleDto
+                {
+                    Id = user.Id,
+                    Name = user.UserName,
+                    Email = user.Email,
+                    Roles = rolesToAssign,
+                }
+            );
+        }
+
         [HttpGet]
-        public IActionResult GetUsers([FromQuery] int offset = 0, [FromQuery] int limit = 10,
-            [FromQuery] string searchTerm = "")
+        public IActionResult GetUsers(
+            [FromQuery] int offset = 0,
+            [FromQuery] int limit = 10,
+            [FromQuery] string searchTerm = ""
+        )
         {
             var query = _userManager.Users.AsQueryable();
 
@@ -34,8 +79,9 @@ namespace Dappi.HeadlessCms.Controllers
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 query = query.Where(u =>
-                    u.UserName.ToLower().Contains(searchTerm) ||
-                    u.Email.ToLower().Contains(searchTerm));
+                    u.UserName.ToLower().Contains(searchTerm)
+                    || u.Email.ToLower().Contains(searchTerm)
+                );
             }
 
             var totalCount = query.Count();
@@ -47,18 +93,30 @@ namespace Dappi.HeadlessCms.Controllers
             {
                 var roles = _userManager.GetRolesAsync(user).Result;
 
-                result.Add(new UserRoleDto
-                {
-                    Id = user.Id, Name = user.UserName, Email = user.Email, Roles = roles.ToList()
-                });
+                result.Add(
+                    new UserRoleDto
+                    {
+                        Id = user.Id,
+                        Name = user.UserName,
+                        Email = user.Email,
+                        Roles = roles.ToList(),
+                    }
+                );
             }
 
             var response = new PagedResponseDto<UserRoleDto>
             {
-                Total = totalCount, Offset = offset, Limit = limit, Data = result
+                Total = totalCount,
+                Offset = offset,
+                Limit = limit,
+                Data = result,
             };
 
-            _logger.LogInformation("Retrieved {Count} users out of {Total}", result.Count, totalCount);
+            _logger.LogInformation(
+                "Retrieved {Count} users out of {Total}",
+                result.Count,
+                totalCount
+            );
             return Ok(response);
         }
 
@@ -77,7 +135,10 @@ namespace Dappi.HeadlessCms.Controllers
 
             var userDto = new UserRoleDto
             {
-                Id = user.Id, Name = user.UserName, Email = user.Email, Roles = roles.ToList()
+                Id = user.Id,
+                Name = user.UserName,
+                Email = user.Email,
+                Roles = roles.ToList(),
             };
 
             _logger.LogInformation("Retrieved user {Username}", username);
@@ -85,7 +146,10 @@ namespace Dappi.HeadlessCms.Controllers
         }
 
         [HttpPut("{username}/roles")]
-        public async Task<IActionResult> UpdateUserRoles(string username, [FromBody] UserRolesUpdateDto dto)
+        public async Task<IActionResult> UpdateUserRoles(
+            string username,
+            [FromBody] UserRolesUpdateDto dto
+        )
         {
             var user = await _userManager.FindByNameAsync(username);
             if (user == null)
@@ -102,8 +166,11 @@ namespace Dappi.HeadlessCms.Controllers
                 var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
                 if (!removeResult.Succeeded)
                 {
-                    _logger.LogWarning("Failed to remove roles from user {Username}: {Errors}",
-                        user.UserName, string.Join(", ", removeResult.Errors.Select(e => e.Description)));
+                    _logger.LogWarning(
+                        "Failed to remove roles from user {Username}: {Errors}",
+                        user.UserName,
+                        string.Join(", ", removeResult.Errors.Select(e => e.Description))
+                    );
                     return BadRequest(removeResult.Errors);
                 }
             }
@@ -114,8 +181,11 @@ namespace Dappi.HeadlessCms.Controllers
                 var addResult = await _userManager.AddToRolesAsync(user, rolesToAdd);
                 if (!addResult.Succeeded)
                 {
-                    _logger.LogWarning("Failed to add roles to user {Username}: {Errors}",
-                        user.UserName, string.Join(", ", addResult.Errors.Select(e => e.Description)));
+                    _logger.LogWarning(
+                        "Failed to add roles to user {Username}: {Errors}",
+                        user.UserName,
+                        string.Join(", ", addResult.Errors.Select(e => e.Description))
+                    );
                     return BadRequest(addResult.Errors);
                 }
             }
@@ -142,8 +212,11 @@ namespace Dappi.HeadlessCms.Controllers
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
             {
-                _logger.LogWarning("Failed to update user {UserId}: {Errors}",
-                    id, string.Join(", ", updateResult.Errors.Select(e => e.Description)));
+                _logger.LogWarning(
+                    "Failed to update user {UserId}: {Errors}",
+                    id,
+                    string.Join(", ", updateResult.Errors.Select(e => e.Description))
+                );
                 return BadRequest(updateResult.Errors);
             }
 
@@ -165,8 +238,11 @@ namespace Dappi.HeadlessCms.Controllers
                 var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
                 if (!removeResult.Succeeded)
                 {
-                    _logger.LogWarning("Failed to remove roles from user {UserId}: {Errors}",
-                        id, string.Join(", ", removeResult.Errors.Select(e => e.Description)));
+                    _logger.LogWarning(
+                        "Failed to remove roles from user {UserId}: {Errors}",
+                        id,
+                        string.Join(", ", removeResult.Errors.Select(e => e.Description))
+                    );
                     return BadRequest(removeResult.Errors);
                 }
             }
@@ -177,8 +253,11 @@ namespace Dappi.HeadlessCms.Controllers
                 var addResult = await _userManager.AddToRolesAsync(user, rolesToAdd);
                 if (!addResult.Succeeded)
                 {
-                    _logger.LogWarning("Failed to add roles to user {UserId}: {Errors}",
-                        id, string.Join(", ", addResult.Errors.Select(e => e.Description)));
+                    _logger.LogWarning(
+                        "Failed to add roles to user {UserId}: {Errors}",
+                        id,
+                        string.Join(", ", addResult.Errors.Select(e => e.Description))
+                    );
                     return BadRequest(addResult.Errors);
                 }
             }
@@ -186,7 +265,15 @@ namespace Dappi.HeadlessCms.Controllers
             var updatedRoles = await _userManager.GetRolesAsync(user);
 
             _logger.LogInformation("Updated user {UserId}", id);
-            return Ok(new { id = user.Id, name = user.UserName, email = user.Email, roles = updatedRoles });
+            return Ok(
+                new
+                {
+                    id = user.Id,
+                    name = user.UserName,
+                    email = user.Email,
+                    roles = updatedRoles,
+                }
+            );
         }
 
         [HttpDelete("{id}")]
@@ -202,8 +289,11 @@ namespace Dappi.HeadlessCms.Controllers
             var result = await _userManager.DeleteAsync(user);
             if (!result.Succeeded)
             {
-                _logger.LogWarning("Failed to delete user {UserId}: {Errors}",
-                    id, string.Join(", ", result.Errors.Select(e => e.Description)));
+                _logger.LogWarning(
+                    "Failed to delete user {UserId}: {Errors}",
+                    id,
+                    string.Join(", ", result.Errors.Select(e => e.Description))
+                );
                 return BadRequest(result.Errors);
             }
 

@@ -1,0 +1,61 @@
+<header class="header">
+  <div class="title-block">
+    <h1>Roles</h1>
+    <p>Manage User roles</p>
+  </div>
+  <button class="create-button" (click)="addRole()" [disabled]="rolesLoading" aria-label="Add role">
+    + Add role
+  </button>
+</header>
+
+@if (rolesError) {
+  <div class="error-message">{{ rolesError }}</div>
+}
+
+@if (rolesLoading) {
+  <div class="content loading-content">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading roles...</p>
+  </div>
+}
+
+@if (!roles.length && !rolesLoading) {
+  <div class="content">
+    <img src="assets/illustration.svg" alt="No roles" />
+    <h2>There are no roles yet</h2>
+    <p>Create a role to manage permissions</p>
+  </div>
+} @else if (!rolesLoading) {
+  <div class="content-list roles-table-container">
+    <table mat-table [dataSource]="roles" class="roles-table" aria-label="Roles table">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef class="cell">Name</th>
+        <td mat-cell *matCellDef="let role" class="cell">{{ role.Name }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="users">
+        <th mat-header-cell *matHeaderCellDef class="cell">Users</th>
+        <td mat-cell *matCellDef="let role" class="cell">
+          <span class="user-count-badge">{{ role.UserCount }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="cell actions-cell"></th>
+        <td mat-cell *matCellDef="let role" class="cell actions-cell">
+          <button
+            class="delete-role-button"
+            (click)="deleteRole(role)"
+            [disabled]="deletingRoleId === role.Id || rolesLoading"
+            aria-label="Delete role"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns" class="header-row"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="content-row"></tr>
+    </table>
+  </div>
+}

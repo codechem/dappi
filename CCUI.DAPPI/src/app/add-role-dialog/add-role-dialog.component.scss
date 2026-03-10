@@ -1,0 +1,61 @@
+@use '../../variables' as vars;
+
+.add-role-dialog {
+  background-color: vars.$background-paper-elevation-1;
+  color: vars.$text-primary;
+  border-radius: 8px;
+  min-width: 400px;
+  max-width: 90vw;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 400;
+  }
+
+  button[mat-icon-button] {
+    color: vars.$text-primary;
+  }
+}
+
+.dialog-content {
+  padding: 0 16px 16px;
+
+  hr {
+    border-color: rgba(255, 255, 255, 0.12);
+    margin-bottom: 20px;
+  }
+}
+
+.input-field {
+  width: 100%;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+
+  .confirm-button {
+    background-color: vars.$primary-main;
+    color: vars.$primary-contrast-text;
+    font-weight: 500;
+    text-transform: none;
+    min-width: 80px;
+    border-radius: 4px;
+
+    &[disabled] {
+      color: vars.$action-disabled !important;
+      background-color: vars.$action-disabled-background;
+      cursor: not-allowed;
+    }
+  }
+}

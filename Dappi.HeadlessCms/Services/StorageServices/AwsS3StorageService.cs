@@ -18,6 +18,16 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             // TODO: implement deletion of objects on s3
         }
 
+        public async Task SaveFileAsync(Guid mediaId, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                throw new Exception("No file was uploaded.");
+
+            var pair = await StreamAndExtensionPair.CreateFromFormFile(file);
+
+            await SaveFileAsync(mediaId, pair);
+        }
+
         public async Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair)
         {
             var accessKey = configuration["AWS:Account:AccessKey"];
@@ -57,7 +67,7 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                     Key = objectKey,
                     InputStream = streamAndExtensionPair.Stream,
                     AutoCloseStream = true,
-                    ContentType = GetContentType(streamAndExtensionPair.Extension),
+                    ContentType = GetContentType(extension),
                 };
 
                 await client.PutObjectAsync(putRequest);
@@ -100,8 +110,7 @@ namespace Dappi.HeadlessCms.Services.StorageServices
         {
             var media = await dbContext
                 .DbContext.Set<MediaInfo>()
-                .Where(m => m.Id == mediaId)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(m => m.Id == mediaId);
 
             if (media == null)
                 return;

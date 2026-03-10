@@ -2,9 +2,20 @@
   Status: 400 Bad Request,
   Content: {
     Headers: {
-      Content-Length: 28,
-      Content-Type: text/plain; charset=utf-8
+      Content-Length: 273,
+      Content-Type: application/problem+json; charset=utf-8
     },
-    Value: Model name must be provided.
+    Value: {
+      type: https://tools.ietf.org/html/rfc9110#section-15.5.1,
+      title: One or more validation errors occurred.,
+      status: 400,
+      errors: {
+        ModelName: [
+          Model name must be provided.,
+          Model name is invalid.
+        ]
+      },
+      traceId: {Scrubbed}
+    }
   }
 }

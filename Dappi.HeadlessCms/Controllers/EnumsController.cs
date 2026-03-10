@@ -1,11 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Dappi.HeadlessCms.Controllers;
 
@@ -19,8 +18,11 @@ public class EnumsController : ControllerBase
     private readonly string _enumsFolderPath;
     private readonly IContentTypeChangesService _contentTypeChangesService;
 
-    public EnumsController(IEnumService enumService, DomainModelEditor domainModelEditor,
-        IContentTypeChangesService contentTypeChangesService)
+    public EnumsController(
+        IEnumService enumService,
+        DomainModelEditor domainModelEditor,
+        IContentTypeChangesService contentTypeChangesService
+    )
     {
         _enumService = enumService;
         _domainModelEditor = domainModelEditor;
@@ -65,13 +67,15 @@ public class EnumsController : ControllerBase
     }
 
     [HttpPut("{enumName}")]
-    public async Task<IActionResult> UpdateEnum(string enumName, [FromBody] UpdateEnumRequest request)
+    public async Task<IActionResult> UpdateEnum(
+        string enumName,
+        [FromBody] UpdateEnumRequest request
+    )
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
-
 
         var result = await _enumService.UpdateEnumAsync(enumName, request.Values);
         if (!result.Success)
@@ -97,15 +101,21 @@ public class EnumsController : ControllerBase
         foreach (var model in models)
         {
             _domainModelEditor.RemoveEnumProperty(model.Name, enumName);
-            if (!Directory.EnumerateFiles(_enumsFolderPath, "*.cs", SearchOption.AllDirectories).Any())
+            if (
+                !Directory
+                    .EnumerateFiles(_enumsFolderPath, "*.cs", SearchOption.AllDirectories)
+                    .Any()
+            )
             {
                 _domainModelEditor.UpdateUsings(model);
             }
 
             //TODO: Add changedFields
-            await _contentTypeChangesService.AddContentTypeChangeAsync(model.Name,
+            await _contentTypeChangesService.AddContentTypeChangeAsync(
+                model.Name,
                 new Dictionary<string, string>(),
-                ContentTypeState.PendingPublish);
+                ContentTypeState.PendingPublish
+            );
         }
 
         await _domainModelEditor.SaveAsync();

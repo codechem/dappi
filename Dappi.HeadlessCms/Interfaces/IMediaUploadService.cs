@@ -9,7 +9,8 @@ namespace Dappi.HeadlessCms.Interfaces
     {
         public void DeleteMedia(MediaInfo media);
         Task UpdateStatusAsync(Guid mediaId, MediaUploadStatus status);
-        public Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair);
+        Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair);
+        Task SaveFileAsync(Guid mediaId, IFormFile file);
         public void ValidateFile(IFormFile file);
     }
 }
