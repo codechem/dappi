@@ -33,8 +33,6 @@ public class AmazonSesService : IEmailService
         string subject
     )
     {
-        var messageId = "";
-
         var sendRequest = new SendEmailRequest
         {
             Destination = new Destination { ToAddresses = toAddresses },
@@ -50,36 +48,17 @@ public class AmazonSesService : IEmailService
             Source = _configuration.GetSection("AWS:SES:SourceEmail").Value,
         };
 
-        try
-        {
-            var response = await _sesClient.SendEmailAsync(sendRequest);
-            messageId = response.MessageId;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex.ToString());
-        }
-
-        return messageId;
+        var response = await _sesClient.SendEmailAsync(sendRequest);
+        return response.MessageId;
     }
 
-    public async Task<bool> VerifyEmailIdentityAsync(string mail)
+    public bool VerifyEmailIdentityAsync(string mail)
     {
-        var success = false;
-        try
-        {
-            var response = _sesClient
-                .VerifyEmailIdentityAsync(new VerifyEmailIdentityRequest { EmailAddress = mail })
-                .Result;
+        var response = _sesClient
+            .VerifyEmailIdentityAsync(new VerifyEmailIdentityRequest { EmailAddress = mail })
+            .Result;
 
-            success = response.HttpStatusCode == HttpStatusCode.OK;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex.ToString());
-        }
-
-        return success;
+        return response.HttpStatusCode == HttpStatusCode.OK;
     }
 
     public async Task<bool> CreateEmailTemplateAsync(
@@ -89,8 +68,6 @@ public class AmazonSesService : IEmailService
         string html
     )
     {
-        var success = false;
-
         var createTemplateRequest = new CreateTemplateRequest
         {
             Template = new Template
@@ -102,17 +79,8 @@ public class AmazonSesService : IEmailService
             },
         };
 
-        try
-        {
-            var response = await _sesClient.CreateTemplateAsync(createTemplateRequest);
-            success = response.HttpStatusCode == HttpStatusCode.OK;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex.ToString());
-        }
-
-        return success;
+        var response = await _sesClient.CreateTemplateAsync(createTemplateRequest);
+        return response.HttpStatusCode == HttpStatusCode.OK;
     }
 
     public async Task<string> SendTemplatedEmailAsync(
@@ -133,17 +101,8 @@ public class AmazonSesService : IEmailService
             TemplateData = $"{{ \"name\":\"{name}\" }}",
         };
 
-        var messageId = "";
-        try
-        {
-            var response = await _sesClient.SendTemplatedEmailAsync(sendTemplatedEmailRequest);
-            messageId = response.MessageId;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex.ToString());
-        }
+        var response = await _sesClient.SendTemplatedEmailAsync(sendTemplatedEmailRequest);
 
-        return messageId;
+        return response.MessageId;
     }
 }
