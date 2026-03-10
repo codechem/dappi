@@ -51,10 +51,10 @@
 </div>
 
 <div class="scrollable-list">
-  <table class="content-table" role="table" aria-label="Content items">
-    <thead>
-      <tr class="header-row" role="row">
-        <th class="small-cell" role="columnheader">
+  @if (headers$ | async; as headers) {
+    <table mat-table [dataSource]="items" class="content-table" aria-label="Content items">
+      <ng-container matColumnDef="select">
+        <th mat-header-cell *matHeaderCellDef class="small-cell">
           <mat-checkbox
             [checked]="selectAll"
             [indeterminate]="selectedItems.size > 0 && selectedItems.size < items.length"
@@ -63,102 +63,100 @@
           >
           </mat-checkbox>
         </th>
-        @if (headers$ | async; as headers) {
-          @for (header of getFilteredHeaders(headers) | slice: 1; track header.key) {
-            <th class="cell" [style.max-width.px]="getColumnWidth(header)" role="columnheader">
-              {{ header.label }}
-            </th>
-          }
-        }
-        <th class="small-cell actions-cell" role="columnheader">
+        <td mat-cell *matCellDef="let item" class="small-cell">
+          <mat-checkbox
+            [checked]="selectedItems.has(item.Id)"
+            (change)="toggleSelectItem($event, item.Id)"
+          >
+          </mat-checkbox>
+        </td>
+      </ng-container>
+
+      @for (header of getVisibleHeaders(headers); track header.key) {
+        <ng-container [matColumnDef]="header.key">
+          <th mat-header-cell *matHeaderCellDef class="cell" [style.max-width.px]="getColumnWidth(header)">
+            {{ header.label }}
+          </th>
+          <td mat-cell *matCellDef="let item" class="cell" [style.max-width.px]="getColumnWidth(header)">
+            @if (header.type === fieldType.file) {
+              @if (isPendingFileUpload(item, header)) {
+                <span class="file-uploading"></span>
+              } @else if (isFailedFileUpload(item, header)) {
+                <div class="failed-file-container">
+                  <img
+                    src="no-picture.svg"
+                    class="file-preview"
+                    alt="Failed upload"
+                  />
+                  <span>File not found</span>
+                </div>
+              } @else if (getCellDisplay(item, header)) {
+                <img
+                  [src]="getCellDisplay(item, header)"
+                  class="file-preview"
+                  alt="{{ header.label }}"
+                  (click)="openImageViewer(getCellDisplay(item, header), header.label)"
+                />
+              }
+              @if (isImageViewerOpen && currentImageUrl === getCellDisplay(item, header)) {
+                <app-image-viewer
+                  [imageUrl]="currentImageUrl"
+                  [title]="currentImageTitle"
+                  (closed)="closeImageViewer()"
+                ></app-image-viewer>
+              }
+            } @else {
+              @if (header.type === fieldType.relation || header.type === fieldType.collection) {
+                <span class="clickable-cell" (click)="openDrawer(item, header)">
+                  {{ getCellDisplay(item, header) }}
+                  <mat-icon class="cell-icon">chevron_right</mat-icon>
+                </span>
+              } @else if (header.type === fieldType.checkbox) {
+                <span
+                  class="checkbox-indicator"
+                  [class.checked]="getCellDisplay(item, header)"
+                  ariaLabel="{{ getCellDisplay(item, header) ? 'Yes' : 'No' }}"
+                >
+                  @if (getCellDisplay(item, header)) {
+                    <mat-icon class="check-icon">check_circle</mat-icon>
+                  } @else {
+                    <mat-icon class="x-icon">cancel</mat-icon>
+                  }
+                </span>
+              } @else {
+                {{ getCellDisplay(item, header) }}
+              }
+            }
+          </td>
+        </ng-container>
+      }
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="small-cell actions-cell">
           <span class="sr-only">Actions</span>
         </th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (item of items; track item.Id) {
-        <tr
-          class="content-row"
-          role="row"
-          [attr.aria-selected]="activeMenuItemId === item.Id || selectedItems.has(item.Id)"
-          [class.selected]="selectedItems.has(item.Id)"
-        >
-          <td class="small-cell" role="cell">
-            <mat-checkbox
-              [checked]="selectedItems.has(item.Id)"
-              (change)="toggleSelectItem($event, item.Id)"
-            >
-            </mat-checkbox>
-          </td>
-          @if (headers$ | async; as headers) {
-            @for (header of getFilteredHeaders(headers) | slice: 1; track header.key) {
-              <td class="cell" [style.max-width.px]="getColumnWidth(header)" role="cell">
-                @if (header.type === fieldType.file) {
-                  @if (isPendingFileUpload(item, header)) {
-                    <span class="file-uploading"></span>
-                  } @else if (isFailedFileUpload(item, header)) {
-                    <div class="failed-file-container">
-                      <img
-                        src="no-picture.svg"
-                        class="file-preview"
-                        alt="Failed upload"
-                      />
-                      <span>File not found</span>
-                    </div>
-                  } @else if (getCellDisplay(item, header)) {
-                    <img
-                      [src]="getCellDisplay(item, header)"
-                      class="file-preview"
-                      alt="{{ header.label }}"
-                      (click)="openImageViewer(getCellDisplay(item, header), header.label)"
-                    />
-                  }
-                  @if (isImageViewerOpen && currentImageUrl === getCellDisplay(item, header)) {
-                    <app-image-viewer
-                      [imageUrl]="currentImageUrl"
-                      [title]="currentImageTitle"
-                      (closed)="closeImageViewer()"
-                    ></app-image-viewer>
-                  }
-                } @else {
-                  @if (header.type === fieldType.relation || header.type === fieldType.collection) {
-                    <span class="clickable-cell" (click)="openDrawer(item, header)">
-                      {{ getCellDisplay(item, header) }}
-                      <mat-icon class="cell-icon">chevron_right</mat-icon>
-                    </span>
-                  } @else if (header.type === fieldType.checkbox) {
-                    <span
-                      class="checkbox-indicator"
-                      [class.checked]="getCellDisplay(item, header)"
-                      ariaLabel="{{ getCellDisplay(item, header) ? 'Yes' : 'No' }}"
-                    >
-                      @if (getCellDisplay(item, header)) {
-                        <mat-icon class="check-icon">check_circle</mat-icon>
-                      } @else {
-                        <mat-icon class="x-icon">cancel</mat-icon>
-                      }
-                    </span>
-                  } @else {
-                    {{ getCellDisplay(item, header) }}
-                  }
-                }
-              </td>
-            }
-          }
-          <td class="small-cell actions-cell" role="cell">
-            <button
-              mat-icon-button
-              (click)="toggleMenu(item, $event)"
-              aria-haspopup="true"
-              [attr.aria-expanded]="activeMenuItemId === item.Id"
-            >
-              <mat-icon>more_vert</mat-icon>
-            </button>
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
+        <td mat-cell *matCellDef="let item" class="small-cell actions-cell">
+          <button
+            mat-icon-button
+            (click)="toggleMenu(item, $event)"
+            aria-haspopup="true"
+            [attr.aria-expanded]="activeMenuItemId === item.Id"
+          >
+            <mat-icon>more_vert</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="getDisplayedColumns(headers)" class="header-row"></tr>
+      <tr
+        mat-row
+        *matRowDef="let item; columns: getDisplayedColumns(headers)"
+        class="content-row"
+        [attr.aria-selected]="activeMenuItemId === item.Id || selectedItems.has(item.Id)"
+        [class.selected]="selectedItems.has(item.Id)"
+      ></tr>
+    </table>
+  }
 
   @if (isLoading) {
     <div class="loading-indicator">

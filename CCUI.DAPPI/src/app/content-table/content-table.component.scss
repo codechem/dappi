@@ -150,7 +150,6 @@
 
 .header-row,
 .content-row {
-  display: table-row;
   background: vars.$background-paper-elevation-1;
 }
 
@@ -163,18 +162,13 @@
 
 .small-cell,
 .cell {
-  display: table-cell;
   padding: 12px 16px;
   vertical-align: middle;
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 200px;
-}
-
-.small-cell,
-.cell {
-  text-align: left;
 }
 
 .small-cell {
@@ -183,10 +177,6 @@
   .mat-mdc-checkbox {
     margin-right: 8px;
   }
-}
-
-.cell {
-  flex-grow: 1;
 }
 
 .file-preview {

@@ -27,32 +27,35 @@
   </div>
 } @else if (!rolesLoading) {
   <div class="content-list roles-table-container">
-    <table class="roles-table" role="table" aria-label="Roles table">
-      <thead>
-        <tr class="header-row">
-          <th class="cell">Name</th>
-          <th class="cell">Users</th>
-          <th class="cell actions-cell"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (role of roles; track role.Id) {
-          <tr class="content-row">
-            <td class="cell">{{ role.Name }}</td>
-            <td class="cell"><span class="user-count-badge">{{ role.UserCount }}</span></td>
-            <td class="cell actions-cell">
-              <button
-                class="delete-role-button"
-                (click)="deleteRole(role)"
-                [disabled]="deletingRoleId === role.Id || rolesLoading"
-                aria-label="Delete role"
-              >
-                <mat-icon>delete</mat-icon>
-              </button>
-            </td>
-          </tr>
-        }
-      </tbody>
+    <table mat-table [dataSource]="roles" class="roles-table" aria-label="Roles table">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef class="cell">Name</th>
+        <td mat-cell *matCellDef="let role" class="cell">{{ role.Name }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="users">
+        <th mat-header-cell *matHeaderCellDef class="cell">Users</th>
+        <td mat-cell *matCellDef="let role" class="cell">
+          <span class="user-count-badge">{{ role.UserCount }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="cell actions-cell"></th>
+        <td mat-cell *matCellDef="let role" class="cell actions-cell">
+          <button
+            class="delete-role-button"
+            (click)="deleteRole(role)"
+            [disabled]="deletingRoleId === role.Id || rolesLoading"
+            aria-label="Delete role"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns" class="header-row"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="content-row"></tr>
     </table>
   </div>
 }

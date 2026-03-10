@@ -13,6 +13,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTableModule } from '@angular/material/table';
 import { Router } from '@angular/router';
 import { MenuComponent } from '../menu/menu.component';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
@@ -32,6 +33,7 @@ import { DrawerComponent } from '../relation-drawer/drawer.component';
 import { ImageViewerComponent } from '../image-viewer/image-viewer.component';
 import { selectAllowedCrudActions } from '../state/collection/collection.selectors';
 import { MediaUploadStatus } from '../models/media-info.model';
+import { CdkAriaLive } from "../../../node_modules/@angular/cdk/a11y-module.d";
 
 @Component({
   selector: 'app-content-table',
@@ -43,10 +45,12 @@ import { MediaUploadStatus } from '../models/media-info.model';
     CommonModule,
     FormsModule,
     MatMenuModule,
+    MatTableModule,
     MenuComponent,
     DrawerComponent,
     ImageViewerComponent,
-  ],
+    CdkAriaLive
+],
   templateUrl: './content-table.component.html',
   styleUrl: './content-table.component.scss',
 })
@@ -307,6 +311,14 @@ export class ContentTableComponent implements OnInit, OnChanges, OnDestroy {
     if (!headers) return [];
 
     return headers.filter((header) => header.type !== FieldType.relation);
+  }
+
+  getVisibleHeaders(headers: TableHeader[]): TableHeader[] {
+    return this.getFilteredHeaders(headers).slice(1);
+  }
+
+  getDisplayedColumns(headers: TableHeader[]): string[] {
+    return ['select', ...this.getVisibleHeaders(headers).map((header) => header.key), 'actions'];
   }
 
   getColumnWidth(header: TableHeader): number {
