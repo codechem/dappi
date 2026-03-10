@@ -127,5 +127,7 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                 ".pdf" => "application/pdf",
                 _ => "application/octet-stream",
             };
+
+        public override string ToString() => "aws-bucket";
     }
 }

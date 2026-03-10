@@ -23,11 +23,13 @@ public class ModelsController : ControllerBase
     private readonly string _entitiesFolderPath;
     private readonly string _controllersFolderPath;
     private readonly IContentTypeChangesService _contentTypeChangesService;
+    private readonly bool _usesS3AsMediaSource;
 
     public ModelsController(
         DomainModelEditor domainModelEditor,
         DbContextEditor dbContextEditor,
-        IContentTypeChangesService contentTypeChangesService
+        IContentTypeChangesService contentTypeChangesService,
+        IServiceProvider serviceProvider
     )
     {
         _domainModelEditor = domainModelEditor;
@@ -41,6 +43,21 @@ public class ModelsController : ControllerBase
         {
             Directory.CreateDirectory(_entitiesFolderPath);
         }
+
+        var awsBucket = serviceProvider.GetService(typeof(IMediaUploadService))?.ToString();
+        _usesS3AsMediaSource = string.Equals(awsBucket, "aws-bucket", StringComparison.Ordinal);
+    }
+
+    [HttpGet("storage-source")]
+    public IActionResult GetStorageSource()
+    {
+        return Ok(
+            new
+            {
+                UsesS3 = _usesS3AsMediaSource,
+                Source = _usesS3AsMediaSource ? "S3" : "Local",
+            }
+        );
     }
 
     [HttpGet]

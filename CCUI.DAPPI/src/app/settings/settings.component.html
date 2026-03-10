@@ -24,6 +24,12 @@
       <mat-icon>admin_panel_settings</mat-icon>
       <span>Roles</span>
     </button>
+
+    <div class="settings-sidebar__section settings-sidebar__section--spaced">Storage</div>
+    <div class="settings-sidebar__status" aria-label="Media source status">
+      <mat-icon>{{ usesS3 ? 'cloud_done' : 'dns' }}</mat-icon>
+      <span>Media Source: {{ storageSource }}</span>
+    </div>
   </aside>
 
   <div class="container">
