@@ -144,7 +144,7 @@ public static class ServiceExtensions
         }
 
         services.AddSingleton<ISesClientFactory, SesClientFactory>();
-        services.AddScoped<IEmailService, AmazonSesService>();
+        services.AddScoped<IEmailService, AwsSesService>();
         return services;
     }
 
