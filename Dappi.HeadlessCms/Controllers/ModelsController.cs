@@ -23,6 +23,7 @@ public class ModelsController : ControllerBase
     private readonly string _entitiesFolderPath;
     private readonly string _controllersFolderPath;
     private readonly IContentTypeChangesService _contentTypeChangesService;
+    private readonly bool _usesS3AsMediaSource;
 
     public ModelsController(
         DomainModelEditor domainModelEditor,

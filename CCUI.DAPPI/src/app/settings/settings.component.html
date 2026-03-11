@@ -3,6 +3,20 @@
     <div class="settings-sidebar__title">Settings</div>
     <div class="settings-sidebar__divider"></div>
 
+    <div class="settings-sidebar__section">SETTINGS</div>
+
+    <button
+      class="settings-sidebar__item"
+      [class.settings-sidebar__item--active]="activeTab === 'storage'"
+      (click)="selectTab('storage')"
+      aria-label="Media storage"
+    >
+      <mat-icon>storage</mat-icon>
+      <span>Media storage</span>
+    </button>
+
+    <div class="settings-sidebar__divider"></div>
+
     <div class="settings-sidebar__section">User Administration</div>
 
     <button
@@ -27,7 +41,9 @@
   </aside>
 
   <div class="container">
-    @if (activeTab === 'users') {
+    @if (activeTab === 'storage') {
+      <app-data-storage></app-data-storage>
+    } @else if (activeTab === 'users') {
       <app-users></app-users>
     } @else {
       <app-roles></app-roles>

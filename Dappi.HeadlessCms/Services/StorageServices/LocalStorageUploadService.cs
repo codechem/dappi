@@ -109,5 +109,7 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                 _ => "unsupported",
             };
         }
+
+        public override string ToString() => "local";
     }
 }

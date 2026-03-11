@@ -1,0 +1,148 @@
+@use '../../../variables' as vars;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  .title-block {
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    p {
+      margin: 4px 0 0;
+      font-size: 14px;
+      color: vars.$text-secondary;
+    }
+  }
+}
+
+.error-message {
+  color: vars.$error-light;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 0;
+}
+
+.content-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-content: start;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.loading-content {
+  p {
+    margin-top: 16px;
+    color: vars.$text-secondary;
+  }
+}
+
+.storage-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border-radius: 14px;
+  border: vars.$divider;
+  background: vars.$background-paper-elevation-1;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  padding: 20px;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: vars.$divider;
+    margin-bottom: 8px;
+
+    h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: vars.$text-primary;
+    }
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 16px;
+    padding: 10px 0;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  &__label {
+    color: vars.$text-secondary;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    min-width: 0;
+  }
+
+  &__value {
+    color: vars.$text-primary;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: right;
+    min-width: 0;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    justify-self: end;
+  }
+
+  &--empty {
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 900px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .storage-card {
+    padding: 16px;
+
+    &__header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    &__row {
+      grid-template-columns: 1fr;
+    }
+
+    &__value {
+      text-align: left;
+      justify-self: start;
+    }
+  }
+}

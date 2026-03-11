@@ -146,6 +146,15 @@
   width: 100%;
   border-spacing: 0 4px;
   border-collapse: separate;
+  background-color: vars.$background-paper-elevation-1;
+}
+
+.content-table .mat-mdc-header-row,
+.content-table .mat-mdc-row,
+.content-table .mat-mdc-header-cell,
+.content-table .mat-mdc-cell {
+  background-color: vars.$background-paper-elevation-1;
+  color: vars.$text-primary;
 }
 
 .header-row,

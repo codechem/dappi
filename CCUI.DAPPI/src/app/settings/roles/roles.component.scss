@@ -99,6 +99,15 @@
   width: 100%;
   border-spacing: 0 4px;
   border-collapse: separate;
+  background-color: vars.$background-paper-elevation-1;
+}
+
+.roles-table .mat-mdc-header-row,
+.roles-table .mat-mdc-row,
+.roles-table .mat-mdc-header-cell,
+.roles-table .mat-mdc-cell {
+  background-color: vars.$background-paper-elevation-1;
+  color: vars.$text-primary;
 }
 
 .header-row,
@@ -111,20 +120,16 @@
   top: 0;
   z-index: 2;
   background-color: vars.$primary-focus;
-
-  .cell {
-    padding: 22.5px 16px;
-    font-weight: 600;
-  }
 }
 
 .cell {
-  padding: 16px 16px;
+  padding: 12px 16px;
   vertical-align: middle;
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 200px;
 }
 
 .actions-cell {
