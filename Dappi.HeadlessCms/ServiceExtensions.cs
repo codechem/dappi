@@ -9,6 +9,7 @@ using Dappi.HeadlessCms.Core;
 using Dappi.HeadlessCms.Database;
 using Dappi.HeadlessCms.Database.Interceptors;
 using Dappi.HeadlessCms.Interfaces;
+using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
 using Dappi.HeadlessCms.Services.MailServices;
