@@ -72,7 +72,7 @@ public static class ServiceExtensions
         services.AddScoped<IContentTypeChangesService, ContentTypeChangesService>();
 
         services.AddFluentValidationAutoValidation();
-        services.AddValidatorsFromAssembly(typeof(TDbContext).Assembly);
+        services.AddValidatorsFromAssemblyContaining<FieldRequestValidator>();
 
         services
             .AddControllers()
