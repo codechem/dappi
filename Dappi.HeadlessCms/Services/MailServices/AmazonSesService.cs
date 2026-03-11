@@ -9,22 +9,14 @@ namespace Dappi.HeadlessCms.Services.MailServices;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
 
-public class AmazonSesService : IEmailService
+public class AmazonSesService(
+    IConfiguration configuration,
+    ILogger<AmazonSesService> logger,
+    ISesClientFactory factory
+) : IEmailService
 {
-    private readonly IAmazonSimpleEmailService _sesClient;
-    private readonly IConfiguration _configuration;
-    private readonly ILogger<AmazonSesService> _logger;
-
-    public AmazonSesService(IConfiguration configuration, ILogger<AmazonSesService> logger)
-    {
-        _configuration = configuration;
-        _logger = logger;
-
-        var sesAccessKey = configuration.GetSection("AWS:SES:AccessKey").Value;
-        var sesSecretKey = configuration.GetSection("AWS:SES:SecretKey").Value;
-
-        _sesClient = new AmazonSimpleEmailServiceClient(sesAccessKey, sesSecretKey);
-    }
+    private readonly IAmazonSimpleEmailService _sesClient = factory.CreateClient();
+    private readonly ILogger<AmazonSesService> _logger = logger;
 
     public async Task<string> SendEmailAsync(
         List<string> toAddresses,
@@ -45,7 +37,7 @@ public class AmazonSesService : IEmailService
                 },
                 Subject = new Content { Charset = "UTF-8", Data = subject },
             },
-            Source = _configuration.GetSection("AWS:SES:SourceEmail").Value,
+            Source = configuration.GetSection("AWS:SES:SourceEmail").Value,
         };
 
         var response = await _sesClient.SendEmailAsync(sendRequest);
@@ -89,7 +81,7 @@ public class AmazonSesService : IEmailService
         string templateName
     )
     {
-        var sourceEmail = _configuration.GetSection("AWS:SES:SourceEmail").Value;
+        var sourceEmail = configuration.GetSection("AWS:SES:SourceEmail").Value;
 
         var sendTemplatedEmailRequest = new SendTemplatedEmailRequest
         {
