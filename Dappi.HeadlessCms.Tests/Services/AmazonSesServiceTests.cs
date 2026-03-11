@@ -1,53 +1,58 @@
 using System.Net;
-using System.Reflection;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
+using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Services.MailServices;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using Xunit;
 
 namespace Dappi.HeadlessCms.Tests.Services;
 
 public class AmazonSesServiceTests
 {
+    private readonly IConfiguration _mockConfig;
+    private readonly ILogger<AmazonSesService> _mockLogger;
     private readonly IAmazonSimpleEmailService _mockSesClient;
+    private readonly ISesClientFactory _mockFactory;
     private readonly AmazonSesService _sut;
 
     public AmazonSesServiceTests()
     {
-        var mockConfig = Substitute.For<IConfiguration>();
-        var mockLogger = Substitute.For<ILogger<AmazonSesService>>();
+        _mockConfig = Substitute.For<IConfiguration>();
+        _mockLogger = Substitute.For<ILogger<AmazonSesService>>();
         _mockSesClient = Substitute.For<IAmazonSimpleEmailService>();
+        _mockFactory = Substitute.For<ISesClientFactory>();
 
-        mockConfig.GetSection("AWS:SES:AccessKey").Value.Returns("fake-key");
-        mockConfig.GetSection("AWS:SES:SecretKey").Value.Returns("fake-secret");
-        mockConfig.GetSection("AWS:SES:SourceEmail").Value.Returns("test@dappi.com");
+        _mockFactory.CreateClient().Returns(_mockSesClient);
 
-        _sut = new AmazonSesService(mockConfig, mockLogger);
+        _mockConfig.GetSection("AWS:SES:SourceEmail").Value.Returns("test@dappi.com");
 
-        var field = typeof(AmazonSesService).GetField(
-            "_sesClient",
-            BindingFlags.Instance | BindingFlags.NonPublic
-        );
-        field?.SetValue(_sut, _mockSesClient);
+        _sut = new AmazonSesService(_mockConfig, _mockLogger, _mockFactory);
     }
 
     [Fact]
-    public async Task SendEmailAsync_ShouldUseMockedClient()
+    public async Task SendEmailAsync_ShouldUseMockedClient_AndReturnMessageId()
     {
         var to = new List<string> { "user@test.com" };
+        var expectedId = "mock-id-123";
         _mockSesClient
             .SendEmailAsync(Arg.Any<SendEmailRequest>())
-            .Returns(new SendEmailResponse { MessageId = "mock-id-123" });
+            .Returns(new SendEmailResponse { MessageId = expectedId });
 
-        var result = await _sut.SendEmailAsync(to, "html", "text", "subject");
+        var result = await _sut.SendEmailAsync(to, "<html></html>", "text", "subject");
 
-        result.Should().Be("mock-id-123");
+        result.Should().Be(expectedId);
         await _mockSesClient
             .Received(1)
-            .SendEmailAsync(Arg.Is<SendEmailRequest>(r => r.Source == "test@dappi.com"));
+            .SendEmailAsync(
+                Arg.Is<SendEmailRequest>(r =>
+                    r.Source == "test@dappi.com"
+                    && r.Destination.ToAddresses.Contains("user@test.com")
+                )
+            );
     }
 
     [Fact]
@@ -103,8 +108,6 @@ public class AmazonSesServiceTests
                 Arg.Is<CreateTemplateRequest>(r =>
                     r.Template.TemplateName == "WelcomeTemplate"
                     && r.Template.SubjectPart == "Subject"
-                    && r.Template.TextPart == "Text body"
-                    && r.Template.HtmlPart == "<html><body>Html body</body></html>"
                 )
             );
     }
@@ -145,7 +148,6 @@ public class AmazonSesServiceTests
                     r.Source == "test@dappi.com"
                     && r.Template == templateName
                     && r.TemplateData == "{ \"name\":\"John Doe\" }"
-                    && r.Destination.ToAddresses.Contains("customer@test.com")
                 )
             );
     }

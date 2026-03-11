@@ -143,6 +143,7 @@ public static class ServiceExtensions
             throw new ValidationException(result.Errors);
         }
 
+        services.AddSingleton<ISesClientFactory, SesClientFactory>();
         services.AddScoped<IEmailService, AmazonSesService>();
         return services;
     }
