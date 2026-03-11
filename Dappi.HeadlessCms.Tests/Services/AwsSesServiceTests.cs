@@ -7,22 +7,21 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace Dappi.HeadlessCms.Tests.Services;
 
-public class AmazonSesServiceTests
+public class AwsSesServiceTests
 {
     private readonly IConfiguration _mockConfig;
-    private readonly ILogger<AmazonSesService> _mockLogger;
+    private readonly ILogger<AwsSesService> _mockLogger;
     private readonly IAmazonSimpleEmailService _mockSesClient;
     private readonly ISesClientFactory _mockFactory;
-    private readonly AmazonSesService _sut;
+    private readonly AwsSesService _sut;
 
-    public AmazonSesServiceTests()
+    public AwsSesServiceTests()
     {
         _mockConfig = Substitute.For<IConfiguration>();
-        _mockLogger = Substitute.For<ILogger<AmazonSesService>>();
+        _mockLogger = Substitute.For<ILogger<AwsSesService>>();
         _mockSesClient = Substitute.For<IAmazonSimpleEmailService>();
         _mockFactory = Substitute.For<ISesClientFactory>();
 
@@ -30,7 +29,7 @@ public class AmazonSesServiceTests
 
         _mockConfig.GetSection("AWS:SES:SourceEmail").Value.Returns("test@dappi.com");
 
-        _sut = new AmazonSesService(_mockConfig, _mockLogger, _mockFactory);
+        _sut = new AwsSesService(_mockConfig, _mockLogger, _mockFactory);
     }
 
     [Fact]
