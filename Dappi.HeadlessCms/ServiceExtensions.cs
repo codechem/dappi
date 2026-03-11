@@ -75,7 +75,7 @@ public static class ServiceExtensions
         services.AddValidatorsFromAssembly(typeof(TDbContext).Assembly);
 
         services
-            .AddControllers(option => option.Filters.Add<ValidationFilter>())
+            .AddControllers()
             .AddJsonOptions(
                 jsonOptions
                     ?? (
