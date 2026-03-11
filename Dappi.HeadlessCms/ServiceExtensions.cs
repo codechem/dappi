@@ -10,6 +10,7 @@ using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Dappi.HeadlessCms.Services;
 using Dappi.HeadlessCms.Services.Identity;
+using Dappi.HeadlessCms.Services.MailServices;
 using Dappi.HeadlessCms.Services.StorageServices;
 using Dappi.HeadlessCms.Validators;
 using FluentValidation;
@@ -110,22 +111,40 @@ public static class ServiceExtensions
         IConfiguration configuration
     )
     {
-        var accessKey = configuration["AWS:Account:AccessKey"];
-        var secretKey = configuration["AWS:Account:SecretKey"];
-        var region = configuration["AWS:Account:Region"];
-        var bucketName = configuration["AWS:Storage:BucketName"];
+        var options =
+            configuration.GetSection("AWS:Account").Get<AwsAccountOptions>()
+            ?? new AwsAccountOptions();
 
-        if (
-            string.IsNullOrWhiteSpace(accessKey)
-            || string.IsNullOrWhiteSpace(secretKey)
-            || string.IsNullOrWhiteSpace(region)
-            || string.IsNullOrWhiteSpace(bucketName)
-        )
+        var validator = new AwsAccountValidator();
+        var result = validator.Validate(options);
+
+        if (!result.IsValid)
         {
-            // throw new Exception("Environment variables for AWS are not set");
+            throw new ValidationException(result.Errors);
         }
 
         services.AddScoped<IMediaUploadService, AwsS3StorageService>();
+        return services;
+    }
+
+    public static IServiceCollection AddAwsSes(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        var options =
+            configuration.GetSection("AWS:SES").Get<AwsSesOptions>() ?? new AwsSesOptions();
+
+        var validator = new AwsSesValidator();
+        var result = validator.Validate(options);
+
+        if (!result.IsValid)
+        {
+            throw new ValidationException(result.Errors);
+        }
+
+        services.AddSingleton<ISesClientFactory, SesClientFactory>();
+        services.AddScoped<IEmailService, AwsSesService>();
         return services;
     }
 
