@@ -22,7 +22,15 @@ namespace Dappi.HeadlessCms.UsersAndPermissions.Services
                     );
                 }
             }
+
             return permissions;
         }
+
+        public bool ControllerHasConfiguredPermissions(string controllerName) =>
+            controllerRoutes.ContainsKey(
+                controllerName.EndsWith("Controller")
+                    ? controllerName
+                    : $"{controllerName}Controller"
+            );
     }
 }

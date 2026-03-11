@@ -9,6 +9,7 @@ using Dappi.HeadlessCms.UsersAndPermissions.Api.Configuration;
 using Dappi.HeadlessCms.UsersAndPermissions.Api.Middleware;
 using Dappi.HeadlessCms.UsersAndPermissions.Core;
 using Dappi.HeadlessCms.UsersAndPermissions.Database;
+using Dappi.HeadlessCms.UsersAndPermissions.Jwt;
 using Dappi.HeadlessCms.UsersAndPermissions.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -100,6 +101,7 @@ public static class Extensions
         services.AddScoped<TokenService<TUser>>();
 
         services.AddScoped<PermissionAuthorizationFilter>();
+        services.AddScoped<ExternalUserSyncContext<TUser>>();
 
         services
             .AddControllers(opts =>
@@ -117,6 +119,38 @@ public static class Extensions
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
             });
 
+        return services;
+    }
+
+    public static IServiceCollection AddExternalJwtProvider<TProvider, TUser>(
+        this IServiceCollection services
+    )
+        where TProvider : JwtValidationProvider<TUser>, new()
+        where TUser : AppUser, new()
+    {
+        var provider = new TProvider();
+
+        services
+            .AddAuthentication()
+            .AddJwtBearer(
+                provider.SchemaAndIssuerProvider.Schema,
+                options =>
+                {
+                    options.TokenValidationParameters = provider.BuildValidationParameters();
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnTokenValidated = async ctx =>
+                        {
+                            var syncContext = ctx.HttpContext.RequestServices.GetRequiredService<
+                                ExternalUserSyncContext<TUser>
+                            >();
+                            await provider.OnUserAuthenticatedAsync(ctx.Principal!, syncContext);
+                        },
+                    };
+                }
+            );
+
+        services.AddSingleton(provider.SchemaAndIssuerProvider);
         return services;
     }
 

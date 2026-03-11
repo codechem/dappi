@@ -1,6 +1,6 @@
 using System.Security.Claims;
-using Dappi.HeadlessCms.UsersAndPermissions.Core;
 using Dappi.HeadlessCms.UsersAndPermissions.Database;
+using Dappi.HeadlessCms.UsersAndPermissions.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
@@ -8,17 +8,23 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Dappi.HeadlessCms.UsersAndPermissions.Api.AuthorizationFilters;
 
-public class PermissionAuthorizationFilter(IDbContextAccessor db, IMemoryCache cache)
-    : IAuthorizationFilter
+public class PermissionAuthorizationFilter(
+    AvailablePermissionsRepository permissionsRepository,
+    IDbContextAccessor db,
+    IMemoryCache cache
+) : IAuthorizationFilter
 {
     private readonly UsersAndPermissionsDbContext _db = db.DbContext;
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
-        var controllerName = context.RouteData.Values["controller"];
+        var controllerName = context.RouteData.Values["controller"] + "Controller";
         var actionName = context.RouteData.Values["action"]?.ToString();
+        if (actionName is null)
+            return;
 
-        if (controllerName is null || actionName is null)
+        // If the controller doesn't have configured permissions by the UAP system, allow access by default
+        if (!permissionsRepository.ControllerHasConfiguredPermissions(controllerName))
             return;
 
         var userRoles = context
@@ -26,10 +32,25 @@ public class PermissionAuthorizationFilter(IDbContextAccessor db, IMemoryCache c
             .Select(c => c.Value)
             .ToList();
 
-        var canAccess = userRoles.Any(role =>
+        if (userRoles.Count == 0)
+        {
+            var email = context
+                .HttpContext.User.Claims.First(c => c.Type == ClaimTypes.Email)
+                .Value;
+            var role = _db
+                .AppRoles.Include(appRole => appRole.Users)
+                .FirstOrDefault(x => x.Users.Select(x => x.Email).Contains(email));
+
+            if (role is null)
+                context.Result = new ForbidResult();
+            else
+                userRoles.Add(role.Name);
+        }
+
+        var canAccess = userRoles.Any(userRole =>
         {
             var userId = context.HttpContext.User.Identity?.Name;
-            var cacheKey = $"{userId}:perm:{role}:{controllerName}:{actionName}";
+            var cacheKey = $"{userId}:perm:{userRole}:{controllerName}:{actionName}";
 
             return cache.GetOrCreate(
                 cacheKey,
@@ -37,11 +58,11 @@ public class PermissionAuthorizationFilter(IDbContextAccessor db, IMemoryCache c
                 {
                     entry.SlidingExpiration = TimeSpan.FromMinutes(15);
 
-                    var permissionName = $"{controllerName}Controller:{actionName}";
+                    var permissionName = $"{controllerName}:{actionName}";
 
                     return _db
                         .AppRoles.Include(appRole => appRole.Permissions)
-                        .Where(r => r.Name == role)
+                        .Where(r => r.Name == userRole)
                         .SelectMany(r => r.Permissions)
                         .Any(p => p.Name == permissionName);
                 }

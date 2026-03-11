@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
+using Dappi.Core.Abstractions.Auth;
 using Dappi.HeadlessCms.ActionFilters;
 using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Background;
@@ -101,6 +102,7 @@ public static class ServiceExtensions
         ));
 
         services.AddEndpointsApiExplorer();
+        // services.AddDappiSwaggerGen();
         return services;
     }
 
@@ -173,7 +175,6 @@ public static class ServiceExtensions
             .AddEntityFrameworkStores<TContext>()
             .AddDefaultTokenProviders();
 
-        // JWT Authentication
         var jwtSettings = configuration.GetSection("Authentication:Dappi");
         var secretKey =
             jwtSettings["SecretKey"]
@@ -193,7 +194,6 @@ public static class ServiceExtensions
             {
                 options.ForwardDefaultSelector = context =>
                 {
-                    // Inspect the token's audience to route to the right scheme
                     var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
                     if (authHeader?.StartsWith("Bearer ") == true)
                     {
@@ -204,16 +204,16 @@ public static class ServiceExtensions
                         if (jwtHandler.CanReadToken(token))
                         {
                             var jwt = jwtHandler.ReadJwtToken(token);
-                            var audience = jwt.Audiences.FirstOrDefault();
 
-                            if (audience == jwtSettings["Audience"])
-                                return DappiAuthenticationSchemes.DappiAuthenticationScheme;
-
-                            return "Dappi.UsersAndPermissions";
+                            var schema = context
+                                .RequestServices.GetServices<SchemaAndIssuerProvider>()
+                                .FirstOrDefault(provider => provider.Issuer == jwt.Issuer)
+                                ?.Schema;
+                            return schema ?? DappiAuthenticationSchemes.DappiAuthenticationScheme;
                         }
                     }
 
-                    return DappiAuthenticationSchemes.DappiAuthenticationScheme; // fallback
+                    return DappiAuthenticationSchemes.DappiAuthenticationScheme;
                 };
             }
         );
