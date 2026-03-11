@@ -32,6 +32,7 @@ public class PermissionAuthorizationFilter(
             .Select(c => c.Value)
             .ToList();
 
+        // User is external and doesn't have roles in the token, try to find them in the database based on the email claim
         if (userRoles.Count == 0)
         {
             var email = context
