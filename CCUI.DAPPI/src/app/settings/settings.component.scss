@@ -41,10 +41,6 @@
     color: vars.$text-secondary;
     text-transform: uppercase;
     margin-bottom: 8px;
-
-    &--spaced {
-      margin-top: 16px;
-    }
   }
 
   &__item {
@@ -68,19 +64,6 @@
       background-color: rgba(vars.$primary-main, 0.2);
       color: vars.$primary-main;
     }
-  }
-
-  &__status {
-    color: vars.$text-secondary;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    border-radius: 8px;
-    padding: 10px 12px;
-    cursor: default;
-    background-color: rgba(255, 255, 255, 0.04);
-    user-select: none;
   }
 }
 

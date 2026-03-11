@@ -1,18 +1,23 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { BASE_API_URL } from '../../../Constants';
-
-export interface StorageSourceResponse {
-  UsesS3: boolean;
-  Source: string;
-}
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   constructor(private http: HttpClient) {}
 
-  getStorageSource(): Observable<StorageSourceResponse> {
-    return this.http.get<StorageSourceResponse>(`${BASE_API_URL}models/storage-source`);
+  private shortNameToLongNameMap: Record<string, string> = {
+    ['aws-s3']: 'Amazon S3',
+    ['local']: 'Local Storage'
+  }
+
+  getStorageSource(): Observable<string> {
+    return this.http.get(`${BASE_API_URL}providers/storage`, { responseType: 'text' }).pipe(
+      map((storageProviderName) => {
+        return this.shortNameToLongNameMap[storageProviderName] ?? storageProviderName;
+      })
+    );
   }
 }

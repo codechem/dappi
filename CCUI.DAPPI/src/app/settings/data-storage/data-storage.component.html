@@ -1,0 +1,25 @@
+<header class="header">
+  <div class="title-block">
+    <h1>Media storage</h1>
+  </div>
+</header>
+
+@if (error) {
+  <div class="error-message">{{ error }}</div>
+}
+
+@if (isLoading) {
+  <div class="content loading-content">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading storage source...</p>
+  </div>
+} @else {
+  <div class="content-list">
+    <section class="storage-card" aria-label="Data storage details">
+      <div class="storage-card__row">
+        <span class="storage-card__label">Media storage source</span>
+        <span class="storage-card__value">{{ storageSource || 'Not available' }}</span>
+      </div>
+    </section>
+  </div>
+}

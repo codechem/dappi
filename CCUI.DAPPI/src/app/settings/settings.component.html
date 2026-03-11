@@ -3,6 +3,20 @@
     <div class="settings-sidebar__title">Settings</div>
     <div class="settings-sidebar__divider"></div>
 
+    <div class="settings-sidebar__section">SETTINGS</div>
+
+    <button
+      class="settings-sidebar__item"
+      [class.settings-sidebar__item--active]="activeTab === 'storage'"
+      (click)="selectTab('storage')"
+      aria-label="Media storage"
+    >
+      <mat-icon>storage</mat-icon>
+      <span>Media storage</span>
+    </button>
+
+    <div class="settings-sidebar__divider"></div>
+
     <div class="settings-sidebar__section">User Administration</div>
 
     <button
@@ -24,16 +38,12 @@
       <mat-icon>admin_panel_settings</mat-icon>
       <span>Roles</span>
     </button>
-
-    <div class="settings-sidebar__section settings-sidebar__section--spaced">Storage</div>
-    <div class="settings-sidebar__status" aria-label="Media source status">
-      <mat-icon>{{ usesS3 ? 'cloud_done' : 'dns' }}</mat-icon>
-      <span>Media Source: {{ storageSource }}</span>
-    </div>
   </aside>
 
   <div class="container">
-    @if (activeTab === 'users') {
+    @if (activeTab === 'storage') {
+      <app-data-storage></app-data-storage>
+    } @else if (activeTab === 'users') {
       <app-users></app-users>
     } @else {
       <app-roles></app-roles>

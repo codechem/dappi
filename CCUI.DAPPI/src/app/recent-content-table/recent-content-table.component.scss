@@ -42,32 +42,37 @@
   width: 100%;
   border-spacing: 0 4px;
   border-collapse: separate;
-  table-layout: fixed;
+  background-color: vars.$background-paper-elevation-1;
 }
 
-
+.content-table .mat-mdc-header-row,
+.content-table .mat-mdc-row,
+.content-table .mat-mdc-header-cell,
+.content-table .mat-mdc-cell {
+  background-color: vars.$background-paper-elevation-1;
+  color: vars.$text-primary;
+}
 
 .header-row {
-  font-weight: bold;
-  background: vars.$background-paper-elevation-1;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: vars.$primary-focus;
+}
 
-  &:hover {
-    background: color.adjust(vars.$background-paper-elevation-1, $lightness: 5%);
-  }
+.edit-icon {
+  color: #ffff;
 }
 
 .small-cell,
 .cell {
   padding: 12px 16px;
-  box-shadow: none;
-}
-
-.content-row {
-  background: vars.$background-paper-elevation-1;
-
-  &:hover {
-    background: color.adjust(vars.$background-paper-elevation-1, $lightness: 5%);
-  }
+  vertical-align: middle;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
 }
 
 .small-cell {
@@ -131,6 +136,11 @@
     background-color: rgba(vars.$success-main, 0.2);
     color: vars.$success-main;
   }
+  
+  &.deleted {
+    background-color: rgba(vars.$error-light, 0.2);
+    color: vars.$success-main;
+  }
 }
 
 
@@ -143,6 +153,19 @@
 
   &.deleted {
     background-color: rgba(vars.$error-light, 0.2);
+    color: #ffff;
+  }
+}
+
+.status-pill-draft {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  &.draft {
+    background-color: vars.$background-hover;
     color: #ffff;
   }
 }

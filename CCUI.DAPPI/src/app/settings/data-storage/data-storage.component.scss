@@ -1,0 +1,90 @@
+@use '../../../variables' as vars;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  .title-block {
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    p {
+      margin: 4px 0 0;
+      font-size: 14px;
+      color: vars.$text-secondary;
+    }
+  }
+}
+
+.error-message {
+  color: vars.$error-light;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 0;
+}
+
+.content-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.loading-content {
+  p {
+    margin-top: 16px;
+    color: vars.$text-secondary;
+  }
+}
+
+.storage-card {
+  width: 100%;
+  max-width: 560px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: vars.$background-paper-elevation-1;
+  padding: 20px;
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 0;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  &__label {
+    color: vars.$text-secondary;
+    font-size: 14px;
+  }
+
+  &__value {
+    color: vars.$text-primary;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: right;
+  }
+}

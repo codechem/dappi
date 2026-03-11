@@ -28,8 +28,7 @@ public class ModelsController : ControllerBase
     public ModelsController(
         DomainModelEditor domainModelEditor,
         DbContextEditor dbContextEditor,
-        IContentTypeChangesService contentTypeChangesService,
-        IServiceProvider serviceProvider
+        IContentTypeChangesService contentTypeChangesService
     )
     {
         _domainModelEditor = domainModelEditor;
@@ -43,21 +42,6 @@ public class ModelsController : ControllerBase
         {
             Directory.CreateDirectory(_entitiesFolderPath);
         }
-
-        var awsBucket = serviceProvider.GetService(typeof(IMediaUploadService))?.ToString();
-        _usesS3AsMediaSource = string.Equals(awsBucket, "aws-bucket", StringComparison.Ordinal);
-    }
-
-    [HttpGet("storage-source")]
-    public IActionResult GetStorageSource()
-    {
-        return Ok(
-            new
-            {
-                UsesS3 = _usesS3AsMediaSource,
-                Source = _usesS3AsMediaSource ? "S3" : "Local",
-            }
-        );
     }
 
     [HttpGet]

@@ -122,7 +122,7 @@ public static class ServiceExtensions
             || string.IsNullOrWhiteSpace(bucketName)
         )
         {
-            throw new Exception("Environment variables for AWS are not set");
+            // throw new Exception("Environment variables for AWS are not set");
         }
 
         services.AddScoped<IMediaUploadService, AwsS3StorageService>();

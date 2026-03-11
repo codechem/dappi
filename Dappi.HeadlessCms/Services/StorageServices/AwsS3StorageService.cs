@@ -128,6 +128,6 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                 _ => "application/octet-stream",
             };
 
-        public override string ToString() => "aws-bucket";
+        public override string ToString() => "aws-s3";
     }
 }
