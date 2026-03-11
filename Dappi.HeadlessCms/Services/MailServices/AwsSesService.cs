@@ -9,14 +9,14 @@ namespace Dappi.HeadlessCms.Services.MailServices;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
 
-public class AmazonSesService(
+public class AwsSesService(
     IConfiguration configuration,
-    ILogger<AmazonSesService> logger,
+    ILogger<AwsSesService> logger,
     ISesClientFactory factory
 ) : IEmailService
 {
     private readonly IAmazonSimpleEmailService _sesClient = factory.CreateClient();
-    private readonly ILogger<AmazonSesService> _logger = logger;
+    private readonly ILogger<AwsSesService> _logger = logger;
 
     public async Task<string> SendEmailAsync(
         List<string> toAddresses,
