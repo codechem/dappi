@@ -16,7 +16,7 @@ namespace Dappi.HeadlessCms.UsersAndPermissions.Jwt;
 ///
 /// <para>
 /// Subclass once per external system and register it with
-/// <c>services.AddExternalJwtProvider&lt;TUser, TProvider&gt;()</c>.
+/// <c>services.AddExternalJwtProvider&lt;TProvider, TUser&gt;()</c>.
 /// </para>
 ///
 /// <para>
