@@ -123,6 +123,7 @@ public static class ServiceExtensions
             throw new ValidationException(result.Errors);
         }
 
+        services.AddScoped<IS3ClientFactory, S3ClientFactory>();
         services.AddScoped<IMediaUploadService, AwsS3StorageService>();
         return services;
     }

@@ -10,9 +10,14 @@ using Microsoft.Extensions.Configuration;
 
 namespace Dappi.HeadlessCms.Services.StorageServices
 {
-    public class AwsS3StorageService(IConfiguration configuration, IDbContextAccessor dbContext)
-        : IMediaUploadService
+    public class AwsS3StorageService(
+        IConfiguration configuration,
+        IDbContextAccessor dbContext,
+        IS3ClientFactory factory
+    ) : IMediaUploadService
     {
+        private readonly AmazonS3Client _s3Client = factory.CreateClient();
+
         public void DeleteMedia(MediaInfo media)
         {
             // TODO: implement deletion of objects on s3
@@ -30,25 +35,12 @@ namespace Dappi.HeadlessCms.Services.StorageServices
 
         public async Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair)
         {
-            var accessKey = configuration["AWS:Account:AccessKey"];
-            var secretKey = configuration["AWS:Account:SecretKey"];
-            var regionName = configuration["AWS:Account:Region"];
             var bucketName = configuration["AWS:Storage:BucketName"];
             var cdnUrl = configuration["AWS:Storage:CdnUrl"];
+            var regionName = configuration["AWS:Account:Region"];
+
             var useCdn =
                 bool.TryParse(configuration["AWS:Storage:UseCdn"], out var parsed) && parsed;
-
-            if (string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey))
-            {
-                throw new Exception("AWS Credentials are missing from configuration.");
-            }
-
-            if (useCdn && string.IsNullOrEmpty(cdnUrl))
-            {
-                throw new Exception("Cdn Url is missing from configuration.");
-            }
-
-            var region = Amazon.RegionEndpoint.GetBySystemName(regionName ?? "eu-central-1");
 
             var extension = streamAndExtensionPair.Extension.StartsWith(".")
                 ? streamAndExtensionPair.Extension
@@ -56,8 +48,9 @@ namespace Dappi.HeadlessCms.Services.StorageServices
 
             var objectKey = $"{mediaId}{extension}";
 
-            var credentials = new Amazon.Runtime.BasicAWSCredentials(accessKey, secretKey);
-            using var client = new AmazonS3Client(credentials, region);
+            using var client = _s3Client;
+
+            var region = Amazon.RegionEndpoint.GetBySystemName(regionName ?? "eu-central-1");
 
             try
             {
