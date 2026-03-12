@@ -20,7 +20,21 @@ namespace Dappi.HeadlessCms.Services.StorageServices
 
         public void DeleteMedia(MediaInfo media)
         {
-            // TODO: implement deletion of objects on s3
+            if (string.IsNullOrEmpty(media.Url))
+                return;
+
+            var bucketName = configuration["AWS:Storage:BucketName"];
+
+            var uri = new Uri(media.Url);
+            var objectKey = Path.GetFileName(uri.LocalPath);
+
+            var deleteRequest = new DeleteObjectRequest
+            {
+                BucketName = bucketName,
+                Key = objectKey,
+            };
+
+            _s3Client.DeleteObjectAsync(deleteRequest).GetAwaiter().GetResult();
         }
 
         public async Task SaveFileAsync(Guid mediaId, IFormFile file)
@@ -48,43 +62,30 @@ namespace Dappi.HeadlessCms.Services.StorageServices
 
             var objectKey = $"{mediaId}{extension}";
 
-            using var client = _s3Client;
-
             var region = Amazon.RegionEndpoint.GetBySystemName(regionName ?? "eu-central-1");
 
-            try
+            var putRequest = new PutObjectRequest
             {
-                var putRequest = new PutObjectRequest
-                {
-                    BucketName = bucketName,
-                    Key = objectKey,
-                    InputStream = streamAndExtensionPair.Stream,
-                    AutoCloseStream = true,
-                    ContentType = GetContentType(extension),
-                };
+                BucketName = bucketName,
+                Key = objectKey,
+                InputStream = streamAndExtensionPair.Stream,
+                AutoCloseStream = true,
+                ContentType = GetContentType(extension),
+            };
+            await _s3Client.PutObjectAsync(putRequest);
 
-                await client.PutObjectAsync(putRequest);
+            var baseUrl = useCdn
+                ? $"{cdnUrl}/{objectKey}"
+                : $"https://{bucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
 
-                var baseUrl = useCdn
-                    ? $"{cdnUrl}/{objectKey}"
-                    : $"https://{bucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
+            var media = await dbContext
+                .DbContext.Set<MediaInfo>()
+                .FirstOrDefaultAsync(m => m.Id == mediaId);
 
-                var media = await dbContext
-                    .DbContext.Set<MediaInfo>()
-                    .FirstOrDefaultAsync(m => m.Id == mediaId);
-
-                if (media != null)
-                {
-                    media.Url = baseUrl;
-                    await dbContext.DbContext.SaveChangesAsync();
-                }
-            }
-            catch (AmazonS3Exception e)
+            if (media != null)
             {
-                throw new Exception(
-                    $"Error encountered on server. Message:'{e.Message}' when writing an object",
-                    e
-                );
+                media.Url = baseUrl;
+                await dbContext.DbContext.SaveChangesAsync();
             }
         }
 
