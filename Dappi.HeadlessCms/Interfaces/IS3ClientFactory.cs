@@ -6,12 +6,12 @@ namespace Dappi.HeadlessCms.Interfaces;
 
 public interface IS3ClientFactory
 {
-    AmazonS3Client CreateClient();
+    IAmazonS3 CreateClient();
 }
 
 public class S3ClientFactory(IConfiguration configuration) : IS3ClientFactory
 {
-    public AmazonS3Client CreateClient()
+    public IAmazonS3 CreateClient()
     {
         var accessKey = configuration["AWS:SES:AccessKey"];
         var secretKey = configuration["AWS:SES:SecretKey"];

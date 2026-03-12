@@ -16,7 +16,7 @@ namespace Dappi.HeadlessCms.Services.StorageServices
         IS3ClientFactory factory
     ) : IMediaUploadService
     {
-        private readonly AmazonS3Client _s3Client = factory.CreateClient();
+        private readonly IAmazonS3 _s3Client = factory.CreateClient();
 
         public void DeleteMedia(MediaInfo media)
         {
