@@ -19,7 +19,4 @@
   <ItemGroup>
     <ProjectReference Include="..\Dappi.Core\Dappi.Core.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ExternalAuth\" />
-  </ItemGroup>
 </Project>

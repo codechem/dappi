@@ -28,15 +28,20 @@ public class TokenService<TUser>(
         return new AuthResult(accessToken, refreshToken);
     }
 
-    public string GenerateAccessToken(TUser user)
+    private string GenerateAccessToken(TUser user)
     {
         var jwtSettings = config.GetSection(UsersAndPermissionsConstants.ConfigurationKey);
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]));
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(
+                jwtSettings["SecretKey"]
+                    ?? throw new InvalidOperationException("JWT SecretKey is not configured.")
+            )
+        );
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.Name, user.UserName),
+            new(ClaimTypes.Name, user.Email!),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
         };
         claims.AddRange(new Claim(ClaimTypes.Role, user.Role?.Name!));

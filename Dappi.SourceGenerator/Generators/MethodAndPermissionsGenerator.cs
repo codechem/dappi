@@ -137,7 +137,7 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
                     "Delete" => new MethodRouteEntry
                     {
                         MethodName = "Delete",
-                        HttpRoute = $"DELETE/{model.ClassName}{{id}}",
+                        HttpRoute = $"DELETE/{model.ClassName}/{{id}}",
                     },
                     "Patch" => new MethodRouteEntry
                     {
@@ -265,7 +265,7 @@ public class MethodAndPermissionsGenerator : BaseSourceModelToSourceOutputGenera
                 var arg = httpAttr.ConstructorArguments[0];
                 if (arg is { Kind: TypedConstantKind.Primitive, Value: string s })
                 {
-                    cleanedRoute = s.Replace("/", string.Empty).Trim();
+                    cleanedRoute = s.Trim('/');
                 }
             }
 

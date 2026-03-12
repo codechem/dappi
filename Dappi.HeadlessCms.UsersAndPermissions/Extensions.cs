@@ -52,50 +52,19 @@ public static class Extensions
             .AddEntityFrameworkStores<TDbContext>()
             .AddDefaultTokenProviders()
             .AddSignInManager();
-
-        var jwtSettings = configuration.GetSection(UsersAndPermissionsConstants.ConfigurationKey);
-        var secretKey =
-            jwtSettings["SecretKey"]
-            ?? throw new InvalidOperationException("EndUser JWT SecretKey is not configured");
-        var key = Encoding.UTF8.GetBytes(secretKey);
+        var systemJwtProvider = new SystemJwtValidationProvider<TUser>(configuration);
+        services.AddSingleton(systemJwtProvider.SchemaAndIssuerProvider);
 
         services
             .AddAuthentication()
             .AddJwtBearer(
-                UsersAndPermissionsConstants.SystemId,
+                systemJwtProvider.SchemaAndIssuerProvider.Schema,
                 options =>
                 {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = jwtSettings["Issuer"],
-                        ValidAudience = jwtSettings["Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(key),
-                        ClockSkew = TimeSpan.Zero,
-                    };
+                    options.TokenValidationParameters =
+                        systemJwtProvider.BuildValidationParameters();
 
-                    options.Events = new JwtBearerEvents
-                    {
-                        OnAuthenticationFailed = context =>
-                        {
-                            if (context.Exception is SecurityTokenExpiredException)
-                                context.Response.Headers.Append("Token-Expired", "true");
-                            return Task.CompletedTask;
-                        },
-                        OnChallenge = context =>
-                        {
-                            context.HandleResponse();
-                            context.Response.StatusCode = 401;
-                            context.Response.ContentType = "application/json";
-                            var result = JsonSerializer.Serialize(
-                                new { error = "You are not authorized" }
-                            );
-                            return context.Response.WriteAsync(result);
-                        },
-                    };
+                    options.Events = systemJwtProvider.BuildEvents();
                 }
             );
         services.AddScoped<TokenService<TUser>>();
