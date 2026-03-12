@@ -3,7 +3,7 @@ param (
     [string]$Csproj,
     [string]$DotnetPath = "dotnet",
     [string]$ProcessId,
-    [string]$MigrationName
+    [string]$MigrationName,
     [string]$ContextName
 )
 
