@@ -1,22 +1,23 @@
 using Amazon;
+using Amazon.S3;
 using Amazon.SimpleEmail;
 using Microsoft.Extensions.Configuration;
 
 namespace Dappi.HeadlessCms.Interfaces;
 
-public interface ISesClientFactory
+public interface IS3ClientFactory
 {
-    IAmazonSimpleEmailService CreateClient();
+    IAmazonS3 CreateClient();
 }
 
-public class SesClientFactory(IConfiguration configuration) : ISesClientFactory
+public class S3ClientFactory(IConfiguration configuration) : IS3ClientFactory
 {
-    public IAmazonSimpleEmailService CreateClient()
+    public IAmazonS3 CreateClient()
     {
         var accessKey = configuration["AWS:Account:AccessKey"];
         var secretKey = configuration["AWS:Account:SecretKey"];
         var regionName = configuration["AWS:Account:Region"];
         var region = RegionEndpoint.GetBySystemName(regionName);
-        return new AmazonSimpleEmailServiceClient(accessKey, secretKey, region);
+        return new AmazonS3Client(accessKey, secretKey, region);
     }
 }

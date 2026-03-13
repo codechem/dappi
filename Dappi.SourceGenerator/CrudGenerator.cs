@@ -459,6 +459,7 @@ public partial class {item.ClassName}Controller(
             ),
             GeneratePatchAction(item.CrudActions, item, includesCode),
             GenerateDeleteAction(item.CrudActions, item, includeCode, removeCode),
+            GenerateDeleteActionForMediaInfo(item.CrudActions, item),
         };
         var sb = new StringBuilder();
         foreach (var action in actions.Where(action => !string.IsNullOrEmpty(action)))
