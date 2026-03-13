@@ -111,16 +111,23 @@ public static class ServiceExtensions
         IConfiguration configuration
     )
     {
-        var options =
+        var accountOptions =
             configuration.GetSection("AWS:Account").Get<AwsAccountOptions>()
             ?? new AwsAccountOptions();
 
-        var validator = new AwsAccountValidator();
-        var result = validator.Validate(options);
+        var accountValidator = new AwsAccountValidator();
+        var accountValidation = accountValidator.Validate(accountOptions);
 
-        if (!result.IsValid)
+        var storageOptions =
+            configuration.GetSection("AWS:Storage").Get<AwsStorageOptions>()
+            ?? new AwsStorageOptions();
+
+        var storageValidator = new AwsStorageValidator();
+        var storageValidation = storageValidator.Validate(storageOptions);
+
+        if (!accountValidation.IsValid || !storageValidation.IsValid)
         {
-            throw new ValidationException(result.Errors);
+            throw new ValidationException(accountValidation.Errors);
         }
 
         services.AddScoped<IS3ClientFactory, S3ClientFactory>();
