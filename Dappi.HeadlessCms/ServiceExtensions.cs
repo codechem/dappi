@@ -68,6 +68,7 @@ public static class ServiceExtensions
         services.AddScoped<ICurrentExternalSessionProvider, CurrentExternalSessionProvider>();
 
         services.AddScoped<IContentTypeChangesService, ContentTypeChangesService>();
+        services.AddScoped<IInvitationService, InvitationService>();
         services.AddDappiSwaggerGen();
 
         services.AddFluentValidationAutoValidation();

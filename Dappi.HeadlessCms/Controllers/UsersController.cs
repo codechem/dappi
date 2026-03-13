@@ -2,15 +2,9 @@ using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 
 namespace Dappi.HeadlessCms.Controllers
 {
@@ -22,52 +16,25 @@ namespace Dappi.HeadlessCms.Controllers
         private readonly UserManager<DappiUser> _userManager;
         private readonly ILogger<UsersController> _logger;
         private readonly IEmailService? _emailService;
-        private readonly IConfiguration _configuration;
-        private readonly IDataProtector _invitationProtector;
+        private readonly IInvitationService _invitationService;
 
         public UsersController(
             UserManager<DappiUser> userManager,
             ILogger<UsersController> logger,
-            IConfiguration configuration,
-            IDataProtectionProvider dataProtectionProvider,
+            IInvitationService invitationService,
             IEmailService? emailService = null)
         {
             _userManager = userManager;
             _logger = logger;
-            _configuration = configuration;
+            _invitationService = invitationService;
             _emailService = emailService;
-            _invitationProtector = dataProtectionProvider.CreateProtector("Dappi.HeadlessCms.Users.Invitation.v1");
         }
 
         [HttpPost]
         public async Task<IActionResult> InviteUser([FromBody] InviteUserDto dto)
         {
-            var rolesToAssign = dto.Roles.Count > 0 ? dto.Roles : new List<string> { Constants.UserRoles.User };
-            var generatedPassword = GeneratePassword();
-
-            var invitationPayload = new InvitationPayload(
-                dto.Username,
-                dto.Email,
-                generatedPassword,
-                rolesToAssign,
-                DateTime.UtcNow.AddDays(2)
-            );
-
-            var protectedToken = _invitationProtector.Protect(JsonSerializer.Serialize(invitationPayload));
-            var token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(protectedToken));
-
-            var acceptancePath = $"/api/users/accept-invitation?token={token}";
             var requestBaseUrl = $"{Request.Scheme}://{Request.Host}";
-            var acceptUrl = $"{requestBaseUrl}{acceptancePath}";
-
-            var frontendUrl = _configuration.GetValue<string>(Constants.Configuration.FrontendUrl);
-            var frontendAcceptUrl = string.IsNullOrWhiteSpace(frontendUrl) ? null : $"{frontendUrl.TrimEnd('/')}/accept-invitation?token={token}";
-
-            var emailSubject = "You're invited to join Dappi";
-            var emailTextBody =
-                $"Hi {dto.Username},\n\nYou've been invited to join Dappi.\nTemporary password: {generatedPassword}\n\nAccept your invitation here:\n{acceptUrl}\n\nThis link expires in 48 hours.";
-            var emailHtmlBody =
-                $"<p>Hi {dto.Username},</p><p>You've been invited to join Dappi.</p><p><strong>Temporary password:</strong> {generatedPassword}</p><p><a href=\"{acceptUrl}\">Accept invitation</a></p><p>This link expires in 48 hours.</p>";
+            var invitation = _invitationService.PrepareInvitation(dto, requestBaseUrl);
 
             if (_emailService is null)
             {
@@ -79,9 +46,9 @@ namespace Dappi.HeadlessCms.Controllers
 
             var messageId = await _emailService.SendEmailAsync(
                 [dto.Email],
-                emailHtmlBody,
-                emailTextBody,
-                emailSubject
+                invitation.EmailHtmlBody,
+                invitation.EmailTextBody,
+                invitation.EmailSubject
             );
 
             return Ok(new
@@ -89,9 +56,9 @@ namespace Dappi.HeadlessCms.Controllers
                 message = "Invitation sent successfully.",
                 emailSent = true,
                 messageId,
-                invitationLink = acceptUrl,
-                frontendInvitationLink = frontendAcceptUrl,
-                fallbackApiAcceptLink = acceptUrl
+                invitationLink = invitation.AcceptUrl,
+                frontendInvitationLink = invitation.FrontendAcceptUrl,
+                fallbackApiAcceptLink = invitation.AcceptUrl
             });
         }
 
@@ -104,7 +71,7 @@ namespace Dappi.HeadlessCms.Controllers
                 return BadRequest(new { message = "Invitation token is required." });
             }
 
-            if (!TryGetInvitationPayload(token, out var invitation, out var tokenError))
+            if (!_invitationService.TryGetInvitationPayload(token, out var invitation, out var tokenError))
             {
                 return BadRequest(new { message = tokenError });
             }
@@ -176,7 +143,8 @@ namespace Dappi.HeadlessCms.Controllers
                 }
             }
 
-            var completeInvitationUrl = $"{Request.Scheme}://{Request.Host}/complete-invitation?token={token}";
+            var requestBaseUrl = $"{Request.Scheme}://{Request.Host}";
+            var completeInvitationUrl = _invitationService.BuildCompleteInvitationUrl(requestBaseUrl, token);
 
             return Redirect(completeInvitationUrl);
         }
@@ -195,7 +163,7 @@ namespace Dappi.HeadlessCms.Controllers
                 return BadRequest(new { message = "Both old and new passwords are required." });
             }
 
-            if (!TryGetInvitationPayload(dto.Token, out var invitation, out var tokenError))
+            if (!_invitationService.TryGetInvitationPayload(dto.Token, out var invitation, out var tokenError))
             {
                 return BadRequest(new { message = tokenError });
             }
@@ -435,83 +403,5 @@ namespace Dappi.HeadlessCms.Controllers
             return Ok(new { message = "User deleted successfully" });
         }
 
-        private bool TryGetInvitationPayload(
-            string token,
-            out InvitationPayload invitation,
-            out string error
-        )
-        {
-            try
-            {
-                var decodedTokenBytes = WebEncoders.Base64UrlDecode(token);
-                var protectedToken = Encoding.UTF8.GetString(decodedTokenBytes);
-                var unprotectedPayload = _invitationProtector.Unprotect(protectedToken);
-                var parsedInvitation = JsonSerializer.Deserialize<InvitationPayload>(unprotectedPayload);
-
-                if (parsedInvitation is null)
-                {
-                    invitation = default!;
-                    error = "Invitation payload is invalid.";
-                    return false;
-                }
-
-                invitation = parsedInvitation;
-                error = string.Empty;
-                return true;
-            }
-            catch (Exception)
-            {
-                invitation = default!;
-                error = "Invitation token is invalid.";
-                return false;
-            }
-        }
-
-        private sealed record InvitationPayload(
-            string Username,
-            string Email,
-            string Password,
-            List<string> Roles,
-            DateTime ExpiresAtUtc
-        );
-
-        private static string GeneratePassword()
-        {
-            const string lower = "abcdefghijklmnopqrstuvwxyz";
-            const string upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            const string digits = "0123456789";
-            const string symbols = "!@#$%^&*()_-+=[]{}<>?";
-
-            var requiredCharacters = new List<char>
-            {
-                GetRandomCharacter(lower),
-                GetRandomCharacter(upper),
-                GetRandomCharacter(digits),
-                GetRandomCharacter(symbols),
-            };
-
-            var allCharacters = lower + upper + digits + symbols;
-            const int totalLength = 12;
-
-            while (requiredCharacters.Count < totalLength)
-            {
-                requiredCharacters.Add(GetRandomCharacter(allCharacters));
-            }
-
-            for (var index = requiredCharacters.Count - 1; index > 0; index--)
-            {
-                var swapIndex = RandomNumberGenerator.GetInt32(index + 1);
-                (requiredCharacters[index], requiredCharacters[swapIndex]) =
-                    (requiredCharacters[swapIndex], requiredCharacters[index]);
-            }
-
-            return new string(requiredCharacters.ToArray());
-        }
-
-        private static char GetRandomCharacter(string source)
-        {
-            var position = RandomNumberGenerator.GetInt32(source.Length);
-            return source[position];
-        }
     }
 }

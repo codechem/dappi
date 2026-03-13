@@ -63,4 +63,22 @@ namespace Dappi.HeadlessCms.Models
         public required string OldPassword { get; set; }
         public required string NewPassword { get; set; }
     }
+
+    public sealed record InvitationPayload(
+        string Username,
+        string Email,
+        string Password,
+        List<string> Roles,
+        DateTime ExpiresAtUtc
+    );
+
+    public sealed record InvitationPreparationResult(
+        string Token,
+        string GeneratedPassword,
+        string AcceptUrl,
+        string? FrontendAcceptUrl,
+        string EmailSubject,
+        string EmailTextBody,
+        string EmailHtmlBody
+    );
 }
