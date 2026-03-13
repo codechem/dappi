@@ -12,7 +12,6 @@ import { RolesManagementService, RoleItem } from '../services/auth/roles-managem
 export interface InviteUserData {
   username: string;
   email: string;
-  password: string;
   roles: string[];
 }
 
@@ -35,7 +34,6 @@ export interface InviteUserData {
 export class InviteUserDialogComponent implements OnInit {
   username = '';
   email = '';
-  password = '';
   selectedRoles: string[] = [];
   availableRoles: RoleItem[] = [];
   rolesLoading = false;
@@ -59,7 +57,7 @@ export class InviteUserDialogComponent implements OnInit {
   }
 
   get isValid(): boolean {
-    return !!this.username.trim() && !!this.email.trim() && !!this.password.trim();
+    return !!this.username.trim() && !!this.email.trim();
   }
 
   onConfirm(): void {
@@ -67,7 +65,6 @@ export class InviteUserDialogComponent implements OnInit {
     this.dialogRef.close({
       username: this.username.trim(),
       email: this.email.trim(),
-      password: this.password,
       roles: this.selectedRoles,
     } as InviteUserData);
   }

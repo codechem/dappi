@@ -6,6 +6,7 @@ import { NewEntryComponent } from './new-entry/new-entry.component';
 import { SchemaImporterComponent } from './schema-importer/schema-importer.component';
 import { EnumManagerComponent } from './enum-manager/enum-manager.component';
 import { AuthComponent } from './auth/auth.component';
+import { CompleteInvitationComponent } from './complete-invitation/complete-invitation.component';
 import { AuthGuard } from './services/auth/auth.guard';
 import { NonAuthGuard } from './services/auth/non-auth.guard';
 import { SettingsComponent } from './settings/settings.component';
@@ -21,5 +22,6 @@ export const routes: Routes = [
   { path: 'enum-manager', component: EnumManagerComponent, canActivate: [AuthGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [AuthGuard, AdminGuard] },
   { path: 'auth', component: AuthComponent, canActivate: [NonAuthGuard] },
+  { path: 'complete-invitation', component: CompleteInvitationComponent, canActivate: [NonAuthGuard] },
   { path: '**', redirectTo: '/home' },
 ];

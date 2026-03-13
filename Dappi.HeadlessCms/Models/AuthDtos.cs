@@ -54,7 +54,31 @@ namespace Dappi.HeadlessCms.Models
     {
         public required string Username { get; set; }
         public required string Email { get; set; }
-        public required string Password { get; set; }
         public List<string> Roles { get; set; } = [Constants.UserRoles.User];
     }
+
+    public class CompleteInvitationDto
+    {
+        public required string Token { get; set; }
+        public required string OldPassword { get; set; }
+        public required string NewPassword { get; set; }
+    }
+
+    public sealed record InvitationPayload(
+        string Username,
+        string Email,
+        string Password,
+        List<string> Roles,
+        DateTime ExpiresAtUtc
+    );
+
+    public sealed record InvitationPreparationResult(
+        string Token,
+        string GeneratedPassword,
+        string AcceptUrl,
+        string? FrontendAcceptUrl,
+        string EmailSubject,
+        string EmailTextBody,
+        string EmailHtmlBody
+    );
 }
