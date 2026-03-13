@@ -1,3 +1,4 @@
+using Amazon;
 using Amazon.S3;
 using Amazon.SimpleEmail;
 using Microsoft.Extensions.Configuration;
@@ -13,9 +14,10 @@ public class S3ClientFactory(IConfiguration configuration) : IS3ClientFactory
 {
     public IAmazonS3 CreateClient()
     {
-        var accessKey = configuration["AWS:SES:AccessKey"];
-        var secretKey = configuration["AWS:SES:SecretKey"];
+        var accessKey = configuration["AWS:Account:AccessKey"];
+        var secretKey = configuration["AWS:Account:SecretKey"];
         var regionName = configuration["AWS:Account:Region"];
-        return new AmazonS3Client(accessKey, secretKey, regionName);
+        var region = RegionEndpoint.GetBySystemName(regionName);
+        return new AmazonS3Client(accessKey, secretKey, region);
     }
 }
