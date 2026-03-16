@@ -6,11 +6,18 @@ using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
+using Scriban;
 
 namespace Dappi.HeadlessCms.Services.Identity;
 
 public class InvitationService : IInvitationService
 {
+    private const string DefaultInvitationEmailSubjectTemplate = "You're invited to join Dappi";
+    private const string DefaultInvitationEmailTextTemplate =
+        "Hi {{ username }},\n\nYou've been invited to join Dappi.\nTemporary password: {{ temporary_password }}\n\nAccept your invitation here:\n{{ accept_url }}\n\nThis link expires in {{ expiry_hours }} hours.";
+    private const string DefaultInvitationEmailHtmlTemplate =
+        "<p>Hi {{ username }},</p><p>You've been invited to join Dappi.</p><p><strong>Temporary password:</strong> {{ temporary_password }}</p><p><a href=\"{{ accept_url }}\">Accept invitation</a></p><p>This link expires in {{ expiry_hours }} hours.</p>";
+
     private readonly IConfiguration _configuration;
     private readonly IDataProtector _invitationProtector;
 
@@ -44,11 +51,33 @@ public class InvitationService : IInvitationService
             ? null
             : $"{frontendUrl.TrimEnd('/')}/accept-invitation?token={token}";
 
-        var emailSubject = "You're invited to join Dappi";
-        var emailTextBody =
-            $"Hi {dto.Username},\n\nYou've been invited to join Dappi.\nTemporary password: {generatedPassword}\n\nAccept your invitation here:\n{acceptUrl}\n\nThis link expires in 48 hours.";
-        var emailHtmlBody =
-            $"<p>Hi {dto.Username},</p><p>You've been invited to join Dappi.</p><p><strong>Temporary password:</strong> {generatedPassword}</p><p><a href=\"{acceptUrl}\">Accept invitation</a></p><p>This link expires in 48 hours.</p>";
+        var templateModel = new
+        {
+            username = dto.Username,
+            temporary_password = generatedPassword,
+            accept_url = acceptUrl,
+            expiry_hours = 48,
+        };
+
+        var emailSubjectTemplate = _configuration.GetValue<string>(Constants.Configuration.InvitationEmailSubjectTemplate);
+        var emailTextTemplate = _configuration.GetValue<string>(Constants.Configuration.InvitationEmailTextTemplate);
+        var emailHtmlTemplate = _configuration.GetValue<string>(Constants.Configuration.InvitationEmailHtmlTemplate);
+
+        var emailSubject = RenderTemplate(
+            emailSubjectTemplate,
+            DefaultInvitationEmailSubjectTemplate,
+            templateModel
+        );
+        var emailTextBody = RenderTemplate(
+            emailTextTemplate,
+            DefaultInvitationEmailTextTemplate,
+            templateModel
+        );
+        var emailHtmlBody = RenderTemplate(
+            emailHtmlTemplate,
+            DefaultInvitationEmailHtmlTemplate,
+            templateModel
+        );
 
         return new InvitationPreparationResult(
             token,
@@ -131,5 +160,18 @@ public class InvitationService : IInvitationService
     {
         var position = RandomNumberGenerator.GetInt32(source.Length);
         return source[position];
+    }
+
+    private static string RenderTemplate(string? configuredTemplate, string fallbackTemplate, object model)
+    {
+        var templateToUse = string.IsNullOrWhiteSpace(configuredTemplate)
+            ? fallbackTemplate
+            : configuredTemplate;
+
+        var parsedTemplate = Template.Parse(templateToUse);
+
+        return parsedTemplate.HasErrors
+            ? Template.Parse(fallbackTemplate).Render(model)
+            : parsedTemplate.Render(model);
     }
 }
