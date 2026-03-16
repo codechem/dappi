@@ -95,9 +95,10 @@ public class AwsSesServiceTests
 
         var result = await _sut.CreateEmailTemplateAsync(
             "WelcomeTemplate",
+            new { name = "User" },
             "Subject",
             "Text body",
-            "<html><body>Html body</body></html>"
+            "<html><body>Default HTML</body></html>"
         );
 
         result.Should().BeTrue();
@@ -120,7 +121,7 @@ public class AwsSesServiceTests
                 new CreateTemplateResponse { HttpStatusCode = HttpStatusCode.InternalServerError }
             );
 
-        var result = await _sut.CreateEmailTemplateAsync("Fail", "Fail", "Fail", "Fail");
+        var result = await _sut.CreateEmailTemplateAsync("Fail", new { name = "User" }, "Fail", "Fail", "Fail");
 
         result.Should().BeFalse();
     }
