@@ -4,6 +4,7 @@ using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Dappi.HeadlessCms.Controllers
@@ -35,6 +36,65 @@ namespace Dappi.HeadlessCms.Controllers
         {
             var requestBaseUrl = $"{Request.Scheme}://{Request.Host}";
             var invitation = _invitationService.PrepareInvitation(dto, requestBaseUrl);
+
+            var existingUsers = await _userManager.Users
+                .Where(user =>
+                    (user.UserName ?? string.Empty).ToLower() == dto.Username.ToLower() ||
+                    (user.Email ?? string.Empty).ToLower() == dto.Email.ToLower())
+                .Take(2)
+                .ToListAsync();
+
+            var existingUser = existingUsers.FirstOrDefault();
+
+            if (existingUsers.Count > 0)
+            {
+                if (existingUsers.Count > 1)
+                {
+                    return BadRequest(new
+                    {
+                        message = "An account already exists with conflicting username/email data.",
+                    });
+                }
+
+                return BadRequest(new { message = "User already exists." });
+            }
+
+            var user = new DappiUser
+            {
+                UserName = dto.Username,
+                Email = dto.Email,
+                EmailConfirmed = false,
+                AcceptedInvitation = false,
+            };
+
+            var result = await _userManager.CreateAsync(user, invitation.GeneratedPassword);
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(new
+                {
+                    message = result.Errors.FirstOrDefault()?.Description ?? "Failed to create invited user.",
+                });
+            }
+
+            var rolesToAssign = dto.Roles.Count > 0
+                ? dto.Roles
+                : new List<string> { Constants.UserRoles.User };
+
+            foreach (var role in rolesToAssign)
+            {
+                var addRoleResult = await _userManager.AddToRoleAsync(user, role);
+
+                if (!addRoleResult.Succeeded)
+                {
+                    await _userManager.DeleteAsync(user);
+
+                    return BadRequest(new
+                    {
+                        message = addRoleResult.Errors.FirstOrDefault()?.Description ?? "Failed to assign role to invited user.",
+                    });
+                }
+            }
 
             if (_emailService is null)
             {
@@ -81,26 +141,18 @@ namespace Dappi.HeadlessCms.Controllers
                 return BadRequest(new { message = "Invitation token has expired." });
             }
 
-            var existingUserByUsername = await _userManager.FindByNameAsync(invitation.Username);
-            var existingUserByEmail = await _userManager.FindByEmailAsync(invitation.Email);
+            var existingUsers = await _userManager.Users
+                .Where(user =>
+                    (user.UserName ?? string.Empty).ToLower() == invitation.Username.ToLower() ||
+                    (user.Email ?? string.Empty).ToLower() == invitation.Email.ToLower())
+                .Take(2)
+                .ToListAsync();
 
-            if (existingUserByUsername is not null || existingUserByEmail is not null)
+            var existingUser = existingUsers.FirstOrDefault();
+
+            if (existingUsers.Count > 0)
             {
-                if (existingUserByUsername is null || existingUserByEmail is null)
-                {
-                    return BadRequest(new
-                    {
-                        message = "An invitation-related account already exists with conflicting data.",
-                    });
-                }
-
-                if (
-                    !string.Equals(
-                        existingUserByUsername.Id,
-                        existingUserByEmail.Id,
-                        StringComparison.Ordinal
-                    )
-                )
+                if (existingUsers.Count > 1)
                 {
                     return BadRequest(new
                     {
@@ -109,38 +161,9 @@ namespace Dappi.HeadlessCms.Controllers
                 }
             }
 
-            if (existingUserByUsername is null)
+            if (existingUser is null)
             {
-                var user = new DappiUser
-                {
-                    UserName = invitation.Username,
-                    Email = invitation.Email,
-                    EmailConfirmed = false,
-                };
-                var result = await _userManager.CreateAsync(user, invitation.Password);
-
-                if (!result.Succeeded)
-                {
-                    return BadRequest(new
-                    {
-                        message = result.Errors.FirstOrDefault()?.Description ?? "Failed to create user from invitation.",
-                    });
-                }
-
-                var rolesToAssign = invitation.Roles.Count > 0 ? invitation.Roles : new List<string> { Constants.UserRoles.User };
-
-                foreach (var role in rolesToAssign)
-                {
-                    var addRoleResult = await _userManager.AddToRoleAsync(user, role);
-
-                    if (!addRoleResult.Succeeded)
-                    {
-                        return BadRequest(new
-                        {
-                            message = addRoleResult.Errors.FirstOrDefault()?.Description ?? "Failed to assign role to invited user.",
-                        });
-                    }
-                }
+                return BadRequest(new { message = "Invitation-related user account was not found." });
             }
 
             var requestBaseUrl = $"{Request.Scheme}://{Request.Host}";
@@ -199,17 +222,23 @@ namespace Dappi.HeadlessCms.Controllers
                 });
             }
 
+            if (!user.AcceptedInvitation)
+            {
+                user.AcceptedInvitation = true;
+            }
+
             if (!user.EmailConfirmed)
             {
                 user.EmailConfirmed = true;
-                var verifyResult = await _userManager.UpdateAsync(user);
-                if (!verifyResult.Succeeded)
+            }
+
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                return BadRequest(new
                 {
-                    return BadRequest(new
-                    {
-                        message = verifyResult.Errors.FirstOrDefault()?.Description ?? "Password changed, but failed to mark user as verified.",
-                    });
-                }
+                    message = updateResult.Errors.FirstOrDefault()?.Description ?? "Password changed, but failed to finalize invitation.",
+                });
             }
 
             return Ok(new { message = "Password changed successfully. User verified." });
@@ -226,8 +255,8 @@ namespace Dappi.HeadlessCms.Controllers
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 query = query.Where(u =>
-                    u.UserName.ToLower().Contains(searchTerm) ||
-                    u.Email.ToLower().Contains(searchTerm));
+                    (u.UserName ?? string.Empty).ToLower().Contains(searchTerm) ||
+                    (u.Email ?? string.Empty).ToLower().Contains(searchTerm));
             }
 
             var totalCount = query.Count();
@@ -241,7 +270,11 @@ namespace Dappi.HeadlessCms.Controllers
 
                 result.Add(new UserRoleDto
                 {
-                    Id = user.Id, Name = user.UserName, Email = user.Email, Roles = roles.ToList()
+                    Id = user.Id,
+                    Name = user.UserName ?? string.Empty,
+                    Email = user.Email ?? string.Empty,
+                    Roles = roles.ToList(),
+                    AcceptedInvitation = user.AcceptedInvitation,
                 });
             }
 
@@ -269,7 +302,11 @@ namespace Dappi.HeadlessCms.Controllers
 
             var userDto = new UserRoleDto
             {
-                Id = user.Id, Name = user.UserName, Email = user.Email, Roles = roles.ToList()
+                Id = user.Id,
+                Name = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                Roles = roles.ToList(),
+                AcceptedInvitation = user.AcceptedInvitation,
             };
 
             _logger.LogInformation("Retrieved user {Username}", username);

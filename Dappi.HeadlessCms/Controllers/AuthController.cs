@@ -35,7 +35,7 @@ public class AuthController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var user = new DappiUser { UserName = dto.Username, Email = dto.Email };
+        var user = new DappiUser { UserName = dto.Username, Email = dto.Email, AcceptedInvitation = true };
         var result = await _userManager.CreateAsync(user, dto.Password);
 
         if (!result.Succeeded)
@@ -63,6 +63,12 @@ public class AuthController : ControllerBase
         {
             _logger.LogWarning("Login failed: User {Username} not found", dto.Username);
             return Unauthorized(new { message = "Invalid username or password" });
+        }
+
+        if (!user.AcceptedInvitation)
+        {
+            _logger.LogWarning("Login rejected: User {Username} has not accepted invitation", dto.Username);
+            return Unauthorized(new { message = "Invitation has not been accepted yet." });
         }
 
         var signInResult = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);
@@ -108,7 +114,8 @@ public class ModelFieldsController : ControllerBase
             new() { FieldName = "Id", FieldType = "Guid", IsRequired = false },
             new() { FieldName = "Email", FieldType = "string", IsRequired = false },
             new() { FieldName = "Name", FieldType = "string", IsRequired = false },
-            new() { FieldName = "Roles", FieldType = "userRoles", IsRequired = false }
+            new() { FieldName = "Roles", FieldType = "userRoles", IsRequired = false },
+            new() { FieldName = "AcceptedInvitation", FieldType = "boolean", IsRequired = false }
         };
 
         _logger.LogInformation("Retrieved user field names");
