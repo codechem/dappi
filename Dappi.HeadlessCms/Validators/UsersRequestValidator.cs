@@ -56,3 +56,13 @@ public class UserRolesUpdateDtoValidator : AbstractValidator<UserRolesUpdateDto>
             .WithMessage("Role cannot be empty.");
     }
 }
+
+public class AcceptInvitationQueryDtoValidator : AbstractValidator<AcceptInvitationQueryDto>
+{
+    public AcceptInvitationQueryDtoValidator()
+    {
+        RuleFor(x => x.Token)
+            .NotEmpty()
+            .WithMessage("Invitation token is required.");
+    }
+}

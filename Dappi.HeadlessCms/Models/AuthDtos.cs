@@ -65,6 +65,11 @@ namespace Dappi.HeadlessCms.Models
         public required string NewPassword { get; set; }
     }
 
+    public class AcceptInvitationQueryDto
+    {
+        public string Token { get; set; } = string.Empty;
+    }
+
     public sealed record InvitationPayload(
         string Username,
         string Email,

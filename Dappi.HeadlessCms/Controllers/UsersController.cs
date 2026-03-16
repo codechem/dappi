@@ -124,14 +124,9 @@ namespace Dappi.HeadlessCms.Controllers
 
         [AllowAnonymous]
         [HttpGet("accept-invitation")]
-        public async Task<IActionResult> AcceptInvitation([FromQuery] string token)
+        public async Task<IActionResult> AcceptInvitation([FromQuery] AcceptInvitationQueryDto dto)
         {
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                return BadRequest(new { message = "Invitation token is required." });
-            }
-
-            if (!_invitationService.TryGetInvitationPayload(token, out var invitation, out var tokenError))
+            if (!_invitationService.TryGetInvitationPayload(dto.Token, out var invitation, out var tokenError))
             {
                 return BadRequest(new { message = tokenError });
             }
@@ -167,7 +162,7 @@ namespace Dappi.HeadlessCms.Controllers
             }
 
             var requestBaseUrl = $"{Request.Scheme}://{Request.Host}";
-            var completeInvitationUrl = _invitationService.BuildCompleteInvitationUrl(requestBaseUrl, token);
+            var completeInvitationUrl = _invitationService.BuildCompleteInvitationUrl(requestBaseUrl, dto.Token);
 
             return Redirect(completeInvitationUrl);
         }
