@@ -35,7 +35,7 @@ namespace Dappi.HeadlessCms.Controllers
         public async Task<IActionResult> InviteUser([FromBody] InviteUserDto dto)
         {
             var requestBaseUrl = $"{Request.Scheme}://{Request.Host}";
-            var invitation = _invitationService.PrepareInvitation(dto, requestBaseUrl);
+            var invitation = await _invitationService.PrepareInvitationAsync(dto, requestBaseUrl);
 
             var existingUsers = await _userManager.Users
                 .Where(user =>

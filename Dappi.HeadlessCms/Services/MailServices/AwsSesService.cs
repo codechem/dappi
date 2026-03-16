@@ -1,5 +1,4 @@
 using System.Net;
-using Amazon.Internal;
 using Dappi.HeadlessCms.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -55,24 +54,63 @@ public class AwsSesService(
 
     public async Task<bool> CreateEmailTemplateAsync(
         string name,
-        string subject,
-        string text,
-        string html
+        object templateModel,
+        string defaultSubjectTemplate,
+        string defaultTextTemplate,
+        string defaultHtmlTemplate
     )
     {
-        var createTemplateRequest = new CreateTemplateRequest
+        var configuredSubjectTemplate = configuration.GetValue<string>(
+            Constants.Configuration.InvitationEmailSubjectTemplate
+        );
+        var configuredTextTemplate = configuration.GetValue<string>(
+            Constants.Configuration.InvitationEmailTextTemplate
+        );
+        var configuredHtmlTemplate = configuration.GetValue<string>(
+            Constants.Configuration.InvitationEmailHtmlTemplate
+        );
+
+        var subject = RenderTemplate(configuredSubjectTemplate, defaultSubjectTemplate, templateModel);
+        var text = RenderTemplate(configuredTextTemplate, defaultTextTemplate, templateModel);
+        var html = RenderTemplate(configuredHtmlTemplate, defaultHtmlTemplate, templateModel);
+
+        var template = new Template
         {
-            Template = new Template
-            {
-                TemplateName = name,
-                SubjectPart = subject,
-                TextPart = text,
-                HtmlPart = html,
-            },
+            TemplateName = name,
+            SubjectPart = subject,
+            TextPart = text,
+            HtmlPart = html,
         };
 
-        var response = await _sesClient.CreateTemplateAsync(createTemplateRequest);
-        return response.HttpStatusCode == HttpStatusCode.OK;
+        try
+        {
+            var response = await _sesClient.CreateTemplateAsync(
+                new CreateTemplateRequest { Template = template }
+            );
+
+            return response.HttpStatusCode == HttpStatusCode.OK;
+        }
+        catch (AlreadyExistsException)
+        {
+            var updateResponse = await _sesClient.UpdateTemplateAsync(
+                new UpdateTemplateRequest { Template = template }
+            );
+
+            return updateResponse.HttpStatusCode == HttpStatusCode.OK;
+        }
+    }
+
+    private static string RenderTemplate(string? configuredTemplate, string fallbackTemplate, object model)
+    {
+        var templateToUse = string.IsNullOrWhiteSpace(configuredTemplate)
+            ? fallbackTemplate
+            : configuredTemplate;
+
+        var parsedTemplate = Scriban.Template.Parse(templateToUse);
+
+        return parsedTemplate.HasErrors
+            ? Scriban.Template.Parse(fallbackTemplate).Render(model)
+            : parsedTemplate.Render(model);
     }
 
     public async Task<string> SendTemplatedEmailAsync(

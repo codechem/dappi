@@ -12,6 +12,7 @@ namespace Dappi.HeadlessCms.Services.Identity;
 
 public class InvitationService : IInvitationService
 {
+    private const string InviteUserTemplateName = "InviteUser";
     private const string DefaultInvitationEmailSubjectTemplate = "You're invited to join Dappi";
     private const string DefaultInvitationEmailTextTemplate =
         "Hi {{ username }},\n\nYou've been invited to join Dappi.\nTemporary password: {{ temporary_password }}\n\nAccept your invitation here:\n{{ accept_url }}\n\nThis link expires in {{ expiry_hours }} hours.";
@@ -20,14 +21,17 @@ public class InvitationService : IInvitationService
 
     private readonly IConfiguration _configuration;
     private readonly IDataProtector _invitationProtector;
+    private readonly IEmailService? _emailService;
 
-    public InvitationService(IConfiguration configuration, IDataProtectionProvider dataProtectionProvider)
+    public InvitationService(IConfiguration configuration, IDataProtectionProvider dataProtectionProvider, IEmailService? emailService = null
+    )
     {
         _configuration = configuration;
         _invitationProtector = dataProtectionProvider.CreateProtector("Dappi.HeadlessCms.Users.Invitation.v1");
+        _emailService = emailService;
     }
 
-    public InvitationPreparationResult PrepareInvitation(InviteUserDto dto, string requestBaseUrl)
+    public async Task<InvitationPreparationResult> PrepareInvitationAsync(InviteUserDto dto, string requestBaseUrl)
     {
         var rolesToAssign = dto.Roles.Count > 0 ? dto.Roles : new List<string> { Constants.UserRoles.User };
         var generatedPassword = GeneratePassword();
@@ -78,6 +82,25 @@ public class InvitationService : IInvitationService
             DefaultInvitationEmailHtmlTemplate,
             templateModel
         );
+
+        if (_emailService is not null)
+        {
+            var reusableTemplateModel = new
+            {
+                username = "{{username}}",
+                temporary_password = "{{temporary_password}}",
+                accept_url = "{{accept_url}}",
+                expiry_hours = "{{expiry_hours}}",
+            };
+
+            await _emailService.CreateEmailTemplateAsync(
+                InviteUserTemplateName,
+                reusableTemplateModel,
+                DefaultInvitationEmailSubjectTemplate,
+                DefaultInvitationEmailTextTemplate,
+                DefaultInvitationEmailHtmlTemplate
+            );
+        }
 
         return new InvitationPreparationResult(
             token,
