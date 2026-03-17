@@ -8,7 +8,7 @@ namespace Dappi.HeadlessCms.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = DappiAuthenticationSchemes.DappiAuthenticationScheme, Roles = "Admin")]
+[Authorize(Policy = DappiAuthenticationSchemes.DappiAuthenticationScheme)]
 public class PluginsController : ControllerBase
 {
     private readonly IServiceProvider _serviceProvider;
