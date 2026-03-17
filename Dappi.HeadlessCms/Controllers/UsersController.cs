@@ -35,9 +35,6 @@ namespace Dappi.HeadlessCms.Controllers
         [HttpPost]
         public async Task<IActionResult> InviteUser([FromBody] InviteUserDto dto)
         {
-            var requestBaseUrl = $"{Request.Scheme}://{Request.Host}";
-            var invitation = await _invitationService.PrepareInvitationAsync(dto, requestBaseUrl);
-
             var existingUser = await _userManager.Users.FirstOrDefaultAsync(user =>
                 (user.UserName ?? string.Empty).ToLower() == dto.Username.ToLower() ||
                 (user.Email ?? string.Empty).ToLower() == dto.Email.ToLower());
@@ -55,15 +52,33 @@ namespace Dappi.HeadlessCms.Controllers
                 }
             }
 
+            InvitationPreparationResult? invitation = null;
+            var passwordToUse = dto.Password;
+            var isInvitationFlow = _emailService is not null;
+
+            if (isInvitationFlow)
+            {
+                var requestBaseUrl = $"{Request.Scheme}://{Request.Host}";
+                invitation = await _invitationService.PrepareInvitationAsync(dto, requestBaseUrl);
+                passwordToUse = invitation.GeneratedPassword;
+            }
+            else if (string.IsNullOrWhiteSpace(passwordToUse))
+            {
+                return BadRequest(new
+                {
+                    message = "Password is required when email service is not configured.",
+                });
+            }
+
             var user = new DappiUser
             {
                 UserName = dto.Username,
                 Email = dto.Email,
-                EmailConfirmed = false,
-                AcceptedInvitation = false,
+                EmailConfirmed = !isInvitationFlow,
+                AcceptedInvitation = !isInvitationFlow,
             };
 
-            var result = await _userManager.CreateAsync(user, invitation.GeneratedPassword);
+            var result = await _userManager.CreateAsync(user, passwordToUse!);
 
             if (!result.Succeeded)
             {
@@ -92,11 +107,19 @@ namespace Dappi.HeadlessCms.Controllers
                 }
             }
 
-            if (_emailService is null)
+            if (!isInvitationFlow)
             {
                 return Ok(new
                 {
-                    message = "Invitation prepared, but email service is not configured.",
+                    message = "User created successfully.",
+                });
+            }
+
+            if (invitation is null)
+            {
+                return BadRequest(new
+                {
+                    message = "Failed to prepare invitation.",
                 });
             }
 
@@ -139,18 +162,15 @@ namespace Dappi.HeadlessCms.Controllers
                 .Take(2)
                 .ToListAsync();
 
-            var existingUser = existingUsers.FirstOrDefault();
-
-            if (existingUsers.Count > 0)
+            if (existingUsers.Count > 1)
             {
-                if (existingUsers.Count > 1)
+                return BadRequest(new
                 {
-                    return BadRequest(new
-                    {
-                        message = "An invitation-related account already exists with conflicting data.",
-                    });
-                }
+                    message = "An invitation-related account already exists with conflicting data.",
+                });
             }
+
+            var existingUser = existingUsers.FirstOrDefault();
 
             if (existingUser is null)
             {

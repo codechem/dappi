@@ -40,6 +40,6 @@ public class UsersControllerTests : BaseIntegrationTestFixture
 
         Assert.NotNull(createdUser);
         Assert.Contains("User", createdUser!.Roles);
-        Assert.False(createdUser.AcceptedInvitation);
+        Assert.True(createdUser.AcceptedInvitation);
     }
 }

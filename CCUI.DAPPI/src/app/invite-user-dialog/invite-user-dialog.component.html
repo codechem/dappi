@@ -1,6 +1,6 @@
 <div class="invite-user-dialog">
   <div class="dialog-header">
-    <h2>Invite new user</h2>
+    <h2>{{ isCreateMode ? 'Create new user' : 'Invite new user' }}</h2>
     <button mat-icon-button (click)="onCancel()" aria-label="Close dialog">
       <mat-icon>close</mat-icon>
     </button>
@@ -28,6 +28,18 @@
         aria-label="Email"
       />
     </mat-form-field>
+    @if (isCreateMode) {
+      <mat-form-field appearance="outline" class="input-field">
+        <mat-label>Password</mat-label>
+        <input
+          matInput
+          [(ngModel)]="password"
+          type="password"
+          placeholder="Enter password"
+          aria-label="Password"
+        />
+      </mat-form-field>
+    }
     <mat-form-field appearance="outline" class="input-field">
       <mat-label>Roles</mat-label>
       <mat-select
@@ -51,7 +63,7 @@
       (click)="onConfirm()"
       [disabled]="!isValid"
     >
-      Invite
+      {{ isCreateMode ? 'Create' : 'Invite' }}
     </button>
   </div>
 </div>

@@ -34,6 +34,8 @@ export class UsersComponent implements OnInit, OnDestroy {
   isSearching = false;
   items: ContentItem[] = [];
   inviteError = '';
+  inviteButtonText = '+ Invite Users';
+  isEmailServiceAvailable = true;
 
   isLoading$ = this.store.select(selectLoading);
   private isSearching$ = this.store.select(selectIsSearching);
@@ -58,6 +60,7 @@ export class UsersComponent implements OnInit, OnDestroy {
       })
     );
 
+    this.loadPluginsState();
     this.loadUsers();
   }
 
@@ -66,7 +69,9 @@ export class UsersComponent implements OnInit, OnDestroy {
   }
 
   inviteUser(): void {
-    const dialogRef = this.dialog.open(InviteUserDialogComponent);
+    const dialogRef = this.dialog.open(InviteUserDialogComponent, {
+      data: { isEmailServiceAvailable: this.isEmailServiceAvailable },
+    });
 
     dialogRef.afterClosed().subscribe((data: InviteUserData | null) => {
       if (!data) return;
@@ -99,6 +104,17 @@ export class UsersComponent implements OnInit, OnDestroy {
         page: 1,
         limit: 10,
         searchText: '',
+      })
+    );
+  }
+
+  private loadPluginsState(): void {
+    this.subscription.add(
+      this.usersManagementService.getPluginsState().subscribe({
+        next: (response) => {
+          this.isEmailServiceAvailable = !!response.services?.['IEmailService'];
+          this.inviteButtonText = this.isEmailServiceAvailable ? '+ Invite Users' : 'Create User';
+        },
       })
     );
   }

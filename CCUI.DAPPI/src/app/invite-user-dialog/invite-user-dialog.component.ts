@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { Component, Inject, OnInit } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,7 +12,12 @@ import { RolesManagementService, RoleItem } from '../services/auth/roles-managem
 export interface InviteUserData {
   username: string;
   email: string;
+  password?: string;
   roles: string[];
+}
+
+export interface InviteUserDialogConfig {
+  isEmailServiceAvailable: boolean;
 }
 
 @Component({
@@ -34,6 +39,7 @@ export interface InviteUserData {
 export class InviteUserDialogComponent implements OnInit {
   username = '';
   email = '';
+  password = '';
   selectedRoles: string[] = [];
   availableRoles: RoleItem[] = [];
   rolesLoading = false;
@@ -41,6 +47,7 @@ export class InviteUserDialogComponent implements OnInit {
   constructor(
     private dialogRef: MatDialogRef<InviteUserDialogComponent>,
     private rolesManagementService: RolesManagementService,
+    @Inject(MAT_DIALOG_DATA) public data: InviteUserDialogConfig,
   ) {}
 
   ngOnInit(): void {
@@ -57,7 +64,11 @@ export class InviteUserDialogComponent implements OnInit {
   }
 
   get isValid(): boolean {
-    return !!this.username.trim() && !!this.email.trim();
+    return !!this.username.trim() && !!this.email.trim() && (this.data.isEmailServiceAvailable || !!this.password);
+  }
+
+  get isCreateMode(): boolean {
+    return !this.data.isEmailServiceAvailable;
   }
 
   onConfirm(): void {
@@ -65,6 +76,7 @@ export class InviteUserDialogComponent implements OnInit {
     this.dialogRef.close({
       username: this.username.trim(),
       email: this.email.trim(),
+      password: this.isCreateMode ? this.password : undefined,
       roles: this.selectedRoles,
     } as InviteUserData);
   }
