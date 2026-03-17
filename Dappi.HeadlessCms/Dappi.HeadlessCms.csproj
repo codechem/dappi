@@ -27,6 +27,12 @@
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.8.1" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="EmailTemplates/Invitation/InvitationEmail.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="EmailTemplates/Invitation/InvitationEmail.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Scripts/Start-DappiMigrationRunner.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -38,6 +44,14 @@
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
     <Content Include="Scripts/restart-app.sh">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+    <Content Include="EmailTemplates/Invitation/InvitationEmail.html">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+    <Content Include="EmailTemplates/Invitation/InvitationEmail.txt">
       <Pack>true</Pack>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>

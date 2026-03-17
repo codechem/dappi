@@ -13,11 +13,9 @@ namespace Dappi.HeadlessCms.Services.Identity;
 public class InvitationService : IInvitationService
 {
     private const string InviteUserTemplateName = "InviteUser";
+    private const string DefaultInvitationEmailHtmlTemplatePath = "EmailTemplates/Invitation/InvitationEmail.html";
+    private const string DefaultInvitationEmailTextTemplatePath = "EmailTemplates/Invitation/InvitationEmail.txt";
     private const string DefaultInvitationEmailSubjectTemplate = "You're invited to join Dappi";
-    private const string DefaultInvitationEmailTextTemplate =
-        "Hi {{ username }},\n\nYou've been invited to join Dappi.\nTemporary password: {{ temporary_password }}\n\nAccept your invitation here:\n{{ accept_url }}\n\nThis link expires in {{ expiry_hours }} hours.";
-    private const string DefaultInvitationEmailHtmlTemplate =
-        "<p>Hi {{ username }},</p><p>You've been invited to join Dappi.</p><p><strong>Temporary password:</strong> {{ temporary_password }}</p><p><a href=\"{{ accept_url }}\">Accept invitation</a></p><p>This link expires in {{ expiry_hours }} hours.</p>";
 
     private readonly IConfiguration _configuration;
     private readonly IDataProtector _invitationProtector;
@@ -33,6 +31,9 @@ public class InvitationService : IInvitationService
 
     public async Task<InvitationPreparationResult> PrepareInvitationAsync(InviteUserDto dto, string requestBaseUrl)
     {
+        var defaultInvitationEmailHtmlTemplate = ReadTemplateFile(DefaultInvitationEmailHtmlTemplatePath);
+        var defaultInvitationEmailTextTemplate = ReadTemplateFile(DefaultInvitationEmailTextTemplatePath);
+
         var rolesToAssign = dto.Roles.Count > 0 ? dto.Roles : new List<string> { Constants.UserRoles.User };
         var generatedPassword = GeneratePassword();
 
@@ -74,12 +75,12 @@ public class InvitationService : IInvitationService
         );
         var emailTextBody = RenderTemplate(
             emailTextTemplate,
-            DefaultInvitationEmailTextTemplate,
+            defaultInvitationEmailTextTemplate,
             templateModel
         );
         var emailHtmlBody = RenderTemplate(
             emailHtmlTemplate,
-            DefaultInvitationEmailHtmlTemplate,
+            defaultInvitationEmailHtmlTemplate,
             templateModel
         );
 
@@ -97,8 +98,8 @@ public class InvitationService : IInvitationService
                 InviteUserTemplateName,
                 reusableTemplateModel,
                 DefaultInvitationEmailSubjectTemplate,
-                DefaultInvitationEmailTextTemplate,
-                DefaultInvitationEmailHtmlTemplate
+                defaultInvitationEmailTextTemplate,
+                defaultInvitationEmailHtmlTemplate
             );
         }
 
@@ -183,6 +184,12 @@ public class InvitationService : IInvitationService
     {
         var position = RandomNumberGenerator.GetInt32(source.Length);
         return source[position];
+    }
+
+    private static string ReadTemplateFile(string relativePath)
+    {
+        var templatePath = Path.Combine(AppContext.BaseDirectory, relativePath);
+        return File.ReadAllText(templatePath);
     }
 
     private static string RenderTemplate(string? configuredTemplate, string fallbackTemplate, object model)
