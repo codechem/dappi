@@ -1,4 +1,5 @@
 using Dappi.HeadlessCms.Authentication;
+using Dappi.HeadlessCms.Exceptions;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -37,26 +38,21 @@ namespace Dappi.HeadlessCms.Controllers
             var requestBaseUrl = $"{Request.Scheme}://{Request.Host}";
             var invitation = await _invitationService.PrepareInvitationAsync(dto, requestBaseUrl);
 
-            var existingUsers = await _userManager.Users
-                .Where(user =>
-                    (user.UserName ?? string.Empty).ToLower() == dto.Username.ToLower() ||
-                    (user.Email ?? string.Empty).ToLower() == dto.Email.ToLower())
-                .Take(2)
-                .ToListAsync();
+            var existingUser = await _userManager.Users.FirstOrDefaultAsync(user =>
+                (user.UserName ?? string.Empty).ToLower() == dto.Username.ToLower() ||
+                (user.Email ?? string.Empty).ToLower() == dto.Email.ToLower());
 
-            var existingUser = existingUsers.FirstOrDefault();
-
-            if (existingUsers.Count > 0)
+            if (existingUser is not null)
             {
-                if (existingUsers.Count > 1)
+                if (string.Equals(existingUser.UserName, dto.Username, StringComparison.OrdinalIgnoreCase))
                 {
-                    return BadRequest(new
-                    {
-                        message = "An account already exists with conflicting username/email data.",
-                    });
+                    throw new UserAlreadyExistsException("An account already exists with conflicting username");
                 }
 
-                return BadRequest(new { message = "User already exists." });
+                if (string.Equals(existingUser.Email, dto.Email, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new UserAlreadyExistsException("An account already exists with conflicting email");
+                }
             }
 
             var user = new DappiUser
