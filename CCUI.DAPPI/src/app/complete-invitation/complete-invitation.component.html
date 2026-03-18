@@ -1,0 +1,55 @@
+<div class="complete-invitation-container">
+  <div class="complete-invitation-card">
+    <h1 class="title">Complete your invitation</h1>
+    <p class="subtitle">Enter the temporary password from your email, then set your new password.</p>
+
+    @if (errorMessage) {
+      <div class="error-banner">{{ errorMessage }}</div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-field">
+        <label for="oldPassword">Temporary password</label>
+        <input type="password" id="oldPassword" formControlName="oldPassword" placeholder="**********" />
+        @if (form.get('oldPassword')?.invalid && form.get('oldPassword')?.touched) {
+          <div class="error-message">Temporary password is required</div>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="newPassword">New password</label>
+        <input type="password" id="newPassword" formControlName="newPassword" placeholder="**********" />
+        @if (form.get('newPassword')?.invalid && form.get('newPassword')?.touched) {
+          <div class="error-message">
+            @if (form.get('newPassword')?.errors?.['required']) {
+              New password is required
+            } @else if (form.get('newPassword')?.errors?.['minlength']) {
+              New password must be at least 8 characters long
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="confirmNewPassword">Confirm new password</label>
+        <input
+          type="password"
+          id="confirmNewPassword"
+          formControlName="confirmNewPassword"
+          placeholder="**********"
+        />
+        @if (form.get('confirmNewPassword')?.touched) {
+          @if (form.get('confirmNewPassword')?.errors?.['required']) {
+            <div class="error-message">Please confirm your new password</div>
+          } @else if (form.hasError('passwordMismatch')) {
+            <div class="error-message">Passwords do not match</div>
+          }
+        }
+      </div>
+
+      <button type="submit" class="submit-button" [disabled]="form.invalid || isSubmitting">
+        {{ isSubmitting ? 'Saving...' : 'Set new password' }}
+      </button>
+    </form>
+  </div>
+</div>

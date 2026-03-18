@@ -1,8 +1,11 @@
 using Dappi.HeadlessCms.Authentication;
+using Dappi.HeadlessCms.Exceptions;
+using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Dappi.HeadlessCms.Controllers
@@ -14,36 +17,242 @@ namespace Dappi.HeadlessCms.Controllers
     {
         private readonly UserManager<DappiUser> _userManager;
         private readonly ILogger<UsersController> _logger;
+        private readonly IEmailService? _emailService;
+        private readonly IInvitationService _invitationService;
 
         public UsersController(
             UserManager<DappiUser> userManager,
-            ILogger<UsersController> logger)
+            ILogger<UsersController> logger,
+            IInvitationService invitationService,
+            IEmailService? emailService = null)
         {
             _userManager = userManager;
             _logger = logger;
+            _invitationService = invitationService;
+            _emailService = emailService;
         }
 
         [HttpPost]
         public async Task<IActionResult> InviteUser([FromBody] InviteUserDto dto)
         {
-            var user = new DappiUser { UserName = dto.Username, Email = dto.Email };
-            var result = await _userManager.CreateAsync(user, dto.Password);
+            var existingUser = await _userManager.Users.FirstOrDefaultAsync(user =>
+                (user.UserName ?? string.Empty).ToLower() == dto.Username.ToLower() ||
+                (user.Email ?? string.Empty).ToLower() == dto.Email.ToLower());
+
+            if (existingUser is not null)
+            {
+                if (string.Equals(existingUser.UserName, dto.Username, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new UserAlreadyExistsException("An account already exists with conflicting username");
+                }
+
+                if (string.Equals(existingUser.Email, dto.Email, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new UserAlreadyExistsException("An account already exists with conflicting email");
+                }
+            }
+
+            InvitationPreparationResult? invitation = null;
+            var passwordToUse = dto.Password;
+            var isInvitationFlow = _emailService is not null;
+
+            if (isInvitationFlow)
+            {
+                var requestBaseUrl = $"{Request.Scheme}://{Request.Host}";
+                invitation = await _invitationService.PrepareInvitationAsync(dto, requestBaseUrl);
+                passwordToUse = invitation.GeneratedPassword;
+            }
+            else if (string.IsNullOrWhiteSpace(passwordToUse))
+            {
+                return BadRequest(new
+                {
+                    message = "Password is required when email service is not configured.",
+                });
+            }
+
+            var user = new DappiUser
+            {
+                UserName = dto.Username,
+                Email = dto.Email,
+                EmailConfirmed = !isInvitationFlow,
+                AcceptedInvitation = !isInvitationFlow,
+            };
+
+            var result = await _userManager.CreateAsync(user, passwordToUse!);
 
             if (!result.Succeeded)
             {
-                _logger.LogWarning("Failed to create user {Username}: {Errors}",
-                    dto.Username, string.Join(", ", result.Errors.Select(e => e.Description)));
-                return BadRequest(new { message = result.Errors.FirstOrDefault()?.Description ?? "Failed to create user." });
+                return BadRequest(new
+                {
+                    message = result.Errors.FirstOrDefault()?.Description ?? "Failed to create invited user.",
+                });
             }
 
-            var rolesToAssign = dto.Roles.Count > 0 ? dto.Roles : new List<string> { "User" };
+            var rolesToAssign = dto.Roles.Count > 0
+                ? dto.Roles
+                : new List<string> { Constants.UserRoles.User };
+
             foreach (var role in rolesToAssign)
             {
-                await _userManager.AddToRoleAsync(user, role);
-            }
-            _logger.LogInformation("User {Username} created successfully with roles: {Roles}", dto.Username, string.Join(", ", rolesToAssign));
+                var addRoleResult = await _userManager.AddToRoleAsync(user, role);
 
-            return Ok(new UserRoleDto { Id = user.Id, Name = user.UserName, Email = user.Email, Roles = rolesToAssign });
+                if (!addRoleResult.Succeeded)
+                {
+                    await _userManager.DeleteAsync(user);
+
+                    return BadRequest(new
+                    {
+                        message = addRoleResult.Errors.FirstOrDefault()?.Description ?? "Failed to assign role to invited user.",
+                    });
+                }
+            }
+
+            if (!isInvitationFlow)
+            {
+                return Ok(new
+                {
+                    message = "User created successfully.",
+                });
+            }
+
+            if (invitation is null)
+            {
+                return BadRequest(new
+                {
+                    message = "Failed to prepare invitation.",
+                });
+            }
+
+            var messageId = await _emailService.SendEmailAsync(
+                [dto.Email],
+                invitation.EmailHtmlBody,
+                invitation.EmailTextBody,
+                invitation.EmailSubject
+            );
+
+            return Ok(new
+            {
+                message = "Invitation sent successfully.",
+                emailSent = true,
+                messageId,
+                invitationLink = invitation.AcceptUrl,
+                frontendInvitationLink = invitation.FrontendAcceptUrl,
+                fallbackApiAcceptLink = invitation.AcceptUrl
+            });
+        }
+
+        [AllowAnonymous]
+        [HttpGet("accept-invitation")]
+        public async Task<IActionResult> AcceptInvitation([FromQuery] AcceptInvitationQueryDto dto)
+        {
+            if (!_invitationService.TryGetInvitationPayload(dto.Token, out var invitation, out var tokenError))
+            {
+                return BadRequest(new { message = tokenError });
+            }
+
+            if (invitation.ExpiresAtUtc < DateTime.UtcNow)
+            {
+                return BadRequest(new { message = "Invitation token has expired." });
+            }
+
+            var existingUsers = await _userManager.Users
+                .Where(user =>
+                    (user.UserName ?? string.Empty).ToLower() == invitation.Username.ToLower() ||
+                    (user.Email ?? string.Empty).ToLower() == invitation.Email.ToLower())
+                .Take(2)
+                .ToListAsync();
+
+            if (existingUsers.Count > 1)
+            {
+                return BadRequest(new
+                {
+                    message = "An invitation-related account already exists with conflicting data.",
+                });
+            }
+
+            var existingUser = existingUsers.FirstOrDefault();
+
+            if (existingUser is null)
+            {
+                return BadRequest(new { message = "Invitation-related user account was not found." });
+            }
+
+            var requestBaseUrl = $"{Request.Scheme}://{Request.Host}";
+            var completeInvitationUrl = _invitationService.BuildCompleteInvitationUrl(requestBaseUrl, dto.Token);
+
+            return Redirect(completeInvitationUrl);
+        }
+
+        [AllowAnonymous]
+        [HttpPost("complete-invitation")]
+        public async Task<IActionResult> CompleteInvitation([FromBody] CompleteInvitationDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Token))
+            {
+                return BadRequest(new { message = "Invitation token is required." });
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.OldPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
+            {
+                return BadRequest(new { message = "Both old and new passwords are required." });
+            }
+
+            if (!_invitationService.TryGetInvitationPayload(dto.Token, out var invitation, out var tokenError))
+            {
+                return BadRequest(new { message = tokenError });
+            }
+
+            if (invitation.ExpiresAtUtc < DateTime.UtcNow)
+            {
+                return BadRequest(new { message = "Invitation token has expired." });
+            }
+
+            var user = await _userManager.FindByNameAsync(invitation.Username);
+            if (user is null || !string.Equals(user.Email, invitation.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { message = "Invitation is not accepted yet." });
+            }
+
+            var passwordMatches = await _userManager.CheckPasswordAsync(user, dto.OldPassword);
+            if (!passwordMatches)
+            {
+                return BadRequest(new { message = "Old password is incorrect." });
+            }
+
+            var changePasswordResult = await _userManager.ChangePasswordAsync(
+                user,
+                dto.OldPassword,
+                dto.NewPassword
+            );
+
+            if (!changePasswordResult.Succeeded)
+            {
+                return BadRequest(new
+                {
+                    message = changePasswordResult.Errors.FirstOrDefault()?.Description ?? "Failed to change password.",
+                });
+            }
+
+            if (!user.AcceptedInvitation)
+            {
+                user.AcceptedInvitation = true;
+            }
+
+            if (!user.EmailConfirmed)
+            {
+                user.EmailConfirmed = true;
+            }
+
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                return BadRequest(new
+                {
+                    message = updateResult.Errors.FirstOrDefault()?.Description ?? "Password changed, but failed to finalize invitation.",
+                });
+            }
+
+            return Ok(new { message = "Password changed successfully. User verified." });
         }
 
         [HttpGet]
@@ -57,8 +266,8 @@ namespace Dappi.HeadlessCms.Controllers
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 query = query.Where(u =>
-                    u.UserName.ToLower().Contains(searchTerm) ||
-                    u.Email.ToLower().Contains(searchTerm));
+                    (u.UserName ?? string.Empty).ToLower().Contains(searchTerm) ||
+                    (u.Email ?? string.Empty).ToLower().Contains(searchTerm));
             }
 
             var totalCount = query.Count();
@@ -72,7 +281,11 @@ namespace Dappi.HeadlessCms.Controllers
 
                 result.Add(new UserRoleDto
                 {
-                    Id = user.Id, Name = user.UserName, Email = user.Email, Roles = roles.ToList()
+                    Id = user.Id,
+                    Name = user.UserName ?? string.Empty,
+                    Email = user.Email ?? string.Empty,
+                    Roles = roles.ToList(),
+                    AcceptedInvitation = user.AcceptedInvitation,
                 });
             }
 
@@ -100,7 +313,11 @@ namespace Dappi.HeadlessCms.Controllers
 
             var userDto = new UserRoleDto
             {
-                Id = user.Id, Name = user.UserName, Email = user.Email, Roles = roles.ToList()
+                Id = user.Id,
+                Name = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                Roles = roles.ToList(),
+                AcceptedInvitation = user.AcceptedInvitation,
             };
 
             _logger.LogInformation("Retrieved user {Username}", username);
@@ -233,5 +450,6 @@ namespace Dappi.HeadlessCms.Controllers
             _logger.LogInformation("Deleted user {UserId}", id);
             return Ok(new { message = "User deleted successfully" });
         }
+
     }
 }
