@@ -6,7 +6,7 @@ namespace Dappi.Core.Abstractions.Auth;
 ///
 /// <para>
 /// An instance is returned by the <c>SchemaAndIssuerProvider</c> property of an
-/// <c>ExternalJwtProvider&lt;TUser&gt;</c> subclass and is registered as a singleton
+/// <c>JwtValidationProvider&lt;TUser&gt;</c> subclass and is registered as a singleton
 /// in the DI container by <c>AddExternalJwtProvider&lt;TUser, TProvider&gt;</c>.
 /// </para>
 ///
