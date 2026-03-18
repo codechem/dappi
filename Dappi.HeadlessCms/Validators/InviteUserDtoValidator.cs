@@ -16,8 +16,9 @@ public class InviteUserDtoValidator : AbstractValidator<InviteUserDto>
             .EmailAddress().WithMessage("A valid email address is required.");
 
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Password is required.")
-            .MinimumLength(6).WithMessage("Password must be at least 6 characters.");
+            .MinimumLength(8)
+            .When(x => !string.IsNullOrWhiteSpace(x.Password))
+            .WithMessage("Password must be at least 8 characters long.");
 
     }
 }

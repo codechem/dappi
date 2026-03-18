@@ -33,9 +33,13 @@ public class UsersControllerTests : BaseIntegrationTestFixture
         var response = await _client.PostAsJsonAsync("/api/users", request);
         response.EnsureSuccessStatusCode();
 
-        var createdUser = await response.Content.ReadFromJsonAsync<UserRoleDto>();
+        var createdUserResponse = await _client.GetAsync($"/api/users/username/{uniqueUsername}");
+        createdUserResponse.EnsureSuccessStatusCode();
+
+        var createdUser = await createdUserResponse.Content.ReadFromJsonAsync<UserRoleDto>();
 
         Assert.NotNull(createdUser);
         Assert.Contains("User", createdUser!.Roles);
+        Assert.True(createdUser.AcceptedInvitation);
     }
 }

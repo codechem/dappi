@@ -12,6 +12,9 @@ internal static class Constants
         private const string SectionName = "Dappi";
         public const string PostgresConnection = $"{SectionName}:{nameof(PostgresConnection)}";
         public const string FrontendUrl = $"{SectionName}:{nameof(FrontendUrl)}";
+        public const string InvitationEmailSubjectTemplate = $"{SectionName}:{nameof(InvitationEmailSubjectTemplate)}";
+        public const string InvitationEmailTextTemplate = $"{SectionName}:{nameof(InvitationEmailTextTemplate)}";
+        public const string InvitationEmailHtmlTemplate = $"{SectionName}:{nameof(InvitationEmailHtmlTemplate)}";
     }
     
     public static class UserRoles

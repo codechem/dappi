@@ -9,7 +9,13 @@ namespace Dappi.HeadlessCms.Interfaces
             string subject
         );
         bool VerifyEmailIdentityAsync(string mail);
-        Task<bool> CreateEmailTemplateAsync(string name, string subject, string text, string html);
+        Task<bool> CreateEmailTemplateAsync(
+            string name,
+            object templateModel,
+            string defaultSubjectTemplate,
+            string defaultTextTemplate,
+            string defaultHtmlTemplate
+        );
         Task<string> SendTemplatedEmailAsync(
             List<string> toAddresses,
             string userName,
