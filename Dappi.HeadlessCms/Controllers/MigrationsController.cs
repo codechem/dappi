@@ -14,27 +14,29 @@ namespace Dappi.HeadlessCms.Controllers;
 [ApiController]
 [Route("api/create-migrations-update-db")]
 [Authorize(Policy = DappiAuthenticationSchemes.DappiAuthenticationScheme)]
-public class MigrationController : ControllerBase
+public class MigrationController(
+    IHostApplicationLifetime appLifetime,
+    IContentTypeChangesService contentTypeChangesService,
+    IDbContextAccessor dbContextAccessor
+) : ControllerBase
 {
-    private readonly IHostApplicationLifetime _appLifetime;
-    private readonly string _projectDirectory;
-    private readonly IContentTypeChangesService _contentTypeChangesService;
+    private readonly string _projectDirectory = Path.GetDirectoryName(
+        Assembly.GetEntryAssembly() is not null
+            ? Assembly.GetEntryAssembly()!.Location
+            : Directory.GetCurrentDirectory()
+    )!;
 
-    public MigrationController(
-        IHostApplicationLifetime appLifetime, IContentTypeChangesService contentTypeChangesService)
-    {
-        _appLifetime = appLifetime;
-        _contentTypeChangesService = contentTypeChangesService;
-        _projectDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly() is not null
-            ? Assembly.GetEntryAssembly().Location
-            : Directory.GetCurrentDirectory());
-    }
+    private readonly string _dbContextName = dbContextAccessor.DbContext.GetType().Name;
 
     [HttpPost]
     public async Task<IActionResult> ApplyMigrationsAndRestart()
     {
-        var draftModels = await _contentTypeChangesService.GetDraftsAsync().ToListAsync();
-        if (draftModels.Any(x => x.State is ContentTypeState.PendingPublish or ContentTypeState.PendingDelete))
+        var draftModels = await contentTypeChangesService.GetDraftsAsync().ToListAsync();
+        if (
+            draftModels.Any(x =>
+                x.State is ContentTypeState.PendingPublish or ContentTypeState.PendingDelete
+            )
+        )
         {
             if (OperatingSystem.IsWindows())
             {
@@ -56,25 +58,32 @@ public class MigrationController : ControllerBase
     {
         GenerateMigrationsIfNeeded();
         var directory = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
-        ApplyMigrationsAfterRestart(directory);
+        ApplyMigrationsAfterRestart(directory!);
         RestartApplication();
-        _appLifetime.StopApplication();
+        appLifetime.StopApplication();
     }
 
     private void RunDbMigrationScenarioForWindows()
     {
         var currentDir = Directory.GetCurrentDirectory();
-        var csproj = Directory.GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
+        var csproj = Directory
+            .GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly)
+            .FirstOrDefault();
         var scriptPath = Path.Combine(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Scripts",
-            "Start-DappiMigrationRunner.ps1");
+            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!,
+            "Scripts",
+            "Start-DappiMigrationRunner.ps1"
+        );
         var procId = Environment.ProcessId;
 
         var args =
-            $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -ProjectPath \"{_projectDirectory}\" -Csproj \"{csproj}\" -ProcessId \"{procId}\" -MigrationName \"{GetMigrationName()}\"";
+            $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -ProjectPath \"{_projectDirectory}\" -Csproj \"{csproj}\" -ProcessId \"{procId}\" -MigrationName \"{GetMigrationName()}\" -ContextName \"{_dbContextName}\"";
         var psi = new ProcessStartInfo
         {
-            FileName = "powershell.exe", Arguments = args, UseShellExecute = true, CreateNoWindow = true,
+            FileName = "powershell.exe",
+            Arguments = args,
+            UseShellExecute = true,
+            CreateNoWindow = true,
         };
 
         Process.Start(psi);
@@ -92,9 +101,9 @@ public class MigrationController : ControllerBase
         {
             WorkingDirectory = Directory.GetCurrentDirectory(),
             FileName = "dotnet",
-            Arguments = $"ef migrations add {GetMigrationName()}",
+            Arguments = $"ef migrations add {GetMigrationName()} --context {_dbContextName}",
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
         };
         Process.Start(startInfo)?.WaitForExit();
     }
@@ -104,7 +113,7 @@ public class MigrationController : ControllerBase
         var exePath = Assembly.GetEntryAssembly()!.Location;
         var directory = Path.GetDirectoryName(exePath);
         var processId = Environment.ProcessId;
-        var scriptPath = Path.Combine(directory, "Scripts", "restart-app.sh");
+        var scriptPath = Path.Combine(directory!, "Scripts", "restart-app.sh");
         Process.Start("chmod", new[] { "+x", scriptPath })?.WaitForExit();
 
         var startInfo = new ProcessStartInfo
@@ -112,24 +121,26 @@ public class MigrationController : ControllerBase
             FileName = "/bin/bash",
             Arguments = $"-c \"{scriptPath}\" {processId} {exePath}",
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
         };
 
         Process.Start(startInfo);
-        _appLifetime.StopApplication();
+        appLifetime.StopApplication();
     }
 
     private void ApplyMigrationsAfterRestart(string directory)
     {
         var currentDir = Directory.GetCurrentDirectory();
-        var csproj = Directory.GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
+        var csproj = Directory
+            .GetFiles(currentDir, "*.csproj", SearchOption.TopDirectoryOnly)
+            .FirstOrDefault();
 
         var startInfo = new ProcessStartInfo
         {
             FileName = "dotnet",
-            Arguments = $"ef database update --project {csproj}",
+            Arguments = $"ef database update --project {csproj} --context {_dbContextName}",
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
         };
         Process.Start(startInfo)?.WaitForExit();
     }

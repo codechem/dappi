@@ -26,7 +26,8 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
 
                 var crudActions = classDeclaration.ExtractAllowedCrudActions();
 
-                var authorizeAttributes = classSymbol.GetAttributes()
+                var authorizeAttributes = classSymbol
+                    .GetAttributes()
                     .Where(attr => attr.AttributeClass?.ToDisplayString() == authorizeAttributeName)
                     .Select(attr =>
                     {
@@ -40,37 +41,59 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
 
                         foreach (var namedArg in attr.NamedArguments)
                         {
-                            if (namedArg is { Key: nameof(DappiAuthorizeAttribute.Roles), Value.Kind: TypedConstantKind.Array })
+                            if (
+                                namedArg is
+                                {
+                                    Key: nameof(DappiAuthorizeAttribute.Roles),
+                                    Value.Kind: TypedConstantKind.Array
+                                }
+                            )
                             {
-                                roles = namedArg.Value.Values
-                                    .Select(v => v.Value?.ToString() ?? string.Empty)
+                                roles = namedArg
+                                    .Value.Values.Select(v => v.Value?.ToString() ?? string.Empty)
                                     .ToList();
                             }
 
-                            if (namedArg is { Key: nameof(DappiAuthorizeAttribute.Methods), Value.Kind: TypedConstantKind.Array })
+                            if (
+                                namedArg is
+                                {
+                                    Key: nameof(DappiAuthorizeAttribute.Methods),
+                                    Value.Kind: TypedConstantKind.Array
+                                }
+                            )
                             {
-                                methods = namedArg.Value.Values
-                                    .Select(v =>
+                                methods = namedArg
+                                    .Value.Values.Select(v =>
                                     {
-                                        if (v is { Value: not null, Type: INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType })
+                                        if (
+                                            v is
+                                            {
+                                                Value: not null,
+                                                Type: INamedTypeSymbol
+                                                {
+                                                    TypeKind: TypeKind.Enum
+                                                } enumType
+                                            }
+                                        )
                                         {
-                                            var enumMember = enumType.GetMembers()
+                                            var enumMember = enumType
+                                                .GetMembers()
                                                 .OfType<IFieldSymbol>()
-                                                .FirstOrDefault(f => f.IsConst && Equals(f.ConstantValue, v.Value));
+                                                .FirstOrDefault(f =>
+                                                    f.IsConst && Equals(f.ConstantValue, v.Value)
+                                                );
 
-                                            return enumMember?.Name.ToUpperInvariant() ?? string.Empty;
+                                            return enumMember?.Name.ToUpperInvariant()
+                                                ?? string.Empty;
                                         }
-                                        return v.Value?.ToString()?.ToUpperInvariant() ?? string.Empty;
+                                        return v.Value?.ToString()?.ToUpperInvariant()
+                                            ?? string.Empty;
                                     })
                                     .ToList();
                             }
                         }
-                        
-                        return new DappiAuthorizeInfo
-                        {
-                            Roles = roles, 
-                            Methods = methods
-                        };
+
+                        return new DappiAuthorizeInfo { Roles = roles, Methods = methods };
                     })
                     .ToList();
 
@@ -81,14 +104,17 @@ public abstract class BaseSourceModelToSourceOutputGenerator : IIncrementalGener
                     RootNamespace = classSymbol.ContainingNamespace.GetRootNamespace(),
                     PropertiesInfos = GoThroughPropertiesAndGatherInfo(namedClassTypeSymbol),
                     AuthorizeAttributes = authorizeAttributes,
-                    CrudActions = crudActions.ToList()
+                    CrudActions = crudActions.ToList(),
                 };
-            });
+            }
+        );
 
         var compilation = context.CompilationProvider.Combine(syntaxProvider.Collect());
         context.RegisterSourceOutput(compilation, Execute);
     }
 
-    protected abstract void Execute(SourceProductionContext context,
-        (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input);
+    protected abstract void Execute(
+        SourceProductionContext context,
+        (Compilation Compilation, ImmutableArray<SourceModel> CollectedData) input
+    );
 }

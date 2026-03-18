@@ -8,7 +8,9 @@ internal static class CompilationExtensions
 {
     public static DbContextInformation? GetDbContextInformation(this Compilation compilation)
     {
-        var dbContextSymbol = compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
+        var dbContextSymbol = compilation.GetTypeByMetadataName(
+            "Microsoft.EntityFrameworkCore.DbContext"
+        );
         if (dbContextSymbol is null)
             return null;
 
@@ -29,13 +31,21 @@ internal static class CompilationExtensions
                     return new DbContextInformation
                     {
                         ClassName = classSymbol.Name,
-                        ResidingNamespace = GetFullNamespace(classSymbol)
+                        ResidingNamespace = GetFullNamespace(classSymbol),
                     };
                 }
             }
         }
 
         return null;
+    }
+
+    public static bool HasDappiSystem(this Compilation compilation, string systemName)
+    {
+        const string systemPrefix = "Dappi.HeadlessCms.";
+        return compilation.ReferencedAssemblyNames.Any(assemblyRef =>
+            assemblyRef.Name == $"{systemPrefix}{systemName}"
+        );
     }
 
     private static bool IsDerivedFrom(INamedTypeSymbol? symbol, INamedTypeSymbol baseType)

@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
+using Dappi.Core.Abstractions.Auth;
+using Dappi.HeadlessCms.ActionFilters;
 using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Background;
 using Dappi.HeadlessCms.Core;
@@ -89,7 +91,6 @@ public static class ServiceExtensions
             );
 
         var dbContextType = typeof(TDbContext);
-        var location = Assembly.GetAssembly(dbContextType)?.Location;
 
         services.AddScoped<DbContextEditor>(
             (_) =>
@@ -98,12 +99,13 @@ public static class ServiceExtensions
                     dbContextName: dbContextType.Name
                 )
         );
-
         services.AddScoped<DomainModelEditor>(_ => new DomainModelEditor(
             Path.Combine(Directory.GetCurrentDirectory(), "Entities"),
             Path.Combine(Directory.GetCurrentDirectory(), "Enums")
         ));
+
         services.AddEndpointsApiExplorer();
+
         return services;
     }
 
@@ -176,7 +178,6 @@ public static class ServiceExtensions
             .AddEntityFrameworkStores<TContext>()
             .AddDefaultTokenProviders();
 
-        // JWT Authentication
         var jwtSettings = configuration.GetSection("Authentication:Dappi");
         var secretKey =
             jwtSettings["SecretKey"]
@@ -189,6 +190,36 @@ public static class ServiceExtensions
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         });
+        authenticationBuilder.AddPolicyScheme(
+            JwtBearerDefaults.AuthenticationScheme,
+            JwtBearerDefaults.AuthenticationScheme,
+            options =>
+            {
+                options.ForwardDefaultSelector = context =>
+                {
+                    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                    if (authHeader?.StartsWith("Bearer ") == true)
+                    {
+                        var token = authHeader["Bearer ".Length..];
+                        var jwtHandler =
+                            new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+
+                        if (jwtHandler.CanReadToken(token))
+                        {
+                            var jwt = jwtHandler.ReadJwtToken(token);
+
+                            var schema = context
+                                .RequestServices.GetServices<SchemaAndIssuerProvider>()
+                                .FirstOrDefault(provider => provider.Issuer == jwt.Issuer)
+                                ?.Schema;
+                            return schema ?? DappiAuthenticationSchemes.DappiAuthenticationScheme;
+                        }
+                    }
+
+                    return DappiAuthenticationSchemes.DappiAuthenticationScheme;
+                };
+            }
+        );
 
         authenticationBuilder.AddJwtBearer(
             DappiAuthenticationSchemes.DappiAuthenticationScheme,
@@ -284,7 +315,7 @@ public static class ServiceExtensions
         return services;
     }
 
-    private static IServiceCollection AddDappiSwaggerGen(this IServiceCollection services)
+    public static IServiceCollection AddDappiSwaggerGen(this IServiceCollection services)
     {
         return services.AddSwaggerGen(c =>
         {
