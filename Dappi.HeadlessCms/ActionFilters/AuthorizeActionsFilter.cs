@@ -28,7 +28,7 @@ namespace Dappi.HeadlessCms.ActionFilters
                 request.Method == "POST" && !allowedCrudAction.Contains(CrudActions.Create)
                 || request.Method == "PUT" && !allowedCrudAction.Contains(CrudActions.Update)
                 || request.Method == "DELETE" && !allowedCrudAction.Contains(CrudActions.Delete)
-                || request.Method == "PUT" && !allowedCrudAction.Contains(CrudActions.Patch)
+                || request.Method == "PATCH" && !allowedCrudAction.Contains(CrudActions.Patch)
             )
             {
                 context.Result = new JsonResult(new { Error = "Method not allowed" })
