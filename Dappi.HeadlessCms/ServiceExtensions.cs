@@ -105,7 +105,7 @@ public static class ServiceExtensions
         ));
 
         services.AddEndpointsApiExplorer();
-        services.AddDappiSwaggerGen();
+
         return services;
     }
 
