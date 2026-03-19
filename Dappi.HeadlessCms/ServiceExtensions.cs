@@ -112,14 +112,14 @@ public static class ServiceExtensions
     )
     {
         var accountOptions =
-            configuration.GetSection("AWS:Account").Get<AwsAccountOptions>()
+            configuration.GetSection(AwsAccountOptions.AwsAccount).Get<AwsAccountOptions>()
             ?? new AwsAccountOptions();
 
         var accountValidator = new AwsAccountValidator();
         var accountValidation = accountValidator.Validate(accountOptions);
 
         var storageOptions =
-            configuration.GetSection("AWS:Storage").Get<AwsStorageOptions>()
+            configuration.GetSection(AwsStorageOptions.AwsStorage).Get<AwsStorageOptions>()
             ?? new AwsStorageOptions();
 
         var storageValidator = new AwsStorageValidator();
@@ -141,7 +141,8 @@ public static class ServiceExtensions
     )
     {
         var options =
-            configuration.GetSection("AWS:SES").Get<AwsSesOptions>() ?? new AwsSesOptions();
+            configuration.GetSection(AwsSesOptions.AwsSes).Get<AwsSesOptions>()
+            ?? new AwsSesOptions();
 
         var validator = new AwsSesValidator();
         var result = validator.Validate(options);

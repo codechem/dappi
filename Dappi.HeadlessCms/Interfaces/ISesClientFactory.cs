@@ -1,5 +1,6 @@
 using Amazon;
 using Amazon.SimpleEmail;
+using Dappi.HeadlessCms.Models;
 using Microsoft.Extensions.Configuration;
 
 namespace Dappi.HeadlessCms.Interfaces;
@@ -13,10 +14,14 @@ public class SesClientFactory(IConfiguration configuration) : ISesClientFactory
 {
     public IAmazonSimpleEmailService CreateClient()
     {
-        var accessKey = configuration["AWS:Account:AccessKey"];
-        var secretKey = configuration["AWS:Account:SecretKey"];
-        var regionName = configuration["AWS:Account:Region"];
-        var region = RegionEndpoint.GetBySystemName(regionName);
-        return new AmazonSimpleEmailServiceClient(accessKey, secretKey, region);
+        var accountOptions =
+            configuration.GetSection(AwsAccountOptions.AwsAccount).Get<AwsAccountOptions>()
+            ?? new AwsAccountOptions();
+
+        return new AmazonSimpleEmailServiceClient(
+            accountOptions.AccessKey,
+            accountOptions.SecretKey,
+            RegionEndpoint.GetBySystemName(accountOptions.Region)
+        );
     }
 }

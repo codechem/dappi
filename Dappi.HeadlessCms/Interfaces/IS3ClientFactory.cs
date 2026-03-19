@@ -1,6 +1,7 @@
 using Amazon;
 using Amazon.S3;
 using Amazon.SimpleEmail;
+using Dappi.HeadlessCms.Models;
 using Microsoft.Extensions.Configuration;
 
 namespace Dappi.HeadlessCms.Interfaces;
@@ -14,10 +15,14 @@ public class S3ClientFactory(IConfiguration configuration) : IS3ClientFactory
 {
     public IAmazonS3 CreateClient()
     {
-        var accessKey = configuration["AWS:Account:AccessKey"];
-        var secretKey = configuration["AWS:Account:SecretKey"];
-        var regionName = configuration["AWS:Account:Region"];
-        var region = RegionEndpoint.GetBySystemName(regionName);
-        return new AmazonS3Client(accessKey, secretKey, region);
+        var accountOptions =
+            configuration.GetSection(AwsAccountOptions.AwsAccount).Get<AwsAccountOptions>()
+            ?? new AwsAccountOptions();
+
+        return new AmazonS3Client(
+            accountOptions.AccessKey,
+            accountOptions.SecretKey,
+            RegionEndpoint.GetBySystemName(accountOptions.Region)
+        );
     }
 }
