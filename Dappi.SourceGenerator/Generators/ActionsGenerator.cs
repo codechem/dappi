@@ -451,67 +451,6 @@ namespace Dappi.SourceGenerator.Generators
                 """;
         }
 
-        public static string GenerateDeleteActionForMediaInfo(
-            List<CrudActions> crudActions,
-            SourceModel item
-        )
-        {
-            var containsMediaInfoProperty = item.PropertiesInfos.Any(p =>
-                p.PropertyType.Name.Contains("MediaInfo")
-            );
-
-            if (!crudActions.Contains(CrudActions.Delete) || !containsMediaInfoProperty)
-            {
-                return string.Empty;
-            }
-
-            return $$"""
-                    [HttpDelete("delete-file/{id}")]
-                    {{PropagateDappiAuthorizationTags(
-                    item.AuthorizeAttributes,
-                    AuthorizeMethods.Delete
-                )}}
-                    public async Task<IActionResult> DeleteFile(Guid id, [FromForm] string fieldName)
-                    {
-                        if (string.IsNullOrEmpty(fieldName))
-                            return BadRequest("Field name is required.");
-
-                        try
-                        {
-                            var entity = await dbContext.{{item.ClassName.Pluralize()}}
-                                .Include(fieldName) 
-                                .FirstOrDefaultAsync(e => e.Id == id);
-
-                            if (entity == null)
-                                return NotFound($"{nameof({{item.ClassName}})} with ID {id} not found.");
-
-                            var property = typeof({{item.ClassName}}).GetProperty(fieldName);
-                            if (property == null || property.PropertyType != typeof(MediaInfo))
-                                return BadRequest($"Property '{fieldName}' is not a valid MediaInfo field on {{item.ClassName}}.");
-
-                            var mediaInfo = property.GetValue(entity) as MediaInfo;
-                            if (mediaInfo == null)
-                                return NotFound("No media is currently assigned to this field.");
-
-                            uploadService.DeleteMedia(mediaInfo);
-
-                            dbContext.Set<MediaInfo>().Remove(mediaInfo);
-
-                            property.SetValue(entity, null);
-                            dbContext.Entry(entity).State = EntityState.Modified;
-
-                            await dbContext.SaveChangesAsync();
-
-                            return Ok(new { message = "Media deleted successfully", deletedMediaId = mediaInfo.Id });
-                        }
-                        catch (Exception ex)
-                        {
-                            return BadRequest(new { message = ex.Message });
-                        }
-                    }
-                """;
-        }
-
         public static string GeneratePutAction(
             List<CrudActions> crudActions,
             SourceModel item,
@@ -569,8 +508,27 @@ namespace Dappi.SourceGenerator.Generators
                 return string.Empty;
             }
 
-            return $$"""
+            var mediaInfoProperties = item
+                .PropertiesInfos.Where(p => p.PropertyType.Name.Contains("MediaInfo"))
+                .Select(p => p.PropertyName)
+                .ToList();
 
+            var mediaInfoDeleteCode = string.Empty;
+            if (mediaInfoProperties.Count > 0)
+            {
+                mediaInfoDeleteCode = string.Join(
+                    "\n",
+                    mediaInfoProperties.Select(prop =>
+                        $@"if (model.{prop} != null)
+                        {{
+                            uploadService.DeleteMedia(model.{prop});
+                            dbContext.Set<MediaInfo>().Remove(model.{prop});
+                        }}"
+                    )
+                );
+            }
+
+            return $$"""
                     [HttpDelete("{id}")]
                     {{PropagateDappiAuthorizationTags(
                     item.AuthorizeAttributes,
@@ -582,6 +540,8 @@ namespace Dappi.SourceGenerator.Generators
 
                         if (model is null)
                             return NotFound();
+
+                        {{mediaInfoDeleteCode}}
 
                         dbContext.{{item.ClassName.Pluralize()}}.Remove(model);
                         {{removeCode}}
