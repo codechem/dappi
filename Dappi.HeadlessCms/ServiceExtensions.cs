@@ -140,16 +140,23 @@ public static class ServiceExtensions
         IConfiguration configuration
     )
     {
-        var options =
+        var accountOptions =
+            configuration.GetSection(AwsAccountOptions.AwsAccount).Get<AwsAccountOptions>()
+            ?? new AwsAccountOptions();
+
+        var accountValidator = new AwsAccountValidator();
+        var accountValidation = accountValidator.Validate(accountOptions);
+
+        var sesOptions =
             configuration.GetSection(AwsSesOptions.AwsSes).Get<AwsSesOptions>()
             ?? new AwsSesOptions();
 
-        var validator = new AwsSesValidator();
-        var result = validator.Validate(options);
+        var sesValidator = new AwsSesValidator();
+        var sesValidation = sesValidator.Validate(sesOptions);
 
-        if (!result.IsValid)
+        if (!accountValidation.IsValid || !sesValidation.IsValid)
         {
-            throw new ValidationException(result.Errors);
+            throw new ValidationException(accountValidation.Errors);
         }
 
         services.AddSingleton<ISesClientFactory, SesClientFactory>();

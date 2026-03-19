@@ -25,8 +25,6 @@ public class AwsSesValidator : AbstractValidator<AwsSesOptions>
 {
     public AwsSesValidator()
     {
-        RuleFor(x => x.AccessKey).NotEmpty();
-        RuleFor(x => x.SecretKey).NotEmpty();
         RuleFor(x => x.SourceEmail).NotEmpty().EmailAddress();
     }
 }
