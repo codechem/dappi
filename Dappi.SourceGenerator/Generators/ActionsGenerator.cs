@@ -508,8 +508,27 @@ namespace Dappi.SourceGenerator.Generators
                 return string.Empty;
             }
 
-            return $$"""
+            var mediaInfoProperties = item
+                .PropertiesInfos.Where(p => p.PropertyType.Name.Contains("MediaInfo"))
+                .Select(p => p.PropertyName)
+                .ToList();
 
+            var mediaInfoDeleteCode = string.Empty;
+            if (mediaInfoProperties.Count > 0)
+            {
+                mediaInfoDeleteCode = string.Join(
+                    "\n",
+                    mediaInfoProperties.Select(prop =>
+                        $@"if (model.{prop} != null)
+                        {{
+                            uploadService.DeleteMedia(model.{prop});
+                            dbContext.Set<MediaInfo>().Remove(model.{prop});
+                        }}"
+                    )
+                );
+            }
+
+            return $$"""
                     [HttpDelete("{id}")]
                     {{PropagateDappiAuthorizationTags(
                     item.AuthorizeAttributes,
@@ -521,6 +540,8 @@ namespace Dappi.SourceGenerator.Generators
 
                         if (model is null)
                             return NotFound();
+
+                        {{mediaInfoDeleteCode}}
 
                         dbContext.{{item.ClassName.Pluralize()}}.Remove(model);
                         {{removeCode}}

@@ -114,18 +114,26 @@ public static class ServiceExtensions
         IConfiguration configuration
     )
     {
-        var options =
-            configuration.GetSection("AWS:Account").Get<AwsAccountOptions>()
+        var accountOptions =
+            configuration.GetSection(AwsAccountOptions.AwsAccount).Get<AwsAccountOptions>()
             ?? new AwsAccountOptions();
 
-        var validator = new AwsAccountValidator();
-        var result = validator.Validate(options);
+        var accountValidator = new AwsAccountValidator();
+        var accountValidation = accountValidator.Validate(accountOptions);
 
-        if (!result.IsValid)
+        var storageOptions =
+            configuration.GetSection(AwsStorageOptions.AwsStorage).Get<AwsStorageOptions>()
+            ?? new AwsStorageOptions();
+
+        var storageValidator = new AwsStorageValidator();
+        var storageValidation = storageValidator.Validate(storageOptions);
+
+        if (!accountValidation.IsValid || !storageValidation.IsValid)
         {
-            throw new ValidationException(result.Errors);
+            throw new ValidationException(accountValidation.Errors);
         }
 
+        services.AddScoped<IS3ClientFactory, S3ClientFactory>();
         services.AddScoped<IMediaUploadService, AwsS3StorageService>();
         return services;
     }
@@ -135,15 +143,23 @@ public static class ServiceExtensions
         IConfiguration configuration
     )
     {
-        var options =
-            configuration.GetSection("AWS:SES").Get<AwsSesOptions>() ?? new AwsSesOptions();
+        var accountOptions =
+            configuration.GetSection(AwsAccountOptions.AwsAccount).Get<AwsAccountOptions>()
+            ?? new AwsAccountOptions();
 
-        var validator = new AwsSesValidator();
-        var result = validator.Validate(options);
+        var accountValidator = new AwsAccountValidator();
+        var accountValidation = accountValidator.Validate(accountOptions);
 
-        if (!result.IsValid)
+        var sesOptions =
+            configuration.GetSection(AwsSesOptions.AwsSes).Get<AwsSesOptions>()
+            ?? new AwsSesOptions();
+
+        var sesValidator = new AwsSesValidator();
+        var sesValidation = sesValidator.Validate(sesOptions);
+
+        if (!accountValidation.IsValid || !sesValidation.IsValid)
         {
-            throw new ValidationException(result.Errors);
+            throw new ValidationException(accountValidation.Errors);
         }
 
         services.AddSingleton<ISesClientFactory, SesClientFactory>();
