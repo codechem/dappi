@@ -63,7 +63,7 @@
       <header class="plugin-header">
         <div class="plugin-title-block">
           <h1>Users & Permissions plugin</h1>
-          <p>View all roles from UsersAndPermissionsController.GetAllRoles()</p>
+          <p>View the roles and their permissions</p>
         </div>
       </header>
 
@@ -106,7 +106,6 @@
             @if (selectedUsersAndPermissionsRole) {
               <header class="plugin-role-details__header">
                 <h2>{{ selectedUsersAndPermissionsRole.Name }}</h2>
-                <p>Role ID: {{ selectedUsersAndPermissionsRole.Id }}</p>
               </header>
 
               @if (usersAndPermissionsRoleDetailsError) {
