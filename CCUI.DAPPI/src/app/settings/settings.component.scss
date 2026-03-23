@@ -182,6 +182,16 @@
   background-color: rgba(vars.$primary-main, 0.18) !important;
 }
 
+.plugin-permissions-table {
+  table-layout: fixed;
+}
+
+.plugin-permissions-table .mat-mdc-header-cell,
+.plugin-permissions-table .mat-mdc-cell {
+  white-space: normal;
+  word-break: break-word;
+}
+
 .plugin-role-details {
   border: vars.$divider;
   border-radius: 8px;
