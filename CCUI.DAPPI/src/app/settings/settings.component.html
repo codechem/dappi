@@ -17,6 +17,22 @@
 
     <div class="settings-sidebar__divider"></div>
 
+    <div class="settings-sidebar__section">Plugins</div>
+
+    @if (usersAndPermissionsEnabled) {
+      <button
+        class="settings-sidebar__item"
+        [class.settings-sidebar__item--active]="activeTab === 'usersAndPermissionsPlugin'"
+        (click)="selectTab('usersAndPermissionsPlugin')"
+        aria-label="Users and permissions plugin"
+      >
+        <mat-icon>shield</mat-icon>
+        <span>Users & Permissions plugin</span>
+      </button>
+    }
+
+    <div class="settings-sidebar__divider"></div>
+
     <div class="settings-sidebar__section">User Administration</div>
 
     <button
@@ -43,6 +59,109 @@
   <div class="container">
     @if (activeTab === 'storage') {
       <app-data-storage></app-data-storage>
+    } @else if (activeTab === 'usersAndPermissionsPlugin') {
+      <header class="plugin-header">
+        <div class="plugin-title-block">
+          <h1>Users & Permissions plugin</h1>
+          <p>View all roles from UsersAndPermissionsController.GetAllRoles()</p>
+        </div>
+      </header>
+
+      @if (usersAndPermissionsRolesError) {
+        <div class="plugin-error">{{ usersAndPermissionsRolesError }}</div>
+      }
+
+      @if (usersAndPermissionsRolesLoading) {
+        <div class="plugin-loading">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Loading roles...</p>
+        </div>
+      } @else if (!usersAndPermissionsRoles.length) {
+        <div class="plugin-empty">
+          <img src="assets/illustration.svg" alt="No roles" />
+          <h2>There are no roles yet</h2>
+          <p>No roles were returned from the Users & Permissions plugin.</p>
+        </div>
+      } @else {
+        <div class="plugin-roles-layout">
+          <div class="plugin-roles-table-container" aria-label="Users and permissions roles list">
+            <table mat-table [dataSource]="usersAndPermissionsRoles" class="plugin-roles-table">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>Name</th>
+                <td mat-cell *matCellDef="let role">{{ role.Name }}</td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="usersAndPermissionsRoleColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let role; columns: usersAndPermissionsRoleColumns"
+                class="plugin-role-row"
+                [class.plugin-role-row--active]="selectedUsersAndPermissionsRole?.Id === role.Id"
+                (click)="selectUsersAndPermissionsRole(role)"
+              ></tr>
+            </table>
+          </div>
+
+          <section class="plugin-role-details" aria-label="Role details">
+            @if (selectedUsersAndPermissionsRole) {
+              <header class="plugin-role-details__header">
+                <h2>{{ selectedUsersAndPermissionsRole.Name }}</h2>
+                <p>Role ID: {{ selectedUsersAndPermissionsRole.Id }}</p>
+              </header>
+
+              @if (usersAndPermissionsRoleDetailsError) {
+                <div class="plugin-error">{{ usersAndPermissionsRoleDetailsError }}</div>
+              }
+
+              @if (usersAndPermissionsRoleDetailsLoading) {
+                <div class="plugin-loading plugin-loading--details">
+                  <mat-spinner diameter="32"></mat-spinner>
+                  <p>Loading permissions...</p>
+                </div>
+              } @else if (!selectedUsersAndPermissionsRolePermissionsRows.length) {
+                <div class="plugin-empty plugin-empty--details">
+                  <h3>No permissions found</h3>
+                  <p>This role currently has no configured permissions response.</p>
+                </div>
+              } @else {
+                <div class="plugin-permissions-table-container">
+                  <table mat-table [dataSource]="selectedUsersAndPermissionsRolePermissionsRows" class="plugin-permissions-table">
+                    <ng-container matColumnDef="controller">
+                      <th mat-header-cell *matHeaderCellDef>Controller</th>
+                      <td mat-cell *matCellDef="let row">{{ row.controller }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="permission">
+                      <th mat-header-cell *matHeaderCellDef>Permission</th>
+                      <td mat-cell *matCellDef="let row">{{ row.permissionName }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="description">
+                      <th mat-header-cell *matHeaderCellDef>Description</th>
+                      <td mat-cell *matCellDef="let row">{{ row.description }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="state">
+                      <th mat-header-cell *matHeaderCellDef>Status</th>
+                      <td mat-cell *matCellDef="let row">
+                        <span
+                          class="plugin-permission-state"
+                          [class.plugin-permission-state--enabled]="row.selected"
+                        >
+                          {{ row.selected ? 'Allowed' : 'Not allowed' }}
+                        </span>
+                      </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="usersAndPermissionsPermissionColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: usersAndPermissionsPermissionColumns"></tr>
+                  </table>
+                </div>
+              }
+            }
+          </section>
+        </div>
+      }
     } @else if (activeTab === 'users') {
       <app-users></app-users>
     } @else {
