@@ -117,43 +117,75 @@
                   <mat-spinner diameter="32"></mat-spinner>
                   <p>Loading permissions...</p>
                 </div>
-              } @else if (!selectedUsersAndPermissionsRolePermissionsRows.length) {
+              } @else if (!selectedUsersAndPermissionsRolePermissionGroups.length) {
                 <div class="plugin-empty plugin-empty--details">
                   <h3>No permissions found</h3>
                   <p>This role currently has no configured permissions response.</p>
                 </div>
               } @else {
                 <div class="plugin-permissions-table-container">
-                  <table mat-table [dataSource]="selectedUsersAndPermissionsRolePermissionsRows" class="plugin-permissions-table">
-                    <ng-container matColumnDef="controller">
-                      <th mat-header-cell *matHeaderCellDef>Controller</th>
-                      <td mat-cell *matCellDef="let row">{{ row.controller }}</td>
-                    </ng-container>
+                  <table class="plugin-permissions-table plugin-controllers-table">
+                    <thead>
+                      <tr>
+                        <th>Controller</th>
+                        <th>Summary</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (group of selectedUsersAndPermissionsRolePermissionGroups; track group.controller) {
+                        <tr class="plugin-controller-row">
+                          <td>
+                            <button
+                              class="plugin-controller-toggle"
+                              type="button"
+                              (click)="toggleController(group.controller)"
+                              [attr.aria-label]="'Toggle ' + group.controller + ' permissions'"
+                            >
+                              <mat-icon class="plugin-controller-toggle__icon" [class.plugin-controller-toggle__icon--expanded]="isControllerExpanded(group.controller)">expand_more</mat-icon>
+                              <span>{{ group.controller }}</span>
+                            </button>
+                          </td>
+                          <td>
+                            {{ group.allowedCount }}/{{ group.rows.length }} allowed
+                          </td>
+                        </tr>
 
-                    <ng-container matColumnDef="permission">
-                      <th mat-header-cell *matHeaderCellDef>Permission</th>
-                      <td mat-cell *matCellDef="let row">{{ row.permissionName }}</td>
-                    </ng-container>
+                        @if (isControllerExpanded(group.controller)) {
+                          <tr class="plugin-controller-details-row">
+                            <td [attr.colspan]="usersAndPermissionsControllerColumns.length">
+                              <div class="plugin-controller-details">
+                                <table mat-table [dataSource]="group.rows" class="plugin-permissions-table">
+                                  <ng-container matColumnDef="permission">
+                                    <th mat-header-cell *matHeaderCellDef>Permission</th>
+                                    <td mat-cell *matCellDef="let row">{{ row.permissionName }}</td>
+                                  </ng-container>
 
-                    <ng-container matColumnDef="description">
-                      <th mat-header-cell *matHeaderCellDef>Description</th>
-                      <td mat-cell *matCellDef="let row">{{ row.description }}</td>
-                    </ng-container>
+                                  <ng-container matColumnDef="description">
+                                    <th mat-header-cell *matHeaderCellDef>Description</th>
+                                    <td mat-cell *matCellDef="let row">{{ row.description }}</td>
+                                  </ng-container>
 
-                    <ng-container matColumnDef="state">
-                      <th mat-header-cell *matHeaderCellDef>Status</th>
-                      <td mat-cell *matCellDef="let row">
-                        <span
-                          class="plugin-permission-state"
-                          [class.plugin-permission-state--enabled]="row.selected"
-                        >
-                          {{ row.selected ? 'Allowed' : 'Not allowed' }}
-                        </span>
-                      </td>
-                    </ng-container>
+                                  <ng-container matColumnDef="state">
+                                    <th mat-header-cell *matHeaderCellDef>Status</th>
+                                    <td mat-cell *matCellDef="let row">
+                                      <span
+                                        class="plugin-permission-state"
+                                        [class.plugin-permission-state--enabled]="row.selected"
+                                      >
+                                        {{ row.selected ? 'Allowed' : 'Not allowed' }}
+                                      </span>
+                                    </td>
+                                  </ng-container>
 
-                    <tr mat-header-row *matHeaderRowDef="usersAndPermissionsPermissionColumns"></tr>
-                    <tr mat-row *matRowDef="let row; columns: usersAndPermissionsPermissionColumns"></tr>
+                                  <tr mat-header-row *matHeaderRowDef="usersAndPermissionsPermissionColumns"></tr>
+                                  <tr mat-row *matRowDef="let row; columns: usersAndPermissionsPermissionColumns"></tr>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        }
+                      }
+                    </tbody>
                   </table>
                 </div>
               }

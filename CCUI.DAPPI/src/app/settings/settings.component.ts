@@ -10,7 +10,6 @@ import { UsersManagementService } from '../services/auth/users-management.servic
 import {
   UsersAndPermissionsPluginService,
   UsersAndPermissionsRoleItem,
-  UsersAndPermissionsRolePermissionsResponse,
 } from '../services/auth/users-and-permissions-plugin.service';
 
 interface PermissionTableRow {
@@ -18,6 +17,12 @@ interface PermissionTableRow {
   permissionName: string;
   description: string;
   selected: boolean;
+}
+
+interface ControllerPermissionGroup {
+  controller: string;
+  rows: PermissionTableRow[];
+  allowedCount: number;
 }
 
 type SettingsTab = 'storage' | 'users' | 'roles' | 'usersAndPermissionsPlugin';
@@ -44,9 +49,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
   usersAndPermissionsRoles: UsersAndPermissionsRoleItem[] = [];
   usersAndPermissionsRoleColumns: string[] = ['name'];
   selectedUsersAndPermissionsRole: UsersAndPermissionsRoleItem | null = null;
-  selectedUsersAndPermissionsRolePermissions: UsersAndPermissionsRolePermissionsResponse = {};
-  selectedUsersAndPermissionsRolePermissionsRows: PermissionTableRow[] = [];
-  usersAndPermissionsPermissionColumns: string[] = ['controller', 'permission', 'description', 'state'];
+  selectedUsersAndPermissionsRolePermissionGroups: ControllerPermissionGroup[] = [];
+  usersAndPermissionsControllerColumns: string[] = ['controller', 'summary'];
+  usersAndPermissionsPermissionColumns: string[] = ['permission', 'description', 'state'];
+  expandedControllers = new Set<string>();
   usersAndPermissionsRolesLoading = false;
   usersAndPermissionsRolesError = '';
   usersAndPermissionsRoleDetailsLoading = false;
@@ -110,8 +116,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
         error: (error) => {
           this.usersAndPermissionsRoles = [];
           this.selectedUsersAndPermissionsRole = null;
-          this.selectedUsersAndPermissionsRolePermissions = {};
-          this.selectedUsersAndPermissionsRolePermissionsRows = [];
+          this.selectedUsersAndPermissionsRolePermissionGroups = [];
+          this.expandedControllers.clear();
           this.usersAndPermissionsRolesError = this.getApiErrorMessage(error);
           this.usersAndPermissionsRolesLoading = false;
         },
@@ -130,7 +136,21 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   selectUsersAndPermissionsRole(role: UsersAndPermissionsRoleItem): void {
     this.selectedUsersAndPermissionsRole = role;
+    this.expandedControllers.clear();
     this.loadUsersAndPermissionsRoleDetails(role.Name);
+  }
+
+  toggleController(controller: string): void {
+    if (this.expandedControllers.has(controller)) {
+      this.expandedControllers.delete(controller);
+      return;
+    }
+
+    this.expandedControllers.add(controller);
+  }
+
+  isControllerExpanded(controller: string): boolean {
+    return this.expandedControllers.has(controller);
   }
 
   private loadUsersAndPermissionsRoleDetails(roleName: string): void {
@@ -140,29 +160,33 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.usersAndPermissionsPluginService.getRolePermissions(roleName).subscribe({
         next: (permissions) => {
-          this.selectedUsersAndPermissionsRolePermissions = permissions;
-          this.selectedUsersAndPermissionsRolePermissionsRows = Object.entries(permissions)
-            .flatMap(([controller, permissionItems]) =>
-              permissionItems.map((permission) => ({
-                controller,
-                permissionName: permission.PermissionName,
-                description: permission.Description || '-',
-                selected: permission.Selected,
-              }))
-            )
-            .sort((a, b) => {
-              const byController = a.controller.localeCompare(b.controller);
-              if (byController !== 0) {
-                return byController;
-              }
+          this.selectedUsersAndPermissionsRolePermissionGroups = Object.entries(permissions)
+            .map(([controller, permissionItems]) => {
+              const rows = permissionItems
+                .map((permission) => ({
+                  controller,
+                  permissionName: permission.PermissionName,
+                  description: permission.Description || '-',
+                  selected: permission.Selected,
+                }))
+                .sort((a, b) => a.permissionName.localeCompare(b.permissionName));
 
-              return a.permissionName.localeCompare(b.permissionName);
-            });
+              return {
+                controller,
+                rows,
+                allowedCount: rows.filter((row) => row.selected).length,
+              };
+            })
+            .sort((a, b) => a.controller.localeCompare(b.controller));
+
+          if (this.selectedUsersAndPermissionsRolePermissionGroups.length) {
+            this.expandedControllers.add(this.selectedUsersAndPermissionsRolePermissionGroups[0].controller);
+          }
           this.usersAndPermissionsRoleDetailsLoading = false;
         },
         error: (error) => {
-          this.selectedUsersAndPermissionsRolePermissions = {};
-          this.selectedUsersAndPermissionsRolePermissionsRows = [];
+          this.selectedUsersAndPermissionsRolePermissionGroups = [];
+          this.expandedControllers.clear();
           this.usersAndPermissionsRoleDetailsError = this.getApiErrorMessage(error);
           this.usersAndPermissionsRoleDetailsLoading = false;
         },

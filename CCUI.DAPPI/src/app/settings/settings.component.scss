@@ -186,6 +186,51 @@
   table-layout: fixed;
 }
 
+.plugin-controllers-table {
+  border-bottom: vars.$divider;
+}
+
+.plugin-controllers-table th,
+.plugin-controllers-table td {
+  padding: 12px 14px;
+  border-bottom: vars.$divider;
+  color: vars.$text-primary;
+  text-align: left;
+}
+
+.plugin-controllers-table th {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.plugin-controller-details-row > td {
+  padding: 0;
+}
+
+.plugin-controller-toggle {
+  border: none;
+  background: transparent;
+  color: vars.$text-primary;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.plugin-controller-toggle__icon {
+  transition: transform 0.2s ease;
+}
+
+.plugin-controller-toggle__icon--expanded {
+  transform: rotate(180deg);
+}
+
+.plugin-controller-details {
+  padding: 8px 0 0;
+}
+
 .plugin-permissions-table .mat-mdc-header-cell,
 .plugin-permissions-table .mat-mdc-cell {
   white-space: normal;
