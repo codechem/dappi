@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
@@ -31,6 +32,7 @@ type SettingsTab = 'storage' | 'users' | 'roles' | 'usersAndPermissionsPlugin';
   selector: 'app-settings',
   standalone: true,
   imports: [
+    MatButtonToggleModule,
     MatIconModule,
     MatProgressSpinnerModule,
     MatTableModule,
@@ -151,6 +153,25 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   isControllerExpanded(controller: string): boolean {
     return this.expandedControllers.has(controller);
+  }
+
+  getEndpointMethodColor(description: string): string {
+    const method = (description || '').split('/')[0].trim().toUpperCase();
+
+    switch (method) {
+      case 'GET':
+        return '#164891';
+      case 'PUT':
+        return '#ae6303';
+      case 'PATCH':
+        return '#2f9480';
+      case 'POST':
+        return '#2e9471';
+      case 'DELETE':
+        return '#a40504';
+      default:
+        return '';
+    }
   }
 
   private loadUsersAndPermissionsRoleDetails(roleName: string): void {

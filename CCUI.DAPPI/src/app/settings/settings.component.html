@@ -163,19 +163,27 @@
                                   <ng-container matColumnDef="description">
                                     <th mat-header-cell *matHeaderCellDef>Description</th>
                                     <td mat-cell *matCellDef="let row">
-                                      <span class="plugin-permission-description">{{ row.description }}</span>
+                                      <span
+                                        class="plugin-permission-description"
+                                        [style.background-color]="getEndpointMethodColor(row.description)"
+                                      >
+                                        {{ row.description }}
+                                      </span>
                                     </td>
                                   </ng-container>
 
                                   <ng-container matColumnDef="state">
                                     <th mat-header-cell *matHeaderCellDef>Status</th>
                                     <td mat-cell *matCellDef="let row">
-                                      <span
-                                        class="plugin-permission-state"
-                                        [class.plugin-permission-state--enabled]="row.selected"
+                                      <mat-button-toggle-group
+                                        class="plugin-status-toggle"
+                                        [value]="row.selected"
+                                        (change)="row.selected = $event.value"
+                                        aria-label="Permission status"
                                       >
-                                        {{ row.selected ? 'Allowed' : 'Not allowed' }}
-                                      </span>
+                                        <mat-button-toggle [value]="true">Allowed</mat-button-toggle>
+                                        <mat-button-toggle [value]="false">Not Allowed</mat-button-toggle>
+                                      </mat-button-toggle-group>
                                     </td>
                                   </ng-container>
 

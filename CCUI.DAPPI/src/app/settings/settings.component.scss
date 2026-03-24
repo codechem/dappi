@@ -235,6 +235,12 @@
 .plugin-permissions-table .mat-mdc-cell {
   white-space: normal;
   word-break: break-word;
+  border-bottom-color: rgba(vars.$text-primary, 0.12) !important;
+}
+
+:host ::ng-deep .plugin-permissions-table .mdc-data-table__header-row,
+:host ::ng-deep .plugin-permissions-table .mdc-data-table__row {
+  border-bottom-color: rgba(vars.$text-primary, 0.12) !important;
 }
 
 .plugin-role-details {
@@ -304,4 +310,43 @@
 
 .plugin-permission-state--enabled {
   color: vars.$primary-main;
+}
+
+.plugin-status-toggle {
+  border-radius: 14px;
+}
+
+:host ::ng-deep .plugin-status-toggle.mat-button-toggle-group {
+  border: 0px solid vars.$default-enabled-border;
+  background-color: vars.$background-default;
+  overflow: hidden;
+}
+
+:host ::ng-deep .plugin-status-toggle .mat-button-toggle {
+  background-color: transparent;
+  color: vars.$text-secondary;
+}
+
+:host ::ng-deep .plugin-status-toggle .mat-button-toggle + .mat-button-toggle {
+  border-left: 1px solid rgba(vars.$text-primary, 0.16);
+}
+
+:host ::ng-deep .plugin-status-toggle .mat-button-toggle-checked {
+  background-color: vars.$background-paper-elevation-8;
+  color: vars.$text-primary;
+}
+
+:host ::ng-deep .plugin-status-toggle .mat-button-toggle-label-content {
+  font-size: 12px;
+  line-height: 24px;
+  padding: 0 8px;
+}
+
+:host ::ng-deep .plugin-status-toggle .mat-pseudo-checkbox {
+  color: rgba(vars.$text-primary, 0.98) !important;
+  opacity: 1 !important;
+}
+
+:host ::ng-deep .plugin-status-toggle .mat-pseudo-checkbox::after {
+  border-color: rgba(vars.$text-primary, 0.98) !important;
 }
