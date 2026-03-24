@@ -59,3 +59,10 @@ jobs:
           dotnet nuget push ./nupkgs/*.nupkg \
           --source "https://api.nuget.org/v3/index.json" \
           --api-key ${{ secrets.NUGET_API_KEY }}
+
+      - name: Build UsersAndPermissions
+        run: dotnet build Dappi.HeadlessCms.UsersAndPermissions --configuration Release /p:Version=${{ env.VERSION }} --no-restore
+
+      - name: Pack UsersAndPermissions
+        run: dotnet pack Dappi.HeadlessCms.UsersAndPermissions --configuration Release /p:Version=${{ env.VERSION }} --no-build --output nupkgs
+
