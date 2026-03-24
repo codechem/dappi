@@ -162,7 +162,9 @@
 
                                   <ng-container matColumnDef="description">
                                     <th mat-header-cell *matHeaderCellDef>Description</th>
-                                    <td mat-cell *matCellDef="let row">{{ row.description }}</td>
+                                    <td mat-cell *matCellDef="let row">
+                                      <span class="plugin-permission-description">{{ row.description }}</span>
+                                    </td>
                                   </ng-container>
 
                                   <ng-container matColumnDef="state">

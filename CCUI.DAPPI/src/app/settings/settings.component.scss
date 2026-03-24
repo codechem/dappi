@@ -291,6 +291,17 @@
   white-space: nowrap;
 }
 
+.plugin-permission-description {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: vars.$text-secondary;
+  background-color: vars.$primary-focus;
+  border-radius: 12px;
+  padding: 4px 10px;
+}
+
 .plugin-permission-state--enabled {
   color: vars.$primary-main;
 }
