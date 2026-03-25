@@ -10,7 +10,7 @@ import { RolesComponent } from './roles/roles.component';
 import { UsersManagementService } from '../services/auth/users-management.service';
 import {
   UsersAndPermissionsPluginService,
-  UsersAndPermissionsRoleItem,
+  usersAndPermissionsRoleItem,
 } from '../services/auth/users-and-permissions-plugin.service';
 
 interface PermissionTableRow {
@@ -48,9 +48,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   activeTab: SettingsTab = 'storage';
   usersAndPermissionsEnabled = false;
-  usersAndPermissionsRoles: UsersAndPermissionsRoleItem[] = [];
+  usersAndPermissionsRoles: usersAndPermissionsRoleItem[] = [];
   usersAndPermissionsRoleColumns: string[] = ['name'];
-  selectedUsersAndPermissionsRole: UsersAndPermissionsRoleItem | null = null;
+  selectedUsersAndPermissionsRole: usersAndPermissionsRoleItem | null = null;
   selectedUsersAndPermissionsRolePermissionGroups: ControllerPermissionGroup[] = [];
   usersAndPermissionsControllerColumns: string[] = ['controller', 'summary'];
   usersAndPermissionsPermissionColumns: string[] = ['permission', 'description', 'state'];
@@ -136,10 +136,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
     );
   }
 
-  selectUsersAndPermissionsRole(role: UsersAndPermissionsRoleItem): void {
+  selectUsersAndPermissionsRole(role: usersAndPermissionsRoleItem): void {
     this.selectedUsersAndPermissionsRole = role;
     this.expandedControllers.clear();
-    this.loadUsersAndPermissionsRoleDetails(role.Name);
+    this.loadUsersAndPermissionsRoleDetails(role.name);
   }
 
   toggleController(controller: string): void {
@@ -186,9 +186,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
               const rows = permissionItems
                 .map((permission) => ({
                   controller,
-                  permissionName: permission.PermissionName,
-                  description: permission.Description || '-',
-                  selected: permission.Selected,
+                  permissionName: permission.permissionName,
+                  description: permission.description || '-',
+                  selected: permission.selected,
                 }))
                 .sort((a, b) => a.permissionName.localeCompare(b.permissionName));
 

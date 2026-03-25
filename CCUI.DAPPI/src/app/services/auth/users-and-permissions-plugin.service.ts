@@ -3,35 +3,35 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { BASE_API_URL } from '../../../Constants';
 
-export interface UsersAndPermissionsRoleItem {
-  Id: string;
-  Name: string;
-  IsDefaultForAuthenticatedUser: boolean;
+export interface usersAndPermissionsRoleItem {
+  id: string;
+  name: string;
+  isDefaultForAuthenticatedUser: boolean;
 }
 
-export interface UsersAndPermissionsPermissionItem {
-  PermissionName: string;
-  Description: string;
-  Selected: boolean;
+export interface usersAndPermissionsPermissionItem {
+  permissionName: string;
+  description: string;
+  selected: boolean;
 }
 
-export type UsersAndPermissionsRolePermissionsResponse = Record<
+export type usersAndPermissionsRolePermissionsResponse = Record<
   string,
-  UsersAndPermissionsPermissionItem[]
+  usersAndPermissionsPermissionItem[]
 >;
 
 @Injectable({ providedIn: 'root' })
 export class UsersAndPermissionsPluginService {
   constructor(private http: HttpClient) {}
 
-  getAllRoles(): Observable<UsersAndPermissionsRoleItem[]> {
-    return this.http.get<UsersAndPermissionsRoleItem[]>(`${BASE_API_URL}usersandpermissions/roles`);
+  getAllRoles(): Observable<usersAndPermissionsRoleItem[]> {
+    return this.http.get<usersAndPermissionsRoleItem[]>(`${BASE_API_URL}usersandpermissions/roles`);
   }
 
-  getRolePermissions(roleName: string): Observable<UsersAndPermissionsRolePermissionsResponse> {
+  getRolePermissions(roleName: string): Observable<usersAndPermissionsRolePermissionsResponse> {
     const params = new HttpParams().set('roleName', roleName);
 
-    return this.http.get<UsersAndPermissionsRolePermissionsResponse>(
+    return this.http.get<usersAndPermissionsRolePermissionsResponse>(
       `${BASE_API_URL}usersandpermissions`,
       { params }
     );
