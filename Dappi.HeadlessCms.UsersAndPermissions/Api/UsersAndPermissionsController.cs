@@ -38,7 +38,6 @@ public class UsersAndPermissionsController<TUser>(
             Email = userDto.Email,
             UserName = userDto.Email,
             RoleId = defaultRole.Id,
-            //zosto email e i username
         };
         var result = await userManager.CreateAsync(user, userDto.Password);
 
