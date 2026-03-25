@@ -88,7 +88,7 @@
             <table mat-table [dataSource]="usersAndPermissionsRoles" class="plugin-roles-table">
               <ng-container matColumnDef="name">
                 <th mat-header-cell *matHeaderCellDef>Name</th>
-                <td mat-cell *matCellDef="let role">{{ role.Name }}</td>
+                <td mat-cell *matCellDef="let role">{{ role.name }}</td>
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="usersAndPermissionsRoleColumns"></tr>
@@ -96,7 +96,7 @@
                 mat-row
                 *matRowDef="let role; columns: usersAndPermissionsRoleColumns"
                 class="plugin-role-row"
-                [class.plugin-role-row--active]="selectedUsersAndPermissionsRole?.Id === role.Id"
+                  [class.plugin-role-row--active]="selectedUsersAndPermissionsRole?.id === role.id"
                 (click)="selectUsersAndPermissionsRole(role)"
               ></tr>
             </table>
@@ -105,7 +105,7 @@
           <section class="plugin-role-details" aria-label="Role details">
             @if (selectedUsersAndPermissionsRole) {
               <header class="plugin-role-details__header">
-                <h2>{{ selectedUsersAndPermissionsRole.Name }}</h2>
+                <h2>{{ selectedUsersAndPermissionsRole.name }}</h2>
               </header>
 
               @if (usersAndPermissionsRoleDetailsError) {

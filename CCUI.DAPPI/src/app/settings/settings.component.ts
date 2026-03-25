@@ -132,14 +132,16 @@ export class SettingsComponent implements OnInit, OnDestroy {
       error?.error?.message
       || error?.error?.title
       || error?.error?.error
-      || 'Failed to load roles from /api/UsersAndPermissions/roles.'
+      || (error?.status
+        ? `Failed to load users and permissions data (${error.status}${error?.statusText ? ` ${error.statusText}` : ''})${error?.url ? `: ${error.url}` : '.'}`
+        : 'Failed to load users and permissions data.')
     );
   }
 
   selectUsersAndPermissionsRole(role: UsersAndPermissionsRoleItem): void {
     this.selectedUsersAndPermissionsRole = role;
     this.expandedControllers.clear();
-    this.loadUsersAndPermissionsRoleDetails(role.Name);
+    this.loadUsersAndPermissionsRoleDetails(role.name);
   }
 
   toggleController(controller: string): void {
@@ -186,9 +188,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
               const rows = permissionItems
                 .map((permission) => ({
                   controller,
-                  permissionName: permission.PermissionName,
-                  description: permission.Description || '-',
-                  selected: permission.Selected,
+                  permissionName: permission.permissionName,
+                  description: permission.description || '-',
+                  selected: permission.selected,
                 }))
                 .sort((a, b) => a.permissionName.localeCompare(b.permissionName));
 
