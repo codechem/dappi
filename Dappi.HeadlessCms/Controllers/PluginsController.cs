@@ -22,14 +22,15 @@ public class PluginsController : ControllerBase
     public IActionResult GetPluginsState()
     {
         var interfaceTypes = new[] { typeof(IEmailService) };
-
         var availableInterfaces = _serviceProvider.ResolveAvailable(interfaceTypes);
-
         var services = interfaceTypes.ToDictionary(
-            type => type.Name,
+            type => char.ToLowerInvariant(type.Name[0]) + type.Name.Substring(1),
             type => availableInterfaces.ContainsKey(type)
         );
 
+        var usersAndPermissionsEnabled = _serviceProvider.GetService(typeof(Dappi.Core.Abstractions.Auth.SchemaAndIssuerProvider)) != null;
+        services["usersAndPermissions"] = usersAndPermissionsEnabled;
+
         return Ok(new { services });
     }
-}
+}    

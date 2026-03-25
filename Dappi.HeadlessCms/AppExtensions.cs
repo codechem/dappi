@@ -126,7 +126,7 @@ public static class AppExtensions
             typeof(TUser).GetProperty("UserName")?.SetValue(user, adminUsername);
             typeof(TUser).GetProperty("Email")?.SetValue(user, adminEmail);
             typeof(TUser).GetProperty("EmailConfirmed")?.SetValue(user, true);
-
+            typeof(TUser).GetProperty("AcceptedInvitation")?.SetValue(user, true);
             var result = await userManager.CreateAsync(user, adminPassword);
 
             if (result.Succeeded)

@@ -128,4 +128,18 @@ public class UsersAndPermissionsController<TUser>(
 
         return Ok(result);
     }
+    
+    [HttpGet("roles")]
+    public async Task<IActionResult> GetAllRoles()
+    {
+        var roles = await _usersAndPermissionsDb.AppRoles
+            .Select(r => new
+            {
+                r.Name,
+                r.Id,
+                r.IsDefaultForAuthenticatedUser
+            })
+            .ToListAsync();
+        return Ok(roles);
+    }
 }
