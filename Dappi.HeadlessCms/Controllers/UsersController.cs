@@ -1,5 +1,5 @@
 using Dappi.HeadlessCms.Authentication;
-using Dappi.HeadlessCms.Exceptions;
+using Dappi.Core.Exceptions;
 using Dappi.HeadlessCms.Interfaces;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -123,7 +123,17 @@ namespace Dappi.HeadlessCms.Controllers
                 });
             }
 
-            var messageId = await _emailService.SendEmailAsync(
+
+            var emailService = _emailService;
+            if (emailService is null)
+            {
+                return BadRequest(new
+                {
+                    message = "Email service is not configured.",
+                });
+            }
+
+            var messageId = await emailService.SendEmailAsync(
                 [dto.Email],
                 invitation.EmailHtmlBody,
                 invitation.EmailTextBody,

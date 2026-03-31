@@ -1,4 +1,4 @@
-namespace Dappi.HeadlessCms.Exceptions;
+namespace Dappi.Core.Exceptions;
 
 public class UserAlreadyExistsException : Exception
 {

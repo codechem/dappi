@@ -1,0 +1,150 @@
+@use '../../../variables' as vars;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  --mat-table-background-color: #{vars.$background-paper-elevation-1};
+  --mat-table-header-headline-color: #{vars.$text-primary};
+  --mat-table-row-item-label-text-color: #{vars.$text-primary};
+  --mat-table-row-item-outline-color: rgba(255, 255, 255, 0.12);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  .title-block {
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    p {
+      margin: 4px 0 0;
+      font-size: 14px;
+      color: vars.$text-secondary;
+    }
+  }
+}
+
+.create-button {
+  border: none;
+  border-radius: 6px;
+  background: vars.$primary-main;
+  color: vars.$primary-contrast-text;
+  height: 40px;
+  padding: 0 16px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.error-message {
+  color: vars.$error-light;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 0;
+
+  img {
+    margin-bottom: 24px;
+    max-width: 200px;
+  }
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 500;
+  }
+
+  p {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: vars.$text-secondary;
+  }
+}
+
+.content-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 24px;
+  overflow: auto;
+  width: 100%;
+  position: relative;
+  contain: size;
+}
+
+.plugin-roles-table-container {
+  width: 100%;
+  background-color: vars.$background-paper-elevation-1;
+  border: vars.$divider;
+  border-radius: 8px;
+  overflow: auto;
+}
+
+.plugin-roles-table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.plugin-roles-table .mdc-data-table__table {
+  background-color: vars.$background-paper-elevation-1;
+}
+
+.plugin-roles-table .mat-mdc-header-row,
+.plugin-roles-table .mat-mdc-row,
+.plugin-roles-table .mat-mdc-header-cell,
+.plugin-roles-table .mat-mdc-cell {
+  background-color: vars.$background-paper-elevation-1;
+  color: vars.$text-primary;
+}
+
+.plugin-roles-table .mat-mdc-row:hover {
+  background-color: rgba(vars.$primary-main, 0.12);
+}
+
+.checkbox-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+
+  .check-icon {
+    color: vars.$success-main;
+    font-size: 20px;
+  }
+
+  .x-icon {
+    color: vars.$error-light;
+    font-size: 20px;
+  }
+}
+
+.loading-content {
+  p {
+    margin-top: 16px;
+  }
+}
+
+:host ::ng-deep .plugin-roles-table .mdc-data-table__header-row,
+:host ::ng-deep .plugin-roles-table .mdc-data-table__row,
+:host ::ng-deep .plugin-roles-table .mdc-data-table__header-cell,
+:host ::ng-deep .plugin-roles-table .mdc-data-table__cell {
+  background-color: vars.$background-paper-elevation-1 !important;
+  color: vars.$text-primary !important;
+}

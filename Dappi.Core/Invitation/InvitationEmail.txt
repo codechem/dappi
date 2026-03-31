@@ -1,0 +1,9 @@
+Hi {{ username }},
+
+You've been invited to join Dappi.
+Temporary password: {{ temporary_password }}
+
+Accept your invitation here:
+{{ accept_url }}
+
+This link expires in {{ expiry_hours }} hours.

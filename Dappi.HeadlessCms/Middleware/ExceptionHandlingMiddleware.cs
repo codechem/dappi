@@ -1,4 +1,5 @@
 using System.Net;
+using Dappi.Core.Exceptions;
 using Dappi.HeadlessCms.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
