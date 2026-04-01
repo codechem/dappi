@@ -73,10 +73,9 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             };
             await _s3Client.PutObjectAsync(putRequest);
 
-            var baseUrl =
-                _storageOptions.UseCdn is not null && _storageOptions.UseCdn == true
-                    ? $"{_storageOptions.CdnUrl}/{objectKey}"
-                    : $"https://{_storageOptions.BucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
+            var baseUrl = !string.IsNullOrEmpty(_storageOptions.CdnUrl)
+                ? $"{_storageOptions.CdnUrl}/{objectKey}"
+                : $"https://{_storageOptions.BucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
 
             var media = await dbContext
                 .DbContext.Set<MediaInfo>()
