@@ -11,7 +11,10 @@
     <ItemGroup>
         <ProjectReference Include="..\..\Dappi.Core\Dappi.Core.csproj" />
         <ProjectReference Include="..\..\Dappi.HeadlessCms\Dappi.HeadlessCms.csproj" />
-        <ProjectReference Include="..\..\Dappi.SourceGenerator\Dappi.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+        <ProjectReference Include="..\..\Dappi.HeadlessCms.UsersAndPermissions\Dappi.HeadlessCms.UsersAndPermissions.csproj" />
+        <ProjectReference Include="..\..\Dappi.SourceGenerator\Dappi.SourceGenerator.csproj" ReferenceOutputAssembly="false" />
+        <Analyzer Include="..\..\Dappi.SourceGenerator\bin\$(Configuration)\netstandard2.0\Dappi.SourceGenerator.dll" />
+        <Analyzer Include="..\..\Dappi.SourceGenerator\bin\$(Configuration)\netstandard2.0\Scriban.dll" />
     </ItemGroup>
 
     <ItemGroup>

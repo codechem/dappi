@@ -1,19 +1,13 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { Subscription } from 'rxjs';
-import { DataStorageComponent } from './data-storage/data-storage.component';
-import { UsersComponent } from './users/users.component';
-import { RolesComponent } from './roles/roles.component';
-import { UsersAndPermissionsUsersComponent } from './users-and-permissions-plugin-users/users-and-permissions-plugin-users.component';
-import { UsersManagementService } from '../services/auth/users-management.service';
 import {
   UsersAndPermissionsPluginService,
   UsersAndPermissionsRoleItem,
-} from '../services/auth/users-and-permissions-plugin.service';
+} from '../../services/auth/users-and-permissions-plugin.service';
 
 interface PermissionTableRow {
   controller: string;
@@ -28,30 +22,16 @@ interface ControllerPermissionGroup {
   allowedCount: number;
 }
 
-type SettingsTab = 'storage' | 'users' | 'roles' | 'usersAndPermissionsPlugin' | 'usersAndPermissionsPluginUsers';
-
 @Component({
-  selector: 'app-settings',
+  selector: 'app-users-and-permissions-plugin',
   standalone: true,
-  imports: [
-    CommonModule,
-    MatButtonToggleModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatTableModule,
-    DataStorageComponent,
-    UsersComponent,
-    RolesComponent,
-  ],
-  templateUrl: './settings.component.html',
-  styleUrl: './settings.component.scss',
+  imports: [MatButtonToggleModule, MatIconModule, MatProgressSpinnerModule, MatTableModule],
+  templateUrl: './users-and-permissions-plugin-roles.component.html',
+  styleUrl: './users-and-permissions-plugin-roles.component.scss',
 })
-export class SettingsComponent implements OnInit, OnDestroy {
+export class UsersAndPermissionsPluginComponent implements OnInit, OnDestroy {
   private subscription = new Subscription();
-  readonly usersAndPermissionsUsersComponent = UsersAndPermissionsUsersComponent;
 
-  activeTab: SettingsTab = 'storage';
-  usersAndPermissionsEnabled = false;
   usersAndPermissionsRoles: UsersAndPermissionsRoleItem[] = [];
   usersAndPermissionsRoleColumns: string[] = ['name'];
   selectedUsersAndPermissionsRole: UsersAndPermissionsRoleItem | null = null;
@@ -63,92 +43,15 @@ export class SettingsComponent implements OnInit, OnDestroy {
   usersAndPermissionsRolesError = '';
   usersAndPermissionsRoleDetailsLoading = false;
   usersAndPermissionsRoleDetailsError = '';
-  private usersAndPermissionsRolesLoaded = false;
 
-  constructor(
-    private usersManagementService: UsersManagementService,
-    private usersAndPermissionsPluginService: UsersAndPermissionsPluginService,
-  ) {}
+  constructor(private usersAndPermissionsPluginService: UsersAndPermissionsPluginService) {}
 
   ngOnInit(): void {
-    this.loadPluginsState();
+    this.loadUsersAndPermissionsRoles();
   }
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
-  }
-
-  selectTab(tab: SettingsTab): void {
-    if (
-      (tab === 'usersAndPermissionsPlugin' || tab === 'usersAndPermissionsPluginUsers')
-      && !this.usersAndPermissionsEnabled
-    ) {
-      return;
-    }
-
-    this.activeTab = tab;
-
-    if (tab === 'usersAndPermissionsPlugin' && !this.usersAndPermissionsRolesLoaded) {
-      this.loadUsersAndPermissionsRoles();
-    }
-  }
-
-  private loadPluginsState(): void {
-    this.subscription.add(
-      this.usersManagementService.getPluginsState().subscribe({
-        next: (response) => {
-          this.usersAndPermissionsEnabled = !!response.services?.['usersAndPermissions'];
-
-          if (
-            !this.usersAndPermissionsEnabled
-            && (
-              this.activeTab === 'usersAndPermissionsPlugin'
-              || this.activeTab === 'usersAndPermissionsPluginUsers'
-            )
-          ) {
-            this.activeTab = 'storage';
-          }
-        },
-      })
-    );
-  }
-
-  private loadUsersAndPermissionsRoles(): void {
-    this.usersAndPermissionsRolesLoading = true;
-    this.usersAndPermissionsRolesError = '';
-
-    this.subscription.add(
-      this.usersAndPermissionsPluginService.getAllRoles().subscribe({
-        next: (roles) => {
-          this.usersAndPermissionsRoles = roles;
-          this.usersAndPermissionsRolesLoading = false;
-          this.usersAndPermissionsRolesLoaded = true;
-
-          if (!this.selectedUsersAndPermissionsRole && roles.length) {
-            this.selectUsersAndPermissionsRole(roles[0]);
-          }
-        },
-        error: (error) => {
-          this.usersAndPermissionsRoles = [];
-          this.selectedUsersAndPermissionsRole = null;
-          this.selectedUsersAndPermissionsRolePermissionGroups = [];
-          this.expandedControllers.clear();
-          this.usersAndPermissionsRolesError = this.getApiErrorMessage(error);
-          this.usersAndPermissionsRolesLoading = false;
-        },
-      })
-    );
-  }
-
-  private getApiErrorMessage(error: any): string {
-    return (
-      error?.error?.message
-      || error?.error?.title
-      || error?.error?.error
-      || (error?.status
-        ? `Failed to load users and permissions data (${error.status}${error?.statusText ? ` ${error.statusText}` : ''})${error?.url ? `: ${error.url}` : '.'}`
-        : 'Failed to load users and permissions data.')
-    );
   }
 
   selectUsersAndPermissionsRole(role: UsersAndPermissionsRoleItem): void {
@@ -189,6 +92,32 @@ export class SettingsComponent implements OnInit, OnDestroy {
     }
   }
 
+  private loadUsersAndPermissionsRoles(): void {
+    this.usersAndPermissionsRolesLoading = true;
+    this.usersAndPermissionsRolesError = '';
+
+    this.subscription.add(
+      this.usersAndPermissionsPluginService.getAllRoles().subscribe({
+        next: (roles) => {
+          this.usersAndPermissionsRoles = roles;
+          this.usersAndPermissionsRolesLoading = false;
+
+          if (!this.selectedUsersAndPermissionsRole && roles.length) {
+            this.selectUsersAndPermissionsRole(roles[0]);
+          }
+        },
+        error: (error) => {
+          this.usersAndPermissionsRoles = [];
+          this.selectedUsersAndPermissionsRole = null;
+          this.selectedUsersAndPermissionsRolePermissionGroups = [];
+          this.expandedControllers.clear();
+          this.usersAndPermissionsRolesError = this.getApiErrorMessage(error);
+          this.usersAndPermissionsRolesLoading = false;
+        },
+      })
+    );
+  }
+
   private loadUsersAndPermissionsRoleDetails(roleName: string): void {
     this.usersAndPermissionsRoleDetailsLoading = true;
     this.usersAndPermissionsRoleDetailsError = '';
@@ -216,7 +145,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
             .sort((a, b) => a.controller.localeCompare(b.controller));
 
           if (this.selectedUsersAndPermissionsRolePermissionGroups.length) {
-            this.expandedControllers.add(this.selectedUsersAndPermissionsRolePermissionGroups[0].controller);
+            this.expandedControllers.add(
+              this.selectedUsersAndPermissionsRolePermissionGroups[0].controller
+            );
           }
           this.usersAndPermissionsRoleDetailsLoading = false;
         },
@@ -227,6 +158,17 @@ export class SettingsComponent implements OnInit, OnDestroy {
           this.usersAndPermissionsRoleDetailsLoading = false;
         },
       })
+    );
+  }
+
+  private getApiErrorMessage(error: any): string {
+    return (
+      error?.error?.message ||
+      error?.error?.title ||
+      error?.error?.error ||
+      (error?.status
+        ? `Failed to load users and permissions data (${error.status}${error?.statusText ? ` ${error.statusText}` : ''})${error?.url ? `: ${error.url}` : '.'}`
+        : 'Failed to load users and permissions data.')
     );
   }
 }

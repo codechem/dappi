@@ -24,10 +24,20 @@
         class="settings-sidebar__item"
         [class.settings-sidebar__item--active]="activeTab === 'usersAndPermissionsPlugin'"
         (click)="selectTab('usersAndPermissionsPlugin')"
-        aria-label="Users and permissions plugin"
+        aria-label="Roles and permissions"
       >
         <mat-icon>shield</mat-icon>
-        <span>Users & Permissions plugin</span>
+        <span>Roles & Permissions</span>
+      </button>
+
+      <button
+        class="settings-sidebar__item"
+        [class.settings-sidebar__item--active]="activeTab === 'usersAndPermissionsPluginUsers'"
+        (click)="selectTab('usersAndPermissionsPluginUsers')"
+        aria-label="Users and permissions users"
+      >
+        <mat-icon>people</mat-icon>
+        <span>Users</span>
       </button>
     }
 
@@ -59,6 +69,8 @@
   <div class="container">
     @if (activeTab === 'storage') {
       <app-data-storage></app-data-storage>
+    } @else if (activeTab === 'usersAndPermissionsPluginUsers') {
+      <ng-container [ngComponentOutlet]="usersAndPermissionsUsersComponent"></ng-container>
     } @else if (activeTab === 'usersAndPermissionsPlugin') {
       <header class="plugin-header">
         <div class="plugin-title-block">
