@@ -127,17 +127,8 @@ public class UsersAndPermissionsController<TUser>(
                 message = "Failed to prepare invitation.",
             });
         }
-        
-        var emailService = service;
-        if (emailService is null)
-        {
-            return BadRequest(new
-            {
-                message = "Email service is not configured.",
-            });
-        }
 
-        var messageId = await emailService.SendEmailAsync(
+        var messageId = await service!.SendEmailAsync(
             [dto.Email],
             invitation.EmailHtmlBody,
             invitation.EmailTextBody,
@@ -408,5 +399,23 @@ public class UsersAndPermissionsController<TUser>(
             .ToListAsync(cancellationToken);
 
         return Ok(users);
+    }
+
+    [HttpDelete("users/{id:int}")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var user = await userManager.FindByIdAsync(id.ToString());
+        if (user is null)
+        {
+            return NotFound(new { message = "User not found" });
+        }
+
+        var result = await userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+        {
+            return BadRequest(result.Errors);
+        }
+
+        return Ok(new { message = "User deleted successfully" });
     }
 }

@@ -1,8 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { MatCheckboxChange, MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
-import { Subscription } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import {
   UsersAndPermissionsPluginService,
   UsersAndPermissionsUserItem,
@@ -14,7 +15,7 @@ import { InviteUserData, InviteUserDialogComponent } from '../../invite-user-dia
 @Component({
   selector: 'app-users-and-permissions-users',
   standalone: true,
-  imports: [MatProgressSpinnerModule, MatTableModule, MatIconModule],
+  imports: [MatProgressSpinnerModule, MatTableModule, MatIconModule, MatCheckboxModule],
   templateUrl: './users-and-permissions-plugin-users.component.html',
   styleUrl: './users-and-permissions-plugin-users.component.scss',
 })
@@ -23,11 +24,13 @@ export class UsersAndPermissionsUsersComponent implements OnInit, OnDestroy {
 
   inviteButtonText = '+ Invite Users';
   usersAndPermissionsUsers: UsersAndPermissionsUserItem[] = [];
-  usersAndPermissionsUserColumns: string[] = ['userName', 'email', 'roleName', 'emailConfirmed'];
+  usersAndPermissionsUserColumns: string[] = ['select', 'userName', 'email', 'roleName', 'acceptedInvitation'];
   usersAndPermissionsUsersLoading = false;
   usersAndPermissionsUsersError = '';
   isEmailServiceAvailable = true;
   inviteError = '';
+  deletingUsers = false;
+  selectedUserIds = new Set<number>();
 
 
   constructor(
@@ -53,10 +56,12 @@ export class UsersAndPermissionsUsersComponent implements OnInit, OnDestroy {
       this.usersAndPermissionsPluginService.getAllUsers().subscribe({
         next: (users) => {
           this.usersAndPermissionsUsers = users;
+          this.selectedUserIds.clear();
           this.usersAndPermissionsUsersLoading = false;
         },
         error: (error) => {
           this.usersAndPermissionsUsers = [];
+          this.selectedUserIds.clear();
           this.usersAndPermissionsUsersError = this.getApiErrorMessage(error);
           this.usersAndPermissionsUsersLoading = false;
         },
@@ -89,6 +94,71 @@ export class UsersAndPermissionsUsersComponent implements OnInit, OnDestroy {
         })
       );
     });
+  }
+
+  get selectAllChecked(): boolean {
+    return this.usersAndPermissionsUsers.length > 0
+      && this.selectedUserIds.size === this.usersAndPermissionsUsers.length;
+  }
+
+  get selectAllIndeterminate(): boolean {
+    return this.selectedUserIds.size > 0
+      && this.selectedUserIds.size < this.usersAndPermissionsUsers.length;
+  }
+
+  toggleSelectAll(event: MatCheckboxChange): void {
+    this.selectedUserIds.clear();
+
+    if (event.checked) {
+      this.usersAndPermissionsUsers.forEach((user) => this.selectedUserIds.add(user.id));
+    }
+  }
+
+  toggleSelectUser(event: MatCheckboxChange, userId: number): void {
+    if (event.checked) {
+      this.selectedUserIds.add(userId);
+      return;
+    }
+
+    this.selectedUserIds.delete(userId);
+  }
+
+  isSelected(userId: number): boolean {
+    return this.selectedUserIds.has(userId);
+  }
+
+  deleteSelectedUsers(): void {
+    if (!this.selectedUserIds.size || this.deletingUsers) {
+      return;
+    }
+
+    const selectedCount = this.selectedUserIds.size;
+    const confirmationText = selectedCount === 1
+      ? 'Are you sure you want to delete the selected user?'
+      : `Are you sure you want to delete ${selectedCount} selected users?`;
+
+    if (!confirm(confirmationText)) {
+      return;
+    }
+
+    this.deletingUsers = true;
+    this.usersAndPermissionsUsersError = '';
+
+    const deleteRequests = Array.from(this.selectedUserIds).map((userId) => this.usersAndPermissionsPluginService.deleteUser(userId)
+    );
+
+    this.subscription.add(
+      forkJoin(deleteRequests).subscribe({
+        next: () => {
+          this.deletingUsers = false;
+          this.loadUsersAndPermissionsUsers();
+        },
+        error: (error) => {
+          this.deletingUsers = false;
+          this.usersAndPermissionsUsersError = this.getApiErrorMessage(error);
+        },
+      })
+    );
   }
 
   private getApiErrorMessage(error: any): string {

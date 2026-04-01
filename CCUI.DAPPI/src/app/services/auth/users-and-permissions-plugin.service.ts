@@ -49,6 +49,12 @@ export class UsersAndPermissionsPluginService {
     );
   }
 
+  deleteUser(userId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${BASE_API_URL}${this.endpoint}/users/${userId}`
+    );
+  }
+
   getRolePermissions(roleName: string): Observable<UsersAndPermissionsRolePermissionsResponse> {
     const params = new HttpParams().set('roleName', roleName);
 

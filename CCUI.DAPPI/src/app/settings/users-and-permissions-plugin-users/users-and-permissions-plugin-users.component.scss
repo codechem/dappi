@@ -51,6 +51,23 @@
   font-size: 14px;
 }
 
+.bulk-actions {
+  margin-bottom: 16px;
+}
+
+.delete-selected-button {
+  background: transparent;
+  color: vars.$error-light;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  border: none;
+}
+
+.small-cell {
+  width: 52px;
+}
+
 .content {
   flex: 1;
   display: flex;
