@@ -88,17 +88,6 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             }
         }
 
-        public void ValidateFile(IFormFile file)
-        {
-            if (file == null || file.Length == 0)
-                throw new Exception("No file was uploaded.");
-
-            var fileExtension = Path.GetExtension(file.FileName);
-
-            if (!IsExtensionSupported(fileExtension))
-                throw new Exception("Unsupported media type.");
-        }
-
         public async Task UpdateStatusAsync(Guid mediaId, MediaUploadStatus status)
         {
             var media = await dbContext
@@ -120,22 +109,6 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                 ".pdf" => "application/pdf",
                 _ => "application/octet-stream",
             };
-
-        private bool IsExtensionSupported(string extension)
-        {
-            if (
-                _storageOptions.SupportedExtensions is null
-                || _storageOptions.SupportedExtensions.Count == 0
-            )
-            {
-                return true;
-            }
-
-            var normalizedExtension = extension.TrimStart('.').ToLower();
-            return _storageOptions.SupportedExtensions.Any(allowed =>
-                allowed.Equals(normalizedExtension, StringComparison.CurrentCultureIgnoreCase)
-            );
-        }
 
         public override string ToString() => "aws-s3";
     }
