@@ -420,14 +420,6 @@ namespace Dappi.SourceGenerator.Generators
                                 UploadDate = DateTime.UtcNow
                             };
                             
-                            try { 
-                               uploadService.ValidateFile(file);
-                            }
-                            catch(Exception ex)
-                            {
-                                return BadRequest(new {message = ex.Message});
-                            }
-                            
                             property.SetValue(entity, mediaInfo);
 
                             await dbContext.Set<MediaInfo>().AddAsync(mediaInfo);

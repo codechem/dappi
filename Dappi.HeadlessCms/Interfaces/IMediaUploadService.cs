@@ -11,6 +11,5 @@ namespace Dappi.HeadlessCms.Interfaces
         Task UpdateStatusAsync(Guid mediaId, MediaUploadStatus status);
         Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair);
         Task SaveFileAsync(Guid mediaId, IFormFile file);
-        public void ValidateFile(IFormFile file);
     }
 }

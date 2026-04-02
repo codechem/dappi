@@ -17,20 +17,24 @@ namespace Dappi.HeadlessCms.Services.StorageServices
     ) : IMediaUploadService
     {
         private readonly IAmazonS3 _s3Client = factory.CreateClient();
+        private readonly AwsStorageOptions _storageOptions = configuration
+            .GetSection(AwsStorageOptions.AwsStorage)
+            .Get<AwsStorageOptions>()!;
+        private readonly AwsAccountOptions _accountOptions = configuration
+            .GetSection(AwsAccountOptions.AwsAccount)
+            .Get<AwsAccountOptions>()!;
 
         public void DeleteMedia(MediaInfo media)
         {
             if (string.IsNullOrEmpty(media.Url))
                 return;
 
-            var bucketName = configuration["AWS:Storage:BucketName"];
-
             var uri = new Uri(media.Url);
             var objectKey = Path.GetFileName(uri.LocalPath);
 
             var deleteRequest = new DeleteObjectRequest
             {
-                BucketName = bucketName,
+                BucketName = _storageOptions.BucketName,
                 Key = objectKey,
             };
 
@@ -49,24 +53,19 @@ namespace Dappi.HeadlessCms.Services.StorageServices
 
         public async Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair)
         {
-            var bucketName = configuration["AWS:Storage:BucketName"];
-            var cdnUrl = configuration["AWS:Storage:CdnUrl"];
-            var regionName = configuration["AWS:Account:Region"];
-
-            var useCdn =
-                bool.TryParse(configuration["AWS:Storage:UseCdn"], out var parsed) && parsed;
-
             var extension = streamAndExtensionPair.Extension.StartsWith(".")
                 ? streamAndExtensionPair.Extension
                 : "." + streamAndExtensionPair.Extension;
 
             var objectKey = $"{mediaId}{extension}";
 
-            var region = Amazon.RegionEndpoint.GetBySystemName(regionName ?? "eu-central-1");
+            var region = Amazon.RegionEndpoint.GetBySystemName(
+                _accountOptions.Region ?? "eu-central-1"
+            );
 
             var putRequest = new PutObjectRequest
             {
-                BucketName = bucketName,
+                BucketName = _storageOptions.BucketName,
                 Key = objectKey,
                 InputStream = streamAndExtensionPair.Stream,
                 AutoCloseStream = true,
@@ -74,9 +73,9 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             };
             await _s3Client.PutObjectAsync(putRequest);
 
-            var baseUrl = useCdn
-                ? $"{cdnUrl}/{objectKey}"
-                : $"https://{bucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
+            var baseUrl = !string.IsNullOrEmpty(_storageOptions.CdnUrl)
+                ? $"{_storageOptions.CdnUrl}/{objectKey}"
+                : $"https://{_storageOptions.BucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
 
             var media = await dbContext
                 .DbContext.Set<MediaInfo>()
@@ -87,17 +86,6 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                 media.Url = baseUrl;
                 await dbContext.DbContext.SaveChangesAsync();
             }
-        }
-
-        public void ValidateFile(IFormFile file)
-        {
-            if (file == null || file.Length == 0)
-                throw new Exception("No file was uploaded.");
-
-            var fileExtension = Path.GetExtension(file.FileName);
-
-            if (GetContentType(fileExtension) == "unsupported")
-                throw new Exception("Unsupported media type.");
         }
 
         public async Task UpdateStatusAsync(Guid mediaId, MediaUploadStatus status)
