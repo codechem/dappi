@@ -89,6 +89,53 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             }
         }
 
+        public async Task<T> SaveFileAsync<T>(
+            Guid mediaId,
+            StreamAndExtensionPair streamAndExtensionPair
+        )
+        {
+            var bucketName = configuration["AWS:Storage:BucketName"];
+            var cdnUrl = configuration["AWS:Storage:CdnUrl"];
+            var regionName = configuration["AWS:Account:Region"];
+
+            var useCdn =
+                bool.TryParse(configuration["AWS:Storage:UseCdn"], out var parsed) && parsed;
+
+            var extension = streamAndExtensionPair.Extension.StartsWith(".")
+                ? streamAndExtensionPair.Extension
+                : "." + streamAndExtensionPair.Extension;
+
+            var objectKey = $"{mediaId}{extension}";
+
+            var region = Amazon.RegionEndpoint.GetBySystemName(regionName ?? "eu-central-1");
+
+            var putRequest = new PutObjectRequest
+            {
+                BucketName = bucketName,
+                Key = objectKey,
+                InputStream = streamAndExtensionPair.Stream,
+                AutoCloseStream = true,
+                ContentType = GetContentType(extension),
+            };
+            await _s3Client.PutObjectAsync(putRequest);
+
+            var baseUrl = useCdn
+                ? $"{cdnUrl}/{objectKey}"
+                : $"https://{bucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
+
+            var media = await dbContext
+                .DbContext.Set<MediaInfo>()
+                .FirstOrDefaultAsync(m => m.Id == mediaId);
+
+            if (media == null)
+                return default!;
+
+            media.Url = baseUrl;
+            await dbContext.DbContext.SaveChangesAsync();
+
+            return (T)Convert.ChangeType(baseUrl, typeof(T));
+        }
+
         public void ValidateFile(IFormFile file)
         {
             if (file == null || file.Length == 0)
