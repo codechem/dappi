@@ -12,9 +12,11 @@ namespace Dappi.HeadlessCms.Services.StorageServices
     {
         public void DeleteMedia(MediaInfo media)
         {
-            if (media.Url == null) throw new ArgumentNullException(media.Url);
+            if (media.Url == null)
+                throw new ArgumentNullException(media.Url);
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", media.Url);
-            if (File.Exists(filePath)) File.Delete(filePath);
+            if (File.Exists(filePath))
+                File.Delete(filePath);
         }
 
         public void ValidateFile(IFormFile file)
@@ -30,69 +32,74 @@ namespace Dappi.HeadlessCms.Services.StorageServices
 
         public async Task SaveFileAsync(Guid mediaId, IFormFile file)
         {
-            var uploadsFolder = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "wwwroot",
-                "uploads");
-
-            if (!Directory.Exists(uploadsFolder))
-                Directory.CreateDirectory(uploadsFolder);
-
-            var fileExtension = Path.GetExtension(file.FileName);
-            var fileName = $"{Guid.NewGuid()}_{mediaId}{fileExtension}";
-            var filePath = Path.Combine(uploadsFolder, fileName);
-
-            await using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(fileStream);
-            }
-
-            var relativePath = $"uploads{Path.DirectorySeparatorChar}{fileName}";
-
-            var media = await dbContext.DbContext.Set<MediaInfo>()
-                .Where(m => m.Id == mediaId).FirstOrDefaultAsync();
-
-            if (media == null) return;
-
-            media.Url = relativePath;
-            await dbContext.DbContext.SaveChangesAsync();
+            await using var stream = file.OpenReadStream();
+            await StoreFileAsync(mediaId, stream, Path.GetExtension(file.FileName));
         }
-        
-        public async Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair)
+
+        public Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair) =>
+            StoreFileAsync(
+                mediaId,
+                streamAndExtensionPair.Stream,
+                streamAndExtensionPair.Extension
+            );
+
+        public async Task<T> SaveFileAsync<T>(
+            Guid mediaId,
+            StreamAndExtensionPair streamAndExtensionPair
+        )
         {
-            var uploadsFolder = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "wwwroot",
-                "uploads");
+            var relativePath = await StoreFileAsync(
+                mediaId,
+                streamAndExtensionPair.Stream,
+                streamAndExtensionPair.Extension
+            );
+
+            if (relativePath == null)
+                return default!;
+
+            return (T)Convert.ChangeType(relativePath, typeof(T));
+        }
+
+        private async Task<string?> StoreFileAsync(Guid mediaId, Stream stream, string extension)
+        {
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
 
             if (!Directory.Exists(uploadsFolder))
                 Directory.CreateDirectory(uploadsFolder);
 
-            var fileName = $"{Guid.NewGuid()}_{mediaId}{streamAndExtensionPair.Extension}";
+            var fileName = $"{Guid.NewGuid()}_{mediaId}{extension}";
             var filePath = Path.Combine(uploadsFolder, fileName);
 
             await using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
-                await streamAndExtensionPair.Stream.CopyToAsync(fileStream); 
+                await stream.CopyToAsync(fileStream);
             }
 
             var relativePath = $"uploads{Path.DirectorySeparatorChar}{fileName}";
 
-            var media = await dbContext.DbContext.Set<MediaInfo>()
-                .Where(m => m.Id == mediaId).FirstOrDefaultAsync();
+            var media = await dbContext
+                .DbContext.Set<MediaInfo>()
+                .Where(m => m.Id == mediaId)
+                .FirstOrDefaultAsync();
 
-            if (media == null) return;
+            if (media == null)
+                return null;
 
             media.Url = relativePath;
             await dbContext.DbContext.SaveChangesAsync();
+
+            return relativePath;
         }
 
         public async Task UpdateStatusAsync(Guid mediaId, MediaUploadStatus status)
         {
-            var media = await dbContext.DbContext.Set<MediaInfo>()
-                .Where(m => m.Id == mediaId).FirstOrDefaultAsync();
+            var media = await dbContext
+                .DbContext.Set<MediaInfo>()
+                .Where(m => m.Id == mediaId)
+                .FirstOrDefaultAsync();
 
-            if (media == null) return;
+            if (media == null)
+                return;
 
             media.Status = status;
             await dbContext.DbContext.SaveChangesAsync();

@@ -47,7 +47,26 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             await SaveFileAsync(mediaId, pair);
         }
 
-        public async Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair)
+        public Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair) =>
+            UploadAsync(mediaId, streamAndExtensionPair);
+
+        public async Task<T> SaveFileAsync<T>(
+            Guid mediaId,
+            StreamAndExtensionPair streamAndExtensionPair
+        )
+        {
+            var baseUrl = await UploadAsync(mediaId, streamAndExtensionPair);
+
+            if (baseUrl == null)
+                return default!;
+
+            return (T)Convert.ChangeType(baseUrl, typeof(T));
+        }
+
+        private async Task<string?> UploadAsync(
+            Guid mediaId,
+            StreamAndExtensionPair streamAndExtensionPair
+        )
         {
             var bucketName = configuration["AWS:Storage:BucketName"];
             var cdnUrl = configuration["AWS:Storage:CdnUrl"];
@@ -82,11 +101,13 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                 .DbContext.Set<MediaInfo>()
                 .FirstOrDefaultAsync(m => m.Id == mediaId);
 
-            if (media != null)
-            {
-                media.Url = baseUrl;
-                await dbContext.DbContext.SaveChangesAsync();
-            }
+            if (media == null)
+                return null;
+
+            media.Url = baseUrl;
+            await dbContext.DbContext.SaveChangesAsync();
+
+            return baseUrl;
         }
 
         public void ValidateFile(IFormFile file)
