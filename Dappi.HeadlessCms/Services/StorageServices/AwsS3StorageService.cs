@@ -47,49 +47,23 @@ namespace Dappi.HeadlessCms.Services.StorageServices
             await SaveFileAsync(mediaId, pair);
         }
 
-        public async Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair)
-        {
-            var bucketName = configuration["AWS:Storage:BucketName"];
-            var cdnUrl = configuration["AWS:Storage:CdnUrl"];
-            var regionName = configuration["AWS:Account:Region"];
-
-            var useCdn =
-                bool.TryParse(configuration["AWS:Storage:UseCdn"], out var parsed) && parsed;
-
-            var extension = streamAndExtensionPair.Extension.StartsWith(".")
-                ? streamAndExtensionPair.Extension
-                : "." + streamAndExtensionPair.Extension;
-
-            var objectKey = $"{mediaId}{extension}";
-
-            var region = Amazon.RegionEndpoint.GetBySystemName(regionName ?? "eu-central-1");
-
-            var putRequest = new PutObjectRequest
-            {
-                BucketName = bucketName,
-                Key = objectKey,
-                InputStream = streamAndExtensionPair.Stream,
-                AutoCloseStream = true,
-                ContentType = GetContentType(extension),
-            };
-            await _s3Client.PutObjectAsync(putRequest);
-
-            var baseUrl = useCdn
-                ? $"{cdnUrl}/{objectKey}"
-                : $"https://{bucketName}.s3.{region.SystemName}.amazonaws.com/{objectKey}";
-
-            var media = await dbContext
-                .DbContext.Set<MediaInfo>()
-                .FirstOrDefaultAsync(m => m.Id == mediaId);
-
-            if (media != null)
-            {
-                media.Url = baseUrl;
-                await dbContext.DbContext.SaveChangesAsync();
-            }
-        }
+        public Task SaveFileAsync(Guid mediaId, StreamAndExtensionPair streamAndExtensionPair) =>
+            UploadAsync(mediaId, streamAndExtensionPair);
 
         public async Task<T> SaveFileAsync<T>(
+            Guid mediaId,
+            StreamAndExtensionPair streamAndExtensionPair
+        )
+        {
+            var baseUrl = await UploadAsync(mediaId, streamAndExtensionPair);
+
+            if (baseUrl == null)
+                return default!;
+
+            return (T)Convert.ChangeType(baseUrl, typeof(T));
+        }
+
+        private async Task<string?> UploadAsync(
             Guid mediaId,
             StreamAndExtensionPair streamAndExtensionPair
         )
@@ -128,12 +102,12 @@ namespace Dappi.HeadlessCms.Services.StorageServices
                 .FirstOrDefaultAsync(m => m.Id == mediaId);
 
             if (media == null)
-                return default!;
+                return null;
 
             media.Url = baseUrl;
             await dbContext.DbContext.SaveChangesAsync();
 
-            return (T)Convert.ChangeType(baseUrl, typeof(T));
+            return baseUrl;
         }
 
         public void ValidateFile(IFormFile file)
