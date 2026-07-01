@@ -1,0 +1,103 @@
+<header class="header">
+  <div class="title-block">
+    <h1>Users & Permissions plugin - Users</h1>
+    <p>Manage users and their assigned roles</p>
+  </div>
+  <button class="create-button" (click)="inviteUser()" aria-label="Invite user">
+    {{ inviteButtonText }}
+  </button>
+</header>
+
+@if (usersAndPermissionsUsersError) {
+  <div class="error-message">{{ usersAndPermissionsUsersError }}</div>
+}
+
+@if (inviteError) {
+  <div class="error-message">{{ inviteError }}</div>
+}
+
+@if (selectedUserIds.size > 0) {
+  <div class="bulk-actions">
+    <button
+      class="delete-selected-button"
+      (click)="deleteSelectedUsers()"
+      [disabled]="deletingUsers"
+      aria-label="Delete selected users"
+    >
+      <mat-icon>delete</mat-icon>
+      <span>Delete selected</span>
+    </button>
+  </div>
+}
+
+@if (usersAndPermissionsUsersLoading) {
+  <div class="content loading-content">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading users...</p>
+  </div>
+} @else if (!usersAndPermissionsUsers.length) {
+  <div class="content">
+    <img src="assets/illustration.svg" alt="No users" />
+    <h2>There are no users yet</h2>
+    <p>Users are managed through the Users & Permissions plugin</p>
+  </div>
+} @else {
+  <div class="content-list">
+    <div class="plugin-roles-table-container" aria-label="Users and permissions users list">
+      <table mat-table [dataSource]="usersAndPermissionsUsers" class="plugin-roles-table">
+      <ng-container matColumnDef="select">
+        <th mat-header-cell *matHeaderCellDef class="small-cell">
+          <mat-checkbox
+            [checked]="selectAllChecked"
+            [indeterminate]="selectAllIndeterminate"
+            [disabled]="deletingUsers"
+            (change)="toggleSelectAll($event)"
+            aria-label="Select all users"
+          >
+          </mat-checkbox>
+        </th>
+        <td mat-cell *matCellDef="let user" class="small-cell">
+          <mat-checkbox
+            [checked]="isSelected(user.id)"
+            [disabled]="deletingUsers"
+            (change)="toggleSelectUser($event, user.id)"
+            aria-label="Select user"
+          >
+          </mat-checkbox>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="userName">
+        <th mat-header-cell *matHeaderCellDef>Username</th>
+        <td mat-cell *matCellDef="let user">{{ user.userName }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="roleName">
+        <th mat-header-cell *matHeaderCellDef>Role</th>
+        <td mat-cell *matCellDef="let user">{{ user.roleName || '-' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="acceptedInvitation">
+        <th mat-header-cell *matHeaderCellDef>Accepted Invitation</th>
+        <td mat-cell *matCellDef="let user">
+          <span class="checkbox-indicator" ariaLabel="{{ user.acceptedInvitation ? 'Yes' : 'No' }}">
+            @if (user.acceptedInvitation) {
+              <mat-icon class="check-icon">check_circle</mat-icon>
+            } @else {
+              <mat-icon class="x-icon">cancel</mat-icon>
+            }
+          </span>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="usersAndPermissionsUserColumns"></tr>
+      <tr mat-row *matRowDef="let user; columns: usersAndPermissionsUserColumns"></tr>
+      </table>
+    </div>
+  </div>
+}

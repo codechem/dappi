@@ -1,6 +1,4 @@
 using System.Reflection;
-using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Dappi.Core.Models;
 using Dappi.HeadlessCms.UsersAndPermissions.Api;
@@ -9,16 +7,17 @@ using Dappi.HeadlessCms.UsersAndPermissions.Api.Configuration;
 using Dappi.HeadlessCms.UsersAndPermissions.Api.Middleware;
 using Dappi.HeadlessCms.UsersAndPermissions.Core;
 using Dappi.HeadlessCms.UsersAndPermissions.Database;
+using Dappi.HeadlessCms.UsersAndPermissions.Interfaces;
 using Dappi.HeadlessCms.UsersAndPermissions.Jwt;
 using Dappi.HeadlessCms.UsersAndPermissions.Services;
+using Dappi.HeadlessCms.UsersAndPermissions.Services.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 
 namespace Dappi.HeadlessCms.UsersAndPermissions;
@@ -47,7 +46,10 @@ public static class Extensions
         services.AddSingleton(new AvailablePermissionsRepository(controllerRoutes));
         services.AddMemoryCache();
         services
-            .AddIdentityCore<TUser>()
+            .AddIdentityCore<TUser>(options =>
+            {
+                options.SignIn.RequireConfirmedEmail = true;
+            })
             .AddRoles<AppRole>()
             .AddEntityFrameworkStores<TDbContext>()
             .AddDefaultTokenProviders()
@@ -68,6 +70,8 @@ public static class Extensions
                 }
             );
         services.AddScoped<TokenService<TUser>>();
+        services.AddDataProtection();
+        services.AddScoped<IInvitationService, InvitationService>();
 
         services.AddScoped<PermissionAuthorizationFilter>();
         services.AddScoped<ExternalUserSyncContext<TUser>>();

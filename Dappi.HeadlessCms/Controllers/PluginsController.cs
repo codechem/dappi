@@ -22,9 +22,10 @@ public class PluginsController : ControllerBase
     public IActionResult GetPluginsState()
     {
         var interfaceTypes = new[] { typeof(IEmailService) };
+        
         var availableInterfaces = _serviceProvider.ResolveAvailable(interfaceTypes);
         var services = interfaceTypes.ToDictionary(
-            type => char.ToLowerInvariant(type.Name[0]) + type.Name.Substring(1),
+            type => type.Name,
             type => availableInterfaces.ContainsKey(type)
         );
 

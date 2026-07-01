@@ -27,10 +27,12 @@
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.8.1" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="EmailTemplates/Invitation/InvitationEmail.html">
+    <None Include="..\Dappi.Core\Invitation\InvitationEmail.html">
+      <Link>Invitation/InvitationEmail.html</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="EmailTemplates/Invitation/InvitationEmail.txt">
+    <None Include="..\Dappi.Core\Invitation\InvitationEmail.txt">
+      <Link>Invitation/InvitationEmail.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Scripts/Start-DappiMigrationRunner.ps1">
@@ -47,11 +49,13 @@
       <Pack>true</Pack>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
-    <Content Include="EmailTemplates/Invitation/InvitationEmail.html">
+    <Content Include="..\Dappi.Core\Invitation\InvitationEmail.html">
+      <Link>Invitation/InvitationEmail.html</Link>
       <Pack>true</Pack>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
-    <Content Include="EmailTemplates/Invitation/InvitationEmail.txt">
+    <Content Include="..\Dappi.Core\Invitation\InvitationEmail.txt">
+      <Link>Invitation/InvitationEmail.txt</Link>
       <Pack>true</Pack>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>

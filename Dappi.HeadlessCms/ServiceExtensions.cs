@@ -1,8 +1,6 @@
-using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
 using Dappi.Core.Abstractions.Auth;
-using Dappi.HeadlessCms.ActionFilters;
 using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Background;
 using Dappi.HeadlessCms.Core;
@@ -180,6 +178,7 @@ public static class ServiceExtensions
             .AddIdentity<TUser, TRole>(options =>
             {
                 options.User.RequireUniqueEmail = true;
+                options.SignIn.RequireConfirmedEmail = true;
 
                 options.Password.RequireDigit = true;
                 options.Password.RequireLowercase = true;
@@ -335,6 +334,8 @@ public static class ServiceExtensions
     {
         return services.AddSwaggerGen(c =>
         {
+            c.CustomSchemaIds(type => (type.FullName ?? type.Name).Replace("+", "."));
+
             c.SwaggerDoc("Toolkit", new OpenApiInfo { Title = "Toolkit API", Version = "v1" });
             c.SwaggerDoc("Default", new OpenApiInfo { Title = "Default API", Version = "v1" });
 
@@ -376,7 +377,7 @@ public static class ServiceExtensions
                     },
                 }
             );
-            c.TagActionsBy(api => api.GroupName ?? api.ActionDescriptor.RouteValues["controller"]);
+            c.TagActionsBy(api => [api.GroupName ?? api.ActionDescriptor.RouteValues["controller"] ?? "Default"]);
         });
     }
 }
