@@ -2,7 +2,9 @@ using System.Diagnostics;
 using System.Reflection;
 using Dappi.HeadlessCms.Authentication;
 using Dappi.HeadlessCms.Enums;
+using Dappi.HeadlessCms.Exceptions;
 using Dappi.HeadlessCms.Interfaces;
+using Dappi.HeadlessCms.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +19,8 @@ namespace Dappi.HeadlessCms.Controllers;
 public class MigrationController(
     IHostApplicationLifetime appLifetime,
     IContentTypeChangesService contentTypeChangesService,
-    IDbContextAccessor dbContextAccessor
+    IDbContextAccessor dbContextAccessor,
+    GitPublishService gitPublish
 ) : ControllerBase
 {
     private readonly string _projectDirectory = Path.GetDirectoryName(
@@ -32,11 +35,16 @@ public class MigrationController(
     public async Task<IActionResult> ApplyMigrationsAndRestart()
     {
         var draftModels = await contentTypeChangesService.GetDraftsAsync().ToListAsync();
-        if (
-            draftModels.Any(x =>
-                x.State is ContentTypeState.PendingPublish or ContentTypeState.PendingDelete
-            )
-        )
+        var modelChanged = draftModels.Any(x =>
+            x.State is ContentTypeState.PendingPublish or ContentTypeState.PendingDelete
+        );
+
+        if (gitPublish.IsEnabled)
+        {
+            return await PublishToGit(modelChanged);
+        }
+
+        if (modelChanged)
         {
             if (OperatingSystem.IsWindows())
             {
@@ -52,6 +60,33 @@ public class MigrationController(
 
         RestartApplication();
         return Ok("No migrations to apply. Application restarting...");
+    }
+
+    private async Task<IActionResult> PublishToGit(bool modelChanged)
+    {
+        try
+        {
+            var pushed = await gitPublish.PublishAsync(
+                GetMigrationName(),
+                _dbContextName,
+                modelChanged
+            );
+            var message = pushed
+                ? "Changes pushed. The new version will be live after the redeploy."
+                : "Nothing to publish.";
+            return Ok(
+                new
+                {
+                    success = true,
+                    restarting = pushed,
+                    message,
+                }
+            );
+        }
+        catch (GitPublishException e)
+        {
+            return Conflict(new { success = false, message = e.Message });
+        }
     }
 
     private void RunDbMigrationScenario()

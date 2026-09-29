@@ -71,6 +71,8 @@ public static class ServiceExtensions
 
         services.AddScoped<IContentTypeChangesService, ContentTypeChangesService>();
         services.AddScoped<IInvitationService, InvitationService>();
+        services.Configure<DappiGitOptions>(configuration.GetSection(DappiGitOptions.Section));
+        services.AddScoped<GitPublishService>();
         services.AddDappiSwaggerGen();
 
         services.AddFluentValidationAutoValidation();
