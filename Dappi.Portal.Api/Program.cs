@@ -78,15 +78,23 @@ app.MapPost(
 
 app.MapDelete(
     "/api/apps/{name}",
-    async (string name, Provisioner provisioner) =>
+    async (string name, Provisioner provisioner, ILogger<Provisioner> logger) =>
     {
         if (provisioner.IsCreating(name))
         {
             return Results.BadRequest("Wait until the app is created, then delete it.");
         }
 
-        await provisioner.Delete(name);
-        return Results.NoContent();
+        try
+        {
+            await provisioner.Delete(name);
+            return Results.NoContent();
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Deleting {App} failed", name);
+            return Results.Json(e.Message, statusCode: 500);
+        }
     }
 );
 

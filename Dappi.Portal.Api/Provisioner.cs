@@ -107,9 +107,9 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
         if (project is not null)
         {
             // Removing only the project leaves the app and database containers running.
-            foreach (var environment in project["environments"]!.AsArray())
+            foreach (var environment in project["environments"]?.AsArray() ?? [])
             {
-                foreach (var app in environment!["applications"]!.AsArray())
+                foreach (var app in environment!["applications"]?.AsArray() ?? [])
                 {
                     await dokploy.Post(
                         "application.delete",
@@ -117,7 +117,7 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
                     );
                 }
 
-                foreach (var db in environment["postgres"]!.AsArray())
+                foreach (var db in environment["postgres"]?.AsArray() ?? [])
                 {
                     await dokploy.Post(
                         "postgres.remove",
