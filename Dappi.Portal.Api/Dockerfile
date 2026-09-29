@@ -8,8 +8,10 @@ RUN npm run build
 
 # The SDK image, because the portal runs `dappi init`, `dotnet ef` and git to generate apps.
 FROM mcr.microsoft.com/dotnet/sdk:9.0
+# dappi init caches templates in ~/.config/Dappi and breaks if ~/.config doesn't exist.
 RUN dotnet tool install --global dotnet-ef --version 9.0.6 \
-    && dotnet tool install --global Dappi.Cli --prerelease
+    && dotnet tool install --global Dappi.Cli --prerelease \
+    && mkdir -p /root/.config
 ENV PATH="$PATH:/root/.dotnet/tools" ASPNETCORE_HTTP_PORTS=8080
 WORKDIR /src
 COPY Dappi.Portal.Api/ ./
