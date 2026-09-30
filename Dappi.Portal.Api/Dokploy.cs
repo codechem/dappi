@@ -11,9 +11,12 @@ public class Dokploy
 
     public Dokploy(IConfiguration config)
     {
-        _http = new HttpClient { BaseAddress = new Uri(config["Dokploy:Url"] + "/api/") };
+        Url = config["Dokploy:Url"]!.TrimEnd('/');
+        _http = new HttpClient { BaseAddress = new Uri(Url + "/api/") };
         _http.DefaultRequestHeaders.Add("x-api-key", config["Dokploy:ApiKey"]);
     }
+
+    public string Url { get; }
 
     public async Task<JsonNode?> Get(string procedure)
     {

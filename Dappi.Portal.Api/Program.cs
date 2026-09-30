@@ -50,6 +50,14 @@ app.MapPost(
             );
         }
 
+        if (
+            !Uri.TryCreate(request.RepoUrl, UriKind.Absolute, out var repo)
+            || !repo.Scheme.StartsWith("http")
+        )
+        {
+            return Results.BadRequest("Enter the GitLab repository's https URL.");
+        }
+
         if (string.IsNullOrWhiteSpace(request.Token))
         {
             return Results.BadRequest("Enter a project access token.");
@@ -70,6 +78,11 @@ app.MapDelete(
     "/api/apps/{name}",
     async (string name, Provisioner provisioner, ILogger<Provisioner> logger) =>
     {
+        if (provisioner.IsCreating(name))
+        {
+            return Results.BadRequest("Wait until the app is created, then delete it.");
+        }
+
         try
         {
             await provisioner.Delete(name);
