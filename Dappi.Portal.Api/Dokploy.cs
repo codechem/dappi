@@ -11,22 +11,18 @@ public class Dokploy
 
     public Dokploy(IConfiguration config)
     {
-        Url = config["Dokploy:Url"]!.TrimEnd('/');
-        _http = new HttpClient { BaseAddress = new Uri(Url + "/api/") };
+        _http = new HttpClient { BaseAddress = new Uri(config["Dokploy:Url"] + "/api/") };
         _http.DefaultRequestHeaders.Add("x-api-key", config["Dokploy:ApiKey"]);
     }
 
-    public string Url { get; }
-
-    public async Task<JsonNode?> Get(string procedure, string query = "")
+    public async Task<JsonNode?> Get(string procedure)
     {
-        var response = await _http.GetAsync(procedure + query);
+        var response = await _http.GetAsync(procedure);
         return await Read(procedure, response);
     }
 
     public async Task<JsonNode?> Post(string procedure, object body)
     {
-        // Dokploy ignores the body when the content type has "; charset=utf-8", which StringContent adds.
         var content = new StringContent(JsonSerializer.Serialize(body));
         content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         var response = await _http.PostAsync(procedure, content);

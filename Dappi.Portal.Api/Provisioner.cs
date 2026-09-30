@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
+using System.Text.Json.Nodes;
 
 namespace Dappi.Portal.Api;
 
@@ -22,15 +23,16 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
 
     private bool UseHttps => config.GetValue("Apps:UseHttps", true);
 
-    public string CmsUrl(string name) =>
-        $"{(UseHttps ? "https" : "http")}://{name}.{config["Apps:BaseDomain"]}";
+    private string Host(string name) => $"{name}.{config["Apps:BaseDomain"]}";
+
+    public string CmsUrl(string name) => $"{(UseHttps ? "https" : "http")}://{Host(name)}";
 
     public bool IsCreating(string name) =>
         _creating.TryGetValue(name, out var app) && app.Error is null;
 
     public void StartCreate(string name, string repoUrl, string token)
     {
-        _creating[name] = ("creating", null);
+        _creating[name] = ("generating project", null);
         Task.Run(async () =>
         {
             try
@@ -49,14 +51,9 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
     public async Task<List<AppInfo>> List()
     {
         var apps = new List<AppInfo>();
-        foreach (var project in (await dokploy.Get("project.all"))!.AsArray())
+        foreach (var project in await PortalProjects())
         {
-            var description = (string?)project!["description"] ?? "";
-            if (!description.StartsWith(RepoPrefix))
-            {
-                continue;
-            }
-
+            var description = (string)project["description"]!;
             var name = (string)project["name"]!;
             var environment = project["environments"]?.AsArray().FirstOrDefault();
             var status = (string?)
@@ -97,12 +94,7 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
 
     public async Task Delete(string name)
     {
-        var project = (await dokploy.Get("project.all"))!
-            .AsArray()
-            .FirstOrDefault(p =>
-                (string?)p!["name"] == name
-                && ((string?)p["description"] ?? "").StartsWith(RepoPrefix)
-            );
+        var project = (await PortalProjects()).FirstOrDefault(p => (string?)p["name"] == name);
 
         if (project is not null)
         {
@@ -132,6 +124,13 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
         _creating.TryRemove(name, out _);
     }
 
+    // The portal's apps are the Dokploy projects whose description starts with RepoPrefix.
+    private async Task<IEnumerable<JsonNode>> PortalProjects() =>
+        (await dokploy.Get("project.all"))!
+            .AsArray()
+            .Where(p => ((string?)p!["description"] ?? "").StartsWith(RepoPrefix))
+            .Select(p => p!);
+
     private async Task Create(string name, string repoUrl, string token)
     {
         var gitUrl = new UriBuilder(repoUrl) { UserName = "oauth2", Password = token }
@@ -145,7 +144,6 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
 
         try
         {
-            _creating[name] = ("generating project", null);
             var projectDir = await GenerateProject(name, workDir);
 
             _creating[name] = ("pushing to GitLab", null);
@@ -159,6 +157,7 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
                 "project.create",
                 new { name, description = RepoPrefix + repoUrl }
             );
+
             var projectId = (string)created!["project"]!["projectId"]!;
             var environmentId = (string)created["environment"]!["environmentId"]!;
 
@@ -193,7 +192,6 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
             );
             var applicationId = (string)app!["applicationId"]!;
 
-            // Dokploy rejects these calls unless every field is sent, even the unused ones.
             await dokploy.Post(
                 "application.saveBuildType",
                 new
@@ -243,7 +241,7 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
                 new
                 {
                     applicationId,
-                    host = new Uri(CmsUrl(name)).Host,
+                    host = Host(name),
                     path = "/",
                     port = 8080,
                     https = UseHttps,
@@ -274,7 +272,7 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
     {
         var dotnetName = string.Concat(
             name.Split('-').Select(part => char.ToUpper(part[0]) + part[1..])
-        ); // my-blog -> MyBlog
+        );
         await Run(
             "dappi",
             workDir,
@@ -297,8 +295,6 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
         return root;
     }
 
-    // The SDK image, because Publish in the CMS runs `dotnet ef` and git inside the container.
-    // --no-launch-profile stops launchSettings.json from changing the port and environment.
     private static string Dockerfile(string webApiDir) =>
         $"""
             FROM mcr.microsoft.com/dotnet/sdk:9.0
@@ -323,7 +319,8 @@ public class Provisioner(Dokploy dokploy, IConfiguration config, ILogger<Provisi
         };
         gitLab.DefaultRequestHeaders.Add("PRIVATE-TOKEN", token);
 
-        var projectPath = Uri.EscapeDataString(repo.AbsolutePath.Trim('/').Replace(".git", ""));
+        var path = repo.AbsolutePath.Trim('/');
+        var projectPath = Uri.EscapeDataString(path.EndsWith(".git") ? path[..^4] : path);
         var response = await gitLab.PostAsJsonAsync(
             $"projects/{projectPath}/hooks",
             new

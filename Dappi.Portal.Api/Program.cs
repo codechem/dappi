@@ -17,7 +17,6 @@ builder.Services.AddSingleton<Provisioner>();
 
 var app = builder.Build();
 
-// One shared admin password, checked with HTTP Basic auth: the browser shows its own login box.
 var credentials = Encoding.UTF8.GetBytes($"admin:{app.Configuration["Portal:Password"]}");
 var expected = Encoding.UTF8.GetBytes($"Basic {Convert.ToBase64String(credentials)}");
 app.Use(
@@ -51,14 +50,6 @@ app.MapPost(
             );
         }
 
-        if (
-            !Uri.TryCreate(request.RepoUrl, UriKind.Absolute, out var repo)
-            || !repo.Scheme.StartsWith("http")
-        )
-        {
-            return Results.BadRequest("Enter the GitLab repository's https URL.");
-        }
-
         if (string.IsNullOrWhiteSpace(request.Token))
         {
             return Results.BadRequest("Enter a project access token.");
@@ -69,7 +60,6 @@ app.MapPost(
             return Results.BadRequest($"An app named {request.Name} already exists.");
         }
 
-        // Only scheme, host and path: a pasted "#" or "?..." breaks the git URL.
         var repoUrl = repo.GetLeftPart(UriPartial.Path).TrimEnd('/');
         provisioner.StartCreate(request.Name, repoUrl, request.Token.Trim());
         return Results.Accepted();
@@ -80,11 +70,6 @@ app.MapDelete(
     "/api/apps/{name}",
     async (string name, Provisioner provisioner, ILogger<Provisioner> logger) =>
     {
-        if (provisioner.IsCreating(name))
-        {
-            return Results.BadRequest("Wait until the app is created, then delete it.");
-        }
-
         try
         {
             await provisioner.Delete(name);
