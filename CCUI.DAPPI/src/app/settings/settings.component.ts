@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -7,6 +8,7 @@ import { Subscription } from 'rxjs';
 import { DataStorageComponent } from './data-storage/data-storage.component';
 import { UsersComponent } from './users/users.component';
 import { RolesComponent } from './roles/roles.component';
+import { UsersAndPermissionsUsersComponent } from './users-and-permissions-plugin-users/users-and-permissions-plugin-users.component';
 import { UsersManagementService } from '../services/auth/users-management.service';
 import {
   UsersAndPermissionsPluginService,
@@ -26,12 +28,13 @@ interface ControllerPermissionGroup {
   allowedCount: number;
 }
 
-type SettingsTab = 'storage' | 'users' | 'roles' | 'usersAndPermissionsPlugin';
+type SettingsTab = 'storage' | 'users' | 'roles' | 'usersAndPermissionsPlugin' | 'usersAndPermissionsPluginUsers';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
   imports: [
+    CommonModule,
     MatButtonToggleModule,
     MatIconModule,
     MatProgressSpinnerModule,
@@ -45,6 +48,7 @@ type SettingsTab = 'storage' | 'users' | 'roles' | 'usersAndPermissionsPlugin';
 })
 export class SettingsComponent implements OnInit, OnDestroy {
   private subscription = new Subscription();
+  readonly usersAndPermissionsUsersComponent = UsersAndPermissionsUsersComponent;
 
   activeTab: SettingsTab = 'storage';
   usersAndPermissionsEnabled = false;
@@ -75,7 +79,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   selectTab(tab: SettingsTab): void {
-    if (tab === 'usersAndPermissionsPlugin' && !this.usersAndPermissionsEnabled) {
+    if (
+      (tab === 'usersAndPermissionsPlugin' || tab === 'usersAndPermissionsPluginUsers')
+      && !this.usersAndPermissionsEnabled
+    ) {
       return;
     }
 
@@ -92,7 +99,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
         next: (response) => {
           this.usersAndPermissionsEnabled = !!response.services?.['usersAndPermissions'];
 
-          if (!this.usersAndPermissionsEnabled && this.activeTab === 'usersAndPermissionsPlugin') {
+          if (
+            !this.usersAndPermissionsEnabled
+            && (
+              this.activeTab === 'usersAndPermissionsPlugin'
+              || this.activeTab === 'usersAndPermissionsPluginUsers'
+            )
+          ) {
             this.activeTab = 'storage';
           }
         },

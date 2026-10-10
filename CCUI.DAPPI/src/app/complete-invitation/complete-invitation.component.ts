@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UsersManagementService } from '../services/auth/users-management.service';
+import { UsersAndPermissionsPluginService } from '../services/auth/users-and-permissions-plugin.service';
 
 export function passwordMatchValidator(): ValidatorFn {
   return (control: AbstractControl): { [key: string]: any } | null => {
@@ -27,6 +28,7 @@ export function passwordMatchValidator(): ValidatorFn {
 export class CompleteInvitationComponent implements OnInit {
   form: FormGroup;
   token = '';
+  flow = '';
   isSubmitting = false;
   errorMessage = '';
 
@@ -34,7 +36,8 @@ export class CompleteInvitationComponent implements OnInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private usersManagementService: UsersManagementService
+    private usersManagementService: UsersManagementService,
+    private usersAndPermissionsPluginService: UsersAndPermissionsPluginService
   ) {
     this.form = this.fb.group(
       {
@@ -48,6 +51,7 @@ export class CompleteInvitationComponent implements OnInit {
 
   ngOnInit(): void {
     this.token = this.route.snapshot.queryParamMap.get('token') ?? '';
+    this.flow = (this.route.snapshot.queryParamMap.get('flow') ?? '').toLowerCase();
 
     if (!this.token) {
       this.errorMessage = 'Invitation token is missing.';
@@ -71,7 +75,11 @@ export class CompleteInvitationComponent implements OnInit {
     const oldPassword = this.form.get('oldPassword')?.value;
     const newPassword = this.form.get('newPassword')?.value;
 
-    this.usersManagementService.completeInvitation({ token: this.token, oldPassword, newPassword }).subscribe({
+    const completeInvitation$ = this.flow === 'usersandpermissions'
+      ? this.usersAndPermissionsPluginService.completeInvitation({ token: this.token, oldPassword, newPassword })
+      : this.usersManagementService.completeInvitation({ token: this.token, oldPassword, newPassword });
+
+    completeInvitation$.subscribe({
       next: () => {
         this.isSubmitting = false;
         this.router.navigate(['/auth'], { queryParams: { invitationCompleted: 'true' } });

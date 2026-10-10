@@ -8,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RolesManagementService, RoleItem } from '../services/auth/roles-management.service';
+import { UsersAndPermissionsPluginService } from '../services/auth/users-and-permissions-plugin.service';
 
 export interface InviteUserData {
   username: string;
@@ -18,6 +19,7 @@ export interface InviteUserData {
 
 export interface InviteUserDialogConfig {
   isEmailServiceAvailable: boolean;
+  usePluginRoles?: boolean;
 }
 
 @Component({
@@ -47,20 +49,17 @@ export class InviteUserDialogComponent implements OnInit {
   constructor(
     private dialogRef: MatDialogRef<InviteUserDialogComponent>,
     private rolesManagementService: RolesManagementService,
+    private usersAndPermissionsPluginService: UsersAndPermissionsPluginService,
     @Inject(MAT_DIALOG_DATA) public data: InviteUserDialogConfig,
   ) {}
 
   ngOnInit(): void {
-    this.rolesLoading = true;
-    this.rolesManagementService.getRoles().subscribe({
-      next: (res) => {
-        this.availableRoles = res.Data;
-        this.rolesLoading = false;
-      },
-      error: () => {
-        this.rolesLoading = false;
-      },
-    });
+    if (this.data.usePluginRoles) {
+      this.loadPluginRoles();
+      return;
+    }
+
+    this.loadRegularRoles();
   }
 
   get isValid(): boolean {
@@ -83,5 +82,35 @@ export class InviteUserDialogComponent implements OnInit {
 
   onCancel(): void {
     this.dialogRef.close(null);
+  }
+
+  private loadRegularRoles(): void {
+    this.rolesLoading = true;
+    this.rolesManagementService.getRoles().subscribe({
+      next: (res) => {
+        this.availableRoles = res.Data;
+        this.rolesLoading = false;
+      },
+      error: () => {
+        this.rolesLoading = false;
+      },
+    });
+  }
+
+  private loadPluginRoles(): void {
+    this.rolesLoading = true;
+    this.usersAndPermissionsPluginService.getAllRoles().subscribe({
+      next: (roles) => {
+        this.availableRoles = roles.map((role) => ({
+          Id: role.id,
+          Name: role.name,
+          UserCount: 0,
+        }));
+        this.rolesLoading = false;
+      },
+      error: () => {
+        this.rolesLoading = false;
+      },
+    });
   }
 }

@@ -13,8 +13,8 @@ namespace Dappi.HeadlessCms.Services.Identity;
 public class InvitationService : IInvitationService
 {
     private const string InviteUserTemplateName = "InviteUser";
-    private const string DefaultInvitationEmailHtmlTemplatePath = "EmailTemplates/Invitation/InvitationEmail.html";
-    private const string DefaultInvitationEmailTextTemplatePath = "EmailTemplates/Invitation/InvitationEmail.txt";
+    private const string DefaultInvitationEmailHtmlTemplatePath = "Invitation/InvitationEmail.html";
+    private const string DefaultInvitationEmailTextTemplatePath = "Invitation/InvitationEmail.txt";
     private const string DefaultInvitationEmailSubjectTemplate = "You're invited to join Dappi";
 
     private readonly IConfiguration _configuration;
