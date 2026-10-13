@@ -3,6 +3,7 @@ using Dappi.HeadlessCms.Enums;
 using Dappi.HeadlessCms.Middleware;
 using Dappi.HeadlessCms.Models;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,17 +45,25 @@ public static class AppExtensions
                 await next();
 
                 if (
-                    !context.Request.Path.Value!.StartsWith("/api/")
-                        && !Path.HasExtension(context.Request.Path)
-                    || context.Response.StatusCode == 404
+                    context.Response.HasStarted
+                    || context.Response.StatusCode != StatusCodes.Status404NotFound
+                    || context.GetEndpoint() != null
+                    || !(
+                        HttpMethods.IsGet(context.Request.Method)
+                        || HttpMethods.IsHead(context.Request.Method)
+                    )
+                    || context.Request.Path.StartsWithSegments("/api")
+                    || Path.HasExtension(context.Request.Path)
                 )
                 {
-                    if (!context.Response.HasStarted)
-                    {
-                        context.Request.Path = "/index.html";
-                        await next();
-                    }
+                    return;
                 }
+
+                // StaticFileMiddleware keeps a non-200 status it finds, so the 404 from the
+                // first pass has to be cleared or every client-side route is served as a 404.
+                context.Response.StatusCode = StatusCodes.Status200OK;
+                context.Request.Path = "/index.html";
+                await next();
             }
         );
 
